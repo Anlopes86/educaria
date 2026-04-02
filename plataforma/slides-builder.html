@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slides | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/live-preview.js" defer></script>
+    <script src="../assets/js/builder-actions.js" defer></script>
+    <script src="../assets/js/local-persistence.js" defer></script>
+    <script src="../assets/js/slide-image-tools.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+</head>
+<body class="product-body theme-editor" data-material-type="slides">
+    <main class="platform-shell platform-flow-shell activity-editor-shell">
+        <header class="platform-topbar">
+            <a href="turma.html" class="platform-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>Editor de slides</strong>
+                </div>
+            </a>
+            <div class="platform-top-actions">
+                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+                <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="slides" data-save-target="turma.html">Salvar na turma</button>
+                <a href="apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
+            </div>
+        </header>
+
+        <section class="activity-editor-context">
+            <div>
+                <span class="focus-eyebrow">Editor de slides</span>
+                <h1>Organize a sequencia da aula e acompanhe a apresentacao ao lado.</h1>
+                <p>Use esta tela para montar a narrativa dos slides com menos distracao e mais area util de edicao.</p>
+            </div>
+        </section>
+
+        <section class="activity-editor-top activity-editor-top--stacked">
+            <article class="focus-card ai-structure-card">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">IA de estruturacao</span>
+                        <h2>Trazer roteiro, texto ou topicos</h2>
+                    </div>
+                    <p>A IA entra para montar a estrutura dos slides a partir do material enviado e opcionalmente gerar imagens de apoio.</p>
+                </div>
+
+                <div class="ai-structure-grid">
+                    <div class="platform-field platform-field-wide">
+                        <label for="slides-fonte-texto">Roteiro ou texto-base do professor</label>
+                        <textarea id="slides-fonte-texto" rows="6" placeholder="Cole um roteiro, topicos ou texto da aula para a IA quebrar em slides."></textarea>
+                    </div>
+                    <div class="platform-field">
+                        <label for="slides-arquivo">Arquivo de apoio</label>
+                        <input id="slides-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
+                    </div>
+                    <div class="platform-field">
+                        <label for="slides-acao-ia">Como a IA deve ajudar</label>
+                        <select id="slides-acao-ia">
+                            <option>Organizar texto em slides</option>
+                            <option>Resumir topicos em sequencia</option>
+                            <option>Gerar imagem quando fizer sentido</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="utility-actions">
+                    <button type="button" class="platform-link-button platform-link-primary">Estruturar slides com IA</button>
+                </div>
+            </article>
+
+            <article class="focus-card activity-guidance-card activity-guidance-card--wide">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Regra da tela</span>
+                        <h2>Conteudo primeiro, visual depois</h2>
+                    </div>
+                    <p>O professor precisa montar a narrativa do slide antes de gastar energia com ajustes visuais.</p>
+                </div>
+                <div class="action-card-grid">
+                    <article class="route-card">
+                        <span class="route-tag">Essencial</span>
+                        <h3>Titulo, subtitulo e texto</h3>
+                        <p>Esses campos precisam resolver o slide mesmo sem imagem.</p>
+                    </article>
+                    <article class="route-card">
+                        <span class="route-tag">Opcional</span>
+                        <h3>Imagem e aparencia</h3>
+                        <p>Use quando realmente aumentarem a clareza da explicacao.</p>
+                    </article>
+                </div>
+            </article>
+        </section>
+
+        <section class="platform-quiz-layout activity-workspace">
+            <article class="platform-builder-card highlight-surface activity-builder-pane">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Edicao</span>
+                        <h2>Editar slides</h2>
+                    </div>
+                    <p>Cada slide foi reorganizado em tres blocos: conteudo principal, imagem opcional e aparencia.</p>
+                </div>
+
+                <div class="platform-question-stack activity-card-stack" data-slides-stack>
+                    <section class="platform-question-card slides-editor-card activity-content-card" data-slide-card>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-card-label>Slide 1</span>
+                                <h3>Mensagem principal</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" data-action="duplicate-slide" class="platform-link-button platform-link-secondary">Duplicar</button>
+                                <button type="button" data-action="remove-slide" class="platform-link-button platform-link-secondary">Remover</button>
+                            </div>
+                        </div>
+
+                        <div class="platform-form-grid activity-essential-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Titulo do slide</label>
+                                <input data-field="slide-title" type="text" value="" placeholder="Qual e a ideia principal deste slide?">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Subtitulo do slide</label>
+                                <input data-field="slide-subtitle" type="text" value="" placeholder="Contexto curto para apoiar a leitura">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Conteudo visivel</label>
+                                <textarea data-field="slide-body" rows="4" placeholder="Escreva o texto que sera projetado para a turma"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="activity-optional-block">
+                            <span class="route-tag">Imagem opcional</span>
+                            <div class="platform-form-grid activity-media-grid">
+                                <div class="platform-field">
+                                    <label>Origem da imagem</label>
+                                    <select data-field="slide-image-mode">
+                                        <option>Gerar com IA</option>
+                                        <option>Upload</option>
+                                        <option>Biblioteca</option>
+                                        <option>Buscar gr&aacute;tis</option>
+                                        <option>Sem imagem</option>
+                                    </select>
+                                </div>
+                                <div class="platform-field">
+                                    <label>Formato do slide</label>
+                                    <select data-field="slide-layout">
+                                        <option>Texto acima</option>
+                                        <option>Lado a lado</option>
+                                        <option>Imagem em destaque</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="utility-actions" style="margin-top: 14px;">
+                                <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Escolher imagem</button>
+                            </div>
+                            <div class="platform-field platform-field-wide" hidden>
+                                <label>Descricao da imagem</label>
+                                <textarea data-field="slide-image-prompt"></textarea>
+                            </div>
+                            <div class="platform-field platform-field-wide" hidden>
+                                <input data-field="slide-image-url" type="text" value="">
+                            </div>
+                        </div>
+
+                        <div class="resource-panel" data-image-panel hidden>
+                            <div class="resource-source-grid">
+                                <article class="resource-source-card">
+                                    <h3>Upload</h3>
+                                    <p>Escolha uma imagem do computador.</p>
+                                    <input data-upload-input type="file" accept="image/*">
+                                </article>
+                                <article class="resource-source-card">
+                                    <h3>Biblioteca</h3>
+                                    <p>Selecione uma imagem ja salva no projeto.</p>
+                                </article>
+                                <article class="resource-source-card">
+                                    <h3>Buscar gratis</h3>
+                                    <p>Use bancos gratuitos como Pexels e Openverse.</p>
+                                </article>
+                            </div>
+                            <div class="resource-results-grid">
+                                <div class="resource-result-card">
+                                    <button type="button" data-pick-image data-label="Biblioteca: sala moderna" data-prompt="Sala de aula moderna com alunos usando computadores" data-theme="Biblioteca interna" data-palette="#bfe8ea,#eff6ff">
+                                        <div class="resource-thumb">Sala moderna</div>
+                                        <div class="resource-result-meta"><strong>Biblioteca</strong><span>Imagem ja salva no projeto.</span></div>
+                                    </button>
+                                </div>
+                                <div class="resource-result-card">
+                                    <button type="button" data-pick-image data-label="Pexels: classroom technology" data-prompt="Foto de sala de aula com tecnologia" data-theme="Pexels" data-palette="#fde68a,#dbeafe">
+                                        <div class="resource-thumb">Pexels</div>
+                                        <div class="resource-result-meta"><strong>Classroom technology</strong><span>Busca gratuita sugerida.</span></div>
+                                    </button>
+                                </div>
+                                <div class="resource-result-card">
+                                    <button type="button" data-pick-image data-label="Openverse: school illustration" data-prompt="Ilustracao escolar com livros e computador" data-theme="Openverse" data-palette="#c7d2fe,#f0fdf4">
+                                        <div class="resource-thumb">Openverse</div>
+                                        <div class="resource-result-meta"><strong>School illustration</strong><span>Resultado educativo livre.</span></div>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="resource-panel-actions">
+                                <button type="button" data-generate-ai-image class="platform-link-button platform-link-primary">Gerar imagem com IA</button>
+                                <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Fechar painel</button>
+                            </div>
+                        </div>
+
+                        <div class="activity-optional-block">
+                            <span class="route-tag">Aparencia</span>
+                            <div class="platform-form-grid activity-style-grid">
+                                <div class="platform-field">
+                                    <label>Cor do slide</label>
+                                    <input data-field="slide-color" type="color" value="#d7f5f6">
+                                </div>
+                                <div class="platform-field">
+                                    <label>Cor do texto</label>
+                                    <input data-field="slide-text-color" type="color" value="#0f172a">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card slides-editor-card activity-content-card" data-slide-card>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-card-label>Slide 2</span>
+                                <h3>Mensagem principal</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" data-action="duplicate-slide" class="platform-link-button platform-link-secondary">Duplicar</button>
+                                <button type="button" data-action="remove-slide" class="platform-link-button platform-link-secondary">Remover</button>
+                            </div>
+                        </div>
+
+                        <div class="platform-form-grid activity-essential-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Titulo do slide</label>
+                                <input data-field="slide-title" type="text" value="" placeholder="Qual e a ideia principal deste slide?">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Subtitulo do slide</label>
+                                <input data-field="slide-subtitle" type="text" value="" placeholder="Contexto curto para apoiar a leitura">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Conteudo visivel</label>
+                                <textarea data-field="slide-body" rows="4" placeholder="Escreva o texto que sera projetado para a turma"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="activity-optional-block">
+                            <span class="route-tag">Imagem opcional</span>
+                            <div class="platform-form-grid activity-media-grid">
+                                <div class="platform-field">
+                                    <label>Origem da imagem</label>
+                                    <select data-field="slide-image-mode">
+                                        <option>Sem imagem</option>
+                                        <option>Gerar com IA</option>
+                                        <option>Upload</option>
+                                        <option>Biblioteca</option>
+                                        <option>Buscar gr&aacute;tis</option>
+                                    </select>
+                                </div>
+                                <div class="platform-field">
+                                    <label>Formato do slide</label>
+                                    <select data-field="slide-layout">
+                                        <option>Texto acima</option>
+                                        <option>Lado a lado</option>
+                                        <option>Imagem em destaque</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="utility-actions" style="margin-top: 14px;">
+                                <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Escolher imagem</button>
+                            </div>
+                            <div class="platform-field platform-field-wide" hidden>
+                                <label>Descricao da imagem</label>
+                                <textarea data-field="slide-image-prompt"></textarea>
+                            </div>
+                            <div class="platform-field platform-field-wide" hidden>
+                                <input data-field="slide-image-url" type="text" value="">
+                            </div>
+                        </div>
+
+                        <div class="resource-panel" data-image-panel hidden>
+                            <div class="resource-source-grid">
+                                <article class="resource-source-card">
+                                    <h3>Upload</h3>
+                                    <p>Escolha uma imagem do computador.</p>
+                                    <input data-upload-input type="file" accept="image/*">
+                                </article>
+                                <article class="resource-source-card">
+                                    <h3>Biblioteca</h3>
+                                    <p>Selecione uma imagem ja salva no projeto.</p>
+                                </article>
+                                <article class="resource-source-card">
+                                    <h3>Buscar gratis</h3>
+                                    <p>Use bancos gratuitos como Pexels e Openverse.</p>
+                                </article>
+                            </div>
+                            <div class="resource-results-grid">
+                                <div class="resource-result-card">
+                                    <button type="button" data-pick-image data-label="Biblioteca: gramatica visual" data-prompt="Quadro visual com exemplos de present perfect" data-theme="Biblioteca interna" data-palette="#bfdbfe,#ecfeff">
+                                        <div class="resource-thumb">Gramatica visual</div>
+                                        <div class="resource-result-meta"><strong>Biblioteca</strong><span>Recurso ja salvo.</span></div>
+                                    </button>
+                                </div>
+                                <div class="resource-result-card">
+                                    <button type="button" data-pick-image data-label="Pexels: students learning" data-prompt="Foto de alunos aprendendo com tecnologia" data-theme="Pexels" data-palette="#fde68a,#ddd6fe">
+                                        <div class="resource-thumb">Pexels</div>
+                                        <div class="resource-result-meta"><strong>Students learning</strong><span>Busca gratuita sugerida.</span></div>
+                                    </button>
+                                </div>
+                                <div class="resource-result-card">
+                                    <button type="button" data-pick-image data-label="Openverse: education icons" data-prompt="Ilustracao educacional com icones de escola" data-theme="Openverse" data-palette="#bbf7d0,#dbeafe">
+                                        <div class="resource-thumb">Openverse</div>
+                                        <div class="resource-result-meta"><strong>Education icons</strong><span>Resultado educativo livre.</span></div>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="resource-panel-actions">
+                                <button type="button" data-generate-ai-image class="platform-link-button platform-link-primary">Gerar imagem com IA</button>
+                                <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Fechar painel</button>
+                            </div>
+                        </div>
+
+                        <div class="activity-optional-block">
+                            <span class="route-tag">Aparencia</span>
+                            <div class="platform-form-grid activity-style-grid">
+                                <div class="platform-field">
+                                    <label>Cor do slide</label>
+                                    <input data-field="slide-color" type="color" value="#e8f2ff">
+                                </div>
+                                <div class="platform-field">
+                                    <label>Cor do texto</label>
+                                    <input data-field="slide-text-color" type="color" value="#0f172a">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="platform-form-actions activity-stack-actions">
+                    <button type="button" data-action="add-slide" class="platform-link-button platform-link-primary">Adicionar slide</button>
+                </div>
+            </article>
+
+            <aside class="platform-builder-card slides-preview-card activity-preview-pane">
+                <span class="platform-section-label">Preview</span>
+                <h2>Veja a sequencia como o aluno vai ver</h2>
+                <p>O preview ajuda a validar ritmo, quantidade de texto e uso de imagem antes da apresentacao.</p>
+                <div class="live-preview-stack" data-slides-preview></div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>

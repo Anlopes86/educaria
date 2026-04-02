@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roleta Editavel | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/local-persistence.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/wheel-builder.js" defer></script>
+</head>
+<body class="product-body theme-editor" data-material-type="wheel">
+    <main class="platform-shell platform-flow-shell activity-editor-shell">
+        <header class="platform-topbar">
+            <a href="turma.html" class="platform-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>Roleta editavel</strong>
+                </div>
+            </a>
+            <div class="platform-top-actions">
+                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+                <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="wheel" data-save-target="turma.html">Salvar na turma</button>
+                <a href="roleta-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
+            </div>
+        </header>
+
+        <section class="activity-editor-context">
+            <div>
+                <span class="focus-eyebrow">Editor de roleta</span>
+                <h1>Defina os espacos e acompanhe a leitura da roda no preview.</h1>
+                <p>Esta tela foi simplificada para o professor montar a dinamica rapidamente e testar a distribuicao dos textos.</p>
+            </div>
+        </section>
+
+        <section class="activity-editor-top">
+            <article class="focus-card activity-generator-card">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Configuracao</span>
+                        <h2>Estrutura da roleta</h2>
+                    </div>
+                    <p>Esse formato precisa ser rapido de montar: defina titulo, quantidade e modo, depois edite os espacos abaixo.</p>
+                </div>
+
+                <div class="platform-form-grid">
+                    <div class="platform-field">
+                        <label for="roleta-titulo">Titulo da atividade</label>
+                        <input id="roleta-titulo" type="text" value="">
+                    </div>
+                    <div class="platform-field">
+                        <label for="roleta-quantidade">Quantidade de espacos</label>
+                        <select id="roleta-quantidade">
+                            <option>2 espacos</option>
+                            <option>4 espacos</option>
+                            <option>6 espacos</option>
+                            <option selected>8 espacos</option>
+                            <option>10 espacos</option>
+                            <option>12 espacos</option>
+                        </select>
+                    </div>
+                    <div class="platform-field">
+                        <label for="roleta-modo">Modo</label>
+                        <select id="roleta-modo">
+                            <option>Revisao</option>
+                            <option>Sorteio</option>
+                            <option>Desafio</option>
+                            <option>Debate</option>
+                        </select>
+                    </div>
+                </div>
+            </article>
+
+            <article class="focus-card activity-guidance-card">
+                <span class="platform-section-label">Como montar</span>
+                <h2>Boas praticas</h2>
+                <ul class="mini-list">
+                    <li>Use textos curtos para cada espaco da roleta.</li>
+                    <li>Misture comandos simples e desafios mais ricos.</li>
+                    <li>Evite repetir categorias sem intencao didatica.</li>
+                </ul>
+            </article>
+        </section>
+
+        <section class="platform-quiz-layout activity-workspace">
+            <article class="platform-builder-card highlight-surface activity-builder-pane">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Edicao</span>
+                        <h2>Espacos da roleta</h2>
+                    </div>
+                    <p>Edite o texto e a cor de cada espaco. A quantidade pode ser ajustada sem perder a visualizacao ao lado.</p>
+                </div>
+
+                <div class="platform-question-stack activity-card-stack" data-wheel-segments>
+                    <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-wheel-label>Espaco 1</span>
+                                <h3>Conteudo do espaco</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Texto do espaco</label>
+                                <input data-wheel-text type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor</label>
+                                <input data-wheel-color type="color" value="#22c55e">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-wheel-label>Espaco 2</span>
+                                <h3>Conteudo do espaco</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Texto do espaco</label>
+                                <input data-wheel-text type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor</label>
+                                <input data-wheel-color type="color" value="#0ea5e9">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-wheel-label>Espaco 3</span>
+                                <h3>Conteudo do espaco</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Texto do espaco</label>
+                                <input data-wheel-text type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor</label>
+                                <input data-wheel-color type="color" value="#f59e0b">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-wheel-label>Espaco 4</span>
+                                <h3>Conteudo do espaco</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Texto do espaco</label>
+                                <input data-wheel-text type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor</label>
+                                <input data-wheel-color type="color" value="#ec4899">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-wheel-label>Espaco 5</span>
+                                <h3>Conteudo do espaco</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Texto do espaco</label>
+                                <input data-wheel-text type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor</label>
+                                <input data-wheel-color type="color" value="#8b5cf6">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-wheel-label>Espaco 6</span>
+                                <h3>Conteudo do espaco</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Texto do espaco</label>
+                                <input data-wheel-text type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor</label>
+                                <input data-wheel-color type="color" value="#14b8a6">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-wheel-label>Espaco 7</span>
+                                <h3>Conteudo do espaco</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Texto do espaco</label>
+                                <input data-wheel-text type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor</label>
+                                <input data-wheel-color type="color" value="#ef4444">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-wheel-label>Espaco 8</span>
+                                <h3>Conteudo do espaco</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label>Texto do espaco</label>
+                                <input data-wheel-text type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor</label>
+                                <input data-wheel-color type="color" value="#6366f1">
+                            </div>
+                        </div>
+                    </section>
+                </div>
+                <div class="platform-form-actions activity-stack-actions">
+                    <button type="button" class="platform-link-button platform-link-primary" data-wheel-add>Adicionar espaco</button>
+                </div>
+            </article>
+
+            <aside class="platform-builder-card activity-preview-pane wheel-preview-pane">
+                <span class="platform-section-label">Preview</span>
+                <h2>Veja a roleta pronta</h2>
+                <p>A visualizacao fica sempre ao lado para ajustar quantidade, distribuicao e leitura dos espacos.</p>
+                <div class="live-preview-stack">
+                    <section class="live-preview-card live-preview-card--teal">
+                        <span class="platform-section-label">Resumo</span>
+                        <h3 data-wheel-preview-title>Nova roleta</h3>
+                        <div class="preview-chip-row">
+                            <span class="preview-chip" data-wheel-preview-mode>Revisao</span>
+                            <span class="preview-chip" data-wheel-preview-count>8 espacos</span>
+                        </div>
+                    </section>
+                    <section class="live-preview-card wheel-preview-card">
+                        <div class="wheel-preview-stage">
+                            <div class="wheel-preview-pointer"></div>
+                            <div class="wheel-preview-svg" data-wheel-preview-svg></div>
+                        </div>
+                        <div class="wheel-preview-list" data-wheel-preview-list></div>
+                    </section>
+                </div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>

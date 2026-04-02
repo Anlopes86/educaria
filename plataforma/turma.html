@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turma | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/auth-flow.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/app-sidebar.js" defer></script>
+    <script src="../assets/js/class-format-picker.js" defer></script>
+</head>
+<body class="product-body theme-class" data-requires-auth="true">
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <a href="index.html" class="platform-brand app-sidebar-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>Painel da turma</strong>
+                </div>
+            </a>
+
+            <div class="app-sidebar-profile">
+                <strong data-sidebar-teacher>Professor</strong>
+                <span data-sidebar-institution>Conta educacional</span>
+            </div>
+
+            <nav class="app-sidebar-nav">
+                <a href="index.html" class="sidebar-nav-link">Painel</a>
+
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
+                <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
+                    <div class="sidebar-subitems" data-sidebar-class-list></div>
+                    <div class="sidebar-create-card">
+                        <div class="platform-field">
+                            <label for="sidebar-nome-turma">Nova turma</label>
+                            <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma">
+                        </div>
+                        <div class="platform-field">
+                            <label for="sidebar-materia">Materia</label>
+                            <select id="sidebar-materia">
+                                <option value="">Selecione a materia</option>
+                                <option value="Matematica">Matematica</option>
+                                <option value="Portugues">Portugues</option>
+                                <option value="Ciencias">Ciencias</option>
+                                <option value="Historia">Historia</option>
+                                <option value="Geografia">Geografia</option>
+                                <option value="Ingles">Ingles</option>
+                                <option value="Artes">Artes</option>
+                                <option value="Educacao fisica">Educacao fisica</option>
+                            </select>
+                        </div>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class>Criar turma</button>
+                        <p class="sidebar-feedback" data-sidebar-class-feedback hidden></p>
+                    </div>
+                </div>
+
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false">Criar atividade</button>
+                <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
+                    <div class="sidebar-subitems">
+                        <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
+                        <a href="slides-builder.html" class="sidebar-subitem">Slides</a>
+                        <a href="flashcards-builder.html" class="sidebar-subitem">Flashcards</a>
+                        <a href="jogo-memoria-builder.html" class="sidebar-subitem">Jogo da memoria</a>
+                        <a href="roleta-builder.html" class="sidebar-subitem">Roleta editavel</a>
+                        <a href="ligar-pontos-builder.html" class="sidebar-subitem">Ligar pontos</a>
+                        <a href="mapa-mental-builder.html" class="sidebar-subitem">Mapa mental</a>
+                        <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
+                        <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
+                    </div>
+                </div>
+
+                <a href="biblioteca.html" class="sidebar-nav-link">Biblioteca</a>
+            </nav>
+
+            <div class="app-sidebar-footer">
+                <button type="button" class="platform-link-button platform-link-secondary" data-logout>Sair</button>
+            </div>
+        </aside>
+
+        <main class="app-content">
+            <section class="app-page-intro">
+                <div class="app-page-intro__content">
+                    <span class="focus-eyebrow">Turma atual</span>
+                    <h1 data-class-title>Turma</h1>
+                    <p>Use este painel para criar novas atividades, trocar rapidamente de formato e reencontrar tudo o que ja foi salvo para esta turma.</p>
+                </div>
+                <div class="app-current-class">
+                    <span>Contexto ativo</span>
+                    <strong data-sidebar-current-class>Turma</strong>
+                </div>
+            </section>
+
+            <section class="class-hero">
+                <article class="class-hero-main">
+                    <span class="focus-eyebrow">Criacao rapida</span>
+                    <h2>Escolha um formato sem sair da turma</h2>
+                    <p>Use o menu lateral para trocar de formato a qualquer momento ou selecione abaixo o tipo de atividade que deseja montar agora.</p>
+                    <div class="class-hero-actions">
+                        <a href="#formatos-criar" class="platform-link-button platform-link-primary">Ver formatos</a>
+                        <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Abrir biblioteca</a>
+                    </div>
+                    <div class="class-format-shortcut">
+                        <div class="platform-field">
+                            <label for="class-format-select">Criar formato rapido</label>
+                            <select id="class-format-select" data-format-select>
+                                <option value="">Escolha um formato</option>
+                                <option value="quiz-builder.html">Quiz</option>
+                                <option value="slides-builder.html">Slides</option>
+                                <option value="flashcards-builder.html">Flashcards</option>
+                                <option value="jogo-memoria-builder.html">Jogo da memoria</option>
+                                <option value="roleta-builder.html">Roleta editavel</option>
+                                <option value="ligar-pontos-builder.html">Ligar pontos</option>
+                                <option value="mapa-mental-builder.html">Mapa mental</option>
+                                <option value="debate-guiado-builder.html">Debate guiado</option>
+                                <option value="criar-aula.html">Aula completa</option>
+                            </select>
+                        </div>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-format-go>Continuar</button>
+                    </div>
+                </article>
+
+                <aside class="class-hero-side">
+                    <div class="class-status-card">
+                        <span class="platform-section-label">Visao rapida</span>
+                        <h2>Atividades organizadas por tipo</h2>
+                        <ul class="mini-list">
+                            <li>Escolha outra turma direto no menu lateral.</li>
+                            <li>Abra um novo formato sem sair deste painel.</li>
+                            <li>O que for salvo para esta turma aparece abaixo automaticamente.</li>
+                        </ul>
+                    </div>
+                </aside>
+            </section>
+
+            <section class="focus-card class-format-browser" id="formatos-criar">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Formatos para criar</span>
+                        <h2>Escolha pelo tipo de atividade</h2>
+                    </div>
+                    <p>Os cards abaixo continuam disponiveis para o professor bater o olho e entrar rapido no formato desejado.</p>
+                </div>
+
+                <div class="class-format-card-grid">
+                    <a href="quiz-builder.html" class="class-format-card">
+                        <div class="class-format-visual class-format-visual--quiz"></div>
+                        <h3>Quiz</h3>
+                        <p>Perguntas para revisar e checar entendimento rapidamente.</p>
+                    </a>
+                    <a href="slides-builder.html" class="class-format-card">
+                        <div class="class-format-visual class-format-visual--slides"></div>
+                        <h3>Slides</h3>
+                        <p>Sequencia visual para conduzir a aula projetada.</p>
+                    </a>
+                    <a href="flashcards-builder.html" class="class-format-card">
+                        <div class="class-format-visual class-format-visual--flashcards"></div>
+                        <h3>Flashcards</h3>
+                        <p>Cards para retomada, vocabulario e revisao visual.</p>
+                    </a>
+                    <a href="jogo-memoria-builder.html" class="class-format-card">
+                        <div class="class-format-visual class-format-visual--memory"></div>
+                        <h3>Jogo da memoria</h3>
+                        <p>Pares para memorizacao e descoberta em sala.</p>
+                    </a>
+                    <a href="roleta-builder.html" class="class-format-card">
+                        <div class="class-format-visual class-format-visual--wheel"></div>
+                        <h3>Roleta editavel</h3>
+                        <p>Sorteios, comandos e desafios em um formato rapido.</p>
+                    </a>
+                    <a href="ligar-pontos-builder.html" class="class-format-card">
+                        <div class="class-format-visual class-format-visual--matching"></div>
+                        <h3>Ligar pontos</h3>
+                        <p>Associacoes entre colunas para revisar relacoes e conceitos.</p>
+                    </a>
+                    <a href="mapa-mental-builder.html" class="class-format-card">
+                        <div class="class-format-visual class-format-visual--mindmap"></div>
+                        <h3>Mapa mental</h3>
+                        <p>Topicos e conexoes para organizar o conteudo da turma.</p>
+                    </a>
+                    <a href="debate-guiado-builder.html" class="class-format-card">
+                        <div class="class-format-visual class-format-visual--debate"></div>
+                        <h3>Debate guiado</h3>
+                        <p>Roteiro simples para discussao com mediacao e fechamento.</p>
+                    </a>
+                    <a href="criar-aula.html" class="class-format-card">
+                        <div class="class-format-visual class-format-visual--lesson"></div>
+                        <h3>Aula completa</h3>
+                        <p>Sequencia inteira com abertura, desenvolvimento e fechamento.</p>
+                    </a>
+                </div>
+            </section>
+
+            <section class="focus-card class-library-panel">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Atividades da turma</span>
+                        <h2>Organizadas por tipo</h2>
+                    </div>
+                    <p>Abaixo ficam apenas as atividades que ja foram criadas para esta turma, separadas pelo tipo de material.</p>
+                </div>
+
+                <div class="class-activity-groups" data-saved-lessons></div>
+            </section>
+        </main>
+    </div>
+</body>
+</html>

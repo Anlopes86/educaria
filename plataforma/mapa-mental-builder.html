@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Mental | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+</head>
+<body class="product-body theme-editor">
+    <main class="platform-shell platform-flow-shell activity-editor-shell">
+        <header class="platform-topbar">
+            <a href="turma.html" class="platform-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>Mapa mental</strong>
+                </div>
+            </a>
+            <div class="platform-top-actions">
+                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+                <button type="button" class="platform-link-button platform-link-primary" disabled>Salvar na turma</button>
+                <button type="button" class="platform-link-button platform-link-secondary" disabled>Apresentar</button>
+            </div>
+        </header>
+
+        <section class="activity-editor-context">
+            <div>
+                <span class="focus-eyebrow">Editor de mapa mental</span>
+                <h1>Organize os ramos do conteudo com foco na estrutura principal.</h1>
+                <p>O topo ficou mais discreto para abrir mais espaco de trabalho e revisao do mapa.</p>
+            </div>
+        </section>
+
+        <section class="dashboard-grid">
+            <article class="focus-card ai-structure-card">
+                <span class="platform-section-label">IA de estruturacao</span>
+                <h2>Trazer o conteudo da aula</h2>
+                <div class="platform-field">
+                    <label for="mapa-fonte">Tema e topicos</label>
+                    <textarea id="mapa-fonte" rows="7" placeholder="Cole o tema central e os topicos que devem virar o mapa mental."></textarea>
+                </div>
+            </article>
+
+            <article class="focus-card dashboard-panel">
+                <span class="platform-section-label">Configuracao inicial</span>
+                <h2>Estrutura do mapa</h2>
+                <div class="platform-form-grid">
+                    <div class="platform-field">
+                        <label for="mapa-centro">Tema central</label>
+                        <input id="mapa-centro" type="text" value="Tema da aula">
+                    </div>
+                    <div class="platform-field">
+                        <label for="mapa-ramos">Quantidade de ramos</label>
+                        <select id="mapa-ramos">
+                            <option>4 ramos</option>
+                            <option>6 ramos</option>
+                            <option>8 ramos</option>
+                        </select>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

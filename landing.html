@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EducarIA — Crie aulas em minutos</title>
+  <meta
+    name="description"
+    content="Crie slides, quizzes e flashcards com IA. Feito para professores brasileiros."
+  />
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-soft: #f7f9fc;
+      --text: #0f172a;
+      --text-soft: #475569;
+      --line: #e5e7eb;
+      --blue: #2563eb;
+      --teal: #14b8a6;
+      --teal-soft: #e6fffb;
+      --card: #ffffff;
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      --radius: 18px;
+      --max: 1120px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    .container {
+      width: min(var(--max), calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .section {
+      padding: 88px 0;
+    }
+
+    .section-sm {
+      padding: 64px 0;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--blue);
+      background: #eff6ff;
+      border: 1px solid #dbeafe;
+      padding: 6px 12px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin: 0 0 14px;
+    }
+
+    .section-subtitle {
+      max-width: 680px;
+      font-size: 1.05rem;
+      color: var(--text-soft);
+      margin: 0;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+    }
+
+    .nav-inner {
+      height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      font-size: 1.1rem;
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: #fff;
+      display: grid;
+      place-items: center;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--line);
+    }
+
+    .brand-e {
+      width: 20px;
+      display: grid;
+      gap: 4px;
+    }
+
+    .brand-e span {
+      display: block;
+      height: 5px;
+      border-radius: 999px;
+    }
+
+    .brand-e span:nth-child(1) {
+      width: 16px;
+      background: var(--blue);
+    }
+
+    .brand-e span:nth-child(2) {
+      width: 20px;
+      background: var(--teal);
+    }
+
+    .brand-e span:nth-child(3) {
+      width: 16px;
+      background: #9bdcf1;
+    }
+
+    .brand-text b {
+      color: var(--teal);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      color: var(--text-soft);
+      font-size: 0.96rem;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-weight: 600;
+      font-size: 0.98rem;
+      transition: 0.2s ease;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--blue);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: var(--text);
+      border-color: var(--line);
+    }
+
+    .hero {
+      padding: 56px 0 72px;
+      overflow: hidden;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 6vw, 4.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.055em;
+      margin: 0 0 18px;
+      max-width: 12ch;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: var(--text-soft);
+      max-width: 580px;
+      margin: 0 0 28px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .hero-note {
+      color: var(--text-soft);
+      font-size: 0.95rem;
+    }
+
+    .hero-note strong {
+      color: var(--text);
+    }
+
+    .hero-preview {
+      position: relative;
+      min-height: 520px;
+      display: grid;
+      place-items: center;
+    }
+
+    .preview-panel {
+      width: min(100%, 520px);
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      border-radius: 28px;
+      padding: 18px;
+      position: relative;
+    }
+
+    .preview-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dots span {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #d1d5db;
+    }
+
+    .preview-tag {
+      font-size: 0.84rem;
+      color: var(--text-soft);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+    }
+
+    .stack-area {
+      position: relative;
+      height: 400px;
+    }
+
+    .float-card {
+      position: absolute;
+      width: 84%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+    }
+
+    .float-card h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+
+    .float-card p {
+      margin: 0;
+      color: var(--text-soft);
+      font-size: 0.94rem;
+    }
+
+    .float-card.top {
+      top: 28px;
+      z-index: 3;
+    }
+
+    .float-card.middle {
+      top: 144px;
+      z-index: 2;
+      width: 78%;
+    }
+
+    .float-card.bottom {
+      top: 258px;
+      z-index: 1;
+      width: 72%;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text);
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      padding: 8px 12px;
+      border-radius: 999px;
+    }
+
+    .accent-blue {
+      color: var(--blue);
+    }
+
+    .accent-teal {
+      color: var(--teal);
+    }
+
+    .mini-lines {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .mini-lines span {
+      display: block;
+      height: 9px;
+      border-radius: 999px;
+      background: #eef2f7;
+    }
+
+    .mini-lines span:nth-child(1) { width: 72%; }
+    .mini-lines span:nth-child(2) { width: 92%; }
+    .mini-lines span:nth-child(3) { width: 56%; }
+
+    .steps-grid,
+    .benefits-grid,
+    .pricing-grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    .steps-grid {
+      grid-template-columns: repeat(3, 1fr);
+      margin-top: 40px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
+    }
+
+    .step-number {
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      font-size: 0.92rem;
+      font-weight: 700;
+      background: #eff6ff;
+      color: var(--blue);
+      margin-bottom: 18px;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 1.08rem;
+      letter-spacing: -0.02em;
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--text-soft);
+    }
+
+    .workflow-input {
+      margin-top: 16px;
+      background: var(--bg-soft);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-weight: 500;
+    }
+
+    .feature-list {
+      display: grid;
+      gap: 24px;
+      margin-top: 48px;
+    }
+
+    .feature-row {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .feature-row:nth-child(even) {
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    .feature-copy h3 {
+      font-size: 1.9rem;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      margin: 0 0 14px;
+    }
+
+    .feature-copy p {
+      color: var(--text-soft);
+      font-size: 1.03rem;
+      margin: 0 0 18px;
+      max-width: 56ch;
+    }
+
+    .feature-bullets {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .feature-bullets span {
+      color: var(--text-soft);
+      font-size: 0.98rem;
+    }
+
+    .mockup {
+      background: linear-gradient(180deg, #fff 0%, #fbfdff 100%);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      min-height: 300px;
+    }
+
+    .mockup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      gap: 12px;
+    }
+
+    .mockup-title {
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .mockup-chip {
+      font-size: 0.84rem;
+      color: var(--teal);
+      background: var(--teal-soft);
+      border: 1px solid #b9f4eb;
+      padding: 8px 12px;
+      border-radius: 999px;
+    }
+
+    .mockup-body {
+      display: grid;
+      gap: 14px;
+    }
+
+    .ui-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .ui-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.98rem;
+    }
+
+    .ui-card small {
+      color: var(--text-soft);
+      font-size: 0.9rem;
+    }
+
+    .benefits-grid {
+      grid-template-columns: repeat(4, 1fr);
+      margin-top: 40px;
+    }
+
+    .benefit-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      margin-bottom: 14px;
+      font-size: 1.15rem;
+    }
+
+    .testimonial {
+      max-width: 820px;
+      margin-top: 34px;
+      background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
+    }
+
+    .stars {
+      font-size: 1.1rem;
+      color: #f59e0b;
+      letter-spacing: 0.1em;
+      margin-bottom: 12px;
+    }
+
+    .pricing-grid {
+      grid-template-columns: repeat(2, 1fr);
+      margin-top: 40px;
+    }
+
+    .price-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .price-card.featured {
+      border-color: #bfdbfe;
+      box-shadow: 0 18px 40px rgba(37, 99, 235, 0.12);
+    }
+
+    .price-badge {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      font-size: 0.8rem;
+      background: #eff6ff;
+      color: var(--blue);
+      border: 1px solid #dbeafe;
+      padding: 7px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .price-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.2rem;
+    }
+
+    .price {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      margin: 0 0 18px;
+    }
+
+    .price strong {
+      font-size: 2.4rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+
+    .price span {
+      color: var(--text-soft);
+      font-size: 0.95rem;
+      padding-bottom: 4px;
+    }
+
+    .price-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 22px;
+      display: grid;
+      gap: 12px;
+      color: var(--text-soft);
+    }
+
+    .price-list li::before {
+      content: "•";
+      color: var(--teal);
+      font-weight: 800;
+      display: inline-block;
+      width: 1em;
+      margin-left: -1em;
+    }
+
+    .cta-box {
+      text-align: center;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 52px 24px;
+    }
+
+    .cta-box h2 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+    }
+
+    .cta-box p {
+      max-width: 680px;
+      margin: 0 auto 24px;
+      color: var(--text-soft);
+      font-size: 1.04rem;
+    }
+
+    .footer {
+      padding: 36px 0 52px;
+      border-top: 1px solid var(--line);
+      color: var(--text-soft);
+      font-size: 0.95rem;
+    }
+
+    .footer-inner {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 980px) {
+      .hero-grid,
+      .feature-row,
+      .feature-row:nth-child(even) {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-preview {
+        min-height: auto;
+      }
+
+      .preview-panel {
+        margin-top: 10px;
+      }
+
+      .steps-grid,
+      .benefits-grid,
+      .pricing-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-links {
+        display: none;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .nav-inner {
+        height: auto;
+        padding: 14px 0;
+        flex-wrap: wrap;
+      }
+
+      .nav-actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
+
+      .hero {
+        padding-top: 28px;
+      }
+
+      .hero h1 {
+        max-width: 10ch;
+      }
+
+      .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn {
+        width: 100%;
+      }
+
+      .section,
+      .section-sm {
+        padding: 64px 0;
+      }
+
+      .float-card {
+        width: 92%;
+      }
+
+      .float-card.middle {
+        width: 86%;
+      }
+
+      .float-card.bottom {
+        width: 80%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="#" class="brand" aria-label="EducarIA">
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-e">
+            <span></span>
+            <span></span>
+            <span></span>
+          </span>
+        </span>
+        <span class="brand-text">Educar<b>IA</b></span>
+      </a>
+
+      <nav class="nav-links" aria-label="Principal">
+        <a href="#como-funciona">Como funciona</a>
+        <a href="#produto">Produto</a>
+        <a href="#beneficios">Benefícios</a>
+        <a href="#precos">Preços</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a class="btn btn-secondary" href="#">Entrar</a>
+        <a class="btn btn-primary" href="#">Começar grátis</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow">Feito para professores no Brasil</span>
+          <h1>Crie aulas em minutos</h1>
+          <p>
+            Slides, quizzes e flashcards com IA. Uma forma simples de planejar,
+            organizar e apresentar suas aulas sem perder tempo.
+          </p>
+
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="#">Começar grátis</a>
+            <a class="btn btn-secondary" href="#">Ver demonstração</a>
+          </div>
+
+          <div class="hero-note">
+            <strong>Prático para o dia a dia.</strong> Gere materiais, edite do seu
+            jeito e use em sala com rapidez.
+          </div>
+        </div>
+
+        <div class="hero-preview">
+          <div class="preview-panel">
+            <div class="preview-topbar">
+              <div class="dots" aria-hidden="true">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="preview-tag">Aula criada com IA</div>
+            </div>
+
+            <div class="stack-area">
+              <article class="float-card top">
+                <div class="badge"><span class="accent-blue">●</span> Flashcard</div>
+                <h3>Fotossíntese</h3>
+                <p>Conceito principal, resumo e explicação em linguagem clara.</p>
+                <div class="mini-lines" aria-hidden="true">
+                  <span></span><span></span><span></span>
+                </div>
+              </article>
+
+              <article class="float-card middle">
+                <div class="badge"><span class="accent-teal">●</span> Quiz</div>
+                <h3>5 questões prontas</h3>
+                <p>Perguntas objetivas geradas automaticamente a partir do conteúdo.</p>
+                <div class="mini-lines" aria-hidden="true">
+                  <span></span><span></span><span></span>
+                </div>
+              </article>
+
+              <article class="float-card bottom">
+                <div class="badge"><span style="color:#7dd3fc">●</span> Slides</div>
+                <h3>Apresentação pronta</h3>
+                <p>Transforme seus cards em slides organizados para a aula.</p>
+                <div class="mini-lines" aria-hidden="true">
+                  <span></span><span></span><span></span>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="como-funciona" class="section-sm">
+      <div class="container">
+        <span class="eyebrow">Como funciona</span>
+        <h2 class="section-title">De ideia a aula em segundos</h2>
+        <p class="section-subtitle">
+          Um fluxo simples, direto e pensado para a rotina de professores.
+        </p>
+
+        <div class="steps-grid">
+          <article class="card">
+            <div class="step-number">1</div>
+            <h3>Digite um tema</h3>
+            <p>
+              Comece com um assunto, objetivo de aula ou habilidade que deseja trabalhar.
+            </p>
+            <div class="workflow-input">“Revolução Francesa”</div>
+          </article>
+
+          <article class="card">
+            <div class="step-number">2</div>
+            <h3>A IA cria a base</h3>
+            <p>
+              Gere flashcards, slides e quizzes automaticamente, com conteúdo editável.
+            </p>
+            <div class="workflow-input">Cards, perguntas e estrutura da aula</div>
+          </article>
+
+          <article class="card">
+            <div class="step-number">3</div>
+            <h3>Use na aula</h3>
+            <p>
+              Apresente, ajuste o material e compartilhe com rapidez quando precisar.
+            </p>
+            <div class="workflow-input">Pronto para usar em sala</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="produto" class="section">
+      <div class="container">
+        <span class="eyebrow">Produto</span>
+        <h2 class="section-title">Tudo o que você precisa para ensinar</h2>
+        <p class="section-subtitle">
+          Uma experiência modular, organizada em cards, para planejar melhor e produzir mais rápido.
+        </p>
+
+        <div class="feature-list">
+          <div class="feature-row">
+            <div class="feature-copy">
+              <h3>Flashcards primeiro</h3>
+              <p>
+                Organize conteúdos em blocos simples e reutilizáveis. A lógica de cards
+                ajuda você a montar aulas com clareza e flexibilidade.
+              </p>
+              <div class="feature-bullets">
+                <span>• Estruture por tópicos, conceitos e etapas</span>
+                <span>• Edite rapidamente sem refazer tudo</span>
+                <span>• Reaproveite cards em diferentes turmas</span>
+              </div>
+            </div>
+
+            <div class="mockup">
+              <div class="mockup-header">
+                <div class="mockup-title">Biblioteca de flashcards</div>
+                <div class="mockup-chip">Organizado por aula</div>
+              </div>
+              <div class="mockup-body">
+                <div class="ui-card">
+                  <strong>Card 01 — Definição</strong>
+                  <small>Resumo do conceito com linguagem clara e objetiva.</small>
+                </div>
+                <div class="ui-card">
+                  <strong>Card 02 — Exemplo prático</strong>
+                  <small>Aplicação do conteúdo em situações reais ou exercícios.</small>
+                </div>
+                <div class="ui-card">
+                  <strong>Card 03 — Revisão</strong>
+                  <small>Ponto-chave para reforço e retomada com a turma.</small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="feature-row">
+            <div class="mockup">
+              <div class="mockup-header">
+                <div class="mockup-title">Quiz gerado automaticamente</div>
+                <div class="mockup-chip">Editável</div>
+              </div>
+              <div class="mockup-body">
+                <div class="ui-card">
+                  <strong>Questão 1</strong>
+                  <small>Qual foi a principal causa do processo estudado?</small>
+                </div>
+                <div class="ui-card">
+                  <strong>Questão 2</strong>
+                  <small>Selecione a alternativa correta com base no conteúdo.</small>
+                </div>
+                <div class="ui-card">
+                  <strong>Questão 3</strong>
+                  <small>Use para revisar ou avaliar a compreensão da turma.</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="feature-copy">
+              <h3>Quizzes instantâneos</h3>
+              <p>
+                Gere perguntas em segundos com base nos seus cards. Depois, ajuste o nível,
+                a linguagem e o formato conforme a realidade da sua turma.
+              </p>
+              <div class="feature-bullets">
+                <span>• Questões geradas a partir do conteúdo</span>
+                <span>• Edição rápida antes de aplicar</span>
+                <span>• Mais agilidade para revisar e avaliar</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="feature-row">
+            <div class="feature-copy">
+              <h3>Slides prontos para apresentar</h3>
+              <p>
+                Transforme seus cards em apresentações limpas e objetivas. Menos tempo
+                montando slides, mais tempo focando na aula.
+              </p>
+              <div class="feature-bullets">
+                <span>• Estrutura clara para exposição em sala</span>
+                <span>• Visual organizado e fácil de acompanhar</span>
+                <span>• Da preparação à apresentação no mesmo fluxo</span>
+              </div>
+            </div>
+
+            <div class="mockup">
+              <div class="mockup-header">
+                <div class="mockup-title">Modo apresentação</div>
+                <div class="mockup-chip">Pronto para aula</div>
+              </div>
+              <div class="mockup-body">
+                <div class="ui-card">
+                  <strong>Título do slide</strong>
+                  <small>Ponto principal do tema, com resumo e exemplos.</small>
+                </div>
+                <div class="ui-card">
+                  <strong>Slide seguinte</strong>
+                  <small>Continuidade natural a partir dos flashcards criados.</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="beneficios" class="section-sm">
+      <div class="container">
+        <span class="eyebrow">Benefícios</span>
+        <h2 class="section-title">Feito para a realidade da sala de aula</h2>
+        <p class="section-subtitle">
+          Menos complicação, mais tempo para ensinar.
+        </p>
+
+        <div class="benefits-grid">
+          <article class="card">
+            <div class="benefit-icon">⏱</div>
+            <h3>Economize tempo</h3>
+            <p>Prepare aulas em minutos, sem começar do zero toda vez.</p>
+          </article>
+
+          <article class="card">
+            <div class="benefit-icon">🧠</div>
+            <h3>Engaje mais alunos</h3>
+            <p>Crie materiais mais dinâmicos com quizzes e conteúdos organizados.</p>
+          </article>
+
+          <article class="card">
+            <div class="benefit-icon">🎯</div>
+            <h3>Pronto para usar</h3>
+            <p>Gere, edite e apresente no mesmo fluxo de trabalho.</p>
+          </article>
+
+          <article class="card">
+            <div class="benefit-icon">🤖</div>
+            <h3>IA que ajuda de verdade</h3>
+            <p>Uma ferramenta para apoiar seu trabalho, sem tirar sua autonomia.</p>
+          </article>
+        </div>
+
+        <article class="card testimonial">
+          <div class="stars">★★★★★</div>
+          <h3>“Economizei horas toda semana preparando minhas aulas.”</h3>
+          <p>
+            A EducarIA ajuda a organizar o conteúdo, gerar atividades e acelerar a criação
+            das aulas sem complicar a rotina.
+          </p>
+          <p style="margin-top: 14px; color: var(--text-soft); font-size: 0.95rem;">
+            Professora de Ensino Fundamental • Brasil
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="precos" class="section">
+      <div class="container">
+        <span class="eyebrow">Preços</span>
+        <h2 class="section-title">Comece grátis</h2>
+        <p class="section-subtitle">
+          Teste a plataforma e evolua quando fizer sentido para sua rotina.
+        </p>
+
+        <div class="pricing-grid">
+          <article class="card price-card">
+            <h3>Plano Gratuito</h3>
+            <div class="price">
+              <strong>R$0</strong>
+              <span>/ mês</span>
+            </div>
+            <ul class="price-list">
+              <li>Criação básica de conteúdos</li>
+              <li>Geração limitada por mês</li>
+              <li>Flashcards e quizzes essenciais</li>
+            </ul>
+            <a class="btn btn-secondary" href="#">Começar agora</a>
+          </article>
+
+          <article class="card price-card featured">
+            <div class="price-badge">Mais escolhido</div>
+            <h3>Plano Pro</h3>
+            <div class="price">
+              <strong>R$39</strong>
+              <span>/ mês</span>
+            </div>
+            <ul class="price-list">
+              <li>Aulas e gerações ilimitadas</li>
+              <li>IA avançada para planejamento</li>
+              <li>Mais personalização e organização</li>
+            </ul>
+            <a class="btn btn-primary" href="#">Assinar o Pro</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-sm">
+      <div class="container">
+        <div class="cta-box">
+          <h2>Comece sua próxima aula agora</h2>
+          <p>
+            Crie slides, quizzes e flashcards com IA em um fluxo simples, rápido e pensado
+            para professores brasileiros.
+          </p>
+          <div class="hero-actions" style="justify-content:center; margin-bottom:0;">
+            <a class="btn btn-primary" href="#">Criar aula grátis</a>
+            <a class="btn btn-secondary" href="#">Falar com a equipe</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>© 2026 EducarIA. Todos os direitos reservados.</div>
+      <div>Feito para apoiar professores no dia a dia.</div>
+    </div>
+  </footer>
+</body>
+</html>

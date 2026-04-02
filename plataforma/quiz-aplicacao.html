@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplicacao do Quiz | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/quiz-runtime.js" defer></script>
+</head>
+<body data-material-type="quiz" class="quiz-application-body">
+    <main class="presentation-shell quiz-application-shell">
+        <header class="presentation-topbar">
+            <div class="presentation-brand">
+                <div class="platform-brand-mark">EI</div>
+                <div>
+                    <strong>Aplicacao do quiz</strong>
+                    <span data-quiz-application-class>8&ordm; ano B - Quiz</span>
+                </div>
+            </div>
+            <div class="platform-top-actions">
+                <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">Voltar ao editor</a>
+                <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
+            </div>
+        </header>
+
+        <section class="quiz-application-stage">
+            <aside class="quiz-application-sidecard">
+                <span class="platform-section-label">Modo de sala</span>
+                <h2>Projecao focada</h2>
+                <p>Esta tela foi pensada para destacar o enunciado e deixar a navegacao simples durante a aplicacao.</p>
+                <ul class="preview-mini-list">
+                    <li><span>Etapa</span><strong data-quiz-application-counter>1 de 1</strong></li>
+                    <li><span>Tipo</span><strong data-quiz-application-helper>M&uacute;ltipla escolha</strong></li>
+                </ul>
+            </aside>
+
+            <article class="question-card quiz-application-card quiz-application-card--immersive">
+                <div class="quiz-application-meta">
+                    <span class="platform-section-label">Quiz em andamento</span>
+                    <h2 class="question-text quiz-application-title" data-quiz-application-title>Quiz</h2>
+                </div>
+
+                <div class="quiz-application-prompt-wrap">
+                    <h3 class="question-text quiz-application-prompt" data-quiz-application-prompt>Which sentence uses the present perfect correctly?</h3>
+                </div>
+
+                <div class="options-container quiz-application-options" data-quiz-application-options></div>
+                <p class="results-message quiz-application-explanation-box" data-quiz-application-explanation hidden></p>
+
+                <div class="results-actions quiz-application-actions">
+                    <button type="button" class="review-btn" data-quiz-application-prev>Anterior</button>
+                    <button type="button" class="restart-btn" data-quiz-application-reveal>Mostrar explicacao</button>
+                    <button type="button" class="review-btn" data-quiz-application-next>Proxima</button>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

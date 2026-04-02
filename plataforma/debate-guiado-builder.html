@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debate Guiado | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+</head>
+<body class="product-body theme-editor">
+    <main class="platform-shell platform-flow-shell activity-editor-shell">
+        <header class="platform-topbar">
+            <a href="turma.html" class="platform-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>Debate guiado</strong>
+                </div>
+            </a>
+            <div class="platform-top-actions">
+                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+                <button type="button" class="platform-link-button platform-link-primary" disabled>Salvar na turma</button>
+                <button type="button" class="platform-link-button platform-link-secondary" disabled>Apresentar</button>
+            </div>
+        </header>
+
+        <section class="activity-editor-context">
+            <div>
+                <span class="focus-eyebrow">Editor de debate guiado</span>
+                <h1>Estruture a mediacao sem perder foco na montagem da atividade.</h1>
+                <p>Essa faixa superior ficou mais enxuta para priorizar a configuracao e a futura revisao do debate.</p>
+            </div>
+        </section>
+
+        <section class="dashboard-grid">
+            <article class="focus-card ai-structure-card">
+                <span class="platform-section-label">IA de estruturacao</span>
+                <h2>Trazer tema e argumentos</h2>
+                <div class="platform-field">
+                    <label for="debate-fonte">Tema do debate</label>
+                    <textarea id="debate-fonte" rows="7" placeholder="Cole o tema, a pergunta central e os argumentos que devem orientar o debate."></textarea>
+                </div>
+            </article>
+
+            <article class="focus-card dashboard-panel">
+                <span class="platform-section-label">Configuracao inicial</span>
+                <h2>Estrutura do debate</h2>
+                <div class="platform-form-grid">
+                    <div class="platform-field">
+                        <label for="debate-formato">Formato</label>
+                        <select id="debate-formato">
+                            <option>Dois lados</option>
+                            <option>Roda guiada</option>
+                            <option>Grupos com mediacao</option>
+                        </select>
+                    </div>
+                    <div class="platform-field">
+                        <label for="debate-etapas">Etapas</label>
+                        <select id="debate-etapas">
+                            <option>3 etapas</option>
+                            <option>4 etapas</option>
+                            <option>5 etapas</option>
+                        </select>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

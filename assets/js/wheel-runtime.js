@@ -1,0 +1,182 @@
+const WHEEL_DRAFT_KEY = "educaria:builder:wheel";
+
+function readWheelDraft() {
+    try {
+        const raw = localStorage.getItem(WHEEL_DRAFT_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        console.warn("EducarIA wheel unavailable:", error);
+        return null;
+    }
+}
+
+function parseWheelSegments(stackHtml) {
+    if (!stackHtml) return [];
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(`<div>${stackHtml}</div>`, "text/html");
+
+    return [...doc.querySelectorAll("[data-wheel-segment]")].map((segment, index) => ({
+        index,
+        text: segment.querySelector("[data-wheel-text]")?.value?.trim() || `Espaco ${index + 1}`,
+        color: segment.querySelector("[data-wheel-color]")?.value || "#22c55e"
+    }));
+}
+
+function buildWheelSvg(segments) {
+    const size = 560;
+    const cx = 280;
+    const cy = 280;
+    const radius = 228;
+    const slice = (Math.PI * 2) / segments.length;
+
+    const polar = (angle) => ({
+        x: cx + Math.cos(angle) * radius,
+        y: cy + Math.sin(angle) * radius
+    });
+
+    const wrapLabel = (text, maxCharsPerLine = 10, maxLines = 2) => {
+        const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+        if (!words.length) return ["Item"];
+
+        const lines = [];
+        let current = "";
+
+        words.forEach((word) => {
+            const candidate = current ? `${current} ${word}` : word;
+            if (candidate.length <= maxCharsPerLine) {
+                current = candidate;
+                return;
+            }
+
+            if (current) {
+                lines.push(current);
+                current = word;
+                return;
+            }
+
+            lines.push(word.slice(0, maxCharsPerLine));
+            current = word.slice(maxCharsPerLine);
+        });
+
+        if (current) lines.push(current);
+
+        return lines.slice(0, maxLines).map((line, index, allLines) => {
+            if (index === allLines.length - 1 && lines.length > maxLines) {
+                return `${line.slice(0, Math.max(0, maxCharsPerLine - 3))}...`;
+            }
+            return line;
+        });
+    };
+
+    const paths = segments.map((segment, index) => {
+        const startAngle = -Math.PI / 2 + index * slice;
+        const endAngle = startAngle + slice;
+        const start = polar(startAngle);
+        const end = polar(endAngle);
+        const largeArc = slice > Math.PI ? 1 : 0;
+        const midAngle = startAngle + slice / 2;
+        const labelRadius = radius * (segments.length >= 10 ? 0.68 : 0.62);
+        const labelX = cx + Math.cos(midAngle) * labelRadius;
+        const labelY = cy + Math.sin(midAngle) * labelRadius;
+        const baseRotation = (midAngle * 180) / Math.PI + 90;
+        const textRotation = baseRotation > 90 && baseRotation < 270 ? baseRotation + 180 : baseRotation;
+        const maxChars = segments.length >= 10 ? 7 : 10;
+        const fontSize = segments.length >= 10 ? 12 : 14;
+        const lines = wrapLabel(segment.text, maxChars, 2);
+
+        return `
+            <path d="M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z" fill="${segment.color}" stroke="#ffffff" stroke-width="4"></path>
+            <g transform="translate(${labelX} ${labelY}) rotate(${textRotation})">
+                <text text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="700" fill="#0f172a">
+                    ${lines.map((line, lineIndex) => {
+                        const offset = lines.length === 1 ? 0 : lineIndex === 0 ? -8 : 10;
+                        return `<tspan x="0" y="${offset}">${line}</tspan>`;
+                    }).join("")}
+                </text>
+            </g>
+        `;
+    }).join("");
+
+    return `
+        <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Roleta da atividade">
+            <circle cx="${cx}" cy="${cy}" r="${radius + 10}" fill="#ffffff"></circle>
+            ${paths}
+            <circle cx="${cx}" cy="${cy}" r="76" fill="#0f172a"></circle>
+            <circle cx="${cx}" cy="${cy}" r="20" fill="#ffffff"></circle>
+        </svg>
+    `;
+}
+
+function renderWheelApplication() {
+    const draft = readWheelDraft();
+    const controls = draft?.controls || {};
+    const segments = parseWheelSegments(draft?.stackHtml || "");
+    const safeSegments = segments.length ? segments : [
+        { text: "Revisar conceito", color: "#22c55e" },
+        { text: "Responder pergunta", color: "#0ea5e9" },
+        { text: "Fazer desafio", color: "#f59e0b" },
+        { text: "Compartilhar exemplo", color: "#ec4899" }
+    ];
+
+    const resultRoot = document.querySelector("[data-wheel-stage-result]");
+    const svgRoot = document.querySelector("[data-wheel-stage-svg]");
+    const spinButtons = document.querySelectorAll("[data-wheel-spin]");
+
+    let isSpinning = false;
+    let currentRotation = 0;
+
+    if (svgRoot) {
+        svgRoot.innerHTML = `<div class="wheel-stage-disc" data-wheel-stage-disc>${buildWheelSvg(safeSegments)}</div>`;
+    }
+
+    const spin = () => {
+        if (isSpinning) return;
+
+        isSpinning = true;
+        spinButtons.forEach((button) => {
+            button.disabled = true;
+        });
+
+        const winnerIndex = Math.floor(Math.random() * safeSegments.length);
+        const segmentAngle = 360 / safeSegments.length;
+        const targetCenter = winnerIndex * segmentAngle + segmentAngle / 2;
+        const targetRotation = 360 - targetCenter;
+        const extraTurns = 7 * 360;
+        const normalizedCurrent = ((currentRotation % 360) + 360) % 360;
+        const delta = (targetRotation - normalizedCurrent + 360) % 360;
+        currentRotation += extraTurns + delta;
+
+        const disc = document.querySelector("[data-wheel-stage-disc]");
+        if (disc) {
+            disc.style.transition = "transform 4.8s cubic-bezier(0.08, 0.82, 0.18, 1)";
+            disc.style.transform = `rotate(${currentRotation}deg)`;
+        }
+
+        if (resultRoot) {
+            resultRoot.textContent = "Girando...";
+        }
+
+        window.setTimeout(() => {
+            if (resultRoot) {
+                resultRoot.textContent = safeSegments[winnerIndex].text;
+            }
+            isSpinning = false;
+            spinButtons.forEach((button) => {
+                button.disabled = false;
+            });
+        }, 4800);
+    };
+
+    spinButtons.forEach((button) => {
+        button.addEventListener("click", spin);
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.code !== "Space") return;
+        event.preventDefault();
+        spin();
+    });
+}
+
+document.addEventListener("DOMContentLoaded", renderWheelApplication);

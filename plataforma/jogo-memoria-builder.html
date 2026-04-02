@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo da Memoria | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/local-persistence.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/memory-builder.js" defer></script>
+</head>
+<body class="product-body theme-editor" data-material-type="memory">
+    <main class="platform-shell platform-flow-shell activity-editor-shell">
+        <header class="platform-topbar">
+            <a href="turma.html" class="platform-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>Jogo da memoria</strong>
+                </div>
+            </a>
+            <div class="platform-top-actions">
+                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+                <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="memory" data-save-target="turma.html">Salvar na turma</button>
+                <a href="jogo-memoria-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
+            </div>
+        </header>
+
+        <section class="activity-editor-context">
+            <div>
+                <span class="focus-eyebrow">Editor de jogo da memoria</span>
+                <h1>Monte os pares e confira a grade de jogo no preview.</h1>
+                <p>O foco aqui e clareza de leitura e rapidez de edicao, sem um bloco visual pesado tomando a tela.</p>
+            </div>
+        </section>
+
+        <section class="activity-editor-top">
+            <article class="focus-card activity-generator-card">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Configuracao</span>
+                        <h2>Estrutura do jogo</h2>
+                    </div>
+                    <p>Defina o titulo, o tipo de par e a quantidade de pares. Depois ajuste os cards abaixo.</p>
+                </div>
+
+                <div class="platform-form-grid">
+                    <div class="platform-field">
+                        <label for="memoria-titulo">Titulo da atividade</label>
+                        <input id="memoria-titulo" type="text" value="">
+                    </div>
+                    <div class="platform-field">
+                        <label for="memoria-formato">Tipo de par</label>
+                        <select id="memoria-formato">
+                            <option>Palavra e definicao</option>
+                            <option>Pergunta e resposta</option>
+                            <option>Termo e traducao</option>
+                        </select>
+                    </div>
+                    <div class="platform-field">
+                        <label for="memoria-pares">Quantidade de pares</label>
+                        <select id="memoria-pares">
+                            <option selected>4 pares</option>
+                            <option>6 pares</option>
+                            <option>8 pares</option>
+                            <option>10 pares</option>
+                        </select>
+                    </div>
+                </div>
+            </article>
+
+            <article class="focus-card activity-guidance-card">
+                <span class="platform-section-label">Como montar</span>
+                <h2>Boas praticas</h2>
+                <ul class="mini-list">
+                    <li>Use textos curtos e bem diferentes entre si.</li>
+                    <li>Evite pares muito parecidos que confundam a turma.</li>
+                    <li>Pense na leitura da grade como um todo, e nao so em um card isolado.</li>
+                </ul>
+            </article>
+        </section>
+
+        <section class="platform-quiz-layout activity-workspace">
+            <article class="platform-builder-card highlight-surface activity-builder-pane">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Edicao</span>
+                        <h2>Pares do jogo</h2>
+                    </div>
+                    <p>Edite frente e verso de cada par. A visualizacao ao lado mostra como a grade vai ficar para a turma.</p>
+                </div>
+
+                <div class="platform-question-stack activity-card-stack" data-memory-pairs>
+                    <section class="platform-question-card activity-content-card memory-pair-card" data-memory-pair>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-memory-label>Par 1</span>
+                                <h3>Conteudo do par</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-memory-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label>Frente</label>
+                                <input data-memory-front type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Verso</label>
+                                <input data-memory-back type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor do par</label>
+                                <input data-memory-color type="color" value="#22c55e">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card memory-pair-card" data-memory-pair>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-memory-label>Par 2</span>
+                                <h3>Conteudo do par</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-memory-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label>Frente</label>
+                                <input data-memory-front type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Verso</label>
+                                <input data-memory-back type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor do par</label>
+                                <input data-memory-color type="color" value="#0ea5e9">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card memory-pair-card" data-memory-pair>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-memory-label>Par 3</span>
+                                <h3>Conteudo do par</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-memory-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label>Frente</label>
+                                <input data-memory-front type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Verso</label>
+                                <input data-memory-back type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor do par</label>
+                                <input data-memory-color type="color" value="#f59e0b">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card memory-pair-card" data-memory-pair>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-memory-label>Par 4</span>
+                                <h3>Conteudo do par</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-memory-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label>Frente</label>
+                                <input data-memory-front type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Verso</label>
+                                <input data-memory-back type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Cor do par</label>
+                                <input data-memory-color type="color" value="#ec4899">
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="platform-form-actions activity-stack-actions">
+                    <button type="button" class="platform-link-button platform-link-primary" data-memory-add>Adicionar par</button>
+                </div>
+            </article>
+
+            <aside class="platform-builder-card activity-preview-pane memory-preview-pane">
+                <span class="platform-section-label">Preview</span>
+                <h2>Veja a grade do jogo</h2>
+                <p>A visualizacao fica sempre ao lado para ajustar o tamanho da grade, a leitura e o equilibrio entre os pares.</p>
+                <div class="live-preview-stack">
+                    <section class="live-preview-card live-preview-card--teal">
+                        <span class="platform-section-label">Resumo</span>
+                        <h3 data-memory-preview-title>Novo jogo da memoria</h3>
+                        <div class="preview-chip-row">
+                            <span class="preview-chip" data-memory-preview-format>Palavra e definicao</span>
+                            <span class="preview-chip" data-memory-preview-count>4 pares</span>
+                        </div>
+                    </section>
+                    <section class="live-preview-card memory-preview-card">
+                        <div class="memory-preview-grid" data-memory-preview-grid></div>
+                    </section>
+                </div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>
