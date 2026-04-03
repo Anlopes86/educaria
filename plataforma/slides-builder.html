@@ -12,6 +12,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="slides">
     <main class="platform-shell platform-flow-shell activity-editor-shell">
@@ -36,77 +37,49 @@
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de slides</span>
-                <h1>Organize a sequencia da aula e acompanhe a apresentacao ao lado.</h1>
-                <p>Use esta tela para montar a narrativa dos slides com menos distracao e mais area util de edicao.</p>
+                <h1>Organize a sequencia e acompanhe no preview.</h1>
+                <p>Conteudo primeiro. Visual depois.</p>
             </div>
-        </section>
-
-        <section class="activity-editor-top activity-editor-top--stacked">
-            <article class="focus-card ai-structure-card">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">IA de estruturacao</span>
-                        <h2>Trazer roteiro, texto ou topicos</h2>
-                    </div>
-                    <p>A IA entra para montar a estrutura dos slides a partir do material enviado e opcionalmente gerar imagens de apoio.</p>
-                </div>
-
-                <div class="ai-structure-grid">
-                    <div class="platform-field platform-field-wide">
-                        <label for="slides-fonte-texto">Roteiro ou texto-base do professor</label>
-                        <textarea id="slides-fonte-texto" rows="6" placeholder="Cole um roteiro, topicos ou texto da aula para a IA quebrar em slides."></textarea>
-                    </div>
-                    <div class="platform-field">
-                        <label for="slides-arquivo">Arquivo de apoio</label>
-                        <input id="slides-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
-                    </div>
-                    <div class="platform-field">
-                        <label for="slides-acao-ia">Como a IA deve ajudar</label>
-                        <select id="slides-acao-ia">
-                            <option>Organizar texto em slides</option>
-                            <option>Resumir topicos em sequencia</option>
-                            <option>Gerar imagem quando fizer sentido</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="utility-actions">
-                    <button type="button" class="platform-link-button platform-link-primary">Estruturar slides com IA</button>
-                </div>
-            </article>
-
-            <article class="focus-card activity-guidance-card activity-guidance-card--wide">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Regra da tela</span>
-                        <h2>Conteudo primeiro, visual depois</h2>
-                    </div>
-                    <p>O professor precisa montar a narrativa do slide antes de gastar energia com ajustes visuais.</p>
-                </div>
-                <div class="action-card-grid">
-                    <article class="route-card">
-                        <span class="route-tag">Essencial</span>
-                        <h3>Titulo, subtitulo e texto</h3>
-                        <p>Esses campos precisam resolver o slide mesmo sem imagem.</p>
-                    </article>
-                    <article class="route-card">
-                        <span class="route-tag">Opcional</span>
-                        <h3>Imagem e aparencia</h3>
-                        <p>Use quando realmente aumentarem a clareza da explicacao.</p>
-                    </article>
-                </div>
-            </article>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Edicao</span>
-                        <h2>Editar slides</h2>
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Montar com IA</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label for="slides-fonte-texto">Roteiro ou texto-base do professor</label>
+                                <textarea id="slides-fonte-texto" rows="6" placeholder="Cole um roteiro, topicos ou texto da aula para a IA quebrar em slides."></textarea>
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-arquivo">Arquivo de apoio</label>
+                                <input id="slides-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-acao-ia">Como a IA deve ajudar</label>
+                                <select id="slides-acao-ia">
+                                    <option>Organizar texto em slides</option>
+                                    <option>Resumir topicos em sequencia</option>
+                                    <option>Gerar imagem quando fizer sentido</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-primary">Estruturar slides com IA</button>
+                        </div>
                     </div>
-                    <p>Cada slide foi reorganizado em tres blocos: conteudo principal, imagem opcional e aparencia.</p>
-                </div>
+                </details>
+
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Editar manualmente</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
 
                 <div class="platform-question-stack activity-card-stack" data-slides-stack>
                     <section class="platform-question-card slides-editor-card activity-content-card" data-slide-card>
@@ -373,12 +346,14 @@
                 <div class="platform-form-actions activity-stack-actions">
                     <button type="button" data-action="add-slide" class="platform-link-button platform-link-primary">Adicionar slide</button>
                 </div>
+                    </div>
+                </details>
             </article>
 
             <aside class="platform-builder-card slides-preview-card activity-preview-pane">
                 <span class="platform-section-label">Preview</span>
                 <h2>Veja a sequencia como o aluno vai ver</h2>
-                <p>O preview ajuda a validar ritmo, quantidade de texto e uso de imagem antes da apresentacao.</p>
+                <p>Confira como a apresentacao vai ficar.</p>
                 <div class="live-preview-stack" data-slides-preview></div>
             </aside>
         </section>

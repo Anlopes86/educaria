@@ -9,6 +9,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/memory-builder.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="memory">
@@ -18,7 +19,7 @@
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Jogo da memoria</strong>
+                    <strong>Jogo da memória</strong>
                 </div>
             </a>
             <div class="platform-top-actions">
@@ -33,67 +34,44 @@
 
         <section class="activity-editor-context">
             <div>
-                <span class="focus-eyebrow">Editor de jogo da memoria</span>
-                <h1>Monte os pares e confira a grade de jogo no preview.</h1>
-                <p>O foco aqui e clareza de leitura e rapidez de edicao, sem um bloco visual pesado tomando a tela.</p>
+                <span class="focus-eyebrow">Editor de jogo da memória</span>
+                <h1>Monte os pares e confira a grade no preview.</h1>
+                <p>Textos curtos. Leitura rápida.</p>
             </div>
-        </section>
-
-        <section class="activity-editor-top">
-            <article class="focus-card activity-generator-card">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Configuracao</span>
-                        <h2>Estrutura do jogo</h2>
-                    </div>
-                    <p>Defina o titulo, o tipo de par e a quantidade de pares. Depois ajuste os cards abaixo.</p>
-                </div>
-
-                <div class="platform-form-grid">
-                    <div class="platform-field">
-                        <label for="memoria-titulo">Titulo da atividade</label>
-                        <input id="memoria-titulo" type="text" value="">
-                    </div>
-                    <div class="platform-field">
-                        <label for="memoria-formato">Tipo de par</label>
-                        <select id="memoria-formato">
-                            <option>Palavra e definicao</option>
-                            <option>Pergunta e resposta</option>
-                            <option>Termo e traducao</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="memoria-pares">Quantidade de pares</label>
-                        <select id="memoria-pares">
-                            <option selected>4 pares</option>
-                            <option>6 pares</option>
-                            <option>8 pares</option>
-                            <option>10 pares</option>
-                        </select>
-                    </div>
-                </div>
-            </article>
-
-            <article class="focus-card activity-guidance-card">
-                <span class="platform-section-label">Como montar</span>
-                <h2>Boas praticas</h2>
-                <ul class="mini-list">
-                    <li>Use textos curtos e bem diferentes entre si.</li>
-                    <li>Evite pares muito parecidos que confundam a turma.</li>
-                    <li>Pense na leitura da grade como um todo, e nao so em um card isolado.</li>
-                </ul>
-            </article>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Edicao</span>
-                        <h2>Pares do jogo</h2>
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Configuração manual</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="memoria-titulo">Título da atividade</label>
+                                <input id="memoria-titulo" type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label for="memoria-pares">Quantidade de pares</label>
+                                <select id="memoria-pares">
+                                    <option selected>4 pares</option>
+                                    <option>6 pares</option>
+                                    <option>8 pares</option>
+                                    <option>10 pares</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <p>Edite frente e verso de cada par. A visualizacao ao lado mostra como a grade vai ficar para a turma.</p>
-                </div>
+                </details>
+
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Editar manualmente</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
 
                 <div class="platform-question-stack activity-card-stack" data-memory-pairs>
                     <section class="platform-question-card activity-content-card memory-pair-card" data-memory-pair>
@@ -204,18 +182,19 @@
                 <div class="platform-form-actions activity-stack-actions">
                     <button type="button" class="platform-link-button platform-link-primary" data-memory-add>Adicionar par</button>
                 </div>
+                    </div>
+                </details>
             </article>
 
             <aside class="platform-builder-card activity-preview-pane memory-preview-pane">
                 <span class="platform-section-label">Preview</span>
                 <h2>Veja a grade do jogo</h2>
-                <p>A visualizacao fica sempre ao lado para ajustar o tamanho da grade, a leitura e o equilibrio entre os pares.</p>
+                <p>Veja como a atividade vai ficar.</p>
                 <div class="live-preview-stack">
                     <section class="live-preview-card live-preview-card--teal">
                         <span class="platform-section-label">Resumo</span>
-                        <h3 data-memory-preview-title>Novo jogo da memoria</h3>
+                        <h3 data-memory-preview-title>Novo jogo da memória</h3>
                         <div class="preview-chip-row">
-                            <span class="preview-chip" data-memory-preview-format>Palavra e definicao</span>
                             <span class="preview-chip" data-memory-preview-count>4 pares</span>
                         </div>
                     </section>

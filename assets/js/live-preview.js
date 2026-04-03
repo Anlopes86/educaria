@@ -122,10 +122,8 @@ function buildFlashcardsPreview() {
     if (!root) return;
 
     const totalEl = document.getElementById("cards-quantidade");
-    const formatEl = document.getElementById("cards-formato");
     const exampleEl = document.getElementById("cards-exemplo");
     const total = totalEl ? totalEl.options[totalEl.selectedIndex].text.trim() : "Cards";
-    const format = formatEl ? formatEl.options[formatEl.selectedIndex].text.trim() : "Palavra e tradu&ccedil;&atilde;o";
     const includeExample = exampleEl ? exampleEl.options[exampleEl.selectedIndex].text.trim() : "Sim";
     const cards = [...document.querySelectorAll("[data-flashcard]")];
 
@@ -135,7 +133,6 @@ function buildFlashcardsPreview() {
             <h3>Todos os cards</h3>
             <div class="preview-chip-row">
                 <span class="preview-chip">${escapeHtml(total)}</span>
-                <span class="preview-chip">${escapeHtml(format)}</span>
                 <span class="preview-chip">${cards.length} cards na tela</span>
             </div>
         </section>
@@ -193,7 +190,7 @@ function buildSlidesPreview() {
             </div>
         </section>
         ${slides.map((slide, index) => {
-            const title = textValue(slide, "slide-title") || "Sem t&iacute;tulo";
+            const title = textValue(slide, "slide-title") || "Sem título";
             const subtitle = textValue(slide, "slide-subtitle");
             const body = textValue(slide, "slide-body") || "Sem conte&uacute;do";
             const imageMode = selectValue(slide, "slide-image-mode") || "Sem imagem";

@@ -9,6 +9,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/wheel-builder.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="wheel">
@@ -18,7 +19,7 @@
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Roleta editavel</strong>
+                    <strong>Roleta editável</strong>
                 </div>
             </a>
             <div class="platform-top-actions">
@@ -34,83 +35,59 @@
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de roleta</span>
-                <h1>Defina os espacos e acompanhe a leitura da roda no preview.</h1>
-                <p>Esta tela foi simplificada para o professor montar a dinamica rapidamente e testar a distribuicao dos textos.</p>
+                <h1>Defina os espaços e acompanhe a leitura no preview.</h1>
+                <p>Monte rápido. Ajuste pelo olho.</p>
             </div>
-        </section>
-
-        <section class="activity-editor-top">
-            <article class="focus-card activity-generator-card">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Configuracao</span>
-                        <h2>Estrutura da roleta</h2>
-                    </div>
-                    <p>Esse formato precisa ser rapido de montar: defina titulo, quantidade e modo, depois edite os espacos abaixo.</p>
-                </div>
-
-                <div class="platform-form-grid">
-                    <div class="platform-field">
-                        <label for="roleta-titulo">Titulo da atividade</label>
-                        <input id="roleta-titulo" type="text" value="">
-                    </div>
-                    <div class="platform-field">
-                        <label for="roleta-quantidade">Quantidade de espacos</label>
-                        <select id="roleta-quantidade">
-                            <option>2 espacos</option>
-                            <option>4 espacos</option>
-                            <option>6 espacos</option>
-                            <option selected>8 espacos</option>
-                            <option>10 espacos</option>
-                            <option>12 espacos</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="roleta-modo">Modo</label>
-                        <select id="roleta-modo">
-                            <option>Revisao</option>
-                            <option>Sorteio</option>
-                            <option>Desafio</option>
-                            <option>Debate</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="roleta-eliminacao">Eliminar item sorteado</label>
-                        <select id="roleta-eliminacao">
-                            <option value="Nao">Nao</option>
-                            <option value="Sim">Sim</option>
-                        </select>
-                    </div>
-                </div>
-            </article>
-
-            <article class="focus-card activity-guidance-card">
-                <span class="platform-section-label">Como montar</span>
-                <h2>Boas praticas</h2>
-                <ul class="mini-list">
-                    <li>Use textos curtos para cada espaco da roleta.</li>
-                    <li>Misture comandos simples e desafios mais ricos.</li>
-                    <li>Evite repetir categorias sem intencao didatica.</li>
-                </ul>
-            </article>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Edicao</span>
-                        <h2>Espacos da roleta</h2>
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Configuração manual</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="roleta-titulo">Título da atividade</label>
+                                <input id="roleta-titulo" type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label for="roleta-quantidade">Quantidade de espaços</label>
+                                <select id="roleta-quantidade">
+                                    <option>2 espaços</option>
+                                    <option>4 espaços</option>
+                                    <option>6 espaços</option>
+                                    <option selected>8 espaços</option>
+                                    <option>10 espaços</option>
+                                    <option>12 espaços</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="roleta-eliminacao">Eliminar item sorteado</label>
+                                <select id="roleta-eliminacao">
+                                    <option value="Nao">Nao</option>
+                                    <option value="Sim">Sim</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <p>Edite o texto e a cor de cada espaco. A quantidade pode ser ajustada sem perder a visualizacao ao lado.</p>
-                </div>
+                </details>
+
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Editar manualmente</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
 
                 <div class="platform-question-stack activity-card-stack" data-wheel-segments>
                     <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-wheel-label>Espaco 1</span>
-                                <h3>Conteudo do espaco</h3>
+                                <span class="platform-section-label" data-wheel-label>Espaço 1</span>
+                                <h3>Conteúdo do espaço</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
@@ -118,7 +95,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Texto do espaco</label>
+                                <label>Texto do espaço</label>
                                 <input data-wheel-text type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -131,8 +108,8 @@
                     <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-wheel-label>Espaco 2</span>
-                                <h3>Conteudo do espaco</h3>
+                                <span class="platform-section-label" data-wheel-label>Espaço 2</span>
+                                <h3>Conteúdo do espaço</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
@@ -140,7 +117,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Texto do espaco</label>
+                                <label>Texto do espaço</label>
                                 <input data-wheel-text type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -153,8 +130,8 @@
                     <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-wheel-label>Espaco 3</span>
-                                <h3>Conteudo do espaco</h3>
+                                <span class="platform-section-label" data-wheel-label>Espaço 3</span>
+                                <h3>Conteúdo do espaço</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
@@ -162,7 +139,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Texto do espaco</label>
+                                <label>Texto do espaço</label>
                                 <input data-wheel-text type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -175,8 +152,8 @@
                     <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-wheel-label>Espaco 4</span>
-                                <h3>Conteudo do espaco</h3>
+                                <span class="platform-section-label" data-wheel-label>Espaço 4</span>
+                                <h3>Conteúdo do espaço</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
@@ -184,7 +161,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Texto do espaco</label>
+                                <label>Texto do espaço</label>
                                 <input data-wheel-text type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -197,8 +174,8 @@
                     <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-wheel-label>Espaco 5</span>
-                                <h3>Conteudo do espaco</h3>
+                                <span class="platform-section-label" data-wheel-label>Espaço 5</span>
+                                <h3>Conteúdo do espaço</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
@@ -206,7 +183,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Texto do espaco</label>
+                                <label>Texto do espaço</label>
                                 <input data-wheel-text type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -219,8 +196,8 @@
                     <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-wheel-label>Espaco 6</span>
-                                <h3>Conteudo do espaco</h3>
+                                <span class="platform-section-label" data-wheel-label>Espaço 6</span>
+                                <h3>Conteúdo do espaço</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
@@ -228,7 +205,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Texto do espaco</label>
+                                <label>Texto do espaço</label>
                                 <input data-wheel-text type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -241,8 +218,8 @@
                     <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-wheel-label>Espaco 7</span>
-                                <h3>Conteudo do espaco</h3>
+                                <span class="platform-section-label" data-wheel-label>Espaço 7</span>
+                                <h3>Conteúdo do espaço</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
@@ -250,7 +227,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Texto do espaco</label>
+                                <label>Texto do espaço</label>
                                 <input data-wheel-text type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -263,8 +240,8 @@
                     <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-wheel-label>Espaco 8</span>
-                                <h3>Conteudo do espaco</h3>
+                                <span class="platform-section-label" data-wheel-label>Espaço 8</span>
+                                <h3>Conteúdo do espaço</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
@@ -272,7 +249,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Texto do espaco</label>
+                                <label>Texto do espaço</label>
                                 <input data-wheel-text type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -283,21 +260,22 @@
                     </section>
                 </div>
                 <div class="platform-form-actions activity-stack-actions">
-                    <button type="button" class="platform-link-button platform-link-primary" data-wheel-add>Adicionar espaco</button>
+                    <button type="button" class="platform-link-button platform-link-primary" data-wheel-add>Adicionar espaço</button>
                 </div>
+                    </div>
+                </details>
             </article>
 
             <aside class="platform-builder-card activity-preview-pane wheel-preview-pane">
                 <span class="platform-section-label">Preview</span>
                 <h2>Veja a roleta pronta</h2>
-                <p>A visualizacao fica sempre ao lado para ajustar quantidade, distribuicao e leitura dos espacos.</p>
+                <p>Veja como a atividade vai ficar.</p>
                 <div class="live-preview-stack">
                     <section class="live-preview-card live-preview-card--teal">
                         <span class="platform-section-label">Resumo</span>
                         <h3 data-wheel-preview-title>Nova roleta</h3>
                         <div class="preview-chip-row">
-                            <span class="preview-chip" data-wheel-preview-mode>Revisao</span>
-                            <span class="preview-chip" data-wheel-preview-count>8 espacos</span>
+                            <span class="preview-chip" data-wheel-preview-count>8 espaços</span>
                         </div>
                     </section>
                     <section class="live-preview-card wheel-preview-card">

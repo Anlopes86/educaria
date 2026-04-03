@@ -12,6 +12,7 @@
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/flashcards-generator.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="flashcards">
     <main class="platform-shell platform-flow-shell activity-editor-shell">
@@ -36,181 +37,158 @@
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de flashcards</span>
-                <h1>Edite frente, verso e exemplo sem perder foco no conteudo.</h1>
-                <p>O objetivo aqui e montar cards claros para a turma, com a pre-visualizacao sempre visivel ao lado.</p>
+                <h1>Edite frente e verso com o preview ao lado.</h1>
+                <p>Clareza no conteúdo. Aparência como ajuste.</p>
             </div>
-        </section>
-
-        <section class="activity-editor-top">
-            <article class="focus-card activity-generator-card">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Gerar rapidamente</span>
-                        <h2>Criar por tema</h2>
-                    </div>
-                    <p>Preencha o minimo necessario e gere um primeiro conjunto de cards para ajustar.</p>
-                </div>
-
-                <div class="platform-form-grid">
-                    <div class="platform-field">
-                        <label for="cards-quantidade">Quantidade</label>
-                        <select id="cards-quantidade">
-                            <option>12 cards</option>
-                            <option>8 cards</option>
-                            <option>10 cards</option>
-                            <option>15 cards</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="cards-formato">Estrutura</label>
-                        <select id="cards-formato">
-                            <option>Palavra e tradu&ccedil;&atilde;o</option>
-                            <option>Conceito e defini&ccedil;&atilde;o</option>
-                            <option>Pergunta e resposta</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="cards-exemplo">Exemplo no preview</label>
-                        <select id="cards-exemplo">
-                            <option>Sim</option>
-                            <option>N&atilde;o</option>
-                        </select>
-                    </div>
-                    <div class="platform-field platform-field-wide">
-                        <label for="cards-tema">Tema</label>
-                        <input id="cards-tema" type="text" value="" placeholder="Ex.: sistema solar, fra&ccedil;&otilde;es, verbos no passado">
-                    </div>
-                </div>
-
-                <div class="utility-actions">
-                    <button type="button" class="platform-link-button platform-link-primary" data-generate-flashcards>Gerar cards com IA</button>
-                </div>
-            </article>
-
-            <article class="focus-card activity-guidance-card">
-                <span class="platform-section-label">Como usar bem</span>
-                <h2>Ordem ideal</h2>
-                <ul class="mini-list">
-                    <li>Defina frente e verso antes de pensar em cor.</li>
-                    <li>Use o exemplo so quando ele realmente ajudar o aluno.</li>
-                    <li>Deixe a aparencia consistente para toda a sequencia.</li>
-                </ul>
-            </article>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Edicao</span>
-                        <h2>Editar flashcards</h2>
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Montar com IA</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="cards-quantidade">Quantidade</label>
+                                <select id="cards-quantidade">
+                                    <option>12 cards</option>
+                                    <option>8 cards</option>
+                                    <option>10 cards</option>
+                                    <option>15 cards</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="cards-exemplo">Exemplo no preview</label>
+                                <select id="cards-exemplo">
+                                    <option>Sim</option>
+                                    <option>N&atilde;o</option>
+                                </select>
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label for="cards-tema">Tema</label>
+                                <input id="cards-tema" type="text" value="" placeholder="Ex.: sistema solar, fra&ccedil;&otilde;es, verbos no passado">
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-generate-flashcards>Gerar cards com IA</button>
+                        </div>
                     </div>
-                    <p>O conteudo principal fica no topo de cada card. A aparencia entra como ajuste secundario.</p>
-                </div>
+                </details>
 
-                <div class="platform-question-stack activity-card-stack" data-flashcards-stack>
-                    <section class="platform-question-card flashcards-editor-card activity-content-card" data-flashcard>
-                        <div class="activity-card-header">
-                            <div>
-                                <span class="platform-section-label" data-card-label>Card 1</span>
-                                <h3>Conteudo principal</h3>
-                            </div>
-                            <div class="activity-card-actions">
-                                <button type="button" data-action="duplicate-flashcard" class="platform-link-button platform-link-secondary">Duplicar</button>
-                                <button type="button" data-action="remove-flashcard" class="platform-link-button platform-link-secondary">Remover</button>
-                            </div>
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Editar manualmente</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-question-stack activity-card-stack" data-flashcards-stack>
+                            <section class="platform-question-card flashcards-editor-card activity-content-card" data-flashcard>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-card-label>Card 1</span>
+                                        <h3>Conteudo principal</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" data-action="duplicate-flashcard" class="platform-link-button platform-link-secondary">Duplicar</button>
+                                        <button type="button" data-action="remove-flashcard" class="platform-link-button platform-link-secondary">Remover</button>
+                                    </div>
+                                </div>
+
+                                <div class="platform-form-grid activity-essential-grid">
+                                    <div class="platform-field">
+                                        <label>Frente</label>
+                                        <input data-field="front" type="text" value="" placeholder="Palavra, conceito ou pergunta">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Verso</label>
+                                        <input data-field="back" type="text" value="" placeholder="Tradu&ccedil;&atilde;o, resposta ou defini&ccedil;&atilde;o">
+                                    </div>
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Exemplo opcional</label>
+                                        <textarea data-field="example" rows="3" placeholder="Use apenas se o exemplo ajudar a fixar o conteúdo"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="activity-optional-block">
+                                    <span class="route-tag">Aparencia opcional</span>
+                                    <div class="platform-form-grid activity-style-grid">
+                                        <div class="platform-field">
+                                            <label>Cor da frente</label>
+                                            <input data-field="front-color" type="color" value="#ffffff">
+                                        </div>
+                                        <div class="platform-field">
+                                            <label>Cor do verso</label>
+                                            <input data-field="back-color" type="color" value="#dbeafe">
+                                        </div>
+                                        <div class="platform-field">
+                                            <label>Cor do texto</label>
+                                            <input data-field="text-color" type="color" value="#0f172a">
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="platform-question-card flashcards-editor-card activity-content-card" data-flashcard>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-card-label>Card 2</span>
+                                        <h3>Conteudo principal</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" data-action="duplicate-flashcard" class="platform-link-button platform-link-secondary">Duplicar</button>
+                                        <button type="button" data-action="remove-flashcard" class="platform-link-button platform-link-secondary">Remover</button>
+                                    </div>
+                                </div>
+
+                                <div class="platform-form-grid activity-essential-grid">
+                                    <div class="platform-field">
+                                        <label>Frente</label>
+                                        <input data-field="front" type="text" value="" placeholder="Palavra, conceito ou pergunta">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Verso</label>
+                                        <input data-field="back" type="text" value="" placeholder="Tradu&ccedil;&atilde;o, resposta ou defini&ccedil;&atilde;o">
+                                    </div>
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Exemplo opcional</label>
+                                        <textarea data-field="example" rows="3" placeholder="Use apenas se o exemplo ajudar a fixar o conteúdo"></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="activity-optional-block">
+                                    <span class="route-tag">Aparencia opcional</span>
+                                    <div class="platform-form-grid activity-style-grid">
+                                        <div class="platform-field">
+                                            <label>Cor da frente</label>
+                                            <input data-field="front-color" type="color" value="#ffffff">
+                                        </div>
+                                        <div class="platform-field">
+                                            <label>Cor do verso</label>
+                                            <input data-field="back-color" type="color" value="#dbeafe">
+                                        </div>
+                                        <div class="platform-field">
+                                            <label>Cor do texto</label>
+                                            <input data-field="text-color" type="color" value="#0f172a">
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
                         </div>
 
-                        <div class="platform-form-grid activity-essential-grid">
-                            <div class="platform-field">
-                                <label>Frente</label>
-                                <input data-field="front" type="text" value="" placeholder="Palavra, conceito ou pergunta">
-                            </div>
-                            <div class="platform-field">
-                                <label>Verso</label>
-                                <input data-field="back" type="text" value="" placeholder="Tradu&ccedil;&atilde;o, resposta ou defini&ccedil;&atilde;o">
-                            </div>
-                            <div class="platform-field platform-field-wide">
-                                <label>Exemplo opcional</label>
-                                <textarea data-field="example" rows="3" placeholder="Use apenas se o exemplo ajudar a fixar o conteudo"></textarea>
-                            </div>
+                        <div class="platform-form-actions activity-stack-actions">
+                            <button type="button" data-action="add-flashcard" class="platform-link-button platform-link-primary">Adicionar card</button>
                         </div>
-
-                        <div class="activity-optional-block">
-                            <span class="route-tag">Aparencia opcional</span>
-                            <div class="platform-form-grid activity-style-grid">
-                                <div class="platform-field">
-                                    <label>Cor da frente</label>
-                                    <input data-field="front-color" type="color" value="#ffffff">
-                                </div>
-                                <div class="platform-field">
-                                    <label>Cor do verso</label>
-                                    <input data-field="back-color" type="color" value="#dbeafe">
-                                </div>
-                                <div class="platform-field">
-                                    <label>Cor do texto</label>
-                                    <input data-field="text-color" type="color" value="#0f172a">
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section class="platform-question-card flashcards-editor-card activity-content-card" data-flashcard>
-                        <div class="activity-card-header">
-                            <div>
-                                <span class="platform-section-label" data-card-label>Card 2</span>
-                                <h3>Conteudo principal</h3>
-                            </div>
-                            <div class="activity-card-actions">
-                                <button type="button" data-action="duplicate-flashcard" class="platform-link-button platform-link-secondary">Duplicar</button>
-                                <button type="button" data-action="remove-flashcard" class="platform-link-button platform-link-secondary">Remover</button>
-                            </div>
-                        </div>
-
-                        <div class="platform-form-grid activity-essential-grid">
-                            <div class="platform-field">
-                                <label>Frente</label>
-                                <input data-field="front" type="text" value="" placeholder="Palavra, conceito ou pergunta">
-                            </div>
-                            <div class="platform-field">
-                                <label>Verso</label>
-                                <input data-field="back" type="text" value="" placeholder="Tradu&ccedil;&atilde;o, resposta ou defini&ccedil;&atilde;o">
-                            </div>
-                            <div class="platform-field platform-field-wide">
-                                <label>Exemplo opcional</label>
-                                <textarea data-field="example" rows="3" placeholder="Use apenas se o exemplo ajudar a fixar o conteudo"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="activity-optional-block">
-                            <span class="route-tag">Aparencia opcional</span>
-                            <div class="platform-form-grid activity-style-grid">
-                                <div class="platform-field">
-                                    <label>Cor da frente</label>
-                                    <input data-field="front-color" type="color" value="#ffffff">
-                                </div>
-                                <div class="platform-field">
-                                    <label>Cor do verso</label>
-                                    <input data-field="back-color" type="color" value="#dbeafe">
-                                </div>
-                                <div class="platform-field">
-                                    <label>Cor do texto</label>
-                                    <input data-field="text-color" type="color" value="#0f172a">
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-                </div>
-
-                <div class="platform-form-actions activity-stack-actions">
-                    <button type="button" data-action="add-flashcard" class="platform-link-button platform-link-primary">Adicionar card</button>
-                </div>
+                    </div>
+                </details>
             </article>
 
             <aside class="platform-builder-card flashcards-preview-card activity-preview-pane">
                 <span class="platform-section-label">Preview</span>
                 <h2>Como os cards vao aparecer</h2>
-                <p>O professor enxerga rapidamente o conjunto e decide se a sequencia esta clara.</p>
+                <p>Veja se a sequencia esta clara.</p>
                 <div class="live-preview-stack" data-flashcards-preview></div>
             </aside>
         </section>

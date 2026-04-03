@@ -9,6 +9,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/match-builder.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="match">
@@ -34,93 +35,70 @@
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de ligar pontos</span>
-                <h1>Monte as associacoes entre duas colunas e acompanhe a atividade pronta no preview.</h1>
-                <p>Essa versao foi organizada para edicao rapida, leitura clara e apresentacao imediata em sala.</p>
+                <h1>Monte as associacoes e acompanhe o preview.</h1>
+                <p>Leitura rápida entre coluna A e B.</p>
             </div>
-        </section>
-
-        <section class="activity-editor-top">
-            <article class="focus-card activity-generator-card">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Configuracao</span>
-                        <h2>Estrutura da atividade</h2>
-                    </div>
-                    <p>Defina titulo, tipo de associacao, nomes das colunas e quantidade de pares. Depois ajuste os itens abaixo.</p>
-                </div>
-
-                <div class="platform-form-grid">
-                    <div class="platform-field">
-                        <label for="ligar-titulo">Titulo da atividade</label>
-                        <input id="ligar-titulo" type="text" value="">
-                    </div>
-                    <div class="platform-field">
-                        <label for="ligar-pares">Quantidade de pares</label>
-                        <select id="ligar-pares">
-                            <option selected>4 pares</option>
-                            <option>6 pares</option>
-                            <option>8 pares</option>
-                            <option>10 pares</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="ligar-formato">Modo de associacao</label>
-                        <select id="ligar-formato">
-                            <option>Texto com texto</option>
-                            <option>Pergunta com resposta</option>
-                            <option>Termo com definicao</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="ligar-coluna-a">Nome da coluna A</label>
-                        <input id="ligar-coluna-a" type="text" value="Coluna A">
-                    </div>
-                    <div class="platform-field">
-                        <label for="ligar-coluna-b">Nome da coluna B</label>
-                        <input id="ligar-coluna-b" type="text" value="Coluna B">
-                    </div>
-                    <div class="platform-field">
-                        <label for="ligar-embaralhar">Embaralhar coluna B</label>
-                        <select id="ligar-embaralhar">
-                            <option value="Sim">Sim</option>
-                            <option value="Nao">Nao</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="ligar-cores">Cores dos pares</label>
-                        <select id="ligar-cores">
-                            <option value="manual">Selecao manual</option>
-                            <option value="same">Todos com a mesma cor</option>
-                            <option value="shuffle">Embaralhar cores</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="ligar-cor-unica">Cor unica</label>
-                        <input id="ligar-cor-unica" type="color" value="#22c55e">
-                    </div>
-                </div>
-            </article>
-
-            <article class="focus-card activity-guidance-card">
-                <span class="platform-section-label">Como montar</span>
-                <h2>Boas praticas</h2>
-                <ul class="mini-list">
-                    <li>Prefira termos curtos e distintos para a turma bater o olho.</li>
-                    <li>Evite respostas quase iguais quando o objetivo nao for confundir.</li>
-                    <li>Use os nomes das colunas para orientar o tipo de relacao.</li>
-                </ul>
-            </article>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Edicao</span>
-                        <h2>Pares para ligar</h2>
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Configuração manual</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="ligar-titulo">Título da atividade</label>
+                                <input id="ligar-titulo" type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label for="ligar-pares">Quantidade de pares</label>
+                                <select id="ligar-pares">
+                                    <option selected>4 pares</option>
+                                    <option>6 pares</option>
+                                    <option>8 pares</option>
+                                    <option>10 pares</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="ligar-coluna-a">Nome da coluna A</label>
+                                <input id="ligar-coluna-a" type="text" value="Coluna A">
+                            </div>
+                            <div class="platform-field">
+                                <label for="ligar-coluna-b">Nome da coluna B</label>
+                                <input id="ligar-coluna-b" type="text" value="Coluna B">
+                            </div>
+                            <div class="platform-field">
+                                <label for="ligar-embaralhar">Embaralhar coluna B</label>
+                                <select id="ligar-embaralhar">
+                                    <option value="Sim">Sim</option>
+                                    <option value="Nao">Nao</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="ligar-cores">Cores dos pares</label>
+                                <select id="ligar-cores">
+                                    <option value="manual">Selecao manual</option>
+                                    <option value="same">Todos com a mesma cor</option>
+                                    <option value="shuffle">Embaralhar cores</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="ligar-cor-unica">Cor unica</label>
+                                <input id="ligar-cor-unica" type="color" value="#22c55e">
+                            </div>
+                        </div>
                     </div>
-                    <p>Edite cada ligacao entre a coluna A e a coluna B. O preview mostra a organizacao final da atividade.</p>
-                </div>
+                </details>
+
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Editar manualmente</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
 
                 <div class="platform-question-stack activity-card-stack" data-match-pairs>
                     <section class="platform-question-card activity-content-card match-pair-card" data-match-pair>
@@ -231,18 +209,19 @@
                 <div class="platform-form-actions activity-stack-actions">
                     <button type="button" class="platform-link-button platform-link-primary" data-match-add>Adicionar par</button>
                 </div>
+                    </div>
+                </details>
             </article>
 
             <aside class="platform-builder-card activity-preview-pane match-preview-pane">
                 <span class="platform-section-label">Preview</span>
                 <h2>Veja a atividade pronta</h2>
-                <p>A visualizacao ao lado ajuda a calibrar tamanho dos itens, leitura das colunas e equilibrio entre os pares.</p>
+                <p>Veja como a atividade vai ficar.</p>
                 <div class="live-preview-stack">
                     <section class="live-preview-card live-preview-card--teal">
                         <span class="platform-section-label">Resumo</span>
                         <h3 data-match-preview-title>Novo ligar pontos</h3>
                         <div class="preview-chip-row">
-                            <span class="preview-chip" data-match-preview-format>Texto com texto</span>
                             <span class="preview-chip" data-match-preview-count>4 pares</span>
                         </div>
                     </section>

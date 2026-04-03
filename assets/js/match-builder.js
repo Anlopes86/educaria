@@ -164,12 +164,10 @@ function renderMatchPreview() {
     syncMatchPairCount();
 
     const title = document.getElementById("ligar-titulo")?.value.trim() || "Ligar pontos";
-    const format = document.getElementById("ligar-formato")?.value || "Texto com texto";
     const leftLabel = document.getElementById("ligar-coluna-a")?.value.trim() || "Coluna A";
     const rightLabel = document.getElementById("ligar-coluna-b")?.value.trim() || "Coluna B";
     const pairs = collectMatchPairs();
     const titleRoot = document.querySelector("[data-match-preview-title]");
-    const formatRoot = document.querySelector("[data-match-preview-format]");
     const countRoot = document.querySelector("[data-match-preview-count]");
     const leftLabelRoot = document.querySelector("[data-match-preview-left-label]");
     const rightLabelRoot = document.querySelector("[data-match-preview-right-label]");
@@ -177,7 +175,6 @@ function renderMatchPreview() {
     const rightRoot = document.querySelector("[data-match-preview-right]");
 
     if (titleRoot) titleRoot.textContent = title;
-    if (formatRoot) formatRoot.textContent = format;
     if (countRoot) countRoot.textContent = `${pairs.length} pares`;
     if (leftLabelRoot) leftLabelRoot.textContent = leftLabel;
     if (rightLabelRoot) rightLabelRoot.textContent = rightLabel;
@@ -212,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.addEventListener("change", (event) => {
-        if (["ligar-pares", "ligar-formato", "ligar-embaralhar", "ligar-cores", "ligar-cor-unica"].includes(event.target.id)) {
+        if (["ligar-pares", "ligar-embaralhar", "ligar-cores", "ligar-cor-unica"].includes(event.target.id)) {
             renderMatchPreview();
         }
     });

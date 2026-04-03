@@ -11,6 +11,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/quiz-generator.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="quiz">
@@ -36,213 +37,194 @@
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de quiz</span>
-                <h1>Monte as perguntas e revise o resultado no preview.</h1>
-                <p>O foco aqui e estruturar a atividade com rapidez e ajustar o que importa antes de apresentar.</p>
-            </div>
-        </section>
-
-        <section class="activity-editor-top activity-editor-top--stacked">
-            <article class="focus-card ai-structure-card">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">IA de estruturacao</span>
-                        <h2>Trazer material do professor</h2>
-                    </div>
-                    <p>A IA deve montar o quiz a partir do conteudo enviado, e nao inventar a atividade sozinha.</p>
-                </div>
-
-                <div class="ai-structure-grid">
-                    <div class="platform-field platform-field-wide">
-                        <label for="quiz-fonte-texto">Texto ou perguntas do professor</label>
-                        <textarea id="quiz-fonte-texto" rows="6" placeholder="Cole perguntas com ou sem alternativas. Ex.:&#10;1. Qual e o maior planeta do sistema solar?&#10;a) Marte&#10;b) Terra&#10;c) Jupiter&#10;d) Netuno"></textarea>
-                    </div>
-                    <div class="platform-field">
-                        <label for="quiz-arquivo">Arquivo de apoio</label>
-                        <input id="quiz-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
-                    </div>
-                    <div class="platform-field">
-                        <label for="quiz-acao-ia">Como a IA deve ajudar</label>
-                        <select id="quiz-acao-ia">
-                            <option>Estruturar perguntas enviadas</option>
-                            <option>Completar alternativas quando faltar</option>
-                            <option>Converter texto corrido em quiz</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="utility-actions">
-                    <button type="button" class="platform-link-button platform-link-primary" data-generate-quiz>Estruturar quiz com IA</button>
-                </div>
-            </article>
-
-            <div class="activity-editor-top">
-                <article class="focus-card activity-generator-card">
-                    <div class="page-section-title">
-                        <div>
-                            <span class="platform-section-label">Configuracao rapida</span>
-                            <h2>Definir o formato final</h2>
-                        </div>
-                        <p>Esses controles ajudam a IA a organizar a estrutura final do quiz.</p>
-                    </div>
-
-                    <div class="platform-form-grid">
-                        <div class="platform-field">
-                            <label for="quiz-quantidade">Perguntas</label>
-                            <select id="quiz-quantidade">
-                                <option>8 perguntas</option>
-                                <option>5 perguntas</option>
-                                <option>10 perguntas</option>
-                            </select>
-                        </div>
-                        <div class="platform-field">
-                            <label for="quiz-formato">Formato</label>
-                            <select id="quiz-formato">
-                                <option>Misto</option>
-                                <option>M&uacute;ltipla escolha</option>
-                                <option>Perguntas abertas</option>
-                                <option>Verdadeiro ou falso</option>
-                            </select>
-                        </div>
-                        <div class="platform-field platform-field-wide">
-                            <label for="quiz-tema">Tema</label>
-                            <input id="quiz-tema" type="text" value="" placeholder="Ex.: sistema solar, leitura, fra&ccedil;&otilde;es, revolu&ccedil;&atilde;o francesa">
-                        </div>
-                    </div>
-                </article>
-
-                <article class="focus-card activity-guidance-card">
-                    <span class="platform-section-label">Como revisar</span>
-                    <h2>Ordem ideal</h2>
-                    <ul class="mini-list">
-                        <li>Confirme primeiro o enunciado e o tipo de pergunta.</li>
-                        <li>Ajuste resposta correta e alternativas em seguida.</li>
-                        <li>Deixe a explicacao como apoio para aplicacao.</li>
-                    </ul>
-                </article>
+                <h1>Monte as perguntas e valide no preview.</h1>
+                <p>Primeiro a pergunta. Depois a resposta.</p>
             </div>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Edicao</span>
-                        <h2>Editar perguntas</h2>
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Montar com IA</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label for="quiz-fonte-texto">Texto ou perguntas do professor</label>
+                                <textarea id="quiz-fonte-texto" rows="6" placeholder="Cole perguntas com ou sem alternativas. Ex.:&#10;1. Qual e o maior planeta do sistema solar?&#10;a) Marte&#10;b) Terra&#10;c) Jupiter&#10;d) Netuno"></textarea>
+                            </div>
+                            <div class="platform-field">
+                                <label for="quiz-arquivo">Arquivo de apoio</label>
+                                <input id="quiz-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
+                            </div>
+                            <div class="platform-field">
+                                <label for="quiz-acao-ia">Como a IA deve ajudar</label>
+                                <select id="quiz-acao-ia">
+                                    <option>Estruturar perguntas enviadas</option>
+                                    <option>Completar alternativas quando faltar</option>
+                                    <option>Converter texto corrido em quiz</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-generate-quiz>Estruturar quiz com IA</button>
+                        </div>
                     </div>
-                    <p>O quiz foi reorganizado para que o professor edite primeiro o que define a pergunta e depois os detalhes de correcao.</p>
-                </div>
+                </details>
 
-                <div class="platform-question-stack activity-card-stack" data-quiz-stack>
-                    <section class="platform-question-card quiz-editor-card activity-content-card" data-quiz-question>
-                        <div class="activity-card-header">
-                            <div>
-                                <span class="platform-section-label" data-card-label>Quest&atilde;o 1</span>
-                                <h3>Estrutura da pergunta</h3>
-                            </div>
-                            <div class="activity-card-actions">
-                                <button type="button" data-action="duplicate-question" class="platform-link-button platform-link-secondary">Duplicar</button>
-                                <button type="button" data-action="remove-question" class="platform-link-button platform-link-secondary">Remover</button>
-                            </div>
-                        </div>
-                        <div class="platform-form-grid activity-essential-grid">
-                            <div class="platform-field platform-field-wide">
-                                <label>Enunciado</label>
-                                <textarea data-field="prompt" rows="3" placeholder="Escreva o que o aluno deve responder"></textarea>
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Configuração manual</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="quiz-quantidade">Perguntas</label>
+                                <select id="quiz-quantidade">
+                                    <option>8 perguntas</option>
+                                    <option>5 perguntas</option>
+                                    <option>10 perguntas</option>
+                                </select>
                             </div>
                             <div class="platform-field">
-                                <label>Tipo</label>
-                                <select data-field="type">
+                                <label for="quiz-formato">Formato</label>
+                                <select id="quiz-formato">
+                                    <option>Misto</option>
                                     <option>M&uacute;ltipla escolha</option>
-                                    <option>Pergunta aberta</option>
+                                    <option>Perguntas abertas</option>
                                     <option>Verdadeiro ou falso</option>
                                 </select>
                             </div>
-                            <div class="platform-field">
-                                <label>Resposta correta</label>
-                                <select data-field="correct">
-                                    <option>Alternativa B</option>
-                                    <option>Alternativa A</option>
-                                    <option>Alternativa C</option>
-                                    <option>Alternativa D</option>
-                                </select>
+                            <div class="platform-field platform-field-wide">
+                                <label for="quiz-tema">Tema</label>
+                                <input id="quiz-tema" type="text" value="" placeholder="Ex.: sistema solar, leitura, fra&ccedil;&otilde;es, revolu&ccedil;&atilde;o francesa">
                             </div>
                         </div>
-                        <div class="activity-optional-block">
-                            <span class="route-tag">Alternativas e apoio</span>
-                            <div class="platform-question-stack">
-                                <div class="platform-field">
-                                    <label>Alternativa A</label>
-                                    <input data-option data-option-key="Alternativa A" type="text" value="">
-                                </div>
-                                <div class="platform-field">
-                                    <label>Alternativa B</label>
-                                    <input data-option data-option-key="Alternativa B" type="text" value="">
-                                </div>
-                                <div class="platform-field">
-                                    <label>Alternativa C</label>
-                                    <input data-option data-option-key="Alternativa C" type="text" value="">
-                                </div>
-                                <div class="platform-field">
-                                    <label>Alternativa D</label>
-                                    <input data-option data-option-key="Alternativa D" type="text" value="">
-                                </div>
-                                <div class="platform-field">
-                                    <label>Explicacao</label>
-                                    <textarea data-field="explanation" rows="3"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
+                    </div>
+                </details>
 
-                    <section class="platform-question-card quiz-editor-card activity-content-card" data-quiz-question>
-                        <div class="activity-card-header">
-                            <div>
-                                <span class="platform-section-label" data-card-label>Quest&atilde;o 2</span>
-                                <h3>Estrutura da pergunta</h3>
-                            </div>
-                            <div class="activity-card-actions">
-                                <button type="button" data-action="duplicate-question" class="platform-link-button platform-link-secondary">Duplicar</button>
-                                <button type="button" data-action="remove-question" class="platform-link-button platform-link-secondary">Remover</button>
-                            </div>
-                        </div>
-                        <div class="platform-form-grid activity-essential-grid">
-                            <div class="platform-field platform-field-wide">
-                                <label>Enunciado</label>
-                                <textarea data-field="prompt" rows="3" placeholder="Escreva o que o aluno deve responder"></textarea>
-                            </div>
-                            <div class="platform-field">
-                                <label>Tipo</label>
-                                <select data-field="type">
-                                    <option>Pergunta aberta</option>
-                                    <option>M&uacute;ltipla escolha</option>
-                                    <option>Verdadeiro ou falso</option>
-                                </select>
-                            </div>
-                            <div class="platform-field">
-                                <label>Criterio</label>
-                                <input data-field="criteria" type="text" value="">
-                            </div>
-                            <div class="platform-field platform-field-wide">
-                                <label>Resposta modelo</label>
-                                <textarea data-field="model" rows="3"></textarea>
-                            </div>
-                            <div class="platform-field platform-field-wide">
-                                <label>Explicacao</label>
-                                <textarea data-field="explanation" rows="3"></textarea>
-                            </div>
-                        </div>
-                    </section>
-                </div>
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Editar manualmente</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-question-stack activity-card-stack" data-quiz-stack>
+                            <section class="platform-question-card quiz-editor-card activity-content-card" data-quiz-question>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-card-label>Quest&atilde;o 1</span>
+                                        <h3>Estrutura da pergunta</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" data-action="duplicate-question" class="platform-link-button platform-link-secondary">Duplicar</button>
+                                        <button type="button" data-action="remove-question" class="platform-link-button platform-link-secondary">Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid activity-essential-grid">
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Enunciado</label>
+                                        <textarea data-field="prompt" rows="3" placeholder="Escreva o que o aluno deve responder"></textarea>
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Tipo</label>
+                                        <select data-field="type">
+                                            <option>M&uacute;ltipla escolha</option>
+                                            <option>Pergunta aberta</option>
+                                            <option>Verdadeiro ou falso</option>
+                                        </select>
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Resposta correta</label>
+                                        <select data-field="correct">
+                                            <option>Alternativa B</option>
+                                            <option>Alternativa A</option>
+                                            <option>Alternativa C</option>
+                                            <option>Alternativa D</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="activity-optional-block">
+                                    <span class="route-tag">Alternativas e apoio</span>
+                                    <div class="platform-question-stack">
+                                        <div class="platform-field">
+                                            <label>Alternativa A</label>
+                                            <input data-option data-option-key="Alternativa A" type="text" value="">
+                                        </div>
+                                        <div class="platform-field">
+                                            <label>Alternativa B</label>
+                                            <input data-option data-option-key="Alternativa B" type="text" value="">
+                                        </div>
+                                        <div class="platform-field">
+                                            <label>Alternativa C</label>
+                                            <input data-option data-option-key="Alternativa C" type="text" value="">
+                                        </div>
+                                        <div class="platform-field">
+                                            <label>Alternativa D</label>
+                                            <input data-option data-option-key="Alternativa D" type="text" value="">
+                                        </div>
+                                        <div class="platform-field">
+                                            <label>Explicacao</label>
+                                            <textarea data-field="explanation" rows="3"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
 
-                <div class="platform-form-actions activity-stack-actions">
-                    <button type="button" data-action="add-question" class="platform-link-button platform-link-primary">Adicionar questao</button>
-                </div>
+                            <section class="platform-question-card quiz-editor-card activity-content-card" data-quiz-question>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-card-label>Quest&atilde;o 2</span>
+                                        <h3>Estrutura da pergunta</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" data-action="duplicate-question" class="platform-link-button platform-link-secondary">Duplicar</button>
+                                        <button type="button" data-action="remove-question" class="platform-link-button platform-link-secondary">Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid activity-essential-grid">
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Enunciado</label>
+                                        <textarea data-field="prompt" rows="3" placeholder="Escreva o que o aluno deve responder"></textarea>
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Tipo</label>
+                                        <select data-field="type">
+                                            <option>Pergunta aberta</option>
+                                            <option>M&uacute;ltipla escolha</option>
+                                            <option>Verdadeiro ou falso</option>
+                                        </select>
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Criterio</label>
+                                        <input data-field="criteria" type="text" value="">
+                                    </div>
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Resposta modelo</label>
+                                        <textarea data-field="model" rows="3"></textarea>
+                                    </div>
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Explicacao</label>
+                                        <textarea data-field="explanation" rows="3"></textarea>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="platform-form-actions activity-stack-actions">
+                            <button type="button" data-action="add-question" class="platform-link-button platform-link-primary">Adicionar questão</button>
+                        </div>
+                    </div>
+                </details>
             </article>
 
             <aside class="platform-builder-card quiz-preview-card activity-preview-pane">
                 <span class="platform-section-label">Preview</span>
                 <h2>Veja o quiz antes de aplicar</h2>
-                <p>O preview ajuda a conferir volume, clareza e tipo de resposta antes de ir para o modo de sala.</p>
+                <p>Confira como a atividade vai ficar.</p>
                 <div class="live-preview-stack" data-quiz-preview></div>
             </aside>
         </section>

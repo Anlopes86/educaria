@@ -1218,8 +1218,9 @@ body.product-body.theme-editor {
     font-family: var(--font-primary);
     color: var(--navy-dark);
     background:
-        radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 22%),
-        linear-gradient(180deg, #f7faf9 0%, #eef4f2 100%);
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 20%),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.06), transparent 24%),
+        linear-gradient(180deg, #f8fbfb 0%, #eef4f5 100%);
 }
 
 .platform-shell {
@@ -1230,7 +1231,7 @@ body.product-body.theme-editor {
 .platform-flow-shell,
 .activity-editor-shell {
     display: grid;
-    gap: 20px;
+    gap: 16px;
     padding: 24px 0 132px;
 }
 
@@ -1239,11 +1240,11 @@ body.product-body.theme-editor {
     justify-content: space-between;
     align-items: center;
     gap: 18px;
-    padding: 18px 22px;
+    padding: 16px 20px;
     border-radius: 28px;
-    border: 1px solid rgba(148, 163, 184, 0.14);
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 20px 45px -34px rgba(15, 23, 42, 0.36);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 16px 36px -30px rgba(15, 23, 42, 0.22);
     backdrop-filter: blur(18px);
 }
 
@@ -1330,10 +1331,10 @@ body.product-body.theme-editor {
 .focus-card,
 .platform-builder-card,
 .live-preview-card {
-    border-radius: 28px;
-    border: 1px solid rgba(148, 163, 184, 0.14);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.96) 100%);
-    box-shadow: 0 20px 45px -34px rgba(15, 23, 42, 0.34);
+    border-radius: 24px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 18px 38px -32px rgba(15, 23, 42, 0.2);
 }
 
 .activity-editor-hero {
@@ -1385,19 +1386,19 @@ body.product-body.theme-editor {
 .platform-quiz-layout {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
-    gap: 20px;
+    gap: 16px;
 }
 
 .focus-card,
 .platform-builder-card,
 .live-preview-card {
-    padding: 24px;
+    padding: 22px;
 }
 
 .page-section-title {
     display: grid;
-    gap: 12px;
-    margin-bottom: 20px;
+    gap: 8px;
+    margin-bottom: 18px;
 }
 
 .page-section-title h2 {
@@ -1409,7 +1410,8 @@ body.product-body.theme-editor {
 .live-preview-card p {
     margin: 0;
     color: var(--gray-dark);
-    font-weight: 600;
+    font-size: 0.96rem;
+    font-weight: 500;
 }
 
 .platform-form-grid {
@@ -1430,8 +1432,9 @@ body.product-body.theme-editor {
 
 .platform-field label {
     color: var(--navy-dark);
-    font-size: 0.9rem;
+    font-size: 0.84rem;
     font-weight: 800;
+    letter-spacing: 0.01em;
 }
 
 .platform-field input,
@@ -1441,17 +1444,27 @@ body.product-body.theme-editor {
     min-height: 48px;
     padding: 0 14px;
     border-radius: 16px;
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(255, 255, 255, 0.98);
     color: var(--navy-dark);
     font: inherit;
     box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
 
 .platform-field textarea {
     min-height: 132px;
     padding: 14px;
     resize: vertical;
+}
+
+.platform-field input:focus,
+.platform-field select:focus,
+.platform-field textarea:focus {
+    outline: none;
+    border-color: rgba(14, 165, 233, 0.42);
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.12);
 }
 
 .mini-list,
@@ -1466,11 +1479,11 @@ body.product-body.theme-editor {
 
 .platform-question-card,
 .activity-content-card {
-    padding: 24px;
-    border-radius: 24px;
-    border: 1px solid rgba(148, 163, 184, 0.14);
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    box-shadow: 0 16px 36px -24px rgba(15, 23, 42, 0.28);
+    padding: 22px;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 16px 30px -26px rgba(15, 23, 42, 0.2);
 }
 
 .activity-card-header {
@@ -1478,7 +1491,7 @@ body.product-body.theme-editor {
     justify-content: space-between;
     gap: 16px;
     align-items: start;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
 }
 
 .activity-stack-actions {
@@ -2464,8 +2477,8 @@ body.product-body.theme-auth {
     min-height: 30px;
     padding: 0 10px;
     border-radius: 999px;
-    background: rgba(15, 23, 42, 0.06);
-    color: var(--gray-dark);
+    background: rgba(14, 165, 233, 0.1);
+    color: #0369a1;
     font-size: 0.78rem;
     font-weight: 800;
     letter-spacing: 0.02em;
@@ -3093,7 +3106,7 @@ body.product-body.theme-auth {
 
 .builder-floating-actions .platform-link-button {
     min-width: 200px;
-    box-shadow: 0 18px 32px -22px rgba(15, 23, 42, 0.42);
+    box-shadow: 0 18px 32px -22px rgba(15, 23, 42, 0.3);
 }
 
 .presentation-shell {
@@ -3698,13 +3711,13 @@ body.product-body.theme-auth {
 
 .activity-editor-context {
     display: grid;
-    gap: 8px;
-    padding: 16px 18px;
-    border-radius: 22px;
-    border: 1px solid rgba(14, 165, 233, 0.14);
+    gap: 6px;
+    padding: 14px 18px 14px 22px;
+    border-radius: 20px;
+    border: 1px solid rgba(14, 165, 233, 0.12);
     background:
-        linear-gradient(135deg, rgba(14, 165, 233, 0.12) 0%, rgba(248, 250, 252, 0.94) 55%, rgba(255, 255, 255, 0.96) 100%);
-    box-shadow: 0 16px 28px -26px rgba(15, 23, 42, 0.22);
+        linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(248, 250, 252, 0.96) 52%, rgba(255, 255, 255, 0.98) 100%);
+    box-shadow: 0 14px 24px -24px rgba(15, 23, 42, 0.16);
     position: relative;
     overflow: hidden;
 }
@@ -3713,22 +3726,23 @@ body.product-body.theme-auth {
     content: "";
     position: absolute;
     inset: 0 auto 0 0;
-    width: 6px;
+    width: 4px;
     background: linear-gradient(180deg, #0ea5e9 0%, #22c55e 100%);
 }
 
 .activity-editor-context h1 {
     margin: 0;
     font-family: var(--font-display);
-    font-size: clamp(1.45rem, 2vw, 1.9rem);
+    font-size: clamp(1.35rem, 2vw, 1.75rem);
     color: var(--navy-dark);
 }
 
 .activity-editor-context p {
     margin: 0;
-    max-width: 820px;
+    max-width: 700px;
     color: var(--gray-dark);
-    line-height: 1.65;
+    font-size: 0.96rem;
+    line-height: 1.55;
 }
 
 .activity-editor-context .focus-eyebrow {
@@ -3754,7 +3768,192 @@ body.product-body.theme-auth {
 
 .activity-editor-shell .highlight-surface {
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(240, 249, 255, 0.94) 100%);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(247, 252, 255, 0.96) 100%);
+}
+
+.activity-editor-shell .activity-generator-card,
+.activity-editor-shell .ai-structure-card {
+    border-top: 3px solid rgba(14, 165, 233, 0.34);
+}
+
+.activity-editor-shell .activity-guidance-card {
+    align-self: start;
+    border-top: 3px solid rgba(34, 197, 94, 0.28);
+    background: linear-gradient(180deg, rgba(248, 250, 252, 0.94) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.activity-editor-shell .activity-guidance-card h2 {
+    font-size: 1.18rem;
+}
+
+.activity-editor-shell .mini-list {
+    gap: 10px;
+}
+
+.activity-editor-shell .mini-list li {
+    position: relative;
+    padding-left: 18px;
+    color: var(--gray-dark);
+    font-size: 0.95rem;
+}
+
+.activity-editor-shell .mini-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.7em;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #0ea5e9 0%, #22c55e 100%);
+    transform: translateY(-50%);
+}
+
+.activity-editor-shell .activity-content-card {
+    position: relative;
+}
+
+.activity-editor-shell .activity-content-card::before {
+    content: "";
+    position: absolute;
+    inset: 18px auto 18px 0;
+    width: 3px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(14, 165, 233, 0.6) 0%, rgba(34, 197, 94, 0.35) 100%);
+}
+
+.activity-editor-shell .activity-preview-pane {
+    border-top: 3px solid rgba(14, 165, 233, 0.34);
+}
+
+.activity-editor-shell .activity-builder-pane {
+    display: grid;
+    gap: 16px;
+    align-content: start;
+}
+
+.editor-disclosure {
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.92);
+    overflow: hidden;
+    align-self: start;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.editor-disclosure[open] {
+    border-color: rgba(14, 165, 233, 0.22);
+    box-shadow: 0 14px 28px -26px rgba(15, 23, 42, 0.18);
+}
+
+.editor-disclosure:not([open]) {
+    box-shadow: none;
+}
+
+.editor-disclosure summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 48px;
+    padding: 10px 14px 10px 16px;
+    list-style: none;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background-color 0.2s ease;
+}
+
+.editor-disclosure summary::-webkit-details-marker {
+    display: none;
+}
+
+.editor-disclosure summary:hover {
+    background: rgba(248, 250, 252, 0.88);
+}
+
+.editor-disclosure[open] summary {
+    background: rgba(247, 252, 255, 0.94);
+}
+
+.editor-disclosure summary:focus-visible {
+    outline: 2px solid rgba(14, 165, 233, 0.28);
+    outline-offset: -2px;
+}
+
+.editor-disclosure summary span {
+    color: var(--navy-dark);
+    font-size: 0.95rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.editor-disclosure summary small {
+    display: none;
+}
+
+.editor-disclosure summary::after {
+    content: "+";
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(14, 165, 233, 0.1);
+    color: #0369a1;
+    font-size: 1rem;
+    font-weight: 500;
+    flex: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.editor-disclosure[open] summary::after {
+    content: "-";
+    background: rgba(14, 165, 233, 0.16);
+    color: #075985;
+}
+
+.editor-disclosure-body {
+    display: grid;
+    gap: 16px;
+    padding: 16px 18px 18px;
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.editor-disclosure:not([open]) .editor-disclosure-body {
+    display: none;
+}
+
+.editor-disclosure-body > .page-section-title {
+    margin-top: 16px;
+    margin-bottom: 0;
+}
+
+.activity-editor-shell .activity-optional-block,
+.activity-editor-shell .resource-panel {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 18px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(248, 250, 252, 0.86);
+}
+
+.activity-editor-shell .activity-preview-pane {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(244, 251, 255, 0.96) 100%);
+}
+
+.activity-editor-shell .activity-preview-pane h2 {
+    margin-bottom: 6px;
+}
+
+.activity-editor-shell .activity-card-actions .platform-link-button,
+.activity-editor-shell .platform-form-actions .platform-link-button {
+    min-height: 42px;
+}
+
+.activity-editor-shell .utility-actions {
+    grid-template-columns: minmax(0, max-content);
+    justify-content: start;
+    gap: 12px;
 }
 
 .wheel-presentation-shell,

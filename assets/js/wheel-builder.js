@@ -195,7 +195,7 @@ function buildWheelSvg(segments, rotation = 0) {
     }).join("");
 
     return `
-        <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Pre-visualizacao da roleta">
+        <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Pré-visualização da roleta">
             <g transform="rotate(${rotation} ${cx} ${cy})">
                 <circle cx="${cx}" cy="${cy}" r="${radius + 8}" fill="#ffffff"></circle>
                 ${paths}
@@ -211,23 +211,20 @@ function renderWheelPreview() {
 
     const segments = collectWheelSegments();
     const title = document.getElementById("roleta-titulo")?.value.trim() || "Roleta";
-    const mode = document.getElementById("roleta-modo")?.value || "Revisao";
     const elimination = document.getElementById("roleta-eliminacao")?.value || "Nao";
     const svgRoot = document.querySelector("[data-wheel-preview-svg]");
     const listRoot = document.querySelector("[data-wheel-preview-list]");
     const titleRoot = document.querySelector("[data-wheel-preview-title]");
-    const modeRoot = document.querySelector("[data-wheel-preview-mode]");
     const countRoot = document.querySelector("[data-wheel-preview-count]");
 
     if (titleRoot) titleRoot.textContent = title;
-    if (modeRoot) modeRoot.textContent = elimination === "Sim" ? `${mode} - elimina` : mode;
-    if (countRoot) countRoot.textContent = `${segments.length} espacos`;
+    if (countRoot) countRoot.textContent = elimination === "Sim" ? `${segments.length} espaços - elimina` : `${segments.length} espaços`;
     if (svgRoot) svgRoot.innerHTML = buildWheelSvg(segments);
     if (listRoot) {
         listRoot.innerHTML = segments.map((segment, index) => `
             <div class="wheel-preview-item">
                 <span class="wheel-preview-swatch" style="background:${segment.color};"></span>
-                <strong>Espaco ${index + 1}</strong>
+                <strong>Espaço ${index + 1}</strong>
                 <span>${segment.text}</span>
             </div>
         `).join("");
@@ -245,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.addEventListener("change", (event) => {
-        if (event.target.id === "roleta-quantidade" || event.target.id === "roleta-modo" || event.target.id === "roleta-eliminacao") {
+        if (event.target.id === "roleta-quantidade" || event.target.id === "roleta-eliminacao") {
             renderWheelPreview();
         }
     });

@@ -133,17 +133,14 @@ function buildMemoryCards(pairs) {
 function renderMemoryPreview() {
     syncMemoryPairCount();
 
-    const title = document.getElementById("memoria-titulo")?.value.trim() || "Jogo da memoria";
-    const format = document.getElementById("memoria-formato")?.value || "Palavra e definicao";
+    const title = document.getElementById("memoria-titulo")?.value.trim() || "Jogo da memória";
     const pairs = collectMemoryPairs();
     const cards = buildMemoryCards(pairs);
     const titleRoot = document.querySelector("[data-memory-preview-title]");
-    const formatRoot = document.querySelector("[data-memory-preview-format]");
     const countRoot = document.querySelector("[data-memory-preview-count]");
     const gridRoot = document.querySelector("[data-memory-preview-grid]");
 
     if (titleRoot) titleRoot.textContent = title;
-    if (formatRoot) formatRoot.textContent = format;
     if (countRoot) countRoot.textContent = `${pairs.length} pares`;
 
     if (gridRoot) {
@@ -167,7 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.addEventListener("change", (event) => {
-        if (event.target.id === "memoria-pares" || event.target.id === "memoria-formato") {
+        if (event.target.id === "memoria-pares") {
             renderMemoryPreview();
         }
     });

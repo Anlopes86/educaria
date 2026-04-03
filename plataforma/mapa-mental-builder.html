@@ -9,6 +9,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/mindmap-builder.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="mindmap">
@@ -34,75 +35,60 @@
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de mapa mental</span>
-                <h1>Organize os topicos do conteudo e acompanhe a leitura visual do mapa no preview.</h1>
-                <p>O fluxo foi simplificado para voce montar rapidamente o tema central, os topicos e os detalhes que quer projetar em sala.</p>
+                <h1>Organize os tópicos e acompanhe o mapa no preview.</h1>
+                <p>Ideias centrais primeiro. Detalhes depois.</p>
             </div>
-        </section>
-
-        <section class="activity-editor-top">
-            <article class="focus-card activity-generator-card">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Configuracao</span>
-                        <h2>Estrutura do mapa</h2>
-                    </div>
-                    <p>Defina o tema central, o subtitulo e a quantidade de topicos. Depois edite cada bloco abaixo.</p>
-                </div>
-
-                <div class="platform-form-grid">
-                    <div class="platform-field">
-                        <label for="mapa-centro">Tema central</label>
-                        <input id="mapa-centro" type="text" value="Tema da aula">
-                    </div>
-                    <div class="platform-field">
-                        <label for="mapa-subtitulo">Subtitulo</label>
-                        <input id="mapa-subtitulo" type="text" value="Panorama dos conceitos principais">
-                    </div>
-                    <div class="platform-field">
-                        <label for="mapa-ramos">Quantidade de topicos</label>
-                        <select id="mapa-ramos">
-                            <option selected>4 topicos</option>
-                            <option>6 topicos</option>
-                            <option>8 topicos</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="mapa-layout">Leitura</label>
-                        <select id="mapa-layout">
-                            <option>Radial</option>
-                            <option>Topicos</option>
-                        </select>
-                    </div>
-                </div>
-            </article>
-
-            <article class="focus-card activity-guidance-card">
-                <span class="platform-section-label">Como montar</span>
-                <h2>Boas praticas</h2>
-                <ul class="mini-list">
-                    <li>Use titulos curtos para os topicos e deixe os detalhes no campo de apoio.</li>
-                    <li>Pense em cada topico como uma ideia principal da explicacao.</li>
-                    <li>Distribua exemplos, definicoes e perguntas entre os topicos para enriquecer a leitura.</li>
-                </ul>
-            </article>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Edicao</span>
-                        <h2>Topicos do mapa</h2>
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Configuração manual</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="mapa-centro">Tema central</label>
+                                <input id="mapa-centro" type="text" value="Tema da aula">
+                            </div>
+                            <div class="platform-field">
+                                <label for="mapa-subtitulo">Subtítulo</label>
+                                <input id="mapa-subtitulo" type="text" value="Panorama dos conceitos principais">
+                            </div>
+                            <div class="platform-field">
+                                <label for="mapa-ramos">Quantidade de tópicos</label>
+                                <select id="mapa-ramos">
+                                    <option selected>4 tópicos</option>
+                                    <option>6 tópicos</option>
+                                    <option>8 tópicos</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="mapa-layout">Leitura</label>
+                                <select id="mapa-layout">
+                                    <option>Radial</option>
+                                    <option>Topicos</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <p>Edite o titulo, o subtitulo, a explicacao e a cor de cada topico. Na explicacao, voce pode usar linhas normais para paragrafos e iniciar com "-" para criar topicos.</p>
-                </div>
+                </details>
+
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Editar manualmente</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
 
                 <div class="platform-question-stack activity-card-stack" data-mind-branches>
                     <section class="platform-question-card activity-content-card mind-branch-card" data-mind-branch>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-mind-label>Topico 1</span>
-                                <h3>Conteudo do topico</h3>
+                                <span class="platform-section-label" data-mind-label>Tópico 1</span>
+                                <h3>Conteúdo do tópico</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-mind-remove>Remover</button>
@@ -110,11 +96,11 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field">
-                                <label>Titulo do topico</label>
+                                <label>Título do tópico</label>
                                 <input data-mind-title type="text" value="">
                             </div>
                             <div class="platform-field">
-                                <label>Subtitulo do topico</label>
+                                <label>Subtítulo do tópico</label>
                                 <input data-mind-subtitle type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -122,8 +108,8 @@
                                 <input data-mind-color type="color" value="#22c55e">
                             </div>
                             <div class="platform-field platform-field-wide">
-                                <label>Explicacao do topico</label>
-                                <textarea data-mind-detail rows="4" placeholder="Paragrafo inicial&#10;&#10;- Topico 1&#10;- Topico 2"></textarea>
+                                <label>Explicação do tópico</label>
+                                <textarea data-mind-detail rows="4" placeholder="Parágrafo inicial&#10;&#10;- Tópico 1&#10;- Tópico 2"></textarea>
                             </div>
                         </div>
                     </section>
@@ -131,8 +117,8 @@
                     <section class="platform-question-card activity-content-card mind-branch-card" data-mind-branch>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-mind-label>Topico 2</span>
-                                <h3>Conteudo do topico</h3>
+                                <span class="platform-section-label" data-mind-label>Tópico 2</span>
+                                <h3>Conteúdo do tópico</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-mind-remove>Remover</button>
@@ -140,11 +126,11 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field">
-                                <label>Titulo do topico</label>
+                                <label>Título do tópico</label>
                                 <input data-mind-title type="text" value="">
                             </div>
                             <div class="platform-field">
-                                <label>Subtitulo do topico</label>
+                                <label>Subtítulo do tópico</label>
                                 <input data-mind-subtitle type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -152,8 +138,8 @@
                                 <input data-mind-color type="color" value="#0ea5e9">
                             </div>
                             <div class="platform-field platform-field-wide">
-                                <label>Explicacao do topico</label>
-                                <textarea data-mind-detail rows="4" placeholder="Paragrafo inicial&#10;&#10;- Topico 1&#10;- Topico 2"></textarea>
+                                <label>Explicação do tópico</label>
+                                <textarea data-mind-detail rows="4" placeholder="Parágrafo inicial&#10;&#10;- Tópico 1&#10;- Tópico 2"></textarea>
                             </div>
                         </div>
                     </section>
@@ -161,8 +147,8 @@
                     <section class="platform-question-card activity-content-card mind-branch-card" data-mind-branch>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-mind-label>Topico 3</span>
-                                <h3>Conteudo do topico</h3>
+                                <span class="platform-section-label" data-mind-label>Tópico 3</span>
+                                <h3>Conteúdo do tópico</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-mind-remove>Remover</button>
@@ -170,11 +156,11 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field">
-                                <label>Titulo do topico</label>
+                                <label>Título do tópico</label>
                                 <input data-mind-title type="text" value="">
                             </div>
                             <div class="platform-field">
-                                <label>Subtitulo do topico</label>
+                                <label>Subtítulo do tópico</label>
                                 <input data-mind-subtitle type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -182,8 +168,8 @@
                                 <input data-mind-color type="color" value="#f59e0b">
                             </div>
                             <div class="platform-field platform-field-wide">
-                                <label>Explicacao do topico</label>
-                                <textarea data-mind-detail rows="4" placeholder="Paragrafo inicial&#10;&#10;- Topico 1&#10;- Topico 2"></textarea>
+                                <label>Explicação do tópico</label>
+                                <textarea data-mind-detail rows="4" placeholder="Parágrafo inicial&#10;&#10;- Tópico 1&#10;- Tópico 2"></textarea>
                             </div>
                         </div>
                     </section>
@@ -191,8 +177,8 @@
                     <section class="platform-question-card activity-content-card mind-branch-card" data-mind-branch>
                         <div class="activity-card-header">
                             <div>
-                                <span class="platform-section-label" data-mind-label>Topico 4</span>
-                                <h3>Conteudo do topico</h3>
+                                <span class="platform-section-label" data-mind-label>Tópico 4</span>
+                                <h3>Conteúdo do tópico</h3>
                             </div>
                             <div class="activity-card-actions">
                                 <button type="button" class="platform-link-button platform-link-secondary" data-mind-remove>Remover</button>
@@ -200,11 +186,11 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field">
-                                <label>Titulo do topico</label>
+                                <label>Título do tópico</label>
                                 <input data-mind-title type="text" value="">
                             </div>
                             <div class="platform-field">
-                                <label>Subtitulo do topico</label>
+                                <label>Subtítulo do tópico</label>
                                 <input data-mind-subtitle type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -212,29 +198,31 @@
                                 <input data-mind-color type="color" value="#ec4899">
                             </div>
                             <div class="platform-field platform-field-wide">
-                                <label>Explicacao do topico</label>
-                                <textarea data-mind-detail rows="4" placeholder="Paragrafo inicial&#10;&#10;- Topico 1&#10;- Topico 2"></textarea>
+                                <label>Explicação do tópico</label>
+                                <textarea data-mind-detail rows="4" placeholder="Parágrafo inicial&#10;&#10;- Tópico 1&#10;- Tópico 2"></textarea>
                             </div>
                         </div>
                     </section>
                 </div>
 
                 <div class="platform-form-actions activity-stack-actions">
-                    <button type="button" class="platform-link-button platform-link-primary" data-mind-add>Adicionar topico</button>
+                    <button type="button" class="platform-link-button platform-link-primary" data-mind-add>Adicionar tópico</button>
                 </div>
+                    </div>
+                </details>
             </article>
 
             <aside class="platform-builder-card activity-preview-pane mind-preview-pane">
                 <span class="platform-section-label">Preview</span>
                 <h2>Veja o mapa pronto</h2>
-                <p>Use a visualizacao para ajustar equilibrio entre os topicos, legibilidade e distribuicao do conteudo.</p>
+                <p>Veja como a atividade vai ficar.</p>
                 <div class="live-preview-stack">
                     <section class="live-preview-card live-preview-card--teal">
                         <span class="platform-section-label">Resumo</span>
                         <h3 data-mind-preview-title>Tema da aula</h3>
                         <div class="preview-chip-row">
                             <span class="preview-chip" data-mind-preview-subtitle>Panorama dos conceitos principais</span>
-                            <span class="preview-chip" data-mind-preview-count>4 topicos</span>
+                            <span class="preview-chip" data-mind-preview-count>4 tópicos</span>
                         </div>
                     </section>
                     <section class="live-preview-card mind-preview-card">
