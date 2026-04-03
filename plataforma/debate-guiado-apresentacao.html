@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentacao de Debate Guiado | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/debate-runtime.js" defer></script>
+</head>
+<body data-material-type="debate">
+    <main class="presentation-shell debate-stage-shell">
+        <header class="presentation-topbar presentation-topbar--minimal">
+            <div class="platform-top-actions">
+                <a href="debate-guiado-builder.html" class="platform-link-button platform-link-secondary">Voltar a edicao</a>
+                <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
+            </div>
+        </header>
+
+        <section class="debate-stage-layout debate-stage-layout--full">
+            <article class="debate-stage-card debate-stage-card--full">
+                <div class="debate-stage-head">
+                    <div>
+                        <span class="platform-section-label" data-debate-stage-format>Dois lados</span>
+                        <h1 data-debate-stage-title>Debate guiado</h1>
+                    </div>
+                    <div class="debate-stage-counter" data-debate-stage-counter>1 de 3</div>
+                </div>
+
+                <div class="debate-stage-question" data-debate-stage-main-question>Pergunta central do debate</div>
+
+                <div class="debate-stage-sides">
+                    <article class="debate-stage-side">
+                        <span class="platform-section-label">Lado A</span>
+                        <strong data-debate-stage-side-a>Posicao A</strong>
+                    </article>
+                    <article class="debate-stage-side">
+                        <span class="platform-section-label">Lado B</span>
+                        <strong data-debate-stage-side-b>Posicao B</strong>
+                    </article>
+                </div>
+
+                <div class="debate-stage-content">
+                    <section class="debate-stage-step">
+                        <span class="platform-section-label" data-debate-stage-time>5 min</span>
+                        <h2 data-debate-stage-step-title>Etapa</h2>
+                        <h3 data-debate-stage-step-question>Pergunta da etapa</h3>
+                    </section>
+                    <aside class="debate-stage-guidance">
+                        <span class="platform-section-label">Mediacao</span>
+                        <div class="debate-stage-guidance-text" data-debate-stage-guidance>Orientacao para conduzir essa etapa.</div>
+                    </aside>
+                </div>
+
+                <div class="debate-stage-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-debate-stage-prev>Anterior</button>
+                    <button type="button" class="platform-link-button platform-link-primary" data-debate-stage-next>Proxima etapa</button>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

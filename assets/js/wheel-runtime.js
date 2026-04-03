@@ -122,33 +122,68 @@ function renderWheelApplication() {
     const resultRoot = document.querySelector("[data-wheel-stage-result]");
     const svgRoot = document.querySelector("[data-wheel-stage-svg]");
     const spinButtons = document.querySelectorAll("[data-wheel-spin]");
+    const shouldEliminateWinner = (controls["roleta-eliminacao"] || "Nao") === "Sim";
 
     let isSpinning = false;
     let currentRotation = 0;
+    let activeSegments = [...safeSegments];
+    let pendingRemovalIndex = -1;
 
-    if (svgRoot) {
-        svgRoot.innerHTML = `<div class="wheel-stage-disc" data-wheel-stage-disc>${buildWheelSvg(safeSegments)}</div>`;
-    }
+    const normalizedRotation = () => ((currentRotation % 360) + 360) % 360;
+
+    const renderDisc = () => {
+        if (!svgRoot || !activeSegments.length) return;
+        svgRoot.innerHTML = `<div class="wheel-stage-disc" data-wheel-stage-disc>${buildWheelSvg(activeSegments)}</div>`;
+        const disc = svgRoot.querySelector("[data-wheel-stage-disc]");
+        if (disc) {
+            disc.style.transform = `rotate(${normalizedRotation()}deg)`;
+        }
+    };
+
+    const updateButtonsAvailability = (disabled) => {
+        spinButtons.forEach((button) => {
+            button.disabled = disabled;
+        });
+    };
+
+    renderDisc();
 
     const spin = () => {
-        if (isSpinning) return;
+        if (isSpinning || !activeSegments.length) return;
+
+        if (shouldEliminateWinner && pendingRemovalIndex >= 0) {
+            activeSegments.splice(pendingRemovalIndex, 1);
+            pendingRemovalIndex = -1;
+
+            if (!activeSegments.length) {
+                if (resultRoot) {
+                    resultRoot.textContent = "Todos os espacos foram sorteados";
+                }
+                updateButtonsAvailability(true);
+                return;
+            }
+
+            renderDisc();
+        }
 
         isSpinning = true;
-        spinButtons.forEach((button) => {
-            button.disabled = true;
-        });
+        updateButtonsAvailability(true);
 
-        const winnerIndex = Math.floor(Math.random() * safeSegments.length);
-        const segmentAngle = 360 / safeSegments.length;
+        const winnerIndex = Math.floor(Math.random() * activeSegments.length);
+        const winner = activeSegments[winnerIndex];
+        const segmentAngle = 360 / activeSegments.length;
         const targetCenter = winnerIndex * segmentAngle + segmentAngle / 2;
         const targetRotation = 360 - targetCenter;
         const extraTurns = 7 * 360;
-        const normalizedCurrent = ((currentRotation % 360) + 360) % 360;
+        const normalizedCurrent = normalizedRotation();
         const delta = (targetRotation - normalizedCurrent + 360) % 360;
         currentRotation += extraTurns + delta;
 
         const disc = document.querySelector("[data-wheel-stage-disc]");
         if (disc) {
+            disc.style.transition = "none";
+            disc.style.transform = `rotate(${normalizedCurrent}deg)`;
+            void disc.offsetWidth;
             disc.style.transition = "transform 4.8s cubic-bezier(0.08, 0.82, 0.18, 1)";
             disc.style.transform = `rotate(${currentRotation}deg)`;
         }
@@ -159,12 +194,16 @@ function renderWheelApplication() {
 
         window.setTimeout(() => {
             if (resultRoot) {
-                resultRoot.textContent = safeSegments[winnerIndex].text;
+                resultRoot.textContent = winner.text;
             }
+
+            if (shouldEliminateWinner) {
+                pendingRemovalIndex = winnerIndex;
+            }
+
             isSpinning = false;
-            spinButtons.forEach((button) => {
-                button.disabled = false;
-            });
+
+            updateButtonsAvailability(false);
         }, 4800);
     };
 

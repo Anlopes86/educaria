@@ -52,6 +52,8 @@ function parseSlideCards(stackHtml) {
             imageMode: fieldLabel("slide-image-mode") || "Sem imagem",
             imageUrl: fieldValue("slide-image-url"),
             imagePrompt: fieldValue("slide-image-prompt"),
+            fontChoice: fieldLabel("slide-font") || "Destaque moderno",
+            accentColor: fieldValue("slide-accent-color") || "#0ea5e9",
             slideColor: fieldValue("slide-color") || "#d7f5f6",
             textColor: fieldValue("slide-text-color") || "#0f172a"
         };
@@ -71,6 +73,8 @@ function buildFallbackSlides() {
         imageMode: "Sem imagem",
         imageUrl: "",
         imagePrompt: "",
+        fontChoice: "Destaque moderno",
+        accentColor: "#0ea5e9",
         slideColor: "#d7f5f6",
         textColor: "#0f172a"
     }];
@@ -150,11 +154,17 @@ function renderPresentation(slides) {
         counter.textContent = `${currentIndex + 1} de ${slides.length}`;
 
         slideRoot.style.background = `linear-gradient(180deg, ${slide.slideColor} 0%, #ffffff 100%)`;
+        slideRoot.style.setProperty("--slide-accent", slide.accentColor || slide.textColor);
         slideRoot.style.color = slide.textColor;
         copyRoot.style.color = slide.textColor;
         slideTitle.style.color = slide.textColor;
         slideSubtitle.style.color = slide.textColor;
         slideBody.style.color = slide.textColor;
+        slideRoot.dataset.slideFont = String(slide.fontChoice || "Destaque moderno")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\s+/g, "-");
 
         applySlideLayout(slideRoot, slide);
         resetMediaStyles();
@@ -193,6 +203,7 @@ function renderPresentation(slides) {
 
         prevButton.disabled = currentIndex === 0;
         nextButton.disabled = currentIndex === slides.length - 1;
+        slideRoot.style.visibility = "visible";
     };
 
     prevButton.addEventListener("click", () => {

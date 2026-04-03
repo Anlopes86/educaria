@@ -79,11 +79,11 @@ function renderQuizApplication(questions, controls = {}) {
     const paint = () => {
         const question = questions[currentIndex];
 
-        title.textContent = materialTheme;
-        classLabel.textContent = turma ? `${turma} - ${materialTheme}` : materialTheme;
-        counter.textContent = `${currentIndex + 1} de ${questions.length}`;
+        if (title) title.textContent = materialTheme;
+        if (classLabel) classLabel.textContent = turma ? `${turma} - ${materialTheme}` : materialTheme;
+        if (counter) counter.textContent = `${currentIndex + 1} de ${questions.length}`;
         prompt.textContent = question.prompt;
-        helper.textContent = question.type;
+        if (helper) helper.textContent = question.type;
         explanation.hidden = true;
         explanation.textContent = "";
 

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentacao de Ligar Pontos | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/match-runtime.js" defer></script>
+</head>
+<body data-material-type="match">
+    <main class="presentation-shell match-stage-shell">
+        <header class="presentation-topbar presentation-topbar--minimal">
+            <div class="platform-top-actions">
+                <a href="ligar-pontos-builder.html" class="platform-link-button platform-link-secondary">Voltar a edicao</a>
+                <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
+            </div>
+        </header>
+
+        <section class="match-stage-layout match-stage-layout--full">
+            <article class="match-stage-card match-stage-card--full">
+                <div class="match-stage-header">
+                    <div>
+                        <h1 data-match-stage-title>Ligar pontos</h1>
+                    </div>
+                    <div class="match-stage-status" data-match-stage-status>Selecione um item de cada coluna</div>
+                </div>
+
+                <div class="match-stage-board">
+                    <section class="match-stage-column">
+                        <header class="match-stage-column-head">
+                            <strong data-match-stage-left-label>Coluna A</strong>
+                        </header>
+                        <div class="match-stage-list" data-match-stage-left></div>
+                    </section>
+
+                    <section class="match-stage-column">
+                        <header class="match-stage-column-head">
+                            <strong data-match-stage-right-label>Coluna B</strong>
+                        </header>
+                        <div class="match-stage-list" data-match-stage-right></div>
+                    </section>
+                </div>
+
+                <div class="match-stage-footer">
+                    <div class="match-stage-progress" data-match-stage-progress>0 de 4 pares encontrados</div>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-match-reset>Reiniciar</button>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

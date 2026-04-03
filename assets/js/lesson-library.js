@@ -7,6 +7,9 @@ function draftKeyForType(type) {
     if (type === "flashcards") return "educaria:builder:flashcards";
     if (type === "wheel") return "educaria:builder:wheel";
     if (type === "memory") return "educaria:builder:memory";
+    if (type === "match") return "educaria:builder:match";
+    if (type === "mindmap") return "educaria:builder:mindmap";
+    if (type === "debate") return "educaria:builder:debate";
     return "educaria:builder:slides";
 }
 
@@ -15,6 +18,9 @@ function stackSelectorForType(type) {
     if (type === "flashcards") return "[data-flashcards-stack]";
     if (type === "wheel") return "[data-wheel-segments]";
     if (type === "memory") return "[data-memory-pairs]";
+    if (type === "match") return "[data-match-pairs]";
+    if (type === "mindmap") return "[data-mind-branches]";
+    if (type === "debate") return "[data-debate-steps]";
     return "[data-slides-stack]";
 }
 
@@ -205,6 +211,42 @@ function summarizeMemoryDraft(rawDraft) {
     return { title, summary: `${firstFront} - ${firstBack}`, type: "Jogo da memoria", materialType: "memory" };
 }
 
+function summarizeMatchDraft(rawDraft) {
+    if (!rawDraft) {
+        return { title: "Ligar pontos sem titulo", summary: "Material salvo sem resumo definido.", type: "Ligar pontos", materialType: "match" };
+    }
+
+    const { parsed, doc } = parseDraftHtml(rawDraft);
+    const title = parsed.controls?.["ligar-titulo"] || "Ligar pontos";
+    const firstLeft = doc.querySelector("[data-match-left]")?.value?.trim() || "Sem item inicial";
+    const firstRight = doc.querySelector("[data-match-right]")?.value?.trim() || "Sem resposta inicial";
+    return { title, summary: `${firstLeft} - ${firstRight}`, type: "Ligar pontos", materialType: "match" };
+}
+
+function summarizeMindmapDraft(rawDraft) {
+    if (!rawDraft) {
+        return { title: "Mapa mental sem titulo", summary: "Material salvo sem resumo definido.", type: "Mapa mental", materialType: "mindmap" };
+    }
+
+    const { parsed, doc } = parseDraftHtml(rawDraft);
+    const title = parsed.controls?.["mapa-centro"] || "Mapa mental";
+    const firstBranch = doc.querySelector("[data-mind-title]")?.value?.trim() || "Sem topico inicial";
+    const count = doc.querySelectorAll("[data-mind-branch]").length || 0;
+    return { title, summary: `${count} topicos - ${firstBranch}`, type: "Mapa mental", materialType: "mindmap" };
+}
+
+function summarizeDebateDraft(rawDraft) {
+    if (!rawDraft) {
+        return { title: "Debate guiado sem titulo", summary: "Material salvo sem resumo definido.", type: "Debate guiado", materialType: "debate" };
+    }
+
+    const { parsed, doc } = parseDraftHtml(rawDraft);
+    const title = parsed.controls?.["debate-titulo"] || "Debate guiado";
+    const question = parsed.controls?.["debate-pergunta"] || "Sem pergunta central";
+    const count = doc.querySelectorAll("[data-debate-step]").length || 0;
+    return { title, summary: `${count} etapas - ${question}`, type: "Debate guiado", materialType: "debate" };
+}
+
 function summarizeCurrentDraft(preferredType = "") {
     const currentType = preferredType || (typeof readCurrentMaterialType === "function" ? readCurrentMaterialType() : "slides");
     const currentDraft = readCurrentDraftByType(currentType);
@@ -214,10 +256,13 @@ function summarizeCurrentDraft(preferredType = "") {
         if (currentType === "quiz") return { rawDraft: currentDraft, summary: summarizeQuizDraft(currentDraft), materialType: "quiz" };
         if (currentType === "wheel") return { rawDraft: currentDraft, summary: summarizeWheelDraft(currentDraft), materialType: "wheel" };
         if (currentType === "memory") return { rawDraft: currentDraft, summary: summarizeMemoryDraft(currentDraft), materialType: "memory" };
+        if (currentType === "match") return { rawDraft: currentDraft, summary: summarizeMatchDraft(currentDraft), materialType: "match" };
+        if (currentType === "mindmap") return { rawDraft: currentDraft, summary: summarizeMindmapDraft(currentDraft), materialType: "mindmap" };
+        if (currentType === "debate") return { rawDraft: currentDraft, summary: summarizeDebateDraft(currentDraft), materialType: "debate" };
         return { rawDraft: currentDraft, summary: summarizeSlidesDraft(currentDraft), materialType: "slides" };
     }
 
-    const fallbackOrder = ["slides", "flashcards", "quiz", "wheel", "memory"];
+    const fallbackOrder = ["slides", "flashcards", "quiz", "wheel", "memory", "match", "mindmap", "debate"];
     for (const type of fallbackOrder) {
         const draft = readCurrentDraftByType(type);
         if (!draft) continue;
@@ -306,6 +351,9 @@ function editorPathForLesson(lesson) {
     if (lesson.materialType === "flashcards") return "flashcards-builder.html";
     if (lesson.materialType === "wheel") return "roleta-builder.html";
     if (lesson.materialType === "memory") return "jogo-memoria-builder.html";
+    if (lesson.materialType === "match") return "ligar-pontos-builder.html";
+    if (lesson.materialType === "mindmap") return "mapa-mental-builder.html";
+    if (lesson.materialType === "debate") return "debate-guiado-builder.html";
     return "slides-builder.html";
 }
 
@@ -321,6 +369,9 @@ function materialGroupLabel(type) {
     if (type === "flashcards") return "Flashcards";
     if (type === "wheel") return "Roleta";
     if (type === "memory") return "Jogo da memoria";
+    if (type === "match") return "Ligar pontos";
+    if (type === "mindmap") return "Mapa mental";
+    if (type === "debate") return "Debate guiado";
     return "Slides";
 }
 
@@ -329,6 +380,9 @@ function materialGroupDescription(type) {
     if (type === "flashcards") return "Cards para retomada rapida e revisao visual.";
     if (type === "wheel") return "Sorteios, comandos e desafios prontos para a turma.";
     if (type === "memory") return "Pares para jogar, revisar e memorizar em sala.";
+    if (type === "match") return "Associacoes em duas colunas para ligar e revisar em sala.";
+    if (type === "mindmap") return "Topicos conectados para organizar, explicar e revisar conteudos.";
+    if (type === "debate") return "Roteiros de mediacao para discutir, argumentar e fechar o tema em sala.";
     return "Sequencias para conduzir a aula projetada.";
 }
 
@@ -407,7 +461,7 @@ function hydrateClassPage() {
             return groups;
         }, {});
 
-        const groupOrder = ["quiz", "slides", "flashcards", "wheel", "memory"];
+        const groupOrder = ["quiz", "slides", "flashcards", "wheel", "memory", "match", "mindmap", "debate"];
         listRoot.innerHTML = groupOrder
             .filter((key) => groupedLessons[key]?.length)
             .map((key) => `

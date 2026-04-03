@@ -212,6 +212,7 @@ function renderWheelPreview() {
     const segments = collectWheelSegments();
     const title = document.getElementById("roleta-titulo")?.value.trim() || "Roleta";
     const mode = document.getElementById("roleta-modo")?.value || "Revisao";
+    const elimination = document.getElementById("roleta-eliminacao")?.value || "Nao";
     const svgRoot = document.querySelector("[data-wheel-preview-svg]");
     const listRoot = document.querySelector("[data-wheel-preview-list]");
     const titleRoot = document.querySelector("[data-wheel-preview-title]");
@@ -219,7 +220,7 @@ function renderWheelPreview() {
     const countRoot = document.querySelector("[data-wheel-preview-count]");
 
     if (titleRoot) titleRoot.textContent = title;
-    if (modeRoot) modeRoot.textContent = mode;
+    if (modeRoot) modeRoot.textContent = elimination === "Sim" ? `${mode} - elimina` : mode;
     if (countRoot) countRoot.textContent = `${segments.length} espacos`;
     if (svgRoot) svgRoot.innerHTML = buildWheelSvg(segments);
     if (listRoot) {
@@ -244,7 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.addEventListener("change", (event) => {
-        if (event.target.id === "roleta-quantidade" || event.target.id === "roleta-modo") {
+        if (event.target.id === "roleta-quantidade" || event.target.id === "roleta-modo" || event.target.id === "roleta-eliminacao") {
             renderWheelPreview();
         }
     });

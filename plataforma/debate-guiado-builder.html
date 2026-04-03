@@ -5,8 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Debate Guiado | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/local-persistence.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/debate-builder.js" defer></script>
 </head>
-<body class="product-body theme-editor">
+<body class="product-body theme-editor" data-material-type="debate">
     <main class="platform-shell platform-flow-shell activity-editor-shell">
         <header class="platform-topbar">
             <a href="turma.html" class="platform-brand">
@@ -19,33 +24,40 @@
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
                 <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
-                <button type="button" class="platform-link-button platform-link-primary" disabled>Salvar na turma</button>
-                <button type="button" class="platform-link-button platform-link-secondary" disabled>Apresentar</button>
             </div>
         </header>
+        <div class="builder-floating-actions">
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="debate" data-save-target="turma.html">Salvar na turma</button>
+            <a href="debate-guiado-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
+        </div>
 
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de debate guiado</span>
-                <h1>Estruture a mediacao sem perder foco na montagem da atividade.</h1>
-                <p>Essa faixa superior ficou mais enxuta para priorizar a configuracao e a futura revisao do debate.</p>
+                <h1>Monte a pergunta central, os pontos de vista e o roteiro da mediacao.</h1>
+                <p>O foco desta tela e deixar a conducao clara para o professor e bem organizada para a apresentacao em sala.</p>
             </div>
         </section>
 
-        <section class="dashboard-grid">
-            <article class="focus-card ai-structure-card">
-                <span class="platform-section-label">IA de estruturacao</span>
-                <h2>Trazer tema e argumentos</h2>
-                <div class="platform-field">
-                    <label for="debate-fonte">Tema do debate</label>
-                    <textarea id="debate-fonte" rows="7" placeholder="Cole o tema, a pergunta central e os argumentos que devem orientar o debate."></textarea>
+        <section class="activity-editor-top">
+            <article class="focus-card activity-generator-card">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Configuracao</span>
+                        <h2>Estrutura do debate</h2>
+                    </div>
+                    <p>Defina tema, pergunta central, formato e quantidade de etapas. Depois detalhe a conducao abaixo.</p>
                 </div>
-            </article>
 
-            <article class="focus-card dashboard-panel">
-                <span class="platform-section-label">Configuracao inicial</span>
-                <h2>Estrutura do debate</h2>
                 <div class="platform-form-grid">
+                    <div class="platform-field">
+                        <label for="debate-titulo">Titulo do debate</label>
+                        <input id="debate-titulo" type="text" value="">
+                    </div>
+                    <div class="platform-field">
+                        <label for="debate-pergunta">Pergunta central</label>
+                        <input id="debate-pergunta" type="text" value="">
+                    </div>
                     <div class="platform-field">
                         <label for="debate-formato">Formato</label>
                         <select id="debate-formato">
@@ -57,13 +69,169 @@
                     <div class="platform-field">
                         <label for="debate-etapas">Etapas</label>
                         <select id="debate-etapas">
-                            <option>3 etapas</option>
+                            <option selected>3 etapas</option>
                             <option>4 etapas</option>
                             <option>5 etapas</option>
                         </select>
                     </div>
+                    <div class="platform-field">
+                        <label for="debate-lado-a">Lado A</label>
+                        <input id="debate-lado-a" type="text" value="Posicao A">
+                    </div>
+                    <div class="platform-field">
+                        <label for="debate-lado-b">Lado B</label>
+                        <input id="debate-lado-b" type="text" value="Posicao B">
+                    </div>
                 </div>
             </article>
+
+            <article class="focus-card activity-guidance-card">
+                <span class="platform-section-label">Como montar</span>
+                <h2>Boas praticas</h2>
+                <ul class="mini-list">
+                    <li>Use uma pergunta central que realmente abra espaco para argumentos diferentes.</li>
+                    <li>Separe a mediacao por etapas curtas para manter o ritmo da sala.</li>
+                    <li>Deixe orientacoes concretas para o professor conduzir a fala e o fechamento.</li>
+                </ul>
+            </article>
+        </section>
+
+        <section class="platform-quiz-layout activity-workspace">
+            <article class="platform-builder-card highlight-surface activity-builder-pane">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Edicao</span>
+                        <h2>Etapas do debate</h2>
+                    </div>
+                    <p>Defina o objetivo, a pergunta e a orientacao de cada etapa para a mediacao ficar pronta para uso.</p>
+                </div>
+
+                <div class="platform-question-stack activity-card-stack" data-debate-steps>
+                    <section class="platform-question-card activity-content-card debate-step-card" data-debate-step>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-debate-label>Etapa 1</span>
+                                <h3>Conteudo da etapa</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-debate-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label>Titulo da etapa</label>
+                                <input data-debate-title type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Tempo sugerido</label>
+                                <input data-debate-time type="text" value="">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Pergunta da etapa</label>
+                                <input data-debate-question type="text" value="">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Orientacao de mediacao</label>
+                                <textarea data-debate-guidance rows="4"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card debate-step-card" data-debate-step>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-debate-label>Etapa 2</span>
+                                <h3>Conteudo da etapa</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-debate-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label>Titulo da etapa</label>
+                                <input data-debate-title type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Tempo sugerido</label>
+                                <input data-debate-time type="text" value="">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Pergunta da etapa</label>
+                                <input data-debate-question type="text" value="">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Orientacao de mediacao</label>
+                                <textarea data-debate-guidance rows="4"></textarea>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="platform-question-card activity-content-card debate-step-card" data-debate-step>
+                        <div class="activity-card-header">
+                            <div>
+                                <span class="platform-section-label" data-debate-label>Etapa 3</span>
+                                <h3>Conteudo da etapa</h3>
+                            </div>
+                            <div class="activity-card-actions">
+                                <button type="button" class="platform-link-button platform-link-secondary" data-debate-remove>Remover</button>
+                            </div>
+                        </div>
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label>Titulo da etapa</label>
+                                <input data-debate-title type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label>Tempo sugerido</label>
+                                <input data-debate-time type="text" value="">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Pergunta da etapa</label>
+                                <input data-debate-question type="text" value="">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label>Orientacao de mediacao</label>
+                                <textarea data-debate-guidance rows="4"></textarea>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="platform-form-actions activity-stack-actions">
+                    <button type="button" class="platform-link-button platform-link-primary" data-debate-add>Adicionar etapa</button>
+                </div>
+            </article>
+
+            <aside class="platform-builder-card activity-preview-pane debate-preview-pane">
+                <span class="platform-section-label">Preview</span>
+                <h2>Veja o roteiro pronto</h2>
+                <p>Use a visualizacao para ajustar o fluxo do debate, o equilibrio entre os lados e a clareza da mediacao.</p>
+                <div class="live-preview-stack">
+                    <section class="live-preview-card live-preview-card--teal">
+                        <span class="platform-section-label">Resumo</span>
+                        <h3 data-debate-preview-title>Novo debate guiado</h3>
+                        <div class="preview-chip-row">
+                            <span class="preview-chip" data-debate-preview-format>Dois lados</span>
+                            <span class="preview-chip" data-debate-preview-count>3 etapas</span>
+                        </div>
+                    </section>
+                    <section class="live-preview-card debate-preview-card">
+                        <div class="debate-preview-sides">
+                            <article class="debate-preview-side">
+                                <span class="platform-section-label">Lado A</span>
+                                <strong data-debate-preview-side-a>Posicao A</strong>
+                            </article>
+                            <article class="debate-preview-side">
+                                <span class="platform-section-label">Lado B</span>
+                                <strong data-debate-preview-side-b>Posicao B</strong>
+                            </article>
+                        </div>
+                        <div class="debate-preview-question" data-debate-preview-question>Pergunta central do debate</div>
+                        <div class="debate-preview-steps" data-debate-preview-steps></div>
+                    </section>
+                </div>
+            </aside>
         </section>
     </main>
 </body>

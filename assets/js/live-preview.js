@@ -201,10 +201,12 @@ function buildSlidesPreview() {
             const imageUrl = textValue(slide, "slide-image-url");
             const slideColor = colorValue(slide, "slide-color");
             const textColor = colorValue(slide, "slide-text-color", "#0f172a");
+            const accentColor = colorValue(slide, "slide-accent-color", "#0ea5e9");
+            const slideFont = selectValue(slide, "slide-font") || "Destaque moderno";
             const slideLayout = selectValue(slide, "slide-layout") || "Texto acima";
 
             const textBlock = `
-                <div class="slide-preview-text" style="color: ${escapeHtml(textColor)};">
+                <div class="slide-preview-text slide-preview-text--${escapeHtml(slideFont.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"))}" style="color: ${escapeHtml(textColor)};">
                     <h3>${escapeHtml(title)}</h3>
                     ${subtitle ? `<h4>${escapeHtml(subtitle)}</h4>` : ""}
                     <p style="margin-top: 14px;">${escapeHtml(body)}</p>
@@ -238,12 +240,12 @@ function buildSlidesPreview() {
             }
 
             return `
-                <section class="live-preview-card live-preview-card--teal" style="background: linear-gradient(180deg, ${escapeHtml(slideColor)} 0%, #ffffff 100%); border-color: ${escapeHtml(slideColor)};">
+                <section class="live-preview-card live-preview-card--teal slide-preview-card" style="--slide-preview-accent: ${escapeHtml(accentColor)}; background: linear-gradient(180deg, ${escapeHtml(slideColor)} 0%, #ffffff 100%); border-color: ${escapeHtml(slideColor)};">
                     <span class="platform-section-label">Slide ${index + 1}</span>
                     <div class="preview-chip-row">
                         <span class="preview-chip">${escapeHtml(imageMode)}</span>
                         <span class="preview-chip">${escapeHtml(slideLayout)}</span>
-                        <span class="preview-chip">Cor personalizada</span>
+                        <span class="preview-chip">${escapeHtml(slideFont)}</span>
                     </div>
                     ${slideBody}
                 </section>

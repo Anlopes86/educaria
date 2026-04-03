@@ -26,10 +26,12 @@
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
                 <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
-                <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="slides" data-save-target="turma.html">Salvar na turma</button>
-                <a href="apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
             </div>
         </header>
+        <div class="builder-floating-actions">
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="slides" data-save-target="turma.html">Salvar na turma</button>
+            <a href="apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
+        </div>
 
         <section class="activity-editor-context">
             <div>
@@ -214,6 +216,18 @@
                             <span class="route-tag">Aparencia</span>
                             <div class="platform-form-grid activity-style-grid">
                                 <div class="platform-field">
+                                    <label>Fonte do slide</label>
+                                    <select data-field="slide-font">
+                                        <option>Destaque moderno</option>
+                                        <option>Leitura limpa</option>
+                                        <option>Serifada classica</option>
+                                    </select>
+                                </div>
+                                <div class="platform-field">
+                                    <label>Cor de destaque</label>
+                                    <input data-field="slide-accent-color" type="color" value="#0ea5e9">
+                                </div>
+                                <div class="platform-field">
                                     <label>Cor do slide</label>
                                     <input data-field="slide-color" type="color" value="#d7f5f6">
                                 </div>
@@ -331,6 +345,18 @@
                         <div class="activity-optional-block">
                             <span class="route-tag">Aparencia</span>
                             <div class="platform-form-grid activity-style-grid">
+                                <div class="platform-field">
+                                    <label>Fonte do slide</label>
+                                    <select data-field="slide-font">
+                                        <option>Destaque moderno</option>
+                                        <option>Leitura limpa</option>
+                                        <option>Serifada classica</option>
+                                    </select>
+                                </div>
+                                <div class="platform-field">
+                                    <label>Cor de destaque</label>
+                                    <input data-field="slide-accent-color" type="color" value="#2563eb">
+                                </div>
                                 <div class="platform-field">
                                     <label>Cor do slide</label>
                                     <input data-field="slide-color" type="color" value="#e8f2ff">

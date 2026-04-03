@@ -98,6 +98,36 @@ function builderConfig() {
         };
     }
 
+    if (document.querySelector("[data-match-pairs]")) {
+        return {
+            key: "educaria:builder:match",
+            stackSelector: "[data-match-pairs]",
+            cardSelector: "[data-match-pair]",
+            labelPrefix: "Par",
+            labelSelector: "[data-match-label]"
+        };
+    }
+
+    if (document.querySelector("[data-mind-branches]")) {
+        return {
+            key: "educaria:builder:mindmap",
+            stackSelector: "[data-mind-branches]",
+            cardSelector: "[data-mind-branch]",
+            labelPrefix: "Ramo",
+            labelSelector: "[data-mind-label]"
+        };
+    }
+
+    if (document.querySelector("[data-debate-steps]")) {
+        return {
+            key: "educaria:builder:debate",
+            stackSelector: "[data-debate-steps]",
+            cardSelector: "[data-debate-step]",
+            labelPrefix: "Etapa",
+            labelSelector: "[data-debate-label]"
+        };
+    }
+
     return null;
 }
 
