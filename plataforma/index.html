@@ -7,7 +7,9 @@
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/app-sidebar.js" defer></script>
+    <script src="../assets/js/teacher-dashboard.js" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true">
     <div class="app-shell">
@@ -31,6 +33,10 @@
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
                     <div class="sidebar-subitems" data-sidebar-class-list></div>
+                </div>
+
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false">Criar turma</button>
+                <div class="sidebar-subpanel" data-sidebar-panel="create-class" hidden>
                     <div class="sidebar-create-card">
                         <div class="platform-field">
                             <label for="sidebar-nome-turma">Nova turma</label>
@@ -81,28 +87,38 @@
         <main class="app-content">
             <section class="app-page-intro">
                 <div class="app-page-intro__content">
-                    <span class="focus-eyebrow">Painel inicial</span>
-                    <h1>Turmas e criacao de atividades agora ficam no menu lateral.</h1>
-                    <p>Use a barra da esquerda para criar uma turma, selecionar uma turma existente e entrar em qualquer formato sem passar por etapas duplicadas.</p>
-                </div>
-                <div class="app-current-class">
-                    <span>Turma atual</span>
-                    <strong data-sidebar-current-class>Nenhuma turma selecionada</strong>
+                    <h1>Painel do professor</h1>
+                    <p>Veja suas turmas, acompanhe quantas atividades já foram criadas e entre rápido na biblioteca ou na criação de novas atividades.</p>
                 </div>
             </section>
 
-            <section class="focus-card dashboard-panel">
+            <section class="focus-card dashboard-panel dashboard-panel--teacher">
                 <div class="page-section-title">
                     <div>
-                        <span class="platform-section-label">Fluxo principal</span>
-                        <h2>Comece pelo menu lateral</h2>
+                        <span class="platform-section-label">Resumo</span>
+                        <h2>Visão geral da sua conta</h2>
                     </div>
-                    <p>Abra o submenu de turmas para selecionar ou criar uma nova. Depois use o submenu de atividades para entrar direto no formato que deseja montar.</p>
+                    <p>Um atalho direto para o que mais importa no dia a dia.</p>
+                </div>
+
+                <div class="teacher-dashboard-kpis">
+                    <article class="teacher-dashboard-kpi">
+                        <strong data-dashboard-class-count>0</strong>
+                        <span>turmas</span>
+                    </article>
+                    <article class="teacher-dashboard-kpi">
+                        <strong data-dashboard-activity-count>0</strong>
+                        <span>atividades criadas</span>
+                    </article>
+                    <article class="teacher-dashboard-kpi">
+                        <strong data-dashboard-library-count>0</strong>
+                        <span>na biblioteca</span>
+                    </article>
                 </div>
 
                 <div class="utility-actions">
-                    <a href="turma.html" class="platform-link-button platform-link-primary" data-uses-selected-class>Abrir turma atual</a>
-                    <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary" data-uses-selected-class>Ir para formatos da turma</a>
+                    <a href="biblioteca.html" class="platform-link-button platform-link-primary">Ir para biblioteca</a>
+                    <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary" data-uses-selected-class>Criar atividades</a>
                 </div>
             </section>
 
@@ -110,17 +126,17 @@
                 <article class="focus-card dashboard-panel">
                     <div class="page-section-title">
                         <div>
-                            <span class="platform-section-label">Ultimas atividades</span>
-                            <h2>Retome o que voce estava fazendo</h2>
+                            <span class="platform-section-label">Turmas</span>
+                            <h2>Suas turmas</h2>
                         </div>
-                        <p>Quando voce salvar atividades novas, elas vao aparecer aqui para reabrir, editar ou apresentar depois.</p>
+                        <p>Entre em uma turma existente ou crie uma nova pela barra lateral.</p>
                     </div>
 
-                    <div class="quick-class-grid dashboard-quick-grid">
+                    <div class="quick-class-grid dashboard-quick-grid" data-dashboard-classes>
                         <article class="quick-class-card quick-class-card--active">
-                            <span class="route-tag">Vazio por enquanto</span>
-                            <h3>Nenhuma atividade recente ainda</h3>
-                            <p>Use o menu lateral para criar sua primeira turma e comecar a montar materiais.</p>
+                            <span class="route-tag">Sem turmas</span>
+                            <h3>Nenhuma turma criada ainda</h3>
+                            <p>Use o botão Criar turma na lateral para começar.</p>
                         </article>
                     </div>
                 </article>

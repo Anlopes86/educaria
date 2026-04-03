@@ -1,8 +1,11 @@
 const LESSONS_LIBRARY_KEY = "educaria:lessons";
 const ACTIVE_LESSON_KEY = "educaria:activeLessonId";
 const CLASS_CONTEXT_KEY = "educaria:selectedClass";
+const LESSON_SCOPE_LIBRARY = "library";
+const LESSON_SCOPE_CLASS = "class";
 
 function draftKeyForType(type) {
+    if (type === "lesson") return "educaria:builder:lesson";
     if (type === "quiz") return "educaria:builder:quiz";
     if (type === "flashcards") return "educaria:builder:flashcards";
     if (type === "wheel") return "educaria:builder:wheel";
@@ -14,6 +17,7 @@ function draftKeyForType(type) {
 }
 
 function stackSelectorForType(type) {
+    if (type === "lesson") return "[data-lesson-sequence-list]";
     if (type === "quiz") return "[data-quiz-stack]";
     if (type === "flashcards") return "[data-flashcards-stack]";
     if (type === "wheel") return "[data-wheel-segments]";
@@ -42,6 +46,11 @@ function writeLessonsLibrary(lessons) {
     }
 }
 
+function normalizeLessonScope(lesson) {
+    if (lesson?.scope) return lesson.scope;
+    return lesson?.className ? LESSON_SCOPE_CLASS : LESSON_SCOPE_LIBRARY;
+}
+
 function removeLessonById(id) {
     const lessons = readLessonsLibrary().filter((lesson) => lesson.id !== id);
     writeLessonsLibrary(lessons);
@@ -49,6 +58,71 @@ function removeLessonById(id) {
     if (readActiveLessonId() === id) {
         writeActiveLessonId("");
     }
+}
+
+function duplicateLessonToClass(id, targetClass) {
+    const lesson = readLessonsLibrary().find((item) => item.id === id);
+    const turma = String(targetClass || "").trim();
+    if (!lesson || !turma) return null;
+
+    const copy = {
+        ...lesson,
+        id: `lesson-${Date.now()}`,
+        className: turma,
+        scope: LESSON_SCOPE_CLASS,
+        updatedAt: new Date().toISOString()
+    };
+
+    const lessons = readLessonsLibrary();
+    lessons.unshift(copy);
+    writeLessonsLibrary(lessons);
+    return copy;
+}
+
+function addLessonToLibrary(id) {
+    const lesson = readLessonsLibrary().find((item) => item.id === id);
+    if (!lesson) return null;
+
+    const copy = {
+        ...lesson,
+        id: `lesson-${Date.now()}`,
+        className: "",
+        scope: LESSON_SCOPE_LIBRARY,
+        updatedAt: new Date().toISOString()
+    };
+
+    const lessons = readLessonsLibrary();
+    lessons.unshift(copy);
+    writeLessonsLibrary(lessons);
+    return copy;
+}
+
+function ensureLibraryToast() {
+    let toast = document.querySelector("[data-library-toast]");
+    if (toast) return toast;
+
+    toast = document.createElement("div");
+    toast.className = "platform-toast";
+    toast.hidden = true;
+    toast.setAttribute("data-library-toast", "");
+    document.body.appendChild(toast);
+    return toast;
+}
+
+let libraryToastTimer = 0;
+
+function showLibraryToast(message) {
+    const toast = ensureLibraryToast();
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.hidden = false;
+    toast.dataset.visible = "true";
+    window.clearTimeout(libraryToastTimer);
+    libraryToastTimer = window.setTimeout(() => {
+        toast.dataset.visible = "false";
+        toast.hidden = true;
+    }, 2200);
 }
 
 function readActiveLessonId() {
@@ -247,11 +321,32 @@ function summarizeDebateDraft(rawDraft) {
     return { title, summary: `${count} etapas - ${question}`, type: "Debate guiado", materialType: "debate" };
 }
 
+function summarizeLessonSequenceDraft(rawDraft) {
+    if (!rawDraft) {
+        return { title: "Aula completa sem titulo", summary: "Sequencia ainda sem blocos definidos.", type: "Aula completa", materialType: "lesson" };
+    }
+
+    try {
+        const parsed = JSON.parse(rawDraft);
+        const blocks = Array.isArray(parsed.blocks) ? parsed.blocks : [];
+        const firstBlock = blocks[0];
+        const totalDuration = Number(parsed.duration || 0);
+        const title = (parsed.title || "").trim() || "Aula completa";
+        const summary = blocks.length
+            ? `${blocks.length} blocos - ${firstBlock?.label || firstBlock?.lessonTitle || "Inicio da sequencia"}${totalDuration ? ` - ${totalDuration} min` : ""}`
+            : "Sequencia ainda sem blocos definidos.";
+        return { title, summary, type: "Aula completa", materialType: "lesson" };
+    } catch (error) {
+        return { title: "Aula completa", summary: "Sequencia ainda sem blocos definidos.", type: "Aula completa", materialType: "lesson" };
+    }
+}
+
 function summarizeCurrentDraft(preferredType = "") {
     const currentType = preferredType || (typeof readCurrentMaterialType === "function" ? readCurrentMaterialType() : "slides");
     const currentDraft = readCurrentDraftByType(currentType);
 
     if (currentDraft) {
+        if (currentType === "lesson") return { rawDraft: currentDraft, summary: summarizeLessonSequenceDraft(currentDraft), materialType: "lesson" };
         if (currentType === "flashcards") return { rawDraft: currentDraft, summary: summarizeFlashcardsDraft(currentDraft), materialType: "flashcards" };
         if (currentType === "quiz") return { rawDraft: currentDraft, summary: summarizeQuizDraft(currentDraft), materialType: "quiz" };
         if (currentType === "wheel") return { rawDraft: currentDraft, summary: summarizeWheelDraft(currentDraft), materialType: "wheel" };
@@ -262,7 +357,7 @@ function summarizeCurrentDraft(preferredType = "") {
         return { rawDraft: currentDraft, summary: summarizeSlidesDraft(currentDraft), materialType: "slides" };
     }
 
-    const fallbackOrder = ["slides", "flashcards", "quiz", "wheel", "memory", "match", "mindmap", "debate"];
+    const fallbackOrder = ["lesson", "slides", "flashcards", "quiz", "wheel", "memory", "match", "mindmap", "debate"];
     for (const type of fallbackOrder) {
         const draft = readCurrentDraftByType(type);
         if (!draft) continue;
@@ -287,7 +382,97 @@ function formatLessonDate(isoString) {
     }
 }
 
-function saveCurrentLessonToClass(preferredType = "") {
+function markClassPageReady() {
+    if (!document.body?.classList.contains("theme-class")) return;
+    document.body.dataset.classPageReady = "true";
+}
+
+function duplicateModalTemplate() {
+    return `
+        <div class="platform-modal-backdrop" data-duplicate-modal hidden>
+            <div class="platform-modal-card" role="dialog" aria-modal="true" aria-labelledby="duplicate-lesson-title">
+                <div class="page-section-title page-section-title--compact">
+                    <div>
+                        <span class="platform-section-label">Duplicar atividade</span>
+                        <h2 id="duplicate-lesson-title">Para qual turma você quer duplicar?</h2>
+                    </div>
+                    <p data-duplicate-modal-summary>Escolha a turma de destino para criar uma cópia desta atividade.</p>
+                </div>
+                <div class="platform-field">
+                    <label for="duplicate-lesson-class">Turma de destino</label>
+                    <select id="duplicate-lesson-class" data-duplicate-modal-select></select>
+                </div>
+                <p class="sidebar-feedback" data-duplicate-modal-feedback hidden></p>
+                <div class="utility-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-modal-cancel>Cancelar</button>
+                    <button type="button" class="platform-link-button platform-link-primary" data-duplicate-modal-confirm>Confirmar</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function ensureDuplicateModal() {
+    let modal = document.querySelector("[data-duplicate-modal]");
+    if (modal) return modal;
+    document.body.insertAdjacentHTML("beforeend", duplicateModalTemplate());
+    return document.querySelector("[data-duplicate-modal]");
+}
+
+function openDuplicateModal(lessonId) {
+    const modal = ensureDuplicateModal();
+    const select = modal?.querySelector("[data-duplicate-modal-select]");
+    const summary = modal?.querySelector("[data-duplicate-modal-summary]");
+    const feedback = modal?.querySelector("[data-duplicate-modal-feedback]");
+    const lesson = readLessonsLibrary().find((item) => item.id === lessonId);
+    const current = currentClassName();
+    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses().filter((item) => item !== current) : [];
+    if (!modal || !select || !lesson) return;
+
+    modal.dataset.duplicateLessonId = lessonId;
+    if (summary) {
+        summary.textContent = `Você vai criar uma cópia de "${lesson.title}" em outra turma.`;
+    }
+    if (feedback) {
+        feedback.hidden = true;
+        feedback.textContent = "";
+    }
+
+    select.innerHTML = classes.length
+        ? classes.map((className) => `<option value="${className}">${className}</option>`).join("")
+        : `<option value="">Nenhuma outra turma disponível</option>`;
+    select.disabled = !classes.length;
+    modal.hidden = false;
+}
+
+function closeDuplicateModal() {
+    const modal = document.querySelector("[data-duplicate-modal]");
+    if (!modal) return;
+    modal.hidden = true;
+    modal.dataset.duplicateLessonId = "";
+}
+
+function confirmDuplicateModal() {
+    const modal = document.querySelector("[data-duplicate-modal]");
+    const select = modal?.querySelector("[data-duplicate-modal-select]");
+    const feedback = modal?.querySelector("[data-duplicate-modal-feedback]");
+    if (!modal || !select) return;
+
+    const lessonId = modal.dataset.duplicateLessonId || "";
+    const targetClass = select.value || "";
+    if (!targetClass) {
+        if (feedback) {
+            feedback.hidden = false;
+            feedback.textContent = "Escolha uma turma para continuar.";
+        }
+        return;
+    }
+
+    duplicateLessonToClass(lessonId, targetClass);
+    closeDuplicateModal();
+}
+
+function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
     const turma = currentClassName() || "Turma";
     if (preferredType && typeof setCurrentMaterialType === "function") {
         setCurrentMaterialType(preferredType);
@@ -301,11 +486,16 @@ function saveCurrentLessonToClass(preferredType = "") {
     const lessons = readLessonsLibrary();
     const activeId = readActiveLessonId();
     const existing = lessons.find((lesson) => lesson.id === activeId);
-    const lessonId = existing && (existing.materialType || "slides") === materialType ? existing.id : `lesson-${Date.now()}`;
+    const lessonId = existing
+        && (existing.materialType || "slides") === materialType
+        && normalizeLessonScope(existing) === scope
+        ? existing.id
+        : `lesson-${Date.now()}`;
 
-    const record = {
+    return {
         id: lessonId,
-        className: turma,
+        className: scope === LESSON_SCOPE_CLASS ? turma : "",
+        scope,
         title: summary.title,
         summary: summary.summary,
         type: summary.type,
@@ -313,18 +503,45 @@ function saveCurrentLessonToClass(preferredType = "") {
         updatedAt: new Date().toISOString(),
         draft: rawDraft
     };
+}
 
-    const nextLessons = lessons.filter((lesson) => lesson.id !== lessonId);
+function persistLessonRecord(record) {
+    const lessons = readLessonsLibrary();
+    const nextLessons = lessons.filter((lesson) => lesson.id !== record.id);
     nextLessons.unshift(record);
     writeLessonsLibrary(nextLessons);
-    writeActiveLessonId(lessonId);
-    updateCurrentClass(turma);
-
-    if (typeof setCurrentMaterialType === "function") {
-        setCurrentMaterialType(materialType);
+    writeActiveLessonId(record.id);
+    if (record.className) {
+        updateCurrentClass(record.className);
     }
-
+    if (typeof setCurrentMaterialType === "function") {
+        setCurrentMaterialType(record.materialType || "slides");
+    }
     return record;
+}
+
+function saveCurrentLessonToClass(preferredType = "") {
+    const record = buildLessonRecord(preferredType, LESSON_SCOPE_CLASS);
+    return persistLessonRecord(record);
+}
+
+function saveCurrentLessonToLibrary(preferredType = "") {
+    const record = buildLessonRecord(preferredType, LESSON_SCOPE_LIBRARY);
+    return persistLessonRecord(record);
+}
+
+function libraryMaterials() {
+    return readLessonsLibrary().filter((lesson) => normalizeLessonScope(lesson) === LESSON_SCOPE_LIBRARY);
+}
+
+function classMaterials(className) {
+    return readLessonsLibrary().filter((lesson) => {
+        return normalizeLessonScope(lesson) === LESSON_SCOPE_CLASS && lesson.className === className;
+    });
+}
+
+function allActivityMaterials() {
+    return readLessonsLibrary().filter((lesson) => (lesson.materialType || "slides") !== "lesson");
 }
 
 function activateLessonById(id) {
@@ -332,7 +549,16 @@ function activateLessonById(id) {
     if (!lesson) return null;
 
     writeActiveLessonId(lesson.id);
-    updateCurrentClass(lesson.className);
+    if ((lesson.materialType || "slides") === "lesson") {
+        try {
+            localStorage.setItem("educaria:activeLessonSequenceId", lesson.id);
+        } catch (error) {
+            console.warn("EducarIA lesson unavailable:", error);
+        }
+    }
+    if (lesson.className) {
+        updateCurrentClass(lesson.className);
+    }
     writeCurrentDraftByType(lesson.materialType || "slides", lesson.draft);
     if (typeof setCurrentMaterialType === "function") {
         setCurrentMaterialType(lesson.materialType || "slides");
@@ -347,6 +573,7 @@ function readActiveLesson() {
 }
 
 function editorPathForLesson(lesson) {
+    if (lesson.materialType === "lesson") return "criar-aula.html";
     if (lesson.materialType === "quiz") return "quiz-builder.html";
     if (lesson.materialType === "flashcards") return "flashcards-builder.html";
     if (lesson.materialType === "wheel") return "roleta-builder.html";
@@ -365,6 +592,7 @@ function presentationPathForLesson(lesson) {
 }
 
 function materialGroupLabel(type) {
+    if (type === "lesson") return "Aula completa";
     if (type === "quiz") return "Quiz";
     if (type === "flashcards") return "Flashcards";
     if (type === "wheel") return "Roleta";
@@ -376,6 +604,7 @@ function materialGroupLabel(type) {
 }
 
 function materialGroupDescription(type) {
+    if (type === "lesson") return "Sequencias que combinam varias atividades em uma unica aula.";
     if (type === "quiz") return "Perguntas para revisar, aplicar e projetar em sala.";
     if (type === "flashcards") return "Cards para retomada rapida e revisao visual.";
     if (type === "wheel") return "Sorteios, comandos e desafios prontos para a turma.";
@@ -390,17 +619,28 @@ function bindSaveLessonAction() {
     const buttons = document.querySelectorAll("[data-save-lesson]");
     if (!buttons.length) return;
 
-    buttons.forEach((button) => {
-        button.addEventListener("click", (event) => {
-            event.preventDefault();
-            const material = button.dataset.saveMaterial || "";
-            if (material && typeof setCurrentMaterialType === "function") {
-                setCurrentMaterialType(material);
-            }
-            saveCurrentLessonToClass(material);
-            window.location.href = button.dataset.saveTarget || "turma.html";
+        buttons.forEach((button) => {
+            button.addEventListener("click", (event) => {
+                event.preventDefault();
+                const material = button.dataset.saveMaterial || "";
+                if (material && typeof setCurrentMaterialType === "function") {
+                    setCurrentMaterialType(material);
+                }
+                if (material === "lesson" && typeof saveLessonSequenceToClass === "function") {
+                    const saveMode = button.dataset.saveScope || LESSON_SCOPE_CLASS;
+                    saveLessonSequenceToClass(saveMode);
+                    window.location.href = button.dataset.saveTarget || "turma.html";
+                    return;
+                }
+                const saveMode = button.dataset.saveScope || LESSON_SCOPE_CLASS;
+                if (saveMode === LESSON_SCOPE_LIBRARY) {
+                    saveCurrentLessonToLibrary(material);
+                } else {
+                    saveCurrentLessonToClass(material);
+                }
+                window.location.href = button.dataset.saveTarget || "turma.html";
+            });
         });
-    });
 }
 
 function deleteLessonAndRefresh(id) {
@@ -430,7 +670,7 @@ function hydrateClassPage() {
         node.textContent = turma;
     });
 
-    const lessons = readLessonsLibrary().filter((lesson) => lesson.className === turma);
+    const lessons = classMaterials(turma);
     if (!lessons.length) {
         if (listRoot) {
             listRoot.innerHTML = `
@@ -450,6 +690,7 @@ function hydrateClassPage() {
         if (actionsRoot) {
             actionsRoot.innerHTML = "";
         }
+        markClassPageReady();
         return;
     }
 
@@ -461,7 +702,7 @@ function hydrateClassPage() {
             return groups;
         }, {});
 
-        const groupOrder = ["quiz", "slides", "flashcards", "wheel", "memory", "match", "mindmap", "debate"];
+        const groupOrder = ["lesson", "quiz", "slides", "flashcards", "wheel", "memory", "match", "mindmap", "debate"];
         listRoot.innerHTML = groupOrder
             .filter((key) => groupedLessons[key]?.length)
             .map((key) => `
@@ -484,10 +725,11 @@ function hydrateClassPage() {
                                     <span>${lesson.type}</span>
                                 </div>
                                 <div class="lesson-history-actions">
-                                    <a href="aula-publicada.html" class="platform-link-button platform-link-primary" data-open-lesson="${lesson.id}">Abrir resumo</a>
+                                    <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-present-lesson="${lesson.id}">Apresentar</a>
                                     <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-edit-lesson="${lesson.id}">Editar</a>
-                                    <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-present-lesson="${lesson.id}">Apresentar</a>
-                                    <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Excluir</button>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${lesson.id}">Adicionar a biblioteca</button>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${lesson.id}">Duplicar para outra turma</button>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Remover</button>
                                 </div>
                             </article>
                         `).join("")}
@@ -506,20 +748,40 @@ function hydrateClassPage() {
     if (actionsRoot) {
         const activeLesson = lessons[0];
         actionsRoot.innerHTML = `
-            <a href="aula-publicada.html" class="platform-link-button platform-link-primary" data-open-lesson="${activeLesson.id}" data-lesson-action="open">Abrir resumo</a>
-            <a href="${editorPathForLesson(activeLesson)}" class="platform-link-button platform-link-secondary" data-edit-lesson="${activeLesson.id}" data-lesson-action="edit">Editar material</a>
-            <a href="${presentationPathForLesson(activeLesson)}" class="platform-link-button platform-link-secondary" data-present-lesson="${activeLesson.id}" data-lesson-action="present">Abrir apresentacao</a>
-            <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${activeLesson.id}" data-lesson-action="delete">Excluir atividade</button>
+            <a href="${presentationPathForLesson(activeLesson)}" class="platform-link-button platform-link-primary" data-present-lesson="${activeLesson.id}" data-lesson-action="present">Apresentar</a>
+            <a href="${editorPathForLesson(activeLesson)}" class="platform-link-button platform-link-secondary" data-edit-lesson="${activeLesson.id}" data-lesson-action="edit">Editar</a>
+            <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${activeLesson.id}" data-lesson-action="library">Adicionar a biblioteca</button>
+            <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${activeLesson.id}" data-lesson-action="duplicate">Duplicar para outra turma</button>
+            <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${activeLesson.id}" data-lesson-action="delete">Remover</button>
         `;
     }
+
+    markClassPageReady();
 }
 
 function bindLessonActivationLinks() {
     document.addEventListener("click", (event) => {
-        const trigger = event.target.closest("[data-open-lesson], [data-edit-lesson], [data-present-lesson]");
+        const libraryTrigger = event.target.closest("[data-library-lesson]");
+        if (libraryTrigger) {
+            event.preventDefault();
+            const duplicated = addLessonToLibrary(libraryTrigger.dataset.libraryLesson || "");
+            if (duplicated) {
+                showLibraryToast("Atividade adicionada a biblioteca com sucesso.");
+            }
+            return;
+        }
+
+        const duplicateTrigger = event.target.closest("[data-duplicate-lesson]");
+        if (duplicateTrigger) {
+            event.preventDefault();
+            openDuplicateModal(duplicateTrigger.dataset.duplicateLesson || "");
+            return;
+        }
+
+        const trigger = event.target.closest("[data-edit-lesson], [data-present-lesson]");
         if (!trigger) return;
 
-        const lessonId = trigger.dataset.openLesson || trigger.dataset.editLesson || trigger.dataset.presentLesson;
+        const lessonId = trigger.dataset.editLesson || trigger.dataset.presentLesson;
         if (!lessonId) return;
         activateLessonById(lessonId);
     });
@@ -540,12 +802,12 @@ function bindLessonActivationLinks() {
             const lesson = readLessonsLibrary().find((item) => item.id === lessonId);
             if (!lesson) return;
 
-            const open = actionsRoot.querySelector('[data-lesson-action="open"]');
             const edit = actionsRoot.querySelector('[data-lesson-action="edit"]');
             const present = actionsRoot.querySelector('[data-lesson-action="present"]');
+            const library = actionsRoot.querySelector('[data-lesson-action="library"]');
+            const duplicate = actionsRoot.querySelector('[data-lesson-action="duplicate"]');
             const remove = actionsRoot.querySelector('[data-lesson-action="delete"]');
 
-            if (open) open.dataset.openLesson = lessonId;
             if (edit) {
                 edit.dataset.editLesson = lessonId;
                 edit.setAttribute("href", editorPathForLesson(lesson));
@@ -554,14 +816,73 @@ function bindLessonActivationLinks() {
                 present.dataset.presentLesson = lessonId;
                 present.setAttribute("href", presentationPathForLesson(lesson));
             }
+            if (library) library.dataset.libraryLesson = lessonId;
+            if (duplicate) duplicate.dataset.duplicateLesson = lessonId;
             if (remove) remove.dataset.deleteLesson = lessonId;
         });
     }
+
+    document.addEventListener("click", (event) => {
+        if (event.target.closest("[data-duplicate-modal-cancel]")) {
+            closeDuplicateModal();
+            return;
+        }
+
+        if (event.target.closest("[data-duplicate-modal-confirm]")) {
+            confirmDuplicateModal();
+            return;
+        }
+
+        if (event.target.matches("[data-duplicate-modal]")) {
+            closeDuplicateModal();
+        }
+    });
+}
+
+function hydrateLibraryPage() {
+    const root = document.querySelector("[data-library-materials]");
+    const countNode = document.querySelector("[data-library-count]");
+    if (!root && !countNode) return;
+
+    const lessons = libraryMaterials();
+    if (countNode) {
+        countNode.textContent = `${lessons.length} ${lessons.length === 1 ? "material salvo" : "materiais salvos"}`;
+    }
+
+    if (!root) return;
+    if (!lessons.length) {
+        root.innerHTML = `
+            <article class="lesson-history-card">
+                <span class="route-tag">Biblioteca vazia</span>
+                <h3>Nenhum material salvo na biblioteca ainda</h3>
+                <p>Use “Salvar na biblioteca” em qualquer atividade para montar seu acervo reutilizável.</p>
+            </article>
+        `;
+        return;
+    }
+
+    root.innerHTML = lessons.map((lesson) => `
+        <article class="lesson-history-card lesson-history-card--grouped">
+            <span class="route-tag">${materialGroupLabel(lesson.materialType || "slides")}</span>
+            <h3>${lesson.title}</h3>
+            <p>${lesson.summary}</p>
+            <div class="lesson-history-meta">
+                <span>Atualizado em ${formatLessonDate(lesson.updatedAt)}</span>
+                <span>${lesson.type}</span>
+            </div>
+            <div class="lesson-history-actions">
+                <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-edit-lesson="${lesson.id}">Editar</a>
+                <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-present-lesson="${lesson.id}">Apresentar</a>
+                <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Excluir</button>
+            </div>
+        </article>
+    `).join("");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     bindSaveLessonAction();
     hydrateCompletionSummary();
     hydrateClassPage();
+    hydrateLibraryPage();
     bindLessonActivationLinks();
 });

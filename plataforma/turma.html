@@ -11,14 +11,14 @@
     <script src="../assets/js/app-sidebar.js" defer></script>
     <script src="../assets/js/class-format-picker.js" defer></script>
 </head>
-<body class="product-body theme-class" data-requires-auth="true">
+<body class="product-body theme-class" data-requires-auth="true" data-class-page-ready="false">
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="index.html" class="platform-brand app-sidebar-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Painel da turma</strong>
+                    <strong>Turma</strong>
                 </div>
             </a>
 
@@ -33,6 +33,10 @@
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
                     <div class="sidebar-subitems" data-sidebar-class-list></div>
+                </div>
+
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false">Criar turma</button>
+                <div class="sidebar-subpanel" data-sidebar-panel="create-class" hidden>
                     <div class="sidebar-create-card">
                         <div class="platform-field">
                             <label for="sidebar-nome-turma">Nova turma</label>
@@ -81,26 +85,20 @@
         </aside>
 
         <main class="app-content">
-            <section class="app-page-intro">
+            <section class="app-page-intro class-page-intro">
                 <div class="app-page-intro__content">
-                    <span class="focus-eyebrow">Turma atual</span>
                     <h1 data-class-title>Turma</h1>
-                    <p>Use este painel para criar novas atividades, trocar rapidamente de formato e reencontrar tudo o que ja foi salvo para esta turma.</p>
-                </div>
-                <div class="app-current-class">
-                    <span>Contexto ativo</span>
-                    <strong data-sidebar-current-class>Turma</strong>
                 </div>
             </section>
 
             <section class="class-hero">
                 <article class="class-hero-main">
                     <span class="focus-eyebrow">Criacao rapida</span>
-                    <h2>Escolha um formato sem sair da turma</h2>
-                    <p>Use o menu lateral para trocar de formato a qualquer momento ou selecione abaixo o tipo de atividade que deseja montar agora.</p>
+                    <h2>O que você quer fazer?</h2>
+                    <p>Entre direto em um novo formato ou abra o acervo da turma para retomar o que já foi criado.</p>
                     <div class="class-hero-actions">
-                        <a href="#formatos-criar" class="platform-link-button platform-link-primary">Ver formatos</a>
-                        <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Abrir biblioteca</a>
+                        <a href="#formatos-criar" class="platform-link-button platform-link-primary">Criar atividade</a>
+                        <a href="#atividades-salvas" class="platform-link-button platform-link-secondary">Abrir atividades salvas</a>
                     </div>
                     <div class="class-format-shortcut">
                         <div class="platform-field">
@@ -121,27 +119,15 @@
                         <button type="button" class="platform-link-button platform-link-secondary" data-format-go>Continuar</button>
                     </div>
                 </article>
-
-                <aside class="class-hero-side">
-                    <div class="class-status-card">
-                        <span class="platform-section-label">Visao rapida</span>
-                        <h2>Atividades organizadas por tipo</h2>
-                        <ul class="mini-list">
-                            <li>Escolha outra turma direto no menu lateral.</li>
-                            <li>Abra um novo formato sem sair deste painel.</li>
-                            <li>O que for salvo para esta turma aparece abaixo automaticamente.</li>
-                        </ul>
-                    </div>
-                </aside>
             </section>
 
             <section class="focus-card class-format-browser" id="formatos-criar">
                 <div class="page-section-title">
                     <div>
                         <span class="platform-section-label">Formatos para criar</span>
-                        <h2>Escolha pelo tipo de atividade</h2>
+                        <h2>Escolha pelo tipo de experiência</h2>
                     </div>
-                    <p>Os cards abaixo continuam disponiveis para o professor bater o olho e entrar rapido no formato desejado.</p>
+                    <p>Os atalhos abaixo priorizam leitura rápida, para você bater o olho e entrar direto no formato certo.</p>
                 </div>
 
                 <div class="class-format-card-grid">
@@ -193,13 +179,13 @@
                 </div>
             </section>
 
-            <section class="focus-card class-library-panel">
+            <section class="focus-card class-library-panel" id="atividades-salvas">
                 <div class="page-section-title">
                     <div>
                         <span class="platform-section-label">Atividades da turma</span>
-                        <h2>Organizadas por tipo</h2>
+                        <h2>Acervo organizado por tipo</h2>
                     </div>
-                    <p>Abaixo ficam apenas as atividades que ja foram criadas para esta turma, separadas pelo tipo de material.</p>
+                    <p>Ficam aqui apenas os materiais desta turma, agrupados por formato para facilitar retomada, edição e apresentação.</p>
                 </div>
 
                 <div class="class-activity-groups" data-saved-lessons></div>

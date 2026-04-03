@@ -3,156 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Revisar Aula | EducarIA</title>
+    <title>Aula Completa | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/lesson-sequence-builder.js" defer></script>
 </head>
-<body class="product-body theme-editor" data-material-type="slides">
-    <main class="platform-shell platform-flow-shell lesson-review-shell">
+<body class="product-body theme-editor" data-material-type="lesson">
+    <main class="platform-shell platform-flow-shell lesson-review-shell lesson-sequence-shell">
         <header class="platform-topbar">
             <a href="turma.html" class="platform-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Revisao da aula</strong>
+                    <strong>Aula completa</strong>
                 </div>
             </a>
             <div class="platform-top-actions">
-                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
-                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
-                <a href="apresentacao.html" class="platform-link-button platform-link-secondary">Abrir apresentacao</a>
-                <a href="aula-publicada.html?material=slides" class="platform-link-button platform-link-primary">Marcar como pronta</a>
+                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para a turma</a>
+                <a href="aula-completa-apresentacao.html" class="platform-link-button platform-link-secondary">Abrir apresentação</a>
+                <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="lesson" data-save-target="turma.html">Salvar na turma</button>
             </div>
         </header>
 
         <section class="lesson-review-hero">
             <article class="lesson-review-main">
-                <span class="focus-eyebrow">Rascunho atual</span>
-                <h1>Has Technology Changed Education?</h1>
-                <p>8&ordm; ano B, ingles, 50 minutos. A revisao foi reorganizada para o professor validar rapidamente a sequencia, ajustar pontos criticos e seguir para a sala.</p>
-                <div class="class-hero-actions">
-                    <a href="apresentacao.html" class="platform-link-button platform-link-secondary">Ver como vai aparecer</a>
-                    <a href="aula-publicada.html?material=slides" class="platform-link-button platform-link-primary">Pronta para usar</a>
-                </div>
+                <span class="focus-eyebrow">Sequência da aula</span>
+                <h1>Monte a ordem das atividades em uma única experiência.</h1>
+                <p>Adicione blocos já salvos, organize a sequência e apresente tudo em fluxo, sem misturar a edição profunda de cada ferramenta.</p>
             </article>
 
             <aside class="lesson-review-side">
-                <div class="class-status-card">
-                    <span class="platform-section-label">Checklist rapido</span>
-                    <h2>Revise sem recomecar</h2>
+                <div class="class-status-card lesson-sequence-status">
+                    <span class="platform-section-label">Resumo rápido</span>
+                    <h2 data-lesson-sequence-count>0 blocos</h2>
                     <ul class="mini-list">
-                        <li>A abertura chama a atencao da turma?</li>
-                        <li>O desenvolvimento esta claro e no tempo certo?</li>
-                        <li>O fechamento verifica se houve entendimento?</li>
+                        <li><strong data-lesson-sequence-duration>0 min</strong> de duração planejada</li>
+                        <li><strong data-lesson-sequence-class>Turma</strong> vinculada</li>
+                        <li>Apresente em sequência no modo de sala</li>
                     </ul>
                 </div>
             </aside>
         </section>
 
-        <section class="lesson-review-summary">
-            <article class="route-card">
-                <span class="route-tag">Turma</span>
-                <h3>8&ordm; ano B</h3>
-                <p>Disciplina: ingles.</p>
-            </article>
-            <article class="route-card">
-                <span class="route-tag">Objetivo</span>
-                <h3>Present perfect em contexto</h3>
-                <p>Discutir mudancas na educacao usando exemplos proximos da realidade da turma.</p>
-            </article>
-            <article class="route-card">
-                <span class="route-tag">Status</span>
-                <h3>Em revisao</h3>
-                <p>A sequencia esta pronta para ajustes finais e validacao antes da aula.</p>
-            </article>
-        </section>
-
-        <section class="focus-card lesson-review-panel">
-            <div class="page-section-title">
-                <div>
-                    <span class="platform-section-label">Sequencia da aula</span>
-                    <h2>Validar bloco por bloco</h2>
+        <section class="lesson-sequence-layout">
+            <section class="focus-card lesson-sequence-main">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Dados da aula</span>
+                        <h2>Defina o contexto e a ordem</h2>
+                    </div>
+                    <p>O conteúdo de cada atividade continua nos builders próprios. Aqui você só monta a sequência.</p>
                 </div>
-                <p>Em vez de apenas ler o plano, o professor precisa identificar rapidamente onde ajustar.</p>
-            </div>
 
-            <div class="lesson-review-grid">
-                <article class="lesson-review-block">
-                    <div class="lesson-review-block-head">
-                        <span class="platform-badge-soft">Abertura</span>
-                        <span class="platform-block-chip">5 min</span>
+                <div class="platform-form-grid lesson-sequence-meta">
+                    <div class="platform-field platform-field-wide">
+                        <label for="lesson-title">Título da aula</label>
+                        <input id="lesson-title" type="text" placeholder="Ex.: Aula 1 - Revolução Francesa">
                     </div>
-                    <h3>Pergunta inicial com imagem</h3>
-                    <p>Comparar duas cenas de sala de aula e perguntar o que mudou com a tecnologia.</p>
-                    <div class="utility-actions">
-                        <a href="slides-builder.html" class="platform-link-button platform-link-secondary">Ajustar slide</a>
+                    <div class="platform-field">
+                        <label for="lesson-objective">Objetivo curto</label>
+                        <input id="lesson-objective" type="text" placeholder="O que a turma precisa alcançar?">
                     </div>
-                </article>
-
-                <article class="lesson-review-block">
-                    <div class="lesson-review-block-head">
-                        <span class="platform-badge-soft">Explicacao</span>
-                        <span class="platform-block-chip">10 min</span>
+                    <div class="platform-field">
+                        <label for="lesson-duration">Duração total</label>
+                        <input id="lesson-duration" type="number" min="0" step="1" placeholder="50">
                     </div>
-                    <h3>Present perfect em contexto</h3>
-                    <p>Explicacao curta com frases ligadas a escola, tecnologia e cotidiano dos alunos.</p>
-                    <div class="utility-actions">
-                        <a href="slides-builder.html" class="platform-link-button platform-link-secondary">Refinar explicacao</a>
-                    </div>
-                </article>
-
-                <article class="lesson-review-block">
-                    <div class="lesson-review-block-head">
-                        <span class="platform-badge-soft">Atividade</span>
-                        <span class="platform-block-chip">15 min</span>
-                    </div>
-                    <h3>Debate em duplas</h3>
-                    <p>Perguntas guiadas para comparar a escola antes e depois da tecnologia.</p>
-                    <div class="utility-actions">
-                        <a href="flashcards-builder.html" class="platform-link-button platform-link-secondary">Criar apoio</a>
-                    </div>
-                </article>
-
-                <article class="lesson-review-block">
-                    <div class="lesson-review-block-head">
-                        <span class="platform-badge-soft">Fechamento</span>
-                        <span class="platform-block-chip">8 min</span>
-                    </div>
-                    <h3>Checagem final</h3>
-                    <p>Revisao rapida para verificar forma, uso e contexto antes de encerrar a aula.</p>
-                    <div class="utility-actions">
-                        <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">Ajustar quiz</a>
-                    </div>
-                </article>
-            </div>
-        </section>
-
-        <section class="focus-card lesson-review-panel">
-            <div class="page-section-title">
-                <div>
-                    <span class="platform-section-label">Materiais ligados a aula</span>
-                    <h2>O que ja esta pronto para usar</h2>
                 </div>
-                <p>Esses materiais entram como extensoes da aula principal. O professor enxerga o conjunto e abre o que fizer sentido.</p>
-            </div>
 
-            <div class="lesson-history-grid">
-                <a href="slides-builder.html" class="lesson-history-card">
-                    <span class="route-tag">Apresentacao</span>
-                    <h3>Slides da aula</h3>
-                    <p>Sequencia visual principal para projetar em sala.</p>
-                </a>
-                <a href="quiz-builder.html" class="lesson-history-card">
-                    <span class="route-tag">Fechamento</span>
-                    <h3>Quiz de revisao</h3>
-                    <p>Checagem curta para consolidar entendimento ao final.</p>
-                </a>
-                <a href="flashcards-builder.html" class="lesson-history-card">
-                    <span class="route-tag">Apoio</span>
-                    <h3>Flashcards de retomada</h3>
-                    <p>Material complementar para reforco e revisao posterior.</p>
-                </a>
-            </div>
+                <section class="lesson-sequence-add">
+                    <div class="page-section-title page-section-title--compact">
+                        <div>
+                            <span class="platform-section-label">Adicionar bloco</span>
+                            <h2>Escolha um material salvo</h2>
+                        </div>
+                        <p>Use atividades já prontas da turma e monte a progressão da aula.</p>
+                    </div>
+
+                    <div class="platform-form-grid">
+                        <div class="platform-field">
+                            <label for="lesson-block-type">Tipo de atividade</label>
+                            <select id="lesson-block-type" data-lesson-block-type></select>
+                        </div>
+                        <div class="platform-field">
+                            <label for="lesson-block-material">Material salvo</label>
+                            <select id="lesson-block-material" data-lesson-block-material></select>
+                        </div>
+                        <div class="platform-field">
+                            <label for="lesson-block-duration">Tempo do bloco</label>
+                            <input id="lesson-block-duration" type="number" min="1" step="1" value="8">
+                        </div>
+                    </div>
+                    <div class="utility-actions">
+                        <button type="button" class="platform-link-button platform-link-primary" data-add-lesson-block>Adicionar à sequência</button>
+                    </div>
+                </section>
+
+                <section class="lesson-sequence-blocks">
+                    <div class="page-section-title page-section-title--compact">
+                        <div>
+                            <span class="platform-section-label">Blocos da aula</span>
+                            <h2>Siga a ordem em que a turma vai ver</h2>
+                        </div>
+                        <p>Reordene, ajuste o tempo e abra o material quando quiser editar mais a fundo.</p>
+                    </div>
+
+                    <div class="lesson-sequence-empty" data-lesson-sequence-empty>
+                        <h3>Nenhum bloco na sequência ainda</h3>
+                        <p>Adicione uma atividade salva para começar a montar a aula completa.</p>
+                    </div>
+
+                    <div class="lesson-sequence-list" data-lesson-sequence-list></div>
+                </section>
+            </section>
+
+            <aside class="focus-card lesson-sequence-preview">
+                <div class="page-section-title page-section-title--compact">
+                    <div>
+                        <span class="platform-section-label">Preview</span>
+                        <h2>Bloco selecionado</h2>
+                    </div>
+                    <p>Veja o que entra na aula e abra a edição completa se precisar.</p>
+                </div>
+
+                <div class="lesson-sequence-preview-card" data-lesson-preview-card>
+                    <span class="route-tag">Sem bloco</span>
+                    <h3>Selecione uma atividade</h3>
+                    <p>Ao clicar em um bloco da sequência, os detalhes aparecem aqui.</p>
+                </div>
+
+                <div class="lesson-sequence-preview-actions utility-actions" data-lesson-preview-actions hidden>
+                    <a href="slides-builder.html" class="platform-link-button platform-link-secondary" data-lesson-preview-edit>Editar material</a>
+                    <a href="apresentacao.html" class="platform-link-button platform-link-primary" data-lesson-preview-present>Testar bloco</a>
+                </div>
+            </aside>
         </section>
     </main>
 </body>

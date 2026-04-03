@@ -2096,7 +2096,6 @@ body.product-body.theme-generate {
 .action-card-grid,
 .quick-class-grid,
 .class-format-list,
-.class-kpi-grid,
 .class-layout-grid,
 .dashboard-grid,
 .lesson-history-grid {
@@ -2450,6 +2449,36 @@ body.product-body.theme-auth {
     padding: 24px;
 }
 
+.dashboard-panel--teacher {
+    display: grid;
+    gap: 18px;
+}
+
+.teacher-dashboard-kpis {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.teacher-dashboard-kpi {
+    display: grid;
+    gap: 6px;
+    padding: 18px 20px;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.teacher-dashboard-kpi strong {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    color: var(--navy-dark);
+}
+
+.teacher-dashboard-kpi span {
+    color: var(--gray-dark);
+}
+
 .dashboard-quick-grid,
 .dashboard-shortcuts,
 .action-card-grid {
@@ -2495,6 +2524,33 @@ body.product-body.theme-auth {
     grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
 }
 
+.class-page-intro {
+    position: relative;
+    align-items: start;
+    gap: 14px;
+    padding: 26px 28px;
+    border-radius: 28px;
+    border: 1px solid rgba(14, 165, 233, 0.14);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 26%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.96) 100%);
+    box-shadow: 0 18px 38px -30px rgba(15, 23, 42, 0.22);
+}
+
+.class-page-intro__content {
+    display: grid;
+    gap: 10px;
+}
+
+.theme-class[data-class-page-ready="false"] .app-content {
+    opacity: 0;
+}
+
+.theme-class[data-class-page-ready="true"] .app-content {
+    opacity: 1;
+    transition: opacity 140ms ease;
+}
+
 .class-hero-main,
 .class-status-card {
     padding: 26px;
@@ -2503,8 +2559,11 @@ body.product-body.theme-auth {
 .class-hero-main {
     color: #ffffff;
     background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 28%),
-        linear-gradient(135deg, #0f172a 0%, #166534 52%, #86efac 170%);
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.22), transparent 34%),
+        linear-gradient(135deg, #082f6b 0%, #0f5fc2 52%, #38bdf8 100%);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    box-shadow: 0 24px 44px -30px rgba(8, 47, 107, 0.44);
 }
 
 .class-hero-actions {
@@ -2512,6 +2571,14 @@ body.product-body.theme-auth {
     flex-wrap: wrap;
     gap: 10px;
     margin-top: 18px;
+}
+
+.class-hero-main h2 {
+    margin: 0;
+}
+
+.class-hero-main p {
+    max-width: 58ch;
 }
 
 .class-format-shortcut {
@@ -2527,14 +2594,6 @@ body.product-body.theme-auth {
 
 .class-status-card ul {
     margin: 16px 0 0;
-}
-
-.class-kpi-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.class-kpi-card {
-    background: rgba(255, 255, 255, 0.88);
 }
 
 .class-layout-grid {
@@ -2561,6 +2620,14 @@ body.product-body.theme-auth {
     box-shadow: 0 18px 34px -26px rgba(15, 23, 42, 0.26);
     color: inherit;
     text-decoration: none;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.class-format-card:hover,
+.lesson-history-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 38px -26px rgba(15, 23, 42, 0.28);
+    border-color: rgba(14, 165, 233, 0.18);
 }
 
 .class-format-card h3 {
@@ -2782,6 +2849,8 @@ body.product-body.theme-auth {
 .lesson-group-header {
     display: grid;
     gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 .lesson-group-header h3,
@@ -2821,6 +2890,42 @@ body.product-body.theme-auth {
     flex-wrap: wrap;
     gap: 10px;
     margin-top: 4px;
+}
+
+.platform-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.42);
+    backdrop-filter: blur(10px);
+}
+
+.platform-modal-card {
+    width: min(520px, 100%);
+    display: grid;
+    gap: 16px;
+    padding: 24px;
+    border-radius: 28px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.98) 100%);
+    box-shadow: 0 28px 60px -34px rgba(15, 23, 42, 0.42);
+}
+
+.platform-toast {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 95;
+    max-width: min(340px, calc(100% - 32px));
+    padding: 14px 18px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #0f766e 0%, #0891b2 100%);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 24px 40px -28px rgba(8, 145, 178, 0.72);
 }
 
 [hidden] {
@@ -4033,6 +4138,253 @@ body.product-body.theme-auth {
     box-shadow: 0 16px 30px -24px rgba(15, 23, 42, 0.3);
 }
 
+.lesson-sequence-shell {
+    gap: 18px;
+}
+
+.lesson-sequence-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.72fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.lesson-sequence-main,
+.lesson-sequence-preview {
+    display: grid;
+    gap: 18px;
+}
+
+.page-section-title--compact {
+    align-items: start;
+}
+
+.page-section-title--compact p {
+    max-width: 56ch;
+}
+
+.lesson-sequence-add,
+.lesson-sequence-blocks {
+    display: grid;
+    gap: 16px;
+}
+
+.lesson-sequence-list,
+.lesson-sequence-player-list {
+    display: grid;
+    gap: 12px;
+}
+
+.lesson-sequence-item,
+.lesson-sequence-preview-card,
+.lesson-sequence-player-current {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+    border-radius: 24px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 18px 34px -30px rgba(15, 23, 42, 0.22);
+}
+
+.lesson-sequence-item.is-selected {
+    border-color: rgba(14, 165, 233, 0.28);
+    box-shadow: 0 22px 38px -28px rgba(14, 165, 233, 0.24);
+}
+
+.lesson-sequence-item-main {
+    display: grid;
+    gap: 10px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.lesson-sequence-item-main h3,
+.lesson-sequence-preview-card h3,
+.lesson-sequence-player-current h2 {
+    margin: 0;
+    color: var(--navy-dark);
+}
+
+.lesson-sequence-item-main p,
+.lesson-sequence-preview-card p,
+.lesson-sequence-player-current p {
+    margin: 0;
+    color: var(--gray-dark);
+    line-height: 1.6;
+}
+
+.lesson-sequence-item-head,
+.lesson-sequence-preview-meta,
+.lesson-sequence-player-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.lesson-sequence-item-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.lesson-sequence-item-fields .platform-field-wide {
+    grid-column: 1 / -1;
+}
+
+.lesson-sequence-empty {
+    padding: 22px;
+    border-radius: 24px;
+    border: 1px dashed rgba(148, 163, 184, 0.28);
+    background: rgba(248, 250, 252, 0.78);
+}
+
+.lesson-sequence-empty h3,
+.lesson-sequence-empty p {
+    margin: 0;
+}
+
+.lesson-sequence-preview-meta span,
+.lesson-sequence-player-meta span {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(14, 165, 233, 0.08);
+    color: var(--navy-dark);
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.lesson-sequence-note {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: rgba(240, 249, 255, 0.9);
+    color: var(--navy-dark);
+    line-height: 1.6;
+}
+
+.lesson-sequence-player-shell {
+    gap: 18px;
+}
+
+.lesson-sequence-player-stage {
+    align-items: start;
+}
+
+.lesson-sequence-player-sidebar {
+    min-height: calc(100vh - 180px);
+}
+
+.lesson-sequence-player-frame {
+    display: grid;
+    gap: 14px;
+}
+
+.lesson-sequence-player-embed {
+    min-height: 72vh;
+    padding: 10px;
+    border-radius: 28px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 22px 40px -30px rgba(15, 23, 42, 0.24);
+}
+
+.lesson-sequence-player-embed iframe {
+    width: 100%;
+    min-height: calc(72vh - 20px);
+    border: 0;
+    border-radius: 22px;
+    background: #f8fafc;
+}
+
+.lesson-sequence-player-controls {
+    justify-content: center;
+}
+
+.lesson-sequence-player-item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.68);
+    text-align: left;
+    cursor: pointer;
+}
+
+.lesson-sequence-player-item.is-active {
+    border-color: rgba(14, 165, 233, 0.3);
+    background: rgba(240, 249, 255, 0.9);
+}
+
+.lesson-sequence-player-item strong,
+.lesson-sequence-player-item small {
+    display: block;
+}
+
+.lesson-sequence-player-item small {
+    margin-top: 4px;
+    color: var(--gray-dark);
+}
+
+.lesson-sequence-player-order {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: rgba(14, 165, 233, 0.12);
+    color: var(--navy-dark);
+    font-weight: 800;
+}
+
+@media (max-width: 1040px) {
+    .class-page-intro,
+    .class-hero {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 720px) {
+    .class-page-intro {
+        padding: 22px;
+    }
+
+    .class-format-card-grid,
+    .class-lesson-grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .class-format-shortcut {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 1040px) {
+    .lesson-sequence-layout,
+    .presentation-frame.lesson-sequence-player-stage {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lesson-sequence-player-sidebar {
+        min-height: 0;
+    }
+}
+
+@media (max-width: 720px) {
+    .lesson-sequence-item-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 .wheel-stage-card {
     display: grid;
     grid-template-columns: minmax(320px, 640px) 240px;
@@ -4928,7 +5280,7 @@ body.product-body.theme-auth {
     .dashboard-quick-grid,
     .dashboard-shortcuts,
     .action-card-grid,
-    .class-kpi-grid,
+    .teacher-dashboard-kpis,
     .class-lesson-grid,
     .compact-form-grid,
     .focus-kpis {

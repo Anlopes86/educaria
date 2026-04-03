@@ -18,6 +18,7 @@ function readCurrentMaterialType() {
 }
 
 function presentationPathForMaterial(type) {
+    if (type === "lesson") return "aula-completa-apresentacao.html";
     if (type === "quiz") return "quiz-aplicacao.html";
     if (type === "flashcards") return "flashcards-apresentacao.html";
     if (type === "wheel") return "roleta-apresentacao.html";
@@ -29,6 +30,7 @@ function presentationPathForMaterial(type) {
 }
 
 function presentationLabelForMaterial(type) {
+    if (type === "lesson") return "Aula completa";
     if (type === "flashcards") return "Flashcards";
     if (type === "quiz") return "Quiz";
     if (type === "wheel") return "Roleta";
@@ -43,7 +45,7 @@ function materialTypeFromUrl() {
     try {
         const params = new URLSearchParams(window.location.search);
         const value = params.get("material");
-        if (["flashcards", "slides", "quiz", "wheel", "memory", "match", "mindmap", "debate"].includes(value)) {
+        if (["lesson", "flashcards", "slides", "quiz", "wheel", "memory", "match", "mindmap", "debate"].includes(value)) {
             return value;
         }
     } catch (error) {
