@@ -224,8 +224,8 @@ function bindRegisterForm() {
             return;
         }
 
-        if (!name || !email || !institution || !password || !passwordConfirm) {
-            updateAuthFeedback("Preencha todos os campos para criar sua conta.", "error");
+        if (!name || !email || !password || !passwordConfirm) {
+            updateAuthFeedback("Preencha nome, email e senha para criar sua conta.", "error");
             return;
         }
 
@@ -246,7 +246,7 @@ function bindRegisterForm() {
             await services.db.collection("teachers").doc(credential.user.uid).set({
                 name,
                 email,
-                institution,
+                institution: institution || "",
                 createdAt: new Date().toISOString()
             }, { merge: true });
 

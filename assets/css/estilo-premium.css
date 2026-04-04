@@ -2209,6 +2209,20 @@ body.product-body.theme-auth {
     margin-top: -64px;
 }
 
+body[data-auth-screen="login"] .auth-login-headline {
+    font-size: clamp(1.8rem, 3.25vw, 2.95rem);
+}
+
+body[data-auth-screen="login"] .auth-login-headline span {
+    display: block;
+    white-space: nowrap;
+}
+
+.auth-register-headline span {
+    display: block;
+    white-space: nowrap;
+}
+
 .auth-panel p {
     margin: 0;
     line-height: 1.7;
