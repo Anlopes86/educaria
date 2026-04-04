@@ -76,11 +76,44 @@ function setSelectByText(select, desiredText) {
     select.selectedIndex = match ? match.index : 0;
 }
 
+function normalizeOptionText(value) {
+    return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+}
+
+function quizTemplates() {
+    const cards = [...document.querySelectorAll("[data-quiz-stack] [data-quiz-question]")];
+    if (cards.length < 2) return null;
+
+    return {
+        choice: cards[0].cloneNode(true),
+        open: cards[1].cloneNode(true)
+    };
+}
+
+function buildQuizCardsFromQuestions(questions) {
+    const stack = document.querySelector("[data-quiz-stack]");
+    const templates = quizTemplates();
+    if (!stack || !templates) return [];
+
+    stack.innerHTML = "";
+
+    questions.forEach((question) => {
+        const isOpen = question.type === "short_answer";
+        stack.appendChild(cloneCard(isOpen ? templates.open : templates.choice));
+    });
+
+    return [...stack.querySelectorAll("[data-quiz-question]")];
+}
+
 function applyQuizFromStructuredData(payload) {
     const questions = Array.isArray(payload?.questions) ? payload.questions : [];
     if (!questions.length) return false;
 
-    const cards = ensureCardCount("[data-quiz-stack]", "[data-quiz-question]", questions.length);
+    const cards = buildQuizCardsFromQuestions(questions);
     if (!cards.length) return false;
 
     questions.forEach((question, index) => {
@@ -99,6 +132,10 @@ function applyQuizFromStructuredData(payload) {
                 ? "Verdadeiro ou falso"
                 : "Múltipla escolha";
 
+        const normalizedOptions = question.type === "true_false"
+            ? ["Verdadeiro", "Falso"]
+            : (question.options || []);
+
         if (prompt) prompt.value = question.prompt || "";
         if (explanation) explanation.value = question.explanation || "";
         if (criteria) criteria.value = question.criteria || "";
@@ -110,11 +147,18 @@ function applyQuizFromStructuredData(payload) {
         }
 
         options.forEach((field, optionIndex) => {
-            field.value = question.options?.[optionIndex] || "";
+            field.value = normalizedOptions[optionIndex] || "";
         });
 
         if (correct) {
-            const correctIndex = Math.max(0, (question.options || []).findIndex((option) => option === question.correct_answer));
+            const correctAnswer = normalizeOptionText(question.correct_answer);
+            const correctIndex = Math.max(0, normalizedOptions.findIndex((option) => {
+                const normalizedOption = normalizeOptionText(option);
+                if (normalizedOption === correctAnswer) return true;
+                if (correctAnswer === "true" && normalizedOption === "verdadeiro") return true;
+                if (correctAnswer === "false" && normalizedOption === "falso") return true;
+                return false;
+            }));
             const key = `Alternativa ${String.fromCharCode(65 + correctIndex)}`;
             setSelectByText(correct, key);
         }
@@ -152,6 +196,15 @@ function applySlidesFromStructuredData(payload) {
         if (body) body.value = slide.body || "";
         if (imagePrompt) imagePrompt.value = slide.image_prompt || "";
 
+        const imageUrl = card.querySelector('[data-field="slide-image-url"]');
+        if (imageUrl && slide.image_prompt && !imageUrl.value && typeof createSvgDataUrl === "function") {
+            imageUrl.value = createSvgDataUrl(
+                slide.title || "Slide",
+                slide.image_prompt,
+                ["#99f6e4", "#dbeafe"]
+            );
+        }
+
         if (imageMode) {
             const desiredMode = slide.image_prompt ? "Gerar com IA" : "Sem imagem";
             setSelectByText(imageMode, desiredMode);
@@ -175,16 +228,18 @@ function applySlidesFromStructuredData(payload) {
 
 function buildFallbackSlides(sourceText) {
     const blocks = splitParagraphs(sourceText);
-    const units = blocks.length ? blocks : normalizeLines(sourceText).join("\n").split(/(?<=[.!?])\s+/).filter(Boolean);
-    const title = normalizeLines(sourceText)[0] || "Aula";
-    const slides = (units.length ? units : ["Introdução ao tema", "Desenvolvimento do conteúdo", "Fechamento e revisão"])
-        .slice(0, 8)
+    const lines = normalizeLines(sourceText);
+    const sentenceUnits = lines.join(" ").split(/(?<=[.!?])\s+/).filter(Boolean);
+    const units = blocks.length > 1 ? blocks : sentenceUnits;
+    const title = lines[0] || "Aula";
+    const slides = (units.length ? units : ["Introducao ao tema", "Desenvolvimento do conteudo", "Fechamento e revisao"])
+        .slice(0, 6)
         .map((block, index) => ({
             type: index === 0 ? "cover" : "content",
-            title: index === 0 ? title : `Ponto ${index}`,
-            subtitle: index === 0 ? "Visão geral da aula" : "",
-            body: summarizeBlock(block, "Conteúdo do slide"),
-            image_prompt: index === 0 ? `Ilustração educativa sobre ${title}` : ""
+            title: index === 0 ? summarizeBlock(title, "Aula") : `Ponto ${index}`,
+            subtitle: index === 0 ? "Visao geral da aula" : "",
+            body: summarizeBlock(block, "Conteudo do slide"),
+            image_prompt: index === 0 ? `Ilustracao educativa sobre ${summarizeBlock(title, "o tema")}` : ""
         }));
 
     return { title, slides };
@@ -218,8 +273,41 @@ function buildFallbackQuiz(sourceText) {
     };
 }
 
+function resolveAiEndpoint() {
+    if (window.EDUCARIA_AI_ENDPOINT) {
+        return window.EDUCARIA_AI_ENDPOINT;
+    }
+
+    if (window.location.protocol === "file:") {
+        return "http://localhost:8787/api/ai/generate";
+    }
+
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        return "http://localhost:8787/api/ai/generate";
+    }
+
+    return "/api/ai/generate";
+}
+
+function resolveAiHealthEndpoint() {
+    const endpoint = resolveAiEndpoint();
+    return endpoint.replace(/\/api\/ai\/generate$/, "/api/health");
+}
+
+async function checkAiHealth() {
+    const response = await fetch(resolveAiHealthEndpoint(), {
+        method: "GET"
+    });
+
+    if (!response.ok) {
+        throw new Error(`Health check falhou com status ${response.status}.`);
+    }
+
+    return response.json();
+}
+
 async function requestStructuredMaterial(materialType, sourceText, file, action) {
-    const endpoint = window.EDUCARIA_AI_ENDPOINT || "/api/ai/generate";
+    const endpoint = resolveAiEndpoint();
     const formData = new FormData();
     formData.append("materialType", materialType);
     formData.append("sourceText", sourceText || "");
@@ -236,7 +324,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action)
 
     if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
-        throw new Error(errorPayload?.error || "Não foi possível gerar o material com IA.");
+        throw new Error(errorPayload?.error || "Nao foi possivel gerar o material com IA.");
     }
 
     return response.json();
@@ -248,6 +336,8 @@ function materialConfig(materialType) {
             textId: "quiz-fonte-texto",
             fileId: "quiz-arquivo",
             actionId: "quiz-acao-ia",
+            countId: "quiz-quantidade",
+            formatId: "quiz-formato",
             apply: applyQuizFromStructuredData,
             fallback: buildFallbackQuiz
         };
@@ -273,11 +363,16 @@ async function generateMaterial(materialType, button) {
     const textField = document.getElementById(config.textId);
     const fileField = document.getElementById(config.fileId);
     const actionField = document.getElementById(config.actionId);
+    const countField = config.countId ? document.getElementById(config.countId) : null;
+    const formatField = config.formatId ? document.getElementById(config.formatId) : null;
     const file = fileField?.files?.[0] || null;
     const typedText = textField?.value.trim() || "";
     const fileText = await readTextFile(file);
     const sourceText = [typedText, fileText].filter(Boolean).join("\n\n").trim();
     const action = actionField ? actionField.options[actionField.selectedIndex].text.trim() : "";
+    const countText = countField ? countField.options[countField.selectedIndex].text.trim() : "";
+    const formatText = formatField ? formatField.options[formatField.selectedIndex].text.trim() : "";
+    const requestedCount = Number((countText.match(/\d+/) || [0])[0]) || undefined;
 
     if (!sourceText && !file) {
         window.alert("Adicione um texto-base ou envie um arquivo para a IA estruturar.");
@@ -289,10 +384,20 @@ async function generateMaterial(materialType, button) {
     button.textContent = "Gerando...";
 
     try {
-        const payload = await requestStructuredMaterial(materialType, sourceText, file, action);
+        await checkAiHealth();
+
+        const generationHints = materialType === "quiz"
+            ? [
+                action,
+                requestedCount ? `Gerar ${requestedCount} perguntas.` : "",
+                formatText ? `Formato desejado: ${formatText}.` : ""
+            ].filter(Boolean).join(" ")
+            : action;
+
+        const payload = await requestStructuredMaterial(materialType, sourceText, file, generationHints);
         const applied = config.apply(payload?.material);
         if (!applied) {
-            throw new Error("A resposta da IA não trouxe dados suficientes para preencher o editor.");
+            throw new Error("A resposta da IA nao trouxe dados suficientes para preencher o editor.");
         }
     } catch (error) {
         console.warn("EducarIA AI generation fallback:", error);
@@ -300,6 +405,9 @@ async function generateMaterial(materialType, button) {
         if (fallbackPayload) {
             config.apply(fallbackPayload);
         }
+        const endpoint = resolveAiEndpoint();
+        const detail = error instanceof Error ? error.message : "Erro desconhecido.";
+        window.alert(`A IA real nao respondeu. O editor usou um modo local simplificado.\n\nDetalhe: ${detail}\nEndpoint: ${endpoint}`);
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;

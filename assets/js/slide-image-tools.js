@@ -18,6 +18,39 @@ function createSvgDataUrl(title, subtitle, palette) {
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+function resolveAiGenerateEndpoint() {
+    if (window.EDUCARIA_AI_ENDPOINT) {
+        return window.EDUCARIA_AI_ENDPOINT;
+    }
+
+    if (window.location.protocol === "file:" || window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+        return "http://localhost:8787/api/ai/generate";
+    }
+
+    return "/api/ai/generate";
+}
+
+function resolveAiImageEndpoint() {
+    return resolveAiGenerateEndpoint().replace(/\/api\/ai\/generate$/, "/api/ai/generate-image");
+}
+
+async function requestAiSlideImage(payload) {
+    const response = await fetch(resolveAiImageEndpoint(), {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload?.detail || errorPayload?.error || "Falha ao gerar imagem.");
+    }
+
+    return response.json();
+}
+
 function panelFor(card) {
     return card.querySelector("[data-image-panel]");
 }
@@ -161,9 +194,34 @@ function bindSlideImageTools() {
             const title = card.querySelector('[data-field="slide-title"]')?.value.trim() || "Slide";
             const subtitle = card.querySelector('[data-field="slide-subtitle"]')?.value.trim() || "";
             const body = card.querySelector('[data-field="slide-body"]')?.value.trim() || "";
-            const prompt = subtitle || body || "Ilustracao educacional";
-            const url = createSvgDataUrl(title, prompt, ["#99f6e4", "#dbeafe"]);
-            applySelectedImage(card, prompt, url);
+            const existingPrompt = card.querySelector('[data-field="slide-image-prompt"]')?.value.trim() || "";
+            const prompt = existingPrompt || subtitle || body || "Ilustracao educacional";
+            const originalText = generate.textContent;
+
+            generate.disabled = true;
+            generate.textContent = "Gerando imagem...";
+
+            requestAiSlideImage({ title, subtitle, body, prompt })
+                .then((result) => {
+                    const mimeType = result?.mimeType || "image/png";
+                    const imageBase64 = result?.imageBase64 || "";
+                    if (!imageBase64) {
+                        throw new Error("O backend nao retornou imagem.");
+                    }
+
+                    const url = `data:${mimeType};base64,${imageBase64}`;
+                    applySelectedImage(card, prompt, url);
+                })
+                .catch((error) => {
+                    console.warn("EducarIA image generation fallback:", error);
+                    const url = createSvgDataUrl(title, prompt, ["#99f6e4", "#dbeafe"]);
+                    applySelectedImage(card, prompt, url);
+                    window.alert(`A imagem real nao foi gerada. Foi usado um placeholder local.\n\nDetalhe: ${error.message}`);
+                })
+                .finally(() => {
+                    generate.disabled = false;
+                    generate.textContent = originalText;
+                });
         }
     });
 }

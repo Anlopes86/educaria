@@ -9,10 +9,41 @@ import { GoogleGenAI } from "@google/genai";
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 const port = Number(process.env.PORT || 8787);
-const allowedOrigin = process.env.ALLOWED_ORIGIN || "*";
 const gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 
-app.use(cors({ origin: allowedOrigin === "*" ? true : allowedOrigin }));
+function parseAllowedOrigins(value) {
+    return String(value || "")
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+const configuredOrigins = parseAllowedOrigins(process.env.ALLOWED_ORIGIN);
+const defaultOrigins = [
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
+    "http://127.0.0.1:3000",
+    "http://localhost:3000",
+    "null"
+];
+
+const allowedOrigins = configuredOrigins.length ? configuredOrigins : defaultOrigins;
+
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin) {
+            callback(null, true);
+            return;
+        }
+
+        if (allowedOrigins.includes("*") || allowedOrigins.includes(origin) || (origin === "null" && allowedOrigins.includes("null"))) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error(`Origin not allowed by CORS: ${origin}`));
+    }
+}));
 app.use(express.json({ limit: "5mb" }));
 
 const quizSchema = {
@@ -122,6 +153,7 @@ function promptFor(materialType, action, sourceText) {
             "- Priorize clareza e aderencia ao texto-base.",
             "- Nao use tom publicitario nem linguagem excessivamente rebuscada.",
             "- Se o conteudo estiver incompleto, faca a melhor estrutura possivel sem sair do tema.",
+            "- Respeite explicitamente a quantidade e o formato pedidos pelo professor quando isso for informado.",
             "Material de origem:",
             sourceText
         ].join("\n\n");
@@ -148,6 +180,21 @@ function promptFor(materialType, action, sourceText) {
         "Material de origem:",
         sourceText
     ].join("\n\n");
+}
+
+function imagePromptForSlide({ title, subtitle, body, prompt }) {
+    return [
+        "Voce cria ilustracoes educativas para slides de professores no Brasil.",
+        "Gere uma unica imagem horizontal, clara, ilustrativa e apropriada para contexto escolar.",
+        "Evite texto dentro da imagem, marcas, interfaces, colagens confusas ou excesso de elementos.",
+        "A imagem deve ajudar a explicar o conteudo do slide rapidamente.",
+        "Prefira composicao limpa, foco evidente e visual didatico.",
+        prompt ? `Pedido direto do professor/IA: ${prompt}` : "",
+        title ? `Titulo do slide: ${title}` : "",
+        subtitle ? `Subtitulo do slide: ${subtitle}` : "",
+        body ? `Conteudo do slide: ${body}` : "",
+        "Entregue apenas a imagem."
+    ].filter(Boolean).join("\n\n");
 }
 
 async function extractTextFromFile(file) {
@@ -226,6 +273,49 @@ app.post("/api/ai/generate", upload.single("file"), async (request, response) =>
         console.error("EducarIA AI service error:", error);
         return response.status(500).json({
             error: "Falha ao gerar material com IA.",
+            detail: error instanceof Error ? error.message : "unknown_error"
+        });
+    }
+});
+
+app.post("/api/ai/generate-image", async (request, response) => {
+    try {
+        if (!gemini) {
+            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
+        }
+
+        const title = String(request.body.title || "").trim();
+        const subtitle = String(request.body.subtitle || "").trim();
+        const body = String(request.body.body || "").trim();
+        const prompt = String(request.body.prompt || "").trim();
+
+        if (!title && !subtitle && !body && !prompt) {
+            return response.status(400).json({ error: "Envie contexto suficiente para gerar a imagem." });
+        }
+
+        const result = await gemini.models.generateContent({
+            model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image-preview",
+            contents: imagePromptForSlide({ title, subtitle, body, prompt })
+        });
+
+        const parts = result?.candidates?.[0]?.content?.parts || [];
+        const imagePart = parts.find((part) => part.inlineData?.data);
+
+        if (!imagePart?.inlineData?.data) {
+            return response.status(502).json({
+                error: "O Gemini nao retornou imagem para este slide."
+            });
+        }
+
+        return response.json({
+            ok: true,
+            mimeType: imagePart.inlineData.mimeType || "image/png",
+            imageBase64: imagePart.inlineData.data
+        });
+    } catch (error) {
+        console.error("EducarIA image generation error:", error);
+        return response.status(500).json({
+            error: "Falha ao gerar imagem com IA.",
             detail: error instanceof Error ? error.message : "unknown_error"
         });
     }

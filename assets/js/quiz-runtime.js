@@ -14,6 +14,15 @@ function readQuizDraft() {
     }
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
 function parseQuizQuestions(stackHtml) {
     if (!stackHtml) return [];
 
@@ -42,6 +51,18 @@ function parseQuizQuestions(stackHtml) {
                 value: field.value.trim()
             })).filter((option) => option.value)
         };
+    }).map((question) => {
+        if (question.type === "Verdadeiro ou falso" && question.options.length < 2) {
+            return {
+                ...question,
+                options: [
+                    { key: "Alternativa A", value: "Verdadeiro" },
+                    { key: "Alternativa B", value: "Falso" }
+                ]
+            };
+        }
+
+        return question;
     });
 }
 
@@ -67,11 +88,15 @@ function renderQuizApplication(questions, controls = {}) {
     const counter = document.querySelector("[data-quiz-application-counter]");
     const prompt = document.querySelector("[data-quiz-application-prompt]");
     const optionsRoot = document.querySelector("[data-quiz-application-options]");
+    const cardRoot = document.querySelector(".quiz-application-card");
     const helper = document.querySelector("[data-quiz-application-helper]");
-    const explanation = document.querySelector("[data-quiz-application-explanation]");
     const prevButton = document.querySelector("[data-quiz-application-prev]");
     const nextButton = document.querySelector("[data-quiz-application-next]");
     const revealButton = document.querySelector("[data-quiz-application-reveal]");
+    const modal = document.querySelector("[data-quiz-explanation-modal]");
+    const modalTitle = document.querySelector("[data-quiz-explanation-title]");
+    const modalContent = document.querySelector("[data-quiz-explanation-content]");
+    const closeModalButton = document.querySelector("[data-quiz-explanation-close]");
     let currentIndex = 0;
 
     const turma = typeof readSelectedClass === "function" ? readSelectedClass() : "";
@@ -80,30 +105,44 @@ function renderQuizApplication(questions, controls = {}) {
     const isBinaryQuestion = (question) => question.type === "Verdadeiro ou falso";
     const normalizeCorrectKey = (question) => String(question.correct || "").trim();
 
+    const closeModal = () => {
+        if (modal) modal.hidden = true;
+    };
+
+    const openModal = (question) => {
+        if (!modal || !modalTitle || !modalContent) return;
+        modalTitle.textContent = question.prompt;
+        modalContent.innerHTML = `
+            <p>${escapeHtml(question.explanation || "Sem explicacao.")}</p>
+            ${question.criteria ? `<p><strong>Criterio:</strong> ${escapeHtml(question.criteria)}</p>` : ""}
+            ${question.model ? `<p><strong>Resposta modelo:</strong> ${escapeHtml(question.model)}</p>` : ""}
+        `;
+        modal.hidden = false;
+    };
+
     const paint = () => {
         const question = questions[currentIndex];
+        const isOpenQuestion = question.type === "Pergunta aberta";
 
         if (title) title.textContent = materialTheme;
-        if (classLabel) classLabel.textContent = turma ? `${turma} - ${materialTheme}` : materialTheme;
+        if (classLabel) classLabel.textContent = turma || materialTheme;
         if (counter) counter.textContent = `${currentIndex + 1} de ${questions.length}`;
         prompt.textContent = question.prompt;
         if (helper) helper.textContent = question.type;
-        explanation.hidden = true;
-        explanation.textContent = "";
+        prompt.classList.toggle("quiz-application-prompt--open", isOpenQuestion);
+        optionsRoot.classList.toggle("quiz-application-options--open", isOpenQuestion);
+        cardRoot?.classList.toggle("quiz-application-card--open", isOpenQuestion);
+        closeModal();
 
-        if (question.type === "Pergunta aberta") {
+        if (isOpenQuestion) {
             optionsRoot.innerHTML = `
-                <article class="route-card">
-                    <span class="route-tag">Resposta modelo</span>
-                    <p>${question.model || "Sem resposta modelo."}</p>
-                    <p style="margin-top: 10px;"><strong>Criterio:</strong> ${question.criteria || "Sem criterio definido."}</p>
-                </article>
+                <article class="route-card quiz-open-card" aria-hidden="true"></article>
             `;
         } else {
             optionsRoot.innerHTML = question.options.map((option) => `
-                <button type="button" class="option-btn ${isBinaryQuestion(question) ? "is-binary" : ""}" data-runtime-option="${option.key}">
-                    <span class="option-letter">${isBinaryQuestion(question) ? option.value : option.key.replace("Alternativa ", "")}</span>
-                    <span class="option-text">${option.value}</span>
+                <button type="button" class="option-btn ${isBinaryQuestion(question) ? "is-binary" : ""}" data-runtime-option="${escapeHtml(option.key)}">
+                    <span class="option-letter">${isBinaryQuestion(question) ? escapeHtml(option.value) : escapeHtml(option.key.replace("Alternativa ", ""))}</span>
+                    <span class="option-text">${escapeHtml(option.value)}</span>
                 </button>
             `).join("");
         }
@@ -121,24 +160,37 @@ function renderQuizApplication(questions, controls = {}) {
         const correctKey = normalizeCorrectKey(question);
 
         optionsRoot.querySelectorAll(".option-btn").forEach((node) => {
-            node.classList.remove("selected", "is-correct", "is-wrong");
+            node.classList.remove("selected", "is-correct", "is-wrong", "is-neutral");
         });
-        button.classList.add("selected");
+
+        optionsRoot.querySelectorAll(".option-btn").forEach((node) => {
+            const optionKey = node.dataset.runtimeOption || "";
+
+            if (optionKey === correctKey) {
+                node.classList.add("is-correct");
+                return;
+            }
+
+            if (optionKey === selectedKey && selectedKey !== correctKey) {
+                node.classList.add("is-wrong", "selected");
+                return;
+            }
+
+            node.classList.add("is-neutral");
+        });
 
         if (selectedKey === correctKey) {
-            button.classList.add("is-correct");
-            explanation.hidden = false;
-            explanation.textContent = question.explanation || "Sem explicacao.";
-        } else {
-            button.classList.add("is-wrong");
-            explanation.hidden = true;
-            explanation.textContent = "";
+            button.classList.add("selected");
         }
     });
 
     revealButton.addEventListener("click", () => {
-        explanation.hidden = false;
-        explanation.textContent = questions[currentIndex].explanation || "Sem explicacao.";
+        openModal(questions[currentIndex]);
+    });
+
+    closeModalButton?.addEventListener("click", closeModal);
+    modal?.addEventListener("click", (event) => {
+        if (event.target === modal) closeModal();
     });
 
     prevButton.addEventListener("click", () => {

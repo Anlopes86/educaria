@@ -21,6 +21,10 @@
                 </div>
             </div>
             <div class="platform-top-actions">
+                <div class="quiz-application-top-meta">
+                    <span class="quiz-application-badge" data-quiz-application-counter>1 de 1</span>
+                    <span class="quiz-application-badge quiz-application-badge--soft" data-quiz-application-helper>M&uacute;ltipla escolha</span>
+                </div>
                 <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">Voltar a edicao</a>
                 <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
             </div>
@@ -29,14 +33,7 @@
         <section class="quiz-application-stage">
             <article class="question-card quiz-application-card quiz-application-card--immersive">
                 <div class="quiz-application-meta">
-                    <div>
-                        <span class="platform-section-label">Quiz em andamento</span>
-                        <h2 class="question-text quiz-application-title" data-quiz-application-title>Quiz</h2>
-                    </div>
-                    <div class="quiz-application-badges">
-                        <span class="quiz-application-badge" data-quiz-application-counter>1 de 1</span>
-                        <span class="quiz-application-badge quiz-application-badge--soft" data-quiz-application-helper>M&uacute;ltipla escolha</span>
-                    </div>
+                    <h2 class="question-text quiz-application-title" data-quiz-application-title>Quiz</h2>
                 </div>
 
                 <div class="quiz-application-prompt-wrap">
@@ -44,7 +41,6 @@
                 </div>
 
                 <div class="options-container quiz-application-options" data-quiz-application-options></div>
-                <p class="results-message quiz-application-explanation-box" data-quiz-application-explanation hidden></p>
 
                 <div class="results-actions quiz-application-actions">
                     <button type="button" class="review-btn" data-quiz-application-prev>Anterior</button>
@@ -53,6 +49,19 @@
                 </div>
             </article>
         </section>
+
+        <div class="platform-modal-backdrop quiz-explanation-modal" data-quiz-explanation-modal hidden>
+            <article class="platform-modal-card quiz-explanation-modal-card">
+                <div class="quiz-explanation-modal-head">
+                    <div>
+                        <span class="platform-section-label">Explicacao</span>
+                        <h3 data-quiz-explanation-title>Detalhes da resposta</h3>
+                    </div>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-quiz-explanation-close>Fechar</button>
+                </div>
+                <div class="quiz-explanation-modal-body" data-quiz-explanation-content></div>
+            </article>
+        </div>
     </main>
 </body>
 </html>

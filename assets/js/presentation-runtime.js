@@ -14,6 +14,15 @@ function readSlidesDraft() {
     }
 }
 
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
 function parseSlideCards(stackHtml) {
     if (!stackHtml) return [];
 
@@ -46,12 +55,9 @@ function parseSlideCards(stackHtml) {
 
         return {
             index,
-            type: fieldLabel("slide-type") || "Slide",
             title: fieldValue("slide-title") || `Slide ${index + 1}`,
             subtitle: fieldValue("slide-subtitle"),
             body: fieldValue("slide-body") || "Sem conteudo definido.",
-            note: fieldValue("slide-note") || "Sem nota do professor.",
-            layout: fieldLabel("slide-layout") || "Texto acima",
             layoutMode: normalizeLayout(fieldLabel("slide-layout")),
             imageMode: fieldLabel("slide-image-mode") || "Sem imagem",
             imageUrl: fieldValue("slide-image-url"),
@@ -67,12 +73,9 @@ function parseSlideCards(stackHtml) {
 function buildFallbackSlides() {
     return [{
         index: 0,
-        type: "Abertura",
         title: "Has technology changed education?",
         subtitle: "Observe a transformacao da sala de aula",
         body: "Observe as imagens e pense no que mudou na sala de aula ao longo dos anos.",
-        note: "Use este slide como aquecimento oral antes da explicacao.",
-        layout: "Texto acima",
         layoutMode: "stack",
         imageMode: "Sem imagem",
         imageUrl: "",
@@ -82,6 +85,39 @@ function buildFallbackSlides() {
         slideColor: "#d7f5f6",
         textColor: "#0f172a"
     }];
+}
+
+function renderSlideBody(body) {
+    const lines = String(body || "")
+        .replace(/\r/g, "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+    if (!lines.length) {
+        return "<p>Sem conteudo definido.</p>";
+    }
+
+    const hasBullets = lines.some((line) => /^[-*•]\s+/.test(line));
+    if (hasBullets) {
+        return `
+            <ul>
+                ${lines.map((line) => `<li>${escapeHtml(line.replace(/^[-*•]\s+/, ""))}</li>`).join("")}
+            </ul>
+        `;
+    }
+
+    return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
+}
+
+function renderMediaPlaceholder(slide) {
+    return `
+        <div class="presentation-media-placeholder">
+            <span class="platform-section-label">Imagem sugerida</span>
+            <strong>${escapeHtml(slide.title)}</strong>
+            <p>${escapeHtml(slide.imagePrompt || "Ilustracao educativa para apoiar o slide.")}</p>
+        </div>
+    `;
 }
 
 function applySlideLayout(slideRoot, slide) {
@@ -99,7 +135,7 @@ function applySlideLayout(slideRoot, slide) {
     slideRoot.style.alignItems = "";
     slideRoot.style.flexDirection = "";
 
-    if (!slide.imageUrl) {
+    if (!slide.imageUrl && !slide.imagePrompt) {
         slideRoot.classList.add("presentation-slide--text-only");
         return;
     }
@@ -128,7 +164,6 @@ function renderPresentation(slides) {
     const nextButton = document.querySelector("[data-presentation-next]");
     const counter = document.querySelector("[data-presentation-counter]");
     const media = document.querySelector("[data-presentation-media]");
-    const image = document.querySelector("[data-presentation-image]");
     const controls = document.querySelector("[data-presentation-controls]");
     let currentIndex = 0;
 
@@ -153,7 +188,7 @@ function renderPresentation(slides) {
         slideTitle.textContent = slide.title;
         slideSubtitle.textContent = slide.subtitle || "";
         slideSubtitle.hidden = !slide.subtitle;
-        slideBody.textContent = slide.body;
+        slideBody.innerHTML = renderSlideBody(slide.body);
         classLabel.textContent = turma ? `${turma} • ${slide.title}` : slide.title;
         counter.textContent = `${currentIndex + 1} de ${slides.length}`;
 
@@ -173,10 +208,11 @@ function renderPresentation(slides) {
         applySlideLayout(slideRoot, slide);
         resetMediaStyles();
 
-        if (slide.imageUrl) {
+        if (slide.imageUrl || slide.imagePrompt) {
             media.hidden = false;
-            image.src = slide.imageUrl;
-            image.alt = slide.imagePrompt || slide.title;
+            media.innerHTML = slide.imageUrl
+                ? `<img data-presentation-image alt="${escapeHtml(slide.imagePrompt || slide.title)}" src="${escapeHtml(slide.imageUrl)}">`
+                : renderMediaPlaceholder(slide);
 
             if (slide.layoutMode === "split") {
                 slideRoot.style.display = "grid";
@@ -201,8 +237,7 @@ function renderPresentation(slides) {
             }
         } else {
             media.hidden = true;
-            image.removeAttribute("src");
-            image.alt = "";
+            media.innerHTML = '<img data-presentation-image alt="">';
         }
 
         prevButton.disabled = currentIndex === 0;
