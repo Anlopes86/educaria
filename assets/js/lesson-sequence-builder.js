@@ -1,6 +1,10 @@
 const LESSON_SEQUENCE_DRAFT_KEY = "educaria:builder:lesson";
 const ACTIVE_LESSON_SEQUENCE_KEY = "educaria:activeLessonSequenceId";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 const LESSON_SEQUENCE_TYPES = [
     { value: "slides", label: "Slides" },
     { value: "flashcards", label: "Flashcards" },
@@ -23,7 +27,7 @@ let selectedBlockId = "";
 
 function readLessonSequenceDraft() {
     try {
-        const raw = localStorage.getItem(LESSON_SEQUENCE_DRAFT_KEY);
+        const raw = localStorage.getItem(scopedStorageKey(LESSON_SEQUENCE_DRAFT_KEY));
         return raw ? JSON.parse(raw) : null;
     } catch (error) {
         console.warn("EducarIA lesson draft unavailable:", error);
@@ -33,7 +37,7 @@ function readLessonSequenceDraft() {
 
 function writeLessonSequenceDraft(state) {
     try {
-        localStorage.setItem(LESSON_SEQUENCE_DRAFT_KEY, JSON.stringify(state));
+        localStorage.setItem(scopedStorageKey(LESSON_SEQUENCE_DRAFT_KEY), JSON.stringify(state));
     } catch (error) {
         console.warn("EducarIA lesson draft unavailable:", error);
     }
@@ -90,7 +94,7 @@ function normalizeLessonSequenceState(rawState) {
 
 function activeLessonSequenceRecord() {
     try {
-        const preservedId = localStorage.getItem(ACTIVE_LESSON_SEQUENCE_KEY) || "";
+        const preservedId = localStorage.getItem(scopedStorageKey(ACTIVE_LESSON_SEQUENCE_KEY)) || "";
         if (preservedId) {
             const preservedLesson = findLessonById(preservedId);
             if (preservedLesson?.materialType === "lesson") {
@@ -409,7 +413,7 @@ function saveLessonSequenceToLibrary(scope = "class") {
     writeLessonsLibrary(nextLessons);
     writeActiveLessonId(lessonId);
     try {
-        localStorage.setItem(ACTIVE_LESSON_SEQUENCE_KEY, lessonId);
+            localStorage.setItem(scopedStorageKey(ACTIVE_LESSON_SEQUENCE_KEY), lessonId);
     } catch (error) {
         console.warn("EducarIA lesson draft unavailable:", error);
     }

@@ -1,8 +1,12 @@
 const QUIZ_DRAFT_KEY = "educaria:builder:quiz";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function readQuizDraft() {
     try {
-        const raw = localStorage.getItem(QUIZ_DRAFT_KEY);
+        const raw = localStorage.getItem(scopedStorageKey(QUIZ_DRAFT_KEY));
         return raw ? JSON.parse(raw) : null;
     } catch (error) {
         console.warn("EducarIA quiz unavailable:", error);

@@ -1,8 +1,12 @@
 const FLASHCARDS_DRAFT_KEY = "educaria:builder:flashcards";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function readFlashcardsDraft() {
     try {
-        const raw = localStorage.getItem(FLASHCARDS_DRAFT_KEY);
+        const raw = localStorage.getItem(scopedStorageKey(FLASHCARDS_DRAFT_KEY));
         return raw ? JSON.parse(raw) : null;
     } catch (error) {
         console.warn("EducarIA flashcards unavailable:", error);

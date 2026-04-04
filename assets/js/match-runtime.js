@@ -1,8 +1,12 @@
 const MATCH_DRAFT_KEY = "educaria:builder:match";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function readMatchDraft() {
     try {
-        const raw = localStorage.getItem(MATCH_DRAFT_KEY);
+        const raw = localStorage.getItem(scopedStorageKey(MATCH_DRAFT_KEY));
         return raw ? JSON.parse(raw) : null;
     } catch (error) {
         console.warn("EducarIA match unavailable:", error);

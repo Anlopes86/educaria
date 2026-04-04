@@ -1,8 +1,12 @@
 const WHEEL_DRAFT_KEY = "educaria:builder:wheel";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function readWheelDraft() {
     try {
-        const raw = localStorage.getItem(WHEEL_DRAFT_KEY);
+        const raw = localStorage.getItem(scopedStorageKey(WHEEL_DRAFT_KEY));
         return raw ? JSON.parse(raw) : null;
     } catch (error) {
         console.warn("EducarIA wheel unavailable:", error);

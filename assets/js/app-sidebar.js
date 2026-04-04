@@ -213,3 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bindSidebarCreateClass();
     bindSidebarToggles();
 });
+
+document.addEventListener("educaria-auth-changed", () => {
+    hydrateSidebarTeacher();
+});

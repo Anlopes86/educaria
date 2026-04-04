@@ -28,6 +28,10 @@ function persistMaterializedFields(scope) {
     });
 }
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function restoreControls(values) {
     if (!values) return;
 
@@ -50,7 +54,7 @@ function captureControls() {
 function builderConfig() {
     if (document.querySelector("[data-quiz-stack]")) {
         return {
-            key: "educaria:builder:quiz",
+            key: scopedStorageKey("educaria:builder:quiz"),
             stackSelector: "[data-quiz-stack]",
             cardSelector: "[data-quiz-question]",
             labelPrefix: "Questao",
@@ -60,7 +64,7 @@ function builderConfig() {
 
     if (document.querySelector("[data-flashcards-stack]")) {
         return {
-            key: "educaria:builder:flashcards",
+            key: scopedStorageKey("educaria:builder:flashcards"),
             stackSelector: "[data-flashcards-stack]",
             cardSelector: "[data-flashcard]",
             labelPrefix: "Card",
@@ -70,7 +74,7 @@ function builderConfig() {
 
     if (document.querySelector("[data-slides-stack]")) {
         return {
-            key: "educaria:builder:slides",
+            key: scopedStorageKey("educaria:builder:slides"),
             stackSelector: "[data-slides-stack]",
             cardSelector: "[data-slide-card]",
             labelPrefix: "Slide",
@@ -80,7 +84,7 @@ function builderConfig() {
 
     if (document.querySelector("[data-wheel-segments]")) {
         return {
-            key: "educaria:builder:wheel",
+            key: scopedStorageKey("educaria:builder:wheel"),
             stackSelector: "[data-wheel-segments]",
             cardSelector: "[data-wheel-segment]",
             labelPrefix: "Espaco",
@@ -90,7 +94,7 @@ function builderConfig() {
 
     if (document.querySelector("[data-memory-pairs]")) {
         return {
-            key: "educaria:builder:memory",
+            key: scopedStorageKey("educaria:builder:memory"),
             stackSelector: "[data-memory-pairs]",
             cardSelector: "[data-memory-pair]",
             labelPrefix: "Par",
@@ -100,7 +104,7 @@ function builderConfig() {
 
     if (document.querySelector("[data-match-pairs]")) {
         return {
-            key: "educaria:builder:match",
+            key: scopedStorageKey("educaria:builder:match"),
             stackSelector: "[data-match-pairs]",
             cardSelector: "[data-match-pair]",
             labelPrefix: "Par",
@@ -110,7 +114,7 @@ function builderConfig() {
 
     if (document.querySelector("[data-mind-branches]")) {
         return {
-            key: "educaria:builder:mindmap",
+            key: scopedStorageKey("educaria:builder:mindmap"),
             stackSelector: "[data-mind-branches]",
             cardSelector: "[data-mind-branch]",
             labelPrefix: "Ramo",
@@ -120,7 +124,7 @@ function builderConfig() {
 
     if (document.querySelector("[data-debate-steps]")) {
         return {
-            key: "educaria:builder:debate",
+            key: scopedStorageKey("educaria:builder:debate"),
             stackSelector: "[data-debate-steps]",
             cardSelector: "[data-debate-step]",
             labelPrefix: "Etapa",

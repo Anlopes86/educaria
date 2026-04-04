@@ -5,31 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Entrar | EducarIA</title>
     <link rel="stylesheet" href="assets/css/estilo-premium.css">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
     <script src="assets/js/auth-flow.js" defer></script>
 </head>
 <body class="product-body theme-auth" data-auth-page="true">
     <main class="auth-shell">
         <section class="auth-panel auth-panel--brand">
-            <a href="index.html" class="platform-brand auth-brand">
-                <img src="assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
-                <div>
-                    <span>EducarIA</span>
-                    <strong>Conta do professor</strong>
-                </div>
+            <a href="landing.html" class="auth-brand auth-brand--hero">
+                <img src="assets/images/educar-logo.png" alt="EducarIA" class="auth-brand-logo-large">
             </a>
-            <span class="focus-eyebrow">Acesso rapido</span>
-            <h1>Entre para abrir suas turmas e continuar suas atividades.</h1>
-            <p>O acesso fica vinculado ao cadastro do professor. Em breve, essa mesma conta tambem vai centralizar assinatura e pagamento.</p>
-            <div class="auth-feature-list">
-                <article class="auth-feature-card">
-                    <strong>Conta unica</strong>
-                    <span>Turmas, atividades e acesso ficam ligados ao mesmo professor.</span>
-                </article>
-                <article class="auth-feature-card">
-                    <strong>Fluxo simples</strong>
-                    <span>Entrar, abrir a turma certa e continuar a aula com poucos cliques.</span>
-                </article>
-            </div>
+            <h1>O melhor HUB de atividades para professores do Brasil</h1>
         </section>
 
         <section class="auth-panel auth-panel--form">
@@ -38,13 +26,17 @@
                     <span class="platform-section-label">Entrar</span>
                     <h2>Acesse sua conta</h2>
                 </div>
-                <p>Use o email cadastrado para entrar e continuar o trabalho na plataforma.</p>
+                <p>Use email e senha para abrir sua conta e continuar o trabalho na plataforma.</p>
             </div>
 
             <form class="auth-form" data-login-form>
                 <div class="platform-field">
                     <label for="login-email">Email</label>
                     <input id="login-email" name="email" type="email" placeholder="professor@escola.com.br">
+                </div>
+                <div class="platform-field">
+                    <label for="login-password">Senha</label>
+                    <input id="login-password" name="password" type="password" placeholder="Digite sua senha">
                 </div>
 
                 <button type="submit" class="platform-link-button platform-link-primary auth-submit">Entrar</button>

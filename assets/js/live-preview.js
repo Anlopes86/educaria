@@ -28,7 +28,7 @@ function renderQuestionOptions(options, correctKey) {
         <div class="preview-option-list">
             ${options.map((item) => `
                 <div class="preview-option ${item.key === correctKey ? "is-correct" : ""}">
-                    <span>${escapeHtml(item.value || "Sem op&ccedil;&atilde;o")}</span>
+                    <span>${escapeHtml(item.value || "Sem opção")}</span>
                     <span class="preview-badge">${item.key === correctKey ? "Correta" : item.label}</span>
                 </div>
             `).join("")}
@@ -76,11 +76,11 @@ function buildQuizPreview() {
         ${cards.map((card, index) => {
             const type = selectValue(card, "type");
             const prompt = textValue(card, "prompt") || "Sem enunciado";
-            const explanation = textValue(card, "explanation") || "Sem explica&ccedil;&atilde;o";
+            const explanation = textValue(card, "explanation") || "Sem explicação";
 
             if (type === "Pergunta aberta") {
                 const model = textValue(card, "model") || "Sem resposta modelo";
-                const criteria = textValue(card, "criteria") || "Sem crit&eacute;rio";
+                const criteria = textValue(card, "criteria") || "Sem critério";
                 return `
                     <section class="live-preview-card">
                         <span class="platform-section-label">Quest&atilde;o ${index + 1}</span>
@@ -192,7 +192,7 @@ function buildSlidesPreview() {
         ${slides.map((slide, index) => {
             const title = textValue(slide, "slide-title") || "Sem título";
             const subtitle = textValue(slide, "slide-subtitle");
-            const body = textValue(slide, "slide-body") || "Sem conte&uacute;do";
+            const body = textValue(slide, "slide-body") || "Sem conteúdo";
             const imageMode = selectValue(slide, "slide-image-mode") || "Sem imagem";
             const imagePrompt = textValue(slide, "slide-image-prompt") || "Sem imagem definida";
             const imageUrl = textValue(slide, "slide-image-url");

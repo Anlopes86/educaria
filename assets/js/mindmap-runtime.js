@@ -1,8 +1,12 @@
 const MINDMAP_DRAFT_KEY = "educaria:builder:mindmap";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function readMindmapDraft() {
     try {
-        const raw = localStorage.getItem(MINDMAP_DRAFT_KEY);
+        const raw = localStorage.getItem(scopedStorageKey(MINDMAP_DRAFT_KEY));
         return raw ? JSON.parse(raw) : null;
     } catch (error) {
         console.warn("EducarIA mindmap unavailable:", error);

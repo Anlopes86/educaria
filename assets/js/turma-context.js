@@ -2,16 +2,10 @@ const TURMA_CONTEXT_KEY = "educaria:selectedClass";
 const TURMA_LIST_KEY = "educaria:classList";
 const EDUCARIA_RESET_KEY = "educaria:reset:empty-state-v1";
 const DEFAULT_CLASSES = [];
-const RESETTABLE_KEYS = [
-    TURMA_CONTEXT_KEY,
-    TURMA_LIST_KEY,
-    "educaria:lessons",
-    "educaria:activeLessonId",
-    "educaria:builder:slides",
-    "educaria:builder:flashcards",
-    "educaria:builder:quiz",
-    "educaria:currentMaterialType"
-];
+
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
 
 function normalizeClassLabel(value) {
     return typeof value === "string" ? value.trim() : "";
@@ -19,9 +13,9 @@ function normalizeClassLabel(value) {
 
 function ensureEmptyStartState() {
     try {
-        if (localStorage.getItem(EDUCARIA_RESET_KEY) === "done") return;
-        RESETTABLE_KEYS.forEach((key) => localStorage.removeItem(key));
-        localStorage.setItem(EDUCARIA_RESET_KEY, "done");
+        const resetKey = scopedStorageKey(EDUCARIA_RESET_KEY);
+        if (localStorage.getItem(resetKey) === "done") return;
+        localStorage.setItem(resetKey, "done");
     } catch (error) {
         console.warn("EducarIA reset unavailable:", error);
     }
@@ -29,7 +23,7 @@ function ensureEmptyStartState() {
 
 function readStoredClasses() {
     try {
-        const parsed = JSON.parse(localStorage.getItem(TURMA_LIST_KEY) || "[]");
+        const parsed = JSON.parse(localStorage.getItem(scopedStorageKey(TURMA_LIST_KEY)) || "[]");
         return Array.isArray(parsed) ? parsed.map(normalizeClassLabel).filter(Boolean) : [];
     } catch (error) {
         console.warn("EducarIA class list unavailable:", error);
@@ -39,7 +33,7 @@ function readStoredClasses() {
 
 function saveClassList(classes) {
     try {
-        localStorage.setItem(TURMA_LIST_KEY, JSON.stringify(classes));
+        localStorage.setItem(scopedStorageKey(TURMA_LIST_KEY), JSON.stringify(classes));
     } catch (error) {
         console.warn("EducarIA class list unavailable:", error);
     }
@@ -55,7 +49,7 @@ function saveSelectedClass(value) {
     if (!turma) return;
 
     try {
-        localStorage.setItem(TURMA_CONTEXT_KEY, turma);
+        localStorage.setItem(scopedStorageKey(TURMA_CONTEXT_KEY), turma);
     } catch (error) {
         console.warn("EducarIA class context unavailable:", error);
     }
@@ -63,7 +57,7 @@ function saveSelectedClass(value) {
 
 function readSelectedClass() {
     try {
-        return normalizeClassLabel(localStorage.getItem(TURMA_CONTEXT_KEY));
+        return normalizeClassLabel(localStorage.getItem(scopedStorageKey(TURMA_CONTEXT_KEY)));
     } catch (error) {
         console.warn("EducarIA class context unavailable:", error);
         return "";

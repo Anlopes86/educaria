@@ -1,8 +1,12 @@
 const SLIDES_DRAFT_KEY = "educaria:builder:slides";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function readSlidesDraft() {
     try {
-        const raw = localStorage.getItem(SLIDES_DRAFT_KEY);
+        const raw = localStorage.getItem(scopedStorageKey(SLIDES_DRAFT_KEY));
         return raw ? JSON.parse(raw) : null;
     } catch (error) {
         console.warn("EducarIA presentation unavailable:", error);

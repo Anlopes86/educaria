@@ -1,8 +1,12 @@
 const DEBATE_DRAFT_KEY = "educaria:builder:debate";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function readDebateDraft() {
     try {
-        const raw = localStorage.getItem(DEBATE_DRAFT_KEY);
+        const raw = localStorage.getItem(scopedStorageKey(DEBATE_DRAFT_KEY));
         return raw ? JSON.parse(raw) : null;
     } catch (error) {
         console.warn("EducarIA debate unavailable:", error);

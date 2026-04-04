@@ -7,11 +7,15 @@ let lessonPlayerState = {
 let lessonPlayerIndex = 0;
 const ACTIVE_LESSON_SEQUENCE_KEY = "educaria:activeLessonSequenceId";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function readActiveLessonSequenceRecord() {
     let lesson = typeof readActiveLesson === "function" ? readActiveLesson() : null;
     if ((!lesson || lesson.materialType !== "lesson") && typeof readLessonsLibrary === "function") {
         try {
-            const preservedId = localStorage.getItem(ACTIVE_LESSON_SEQUENCE_KEY) || "";
+            const preservedId = localStorage.getItem(scopedStorageKey(ACTIVE_LESSON_SEQUENCE_KEY)) || "";
             if (preservedId) {
                 lesson = readLessonsLibrary().find((item) => item.id === preservedId) || lesson;
             }
@@ -27,7 +31,7 @@ function readActiveLessonSequence() {
     const lesson = readActiveLessonSequenceRecord();
     if (!lesson || !lesson.draft) {
         try {
-            const rawDraft = localStorage.getItem("educaria:builder:lesson") || "";
+            const rawDraft = localStorage.getItem(scopedStorageKey("educaria:builder:lesson")) || "";
             return rawDraft ? JSON.parse(rawDraft) : null;
         } catch (error) {
             console.warn("EducarIA lesson player unavailable:", error);
@@ -178,7 +182,7 @@ function initLessonSequencePlayer() {
     try {
         const currentLessonId = activeLesson?.id || "";
         if (currentLessonId) {
-            localStorage.setItem(ACTIVE_LESSON_SEQUENCE_KEY, currentLessonId);
+            localStorage.setItem(scopedStorageKey(ACTIVE_LESSON_SEQUENCE_KEY), currentLessonId);
         }
     } catch (error) {
         console.warn("EducarIA lesson player unavailable:", error);

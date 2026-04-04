@@ -1,8 +1,12 @@
 const EDUCARIA_MATERIAL_TYPE_KEY = "educaria:currentMaterialType";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function setCurrentMaterialType(type) {
     try {
-        localStorage.setItem(EDUCARIA_MATERIAL_TYPE_KEY, type);
+        localStorage.setItem(scopedStorageKey(EDUCARIA_MATERIAL_TYPE_KEY), type);
     } catch (error) {
         console.warn("EducarIA material context unavailable:", error);
     }
@@ -10,7 +14,7 @@ function setCurrentMaterialType(type) {
 
 function readCurrentMaterialType() {
     try {
-        return localStorage.getItem(EDUCARIA_MATERIAL_TYPE_KEY) || "slides";
+        return localStorage.getItem(scopedStorageKey(EDUCARIA_MATERIAL_TYPE_KEY)) || "slides";
     } catch (error) {
         console.warn("EducarIA material context unavailable:", error);
         return "slides";

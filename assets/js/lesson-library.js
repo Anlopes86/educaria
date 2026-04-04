@@ -4,16 +4,20 @@ const CLASS_CONTEXT_KEY = "educaria:selectedClass";
 const LESSON_SCOPE_LIBRARY = "library";
 const LESSON_SCOPE_CLASS = "class";
 
+function scopedStorageKey(baseKey) {
+    return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
 function draftKeyForType(type) {
-    if (type === "lesson") return "educaria:builder:lesson";
-    if (type === "quiz") return "educaria:builder:quiz";
-    if (type === "flashcards") return "educaria:builder:flashcards";
-    if (type === "wheel") return "educaria:builder:wheel";
-    if (type === "memory") return "educaria:builder:memory";
-    if (type === "match") return "educaria:builder:match";
-    if (type === "mindmap") return "educaria:builder:mindmap";
-    if (type === "debate") return "educaria:builder:debate";
-    return "educaria:builder:slides";
+    if (type === "lesson") return scopedStorageKey("educaria:builder:lesson");
+    if (type === "quiz") return scopedStorageKey("educaria:builder:quiz");
+    if (type === "flashcards") return scopedStorageKey("educaria:builder:flashcards");
+    if (type === "wheel") return scopedStorageKey("educaria:builder:wheel");
+    if (type === "memory") return scopedStorageKey("educaria:builder:memory");
+    if (type === "match") return scopedStorageKey("educaria:builder:match");
+    if (type === "mindmap") return scopedStorageKey("educaria:builder:mindmap");
+    if (type === "debate") return scopedStorageKey("educaria:builder:debate");
+    return scopedStorageKey("educaria:builder:slides");
 }
 
 function stackSelectorForType(type) {
@@ -31,7 +35,8 @@ function stackSelectorForType(type) {
 function readLessonsLibrary() {
     try {
         const raw = localStorage.getItem(LESSONS_LIBRARY_KEY);
-        return raw ? JSON.parse(raw) : [];
+        const scopedRaw = localStorage.getItem(scopedStorageKey(LESSONS_LIBRARY_KEY));
+        return scopedRaw ? JSON.parse(scopedRaw) : (raw ? JSON.parse(raw) : []);
     } catch (error) {
         console.warn("EducarIA lessons unavailable:", error);
         return [];
@@ -40,7 +45,7 @@ function readLessonsLibrary() {
 
 function writeLessonsLibrary(lessons) {
     try {
-        localStorage.setItem(LESSONS_LIBRARY_KEY, JSON.stringify(lessons));
+        localStorage.setItem(scopedStorageKey(LESSONS_LIBRARY_KEY), JSON.stringify(lessons));
     } catch (error) {
         console.warn("EducarIA lessons unavailable:", error);
     }
@@ -127,7 +132,7 @@ function showLibraryToast(message) {
 
 function readActiveLessonId() {
     try {
-        return localStorage.getItem(ACTIVE_LESSON_KEY) || "";
+        return localStorage.getItem(scopedStorageKey(ACTIVE_LESSON_KEY)) || "";
     } catch (error) {
         console.warn("EducarIA active lesson unavailable:", error);
         return "";
@@ -136,7 +141,7 @@ function readActiveLessonId() {
 
 function writeActiveLessonId(id) {
     try {
-        localStorage.setItem(ACTIVE_LESSON_KEY, id);
+        localStorage.setItem(scopedStorageKey(ACTIVE_LESSON_KEY), id);
     } catch (error) {
         console.warn("EducarIA active lesson unavailable:", error);
     }
@@ -148,7 +153,7 @@ function currentClassName() {
     }
 
     try {
-        return localStorage.getItem(CLASS_CONTEXT_KEY) || "";
+        return localStorage.getItem(scopedStorageKey(CLASS_CONTEXT_KEY)) || "";
     } catch (error) {
         console.warn("EducarIA class context unavailable:", error);
         return "";
@@ -162,7 +167,7 @@ function updateCurrentClass(value) {
     }
 
     try {
-        localStorage.setItem(CLASS_CONTEXT_KEY, value);
+        localStorage.setItem(scopedStorageKey(CLASS_CONTEXT_KEY), value);
     } catch (error) {
         console.warn("EducarIA class context unavailable:", error);
     }
@@ -551,7 +556,7 @@ function activateLessonById(id) {
     writeActiveLessonId(lesson.id);
     if ((lesson.materialType || "slides") === "lesson") {
         try {
-            localStorage.setItem("educaria:activeLessonSequenceId", lesson.id);
+            localStorage.setItem(scopedStorageKey("educaria:activeLessonSequenceId"), lesson.id);
         } catch (error) {
             console.warn("EducarIA lesson unavailable:", error);
         }
