@@ -4,13 +4,13 @@ import cors from "cors";
 import multer from "multer";
 import mammoth from "mammoth";
 import pdfParse from "pdf-parse";
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 const port = Number(process.env.PORT || 8787);
 const allowedOrigin = process.env.ALLOWED_ORIGIN || "*";
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+const gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
 
 app.use(cors({ origin: allowedOrigin === "*" ? true : allowedOrigin }));
 app.use(express.json({ limit: "5mb" }));
@@ -105,24 +105,46 @@ function schemaFor(materialType) {
 function promptFor(materialType, action, sourceText) {
     if (materialType === "quiz") {
         return [
-            "Você organiza conteúdos para uma plataforma educacional brasileira.",
-            "Responda em JSON estruturado compatível com o schema fornecido.",
-            "Se o texto já trouxer perguntas, normalize e complete o que faltar.",
-            "Se o texto for conteúdo expositivo, gere um quiz fiel ao material.",
-            "Prefira linguagem clara, objetiva e apropriada para sala de aula.",
+            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compativel com o schema fornecido.",
+            "O material deve ficar pronto para revisao rapida do professor, sem texto fora do JSON.",
+            "Escreva em portugues do Brasil, com linguagem escolar clara, objetiva e natural.",
+            "Se o texto ja trouxer perguntas, normalize a estrutura e complete apenas o que estiver faltando.",
+            "Se o texto for expositivo, gere um quiz fiel ao conteudo enviado, sem inventar fatos desnecessarios.",
+            "Prefira perguntas que verifiquem compreensao, relacao entre ideias e identificacao de conceitos centrais.",
+            "Evite enunciados vagos, alternativas ambiguas e distracoes absurdas.",
+            "Em multipla escolha, use 4 alternativas plausiveis e apenas uma correta.",
+            "Em verdadeiro ou falso, escreva afirmacoes objetivas e verificaveis.",
+            "Em pergunta aberta, produza criterio curto e resposta-modelo enxuta.",
+            "A explicacao deve ajudar o professor a corrigir ou retomar o conteudo.",
             `Objetivo do professor: ${action || "Estruturar quiz a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Priorize clareza e aderencia ao texto-base.",
+            "- Nao use tom publicitario nem linguagem excessivamente rebuscada.",
+            "- Se o conteudo estiver incompleto, faca a melhor estrutura possivel sem sair do tema.",
             "Material de origem:",
             sourceText
         ].join("\n\n");
     }
 
     return [
-        "Você organiza conteúdos para uma plataforma educacional brasileira.",
-        "Responda em JSON estruturado compatível com o schema fornecido.",
-        "Quebre o conteúdo em uma sequência lógica de slides curtos e projetáveis.",
-        "Evite parágrafos longos na parte visível do slide.",
-        "Sugira image_prompt apenas quando realmente ajudar a aula.",
+        "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+        "Responda apenas em JSON compativel com o schema fornecido.",
+        "Monte slides em portugues do Brasil, prontos para uma aula real e para edicao rapida pelo professor.",
+        "Quebre o conteudo em uma sequencia logica, didatica e enxuta.",
+        "O texto visivel no slide deve ser curto, projetavel e facil de ler pela turma.",
+        "Evite paragrafos longos, frases de efeito, cliches e tom generico de apresentacao corporativa.",
+        "Prefira titulos claros, subtitulos uteis e corpo em topicos curtos quando fizer sentido.",
+        "Use teacher_notes para orientar a mediacao do professor sem repetir o que ja esta visivel no slide.",
+        "Sugira image_prompt apenas quando a imagem realmente ajudar a compreensao do conteudo.",
+        "Quando sugerir image_prompt, prefira descricoes visuais educativas, neutras e adequadas ao contexto escolar brasileiro.",
+        "Organize a sequencia com comeco, desenvolvimento e fechamento.",
         `Objetivo do professor: ${action || "Estruturar slides a partir do material enviado."}`,
+        "Regras adicionais:",
+        "- Nao invente dados especificos que nao estejam sustentados pelo texto-base.",
+        "- Se o conteudo estiver extenso, priorize as ideias centrais.",
+        "- Se o texto estiver raso, mantenha a estrutura simples e honesta.",
+        "- Evite excesso de slides; prefira concisao com progressao clara.",
         "Material de origem:",
         sourceText
     ].join("\n\n");
@@ -153,7 +175,7 @@ async function extractTextFromFile(file) {
 app.get("/api/health", (_request, response) => {
     response.json({
         ok: true,
-        openaiConfigured: Boolean(process.env.OPENAI_API_KEY)
+        geminiConfigured: Boolean(process.env.GEMINI_API_KEY)
     });
 });
 
@@ -164,11 +186,11 @@ app.post("/api/ai/generate", upload.single("file"), async (request, response) =>
         const schemaConfig = schemaFor(materialType);
 
         if (!schemaConfig) {
-            return response.status(400).json({ error: "Tipo de material não suportado." });
+            return response.status(400).json({ error: "Tipo de material nao suportado." });
         }
 
-        if (!openai) {
-            return response.status(503).json({ error: "OPENAI_API_KEY não configurada no backend." });
+        if (!gemini) {
+            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
         }
 
         const fileText = await extractTextFromFile(request.file);
@@ -182,26 +204,19 @@ app.post("/api/ai/generate", upload.single("file"), async (request, response) =>
             return response.status(400).json({ error: "Envie um texto-base ou arquivo suportado." });
         }
 
-        const result = await openai.responses.create({
-            model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-            input: [
-                {
-                    role: "user",
-                    content: promptFor(materialType, action, sourceText)
-                }
-            ],
-            text: {
-                format: {
-                    type: "json_schema",
-                    name: schemaConfig.name,
-                    description: schemaConfig.description,
-                    schema: schemaConfig.schema,
-                    strict: true
+        const result = await gemini.models.generateContent({
+            model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
+            contents: promptFor(materialType, action, sourceText),
+            config: {
+                responseMimeType: "application/json",
+                responseJsonSchema: {
+                    ...schemaConfig.schema,
+                    description: schemaConfig.description
                 }
             }
         });
 
-        const material = JSON.parse(result.output_text || "{}");
+        const material = JSON.parse(result.text || "{}");
         return response.json({
             ok: true,
             materialType,

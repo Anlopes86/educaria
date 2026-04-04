@@ -25,7 +25,7 @@ Isso evita conectar uma API sem contrato claro.
 1. O professor cola um texto ou envia um arquivo no builder.
 2. O frontend envia isso para `POST /api/ai/generate`.
 3. O backend extrai texto de `.txt`, `.docx` e `.pdf`.
-4. O backend chama a OpenAI.
+4. O backend chama o Gemini.
 5. A resposta volta em JSON estruturado.
 6. O frontend preenche automaticamente os cards do builder.
 
@@ -40,8 +40,8 @@ npm install
 Copie `.env.example` para `.env` e preencha:
 
 ```env
-OPENAI_API_KEY=...
-OPENAI_MODEL=gpt-4.1-mini
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-2.5-flash
 PORT=8787
 ALLOWED_ORIGIN=http://127.0.0.1:5500
 ```
