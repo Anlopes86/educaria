@@ -139,7 +139,7 @@ function buildFlashcardsPreview() {
         ${cards.map((card, index) => {
             const front = textValue(card, "front") || "Sem frente";
             const back = textValue(card, "back") || "Sem verso";
-            const example = textValue(card, "example") || "Sem exemplo";
+            const example = textValue(card, "example") || "Sem anotacoes";
             const frontColor = colorValue(card, "front-color", "#ffffff");
             const backColor = colorValue(card, "back-color", "#dbeafe");
             const textColor = colorValue(card, "text-color", "#0f172a");
@@ -158,7 +158,7 @@ function buildFlashcardsPreview() {
                         </div>
                         ${includeExample === "Sim" ? `
                             <div class="flashcard-preview-example" style="color: ${escapeHtml(textColor)};">
-                                <strong>Exemplo</strong>
+                                <strong>Anotacoes</strong>
                                 <p>${escapeHtml(example)}</p>
                             </div>
                         ` : ""}

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -14,9 +14,7 @@
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/editor-disclosure.js" defer></script>
-    <script>
-        window.EDUCARIA_AI_ENDPOINT = "https://educaria-ai-service.onrender.com/api/ai/generate";
-    </script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-material-generator.js" defer></script>
     <script src="../assets/js/slide-theme-controls.js" defer></script>
 </head>
@@ -32,7 +30,7 @@
             </a>
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
-                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+                <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
         <div class="builder-floating-actions">
@@ -44,8 +42,8 @@
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de slides</span>
-                <h1>Organize a sequencia e acompanhe no preview.</h1>
-                <p>Conteudo primeiro. Visual depois.</p>
+                <h1>Organize a sequência e acompanhe no preview.</h1>
+                <p>Conteúdo primeiro. Visual depois.</p>
             </div>
         </section>
 
@@ -60,7 +58,7 @@
                         <div class="platform-form-grid ai-structure-grid">
                             <div class="platform-field platform-field-wide">
                                 <label for="slides-fonte-texto">Roteiro ou texto-base do professor</label>
-                                <textarea id="slides-fonte-texto" rows="6" placeholder="Cole um roteiro, topicos ou texto da aula para a IA quebrar em slides."></textarea>
+                                <textarea id="slides-fonte-texto" rows="6" placeholder="Cole um roteiro, tópicos ou texto da aula para a IA quebrar em slides."></textarea>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-arquivo">Arquivo de apoio</label>
@@ -70,7 +68,7 @@
                                 <label for="slides-acao-ia">Como a IA deve ajudar</label>
                                 <select id="slides-acao-ia">
                                     <option>Organizar texto em slides</option>
-                                    <option>Resumir topicos em sequencia</option>
+                                    <option>Resumir tópicos em sequência</option>
                                     <option>Gerar imagem quando fizer sentido</option>
                                 </select>
                             </div>
@@ -79,7 +77,7 @@
                                 <input id="slides-quantidade" type="number" min="1" max="30" step="1" value="8" placeholder="Ex.: 10">
                             </div>
                             <div class="platform-field">
-                                <label for="slides-detalhamento">Nivel de detalhamento</label>
+                                <label for="slides-detalhamento">Nível de detalhamento</label>
                                 <select id="slides-detalhamento">
                                     <option>Equilibrado</option>
                                     <option>Mais enxuto</option>
@@ -90,17 +88,17 @@
                                 <label for="slides-imagens-preferencia">Uso de imagens</label>
                                 <select id="slides-imagens-preferencia">
                                     <option>Quando fizer sentido</option>
-                                    <option>So no slide inicial</option>
-                                    <option>Em varios slides</option>
+                                    <option>Só no slide inicial</option>
+                                    <option>Em vários slides</option>
                                     <option>Sem imagens</option>
                                 </select>
                             </div>
                             <div class="platform-field">
-                                <label for="slides-publico">Ano ou publico</label>
-                                <input id="slides-publico" type="text" value="" placeholder="Ex.: 5º ano, ensino medio, EJA">
+                                <label for="slides-publico">Ano ou público</label>
+                                <input id="slides-publico" type="text" value="" placeholder="Ex.: 5º ano, ensino médio, EJA">
                             </div>
                             <div class="platform-field">
-                                <label for="slides-tom">Tom da apresentacao</label>
+                                <label for="slides-tom">Tom da apresentação</label>
                                 <select id="slides-tom">
                                     <option>Claro e equilibrado</option>
                                     <option>Mais visual e direto</option>
@@ -110,7 +108,7 @@
                             </div>
                             <div class="platform-field platform-field-wide">
                                 <label for="slides-objetivo">Objetivo da aula</label>
-                                <input id="slides-objetivo" type="text" value="" placeholder="Ex.: introduzir o tema, revisar conteudo, preparar debate">
+                                <input id="slides-objetivo" type="text" value="" placeholder="Ex.: introduzir o tema, revisar conteúdo, preparar debate">
                             </div>
                         </div>
                         <div class="utility-actions">
@@ -121,7 +119,7 @@
 
                 <details class="editor-disclosure">
                     <summary>
-                        <span>Tema visual da apresentacao</span>
+                        <span>Tema visual da apresentação</span>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
@@ -130,7 +128,7 @@
                                 <label for="slides-tema-visual">Estilo visual</label>
                                 <select id="slides-tema-visual">
                                     <option value="moderno">Moderno</option>
-                                    <option value="academico">Academico</option>
+                                    <option value="academico">Acadêmico</option>
                                     <option value="vibrante">Vibrante</option>
                                     <option value="minimalista">Minimalista</option>
                                     <option value="infantil">Infantil</option>
@@ -141,7 +139,7 @@
                                 <select id="slides-tema-fonte">
                                     <option>Destaque moderno</option>
                                     <option>Leitura limpa</option>
-                                    <option>Serifada classica</option>
+                                    <option>Serifada clássica</option>
                                 </select>
                             </div>
                             <div class="platform-field">
@@ -185,16 +183,16 @@
 
                         <div class="platform-form-grid activity-essential-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Titulo do slide</label>
-                                <input data-field="slide-title" type="text" value="" placeholder="Qual e a ideia principal deste slide?">
+                                <label>Título do slide</label>
+                                <input data-field="slide-title" type="text" value="" placeholder="Qual é a ideia principal deste slide?">
                             </div>
                             <div class="platform-field platform-field-wide">
-                                <label>Subtitulo do slide</label>
+                                <label>Subtítulo do slide</label>
                                 <input data-field="slide-subtitle" type="text" value="" placeholder="Contexto curto para apoiar a leitura">
                             </div>
                             <div class="platform-field platform-field-wide">
-                                <label>Conteudo visivel</label>
-                                <textarea data-field="slide-body" rows="4" placeholder="Escreva o texto que sera projetado para a turma"></textarea>
+                                <label>Conteúdo visível</label>
+                                <textarea data-field="slide-body" rows="4" placeholder="Escreva o texto que será projetado para a turma"></textarea>
                             </div>
                         </div>
 
@@ -222,7 +220,7 @@
                                 <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Escolher imagem</button>
                             </div>
                             <div class="platform-field platform-field-wide" hidden>
-                                <label>Descricao da imagem</label>
+                                <label>Descrição da imagem</label>
                                 <textarea data-field="slide-image-prompt"></textarea>
                             </div>
                             <div class="platform-field platform-field-wide" hidden>
@@ -239,10 +237,10 @@
                                 </article>
                                 <article class="resource-source-card">
                                     <h3>Biblioteca</h3>
-                                    <p>Selecione uma imagem ja salva no projeto.</p>
+                                    <p>Selecione uma imagem já salva no projeto.</p>
                                 </article>
                                 <article class="resource-source-card">
-                                    <h3>Buscar gratis</h3>
+                                    <h3>Buscar grátis</h3>
                                     <p>Use bancos gratuitos como Pexels e Openverse.</p>
                                 </article>
                             </div>
@@ -250,7 +248,7 @@
                                 <div class="resource-result-card">
                                     <button type="button" data-pick-image data-label="Biblioteca: sala moderna" data-prompt="Sala de aula moderna com alunos usando computadores" data-theme="Biblioteca interna" data-palette="#bfe8ea,#eff6ff">
                                         <div class="resource-thumb">Sala moderna</div>
-                                        <div class="resource-result-meta"><strong>Biblioteca</strong><span>Imagem ja salva no projeto.</span></div>
+                                        <div class="resource-result-meta"><strong>Biblioteca</strong><span>Imagem já salva no projeto.</span></div>
                                     </button>
                                 </div>
                                 <div class="resource-result-card">
@@ -260,7 +258,7 @@
                                     </button>
                                 </div>
                                 <div class="resource-result-card">
-                                    <button type="button" data-pick-image data-label="Openverse: school illustration" data-prompt="Ilustracao escolar com livros e computador" data-theme="Openverse" data-palette="#c7d2fe,#f0fdf4">
+                                    <button type="button" data-pick-image data-label="Openverse: school illustration" data-prompt="Ilustração escolar com livros e computador" data-theme="Openverse" data-palette="#c7d2fe,#f0fdf4">
                                         <div class="resource-thumb">Openverse</div>
                                         <div class="resource-result-meta"><strong>School illustration</strong><span>Resultado educativo livre.</span></div>
                                     </button>
@@ -273,14 +271,14 @@
                         </div>
 
                         <div class="activity-optional-block">
-                            <span class="route-tag">Aparencia</span>
+                            <span class="route-tag">Aparência</span>
                             <div class="platform-form-grid activity-style-grid">
                                 <div class="platform-field">
                                     <label>Fonte do slide</label>
                                     <select data-field="slide-font">
                                         <option>Destaque moderno</option>
                                         <option>Leitura limpa</option>
-                                        <option>Serifada classica</option>
+                                        <option>Serifada clássica</option>
                                     </select>
                                 </div>
                                 <div class="platform-field">
@@ -313,16 +311,16 @@
 
                         <div class="platform-form-grid activity-essential-grid">
                             <div class="platform-field platform-field-wide">
-                                <label>Titulo do slide</label>
-                                <input data-field="slide-title" type="text" value="" placeholder="Qual e a ideia principal deste slide?">
+                                <label>Título do slide</label>
+                                <input data-field="slide-title" type="text" value="" placeholder="Qual é a ideia principal deste slide?">
                             </div>
                             <div class="platform-field platform-field-wide">
-                                <label>Subtitulo do slide</label>
+                                <label>Subtítulo do slide</label>
                                 <input data-field="slide-subtitle" type="text" value="" placeholder="Contexto curto para apoiar a leitura">
                             </div>
                             <div class="platform-field platform-field-wide">
-                                <label>Conteudo visivel</label>
-                                <textarea data-field="slide-body" rows="4" placeholder="Escreva o texto que sera projetado para a turma"></textarea>
+                                <label>Conteúdo visível</label>
+                                <textarea data-field="slide-body" rows="4" placeholder="Escreva o texto que será projetado para a turma"></textarea>
                             </div>
                         </div>
 
@@ -350,7 +348,7 @@
                                 <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Escolher imagem</button>
                             </div>
                             <div class="platform-field platform-field-wide" hidden>
-                                <label>Descricao da imagem</label>
+                                <label>Descrição da imagem</label>
                                 <textarea data-field="slide-image-prompt"></textarea>
                             </div>
                             <div class="platform-field platform-field-wide" hidden>
@@ -367,10 +365,10 @@
                                 </article>
                                 <article class="resource-source-card">
                                     <h3>Biblioteca</h3>
-                                    <p>Selecione uma imagem ja salva no projeto.</p>
+                                    <p>Selecione uma imagem já salva no projeto.</p>
                                 </article>
                                 <article class="resource-source-card">
-                                    <h3>Buscar gratis</h3>
+                                    <h3>Buscar grátis</h3>
                                     <p>Use bancos gratuitos como Pexels e Openverse.</p>
                                 </article>
                             </div>
@@ -378,7 +376,7 @@
                                 <div class="resource-result-card">
                                     <button type="button" data-pick-image data-label="Biblioteca: gramatica visual" data-prompt="Quadro visual com exemplos de present perfect" data-theme="Biblioteca interna" data-palette="#bfdbfe,#ecfeff">
                                         <div class="resource-thumb">Gramatica visual</div>
-                                        <div class="resource-result-meta"><strong>Biblioteca</strong><span>Recurso ja salvo.</span></div>
+                                        <div class="resource-result-meta"><strong>Biblioteca</strong><span>Recurso já salvo.</span></div>
                                     </button>
                                 </div>
                                 <div class="resource-result-card">
@@ -388,7 +386,7 @@
                                     </button>
                                 </div>
                                 <div class="resource-result-card">
-                                    <button type="button" data-pick-image data-label="Openverse: education icons" data-prompt="Ilustracao educacional com icones de escola" data-theme="Openverse" data-palette="#bbf7d0,#dbeafe">
+                                    <button type="button" data-pick-image data-label="Openverse: education icons" data-prompt="Ilustração educacional com ícones de escola" data-theme="Openverse" data-palette="#bbf7d0,#dbeafe">
                                         <div class="resource-thumb">Openverse</div>
                                         <div class="resource-result-meta"><strong>Education icons</strong><span>Resultado educativo livre.</span></div>
                                     </button>
@@ -401,14 +399,14 @@
                         </div>
 
                         <div class="activity-optional-block">
-                            <span class="route-tag">Aparencia</span>
+                            <span class="route-tag">Aparência</span>
                             <div class="platform-form-grid activity-style-grid">
                                 <div class="platform-field">
                                     <label>Fonte do slide</label>
                                     <select data-field="slide-font">
                                         <option>Destaque moderno</option>
                                         <option>Leitura limpa</option>
-                                        <option>Serifada classica</option>
+                                        <option>Serifada clássica</option>
                                     </select>
                                 </div>
                                 <div class="platform-field">
@@ -437,11 +435,13 @@
 
             <aside class="platform-builder-card slides-preview-card activity-preview-pane">
                 <span class="platform-section-label">Preview</span>
-                <h2>Veja a sequencia como o aluno vai ver</h2>
-                <p>Confira como a apresentacao vai ficar.</p>
+                <h2>Veja a sequência como o aluno vai ver</h2>
+                <p>Confira como a apresentação vai ficar.</p>
                 <div class="live-preview-stack" data-slides-preview></div>
             </aside>
         </section>
     </main>
 </body>
 </html>
+
+

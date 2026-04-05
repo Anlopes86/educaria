@@ -26,6 +26,25 @@ function currentSidebarClass() {
     return "";
 }
 
+function ensureSidebarClassesPageLink() {
+    document.querySelectorAll('[data-sidebar-toggle="classes"]').forEach((button) => {
+        const parent = button.parentElement;
+        if (!parent) return;
+
+        const previous = button.previousElementSibling;
+        if (!previous || !previous.matches("[data-sidebar-classes-page-link]")) {
+            const link = document.createElement("a");
+            link.href = "turmas.html";
+            link.className = "sidebar-nav-link";
+            link.textContent = "Turmas";
+            link.setAttribute("data-sidebar-classes-page-link", "");
+            parent.insertBefore(link, button);
+        }
+
+        button.textContent = "Turmas rápidas";
+    });
+}
+
 function renderSidebarCurrentClass(current) {
     document.querySelectorAll("[data-sidebar-current-class]").forEach((element) => {
         element.textContent = current || "Nenhuma turma selecionada";
@@ -206,6 +225,7 @@ function hydrateSidebarTeacher() {
 
 document.addEventListener("DOMContentLoaded", () => {
     hydrateSidebarTeacher();
+    ensureSidebarClassesPageLink();
     renderSidebarClasses();
     setActiveSidebarLinks();
     closeSidebarPanels();

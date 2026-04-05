@@ -113,6 +113,82 @@ const slidesSchema = {
     }
 };
 
+const flashcardsSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "cards"],
+    properties: {
+        title: { type: "string" },
+        cards: {
+            type: "array",
+            minItems: 1,
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["front", "back"],
+                properties: {
+                    front: { type: "string" },
+                    back: { type: "string" },
+                    example: { type: "string" }
+                }
+            }
+        }
+    }
+};
+
+const mindmapSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "subtitle", "branches"],
+    properties: {
+        title: { type: "string" },
+        subtitle: { type: "string" },
+        branches: {
+            type: "array",
+            minItems: 2,
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["title", "subtitle", "detail"],
+                properties: {
+                    title: { type: "string" },
+                    subtitle: { type: "string" },
+                    detail: { type: "string" },
+                    color: { type: "string" }
+                }
+            }
+        }
+    }
+};
+
+const debateSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "question", "format", "side_a", "side_b", "steps"],
+    properties: {
+        title: { type: "string" },
+        question: { type: "string" },
+        format: { type: "string" },
+        side_a: { type: "string" },
+        side_b: { type: "string" },
+        steps: {
+            type: "array",
+            minItems: 2,
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["title", "time", "question", "guidance"],
+                properties: {
+                    title: { type: "string" },
+                    time: { type: "string" },
+                    question: { type: "string" },
+                    guidance: { type: "string" }
+                }
+            }
+        }
+    }
+};
+
 function schemaFor(materialType) {
     if (materialType === "quiz") {
         return {
@@ -127,6 +203,30 @@ function schemaFor(materialType) {
             name: "educaria_slides",
             description: "Slides estruturados para o builder da EducarIA",
             schema: slidesSchema
+        };
+    }
+
+    if (materialType === "flashcards") {
+        return {
+            name: "educaria_flashcards",
+            description: "Flashcards estruturados para o builder da EducarIA",
+            schema: flashcardsSchema
+        };
+    }
+
+    if (materialType === "mindmap") {
+        return {
+            name: "educaria_mindmap",
+            description: "Mapa mental estruturado para o builder da EducarIA",
+            schema: mindmapSchema
+        };
+    }
+
+    if (materialType === "debate") {
+        return {
+            name: "educaria_debate",
+            description: "Debate guiado estruturado para o builder da EducarIA",
+            schema: debateSchema
         };
     }
 
@@ -154,6 +254,72 @@ function promptFor(materialType, action, sourceText) {
             "- Nao use tom publicitario nem linguagem excessivamente rebuscada.",
             "- Se o conteudo estiver incompleto, faca a melhor estrutura possivel sem sair do tema.",
             "- Respeite explicitamente a quantidade e o formato pedidos pelo professor quando isso for informado.",
+            "Material de origem:",
+            sourceText
+        ].join("\n\n");
+    }
+
+    if (materialType === "flashcards") {
+        return [
+            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Monte flashcards claros, curtos e uteis para memorizacao e revisao em sala.",
+            "Escreva em portugues do Brasil, com linguagem escolar natural.",
+            "Cada frente deve ser curta: termo, conceito, pergunta curta ou palavra-chave.",
+            "Cada verso deve trazer resposta, definicao, traducao ou explicacao curta.",
+            "Use example apenas quando realmente ajudar a fixacao.",
+            "Evite textos longos, redundancia e exemplos genericos.",
+            "Respeite rigorosamente os limites do card para caber bem na apresentacao.",
+            "Limite da frente: ate 56 caracteres ou 8 palavras, o que vier primeiro.",
+            "Limite do verso: ate 120 caracteres ou 18 palavras, o que vier primeiro.",
+            "Limite do example: ate 140 caracteres ou 20 palavras, o que vier primeiro.",
+            "Nao use frases truncadas, reticencias nem cortes artificiais.",
+            "Se o professor enviar conteudo teorico, transforme em pares de estudo fieis ao texto-base.",
+            `Objetivo do professor: ${action || "Estruturar flashcards a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Respeite a quantidade de cards pedida quando ela for informada.",
+            "- Prefira variedade de conceitos centrais, nao repeticoes.",
+            "- Nao invente fatos fora do tema.",
+            "Material de origem:",
+            sourceText
+        ].join("\n\n");
+    }
+
+    if (materialType === "mindmap") {
+        return [
+            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Monte um mapa mental didatico, claro e facil de revisar em tela.",
+            "Crie um tema central, um subtitulo curto e topicos bem distribuidos.",
+            "Cada branch deve ter titulo, subtitulo e um detail com uma explicacao breve e organizada.",
+            "No detail, voce pode usar um pequeno paragrafo e bullets curtos separados por \\n quando isso ajudar.",
+            "Evite topicos redundantes, vagos ou amplos demais.",
+            "Prefira conceitos centrais, relacoes entre ideias e organizacao hierarquica simples.",
+            `Objetivo do professor: ${action || "Estruturar mapa mental a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Respeite a quantidade de topicos pedida quando for informada.",
+            "- O subtitulo de cada branch deve resumir a ideia-chave.",
+            "- O detail deve ser curto o bastante para caber bem no builder.",
+            "Material de origem:",
+            sourceText
+        ].join("\n\n");
+    }
+
+    if (materialType === "debate") {
+        return [
+            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Monte um debate guiado pronto para mediacao de professor.",
+            "Crie um titulo, uma pergunta central forte, dois lados claros e um roteiro por etapas.",
+            "As etapas devem ter titulo, tempo sugerido, pergunta da etapa e guidance curto.",
+            "O guidance deve ajudar o professor a conduzir a discussao, nao repetir a pergunta.",
+            "Evite polarizacoes artificiais ou formulacoes agressivas.",
+            "Prefira perguntas debatíveis, adequadas ao ambiente escolar e ligadas ao conteudo-base.",
+            `Objetivo do professor: ${action || "Estruturar debate guiado a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Respeite o numero de etapas e o formato pedidos pelo professor quando forem informados.",
+            "- Os lados devem ser formulados de modo claro e compreensivel.",
+            "- Cada etapa deve ter progressao logica: aquecimento, confronto de ideias, fechamento.",
             "Material de origem:",
             sourceText
         ].join("\n\n");

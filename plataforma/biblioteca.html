@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -16,7 +16,7 @@
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/app-sidebar.js" defer></script>
 </head>
-<body class="product-body theme-overview" data-requires-auth="true">
+<body class="product-body theme-overview" data-requires-auth="true" data-page="library-overview">
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="../index.html" class="platform-brand app-sidebar-brand">
@@ -48,17 +48,17 @@
                             <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma">
                         </div>
                         <div class="platform-field">
-                            <label for="sidebar-materia">Materia</label>
+                            <label for="sidebar-materia">Matéria</label>
                             <select id="sidebar-materia">
-                                <option value="">Selecione a materia</option>
-                                <option value="Matematica">Matematica</option>
-                                <option value="Portugues">Portugues</option>
-                                <option value="Ciencias">Ciencias</option>
-                                <option value="Historia">Historia</option>
+                                <option value="">Selecione a matéria</option>
+                                <option value="Matematica">Matemática</option>
+                                <option value="Portugues">Português</option>
+                                <option value="Ciencias">Ciências</option>
+                                <option value="Historia">História</option>
                                 <option value="Geografia">Geografia</option>
-                                <option value="Ingles">Ingles</option>
+                                <option value="Ingles">Inglês</option>
                                 <option value="Artes">Artes</option>
-                                <option value="Educacao fisica">Educacao fisica</option>
+                                <option value="Educacao fisica">Educação física</option>
                             </select>
                         </div>
                         <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class>Criar turma</button>
@@ -72,8 +72,8 @@
                         <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
                         <a href="slides-builder.html" class="sidebar-subitem">Slides</a>
                         <a href="flashcards-builder.html" class="sidebar-subitem">Flashcards</a>
-                        <a href="jogo-memoria-builder.html" class="sidebar-subitem">Jogo da memoria</a>
-                        <a href="roleta-builder.html" class="sidebar-subitem">Roleta editavel</a>
+                        <a href="jogo-memoria-builder.html" class="sidebar-subitem">Jogo da memória</a>
+                        <a href="roleta-builder.html" class="sidebar-subitem">Roleta editável</a>
                         <a href="ligar-pontos-builder.html" class="sidebar-subitem">Ligar pontos</a>
                         <a href="mapa-mental-builder.html" class="sidebar-subitem">Mapa mental</a>
                         <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
@@ -82,6 +82,7 @@
                 </div>
 
                 <a href="biblioteca.html" class="sidebar-nav-link">Biblioteca</a>
+                <a href="configuracoes.html" class="sidebar-nav-link">Configurações</a>
             </nav>
 
             <div class="app-sidebar-footer">
@@ -90,35 +91,18 @@
         </aside>
 
         <main class="app-content">
-            <section class="app-page-intro">
-                <div class="app-page-intro__content">
-                    <h1>Biblioteca</h1>
-                    <p>Materiais salvos para reutilizar depois, mesmo sem vínculo imediato com uma turma.</p>
-                </div>
-            </section>
-
-            <section class="focus-card dashboard-panel">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label">Resumo</span>
-                        <h2 data-library-count>0 materiais salvos</h2>
-                    </div>
-                    <p>Quando você clicar em "Salvar na biblioteca" nos builders, o material aparece aqui.</p>
-                </div>
-
-                <div class="utility-actions">
-                    <a href="turma.html#formatos-criar" class="platform-link-button platform-link-primary">Criar atividade</a>
-                    <a href="index.html" class="platform-link-button platform-link-secondary">Voltar para o painel</a>
-                </div>
-            </section>
-
-            <section class="focus-card">
+            <section class="focus-card library-overview-panel">
                 <div class="page-section-title">
                     <div>
                         <span class="platform-section-label">Materiais</span>
-                        <h2>Seu acervo da biblioteca</h2>
+                        <h2 data-library-count>Seu acervo da biblioteca</h2>
                     </div>
                     <p>Abra, edite ou apresente qualquer material salvo independentemente de turma.</p>
+                </div>
+
+                <div class="utility-actions">
+                    <a href="turma.html#atividades-salvas" class="platform-link-button platform-link-primary">Criar atividade</a>
+                    <a href="index.html" class="platform-link-button platform-link-secondary">Voltar para o painel</a>
                 </div>
 
                 <div class="class-activity-groups" data-library-materials></div>

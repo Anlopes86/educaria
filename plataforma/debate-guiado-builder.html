@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -12,6 +12,8 @@
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/debate-builder.js" defer></script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/ai-material-generator.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="debate">
     <main class="platform-shell platform-flow-shell activity-editor-shell">
@@ -25,7 +27,7 @@
             </a>
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
-                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+                <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
         <div class="builder-floating-actions">
@@ -44,7 +46,49 @@
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <details class="editor-disclosure" open>
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Montar com IA</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label for="debate-fonte-texto">Texto ou tema do debate</label>
+                                <textarea id="debate-fonte-texto" rows="6" placeholder="Cole o tema, texto-base, artigo curto ou pergunta que a IA deve transformar em debate guiado."></textarea>
+                            </div>
+                            <div class="platform-field">
+                                <label for="debate-arquivo">Arquivo de apoio</label>
+                                <input id="debate-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
+                            </div>
+                            <div class="platform-field">
+                                <label for="debate-acao-ia">Como a IA deve ajudar</label>
+                                <select id="debate-acao-ia">
+                                    <option>Organizar roteiro de debate</option>
+                                    <option>Criar pergunta central e etapas</option>
+                                    <option>Transformar texto em discussão guiada</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="debate-etapas-livre">Quantidade de etapas</label>
+                                <input id="debate-etapas-livre" type="number" min="2" max="8" step="1" value="3">
+                            </div>
+                            <div class="platform-field">
+                                <label for="debate-formato-ia">Formato</label>
+                                <select id="debate-formato-ia">
+                                    <option>Dois lados</option>
+                                    <option>Roda guiada</option>
+                                    <option>Grupos com mediação</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-generate-material="debate">Estruturar debate com IA</button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure">
                     <summary>
                         <span>Configuração manual</span>
                         <small>Expandir</small>
@@ -77,11 +121,11 @@
                     </div>
                     <div class="platform-field">
                         <label for="debate-lado-a">Lado A</label>
-                        <input id="debate-lado-a" type="text" value="Posicao A">
+                        <input id="debate-lado-a" type="text" value="Posição A">
                     </div>
                     <div class="platform-field">
                         <label for="debate-lado-b">Lado B</label>
-                        <input id="debate-lado-b" type="text" value="Posicao B">
+                        <input id="debate-lado-b" type="text" value="Posição B">
                     </div>
                 </div>
                     </div>
@@ -137,7 +181,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field">
-                                <label>Titulo da etapa</label>
+                                <label>Título da etapa</label>
                                 <input data-debate-title type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -167,7 +211,7 @@
                         </div>
                         <div class="platform-form-grid">
                             <div class="platform-field">
-                                <label>Titulo da etapa</label>
+                                <label>Título da etapa</label>
                                 <input data-debate-title type="text" value="">
                             </div>
                             <div class="platform-field">
@@ -210,11 +254,11 @@
                         <div class="debate-preview-sides">
                             <article class="debate-preview-side">
                                 <span class="platform-section-label">Lado A</span>
-                                <strong data-debate-preview-side-a>Posicao A</strong>
+                                <strong data-debate-preview-side-a>Posição A</strong>
                             </article>
                             <article class="debate-preview-side">
                                 <span class="platform-section-label">Lado B</span>
-                                <strong data-debate-preview-side-b>Posicao B</strong>
+                                <strong data-debate-preview-side-b>Posição B</strong>
                             </article>
                         </div>
                         <div class="debate-preview-question" data-debate-preview-question>Pergunta central do debate</div>
@@ -226,3 +270,4 @@
     </main>
 </body>
 </html>
+

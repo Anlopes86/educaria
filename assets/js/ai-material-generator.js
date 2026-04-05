@@ -374,6 +374,164 @@ function applySlidesFromStructuredData(payload) {
     return true;
 }
 
+function applyFlashcardsFromStructuredData(payload) {
+    const cardsPayload = Array.isArray(payload?.cards) ? payload.cards : [];
+    if (!cardsPayload.length) return false;
+
+    const cards = ensureCardCount("[data-flashcards-stack]", "[data-flashcard]", cardsPayload.length);
+    if (!cards.length) return false;
+
+    cardsPayload.forEach((item, index) => {
+        const card = cards[index];
+        const front = card.querySelector('[data-field="front"]');
+        const back = card.querySelector('[data-field="back"]');
+        const example = card.querySelector('[data-field="example"]');
+
+        const fitFlashcardText = (value, maxChars, maxWords) => {
+            const clean = String(value || "").replace(/\s+/g, " ").trim();
+            if (!clean) return "";
+
+            const words = clean.split(" ").filter(Boolean);
+            let candidate = words.slice(0, maxWords).join(" ");
+
+            if (candidate.length > maxChars) {
+                candidate = candidate.slice(0, maxChars);
+                const punctuationBreak = Math.max(
+                    candidate.lastIndexOf("."),
+                    candidate.lastIndexOf(":"),
+                    candidate.lastIndexOf(";"),
+                    candidate.lastIndexOf(",")
+                );
+                const wordBreak = candidate.lastIndexOf(" ");
+                const breakAt = punctuationBreak > maxChars * 0.55 ? punctuationBreak + 1 : wordBreak;
+                candidate = candidate.slice(0, breakAt > 0 ? breakAt : maxChars).trim();
+            }
+
+            return candidate.trim();
+        };
+
+        if (front) front.value = fitFlashcardText(item.front, 56, 8);
+        if (back) back.value = fitFlashcardText(item.back, 120, 18);
+        if (example) example.value = fitFlashcardText(item.example, 140, 20);
+    });
+
+    const titleField = document.getElementById("cards-tema");
+    if (titleField && payload.title) {
+        titleField.value = payload.title;
+    }
+
+    renumberGeneratedCards("[data-flashcard]", "Card");
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
+function applyMindmapFromStructuredData(payload) {
+    const branches = Array.isArray(payload?.branches) ? payload.branches : [];
+    if (!branches.length) return false;
+
+    const titleField = document.getElementById("mapa-centro");
+    const subtitleField = document.getElementById("mapa-subtitulo");
+    const layoutField = document.getElementById("mapa-layout");
+    const countField = document.getElementById("mapa-ramos");
+
+    if (titleField) titleField.value = payload.title || "";
+    if (subtitleField) subtitleField.value = payload.subtitle || "";
+    if (layoutField) setSelectByText(layoutField, "Topicos");
+
+    if (typeof setMindCountSelect === "function") {
+        setMindCountSelect(branches.length);
+    } else if (countField) {
+        const option = [...countField.options].find((item) => String(item.textContent || "").includes(String(branches.length)));
+        if (option) countField.value = option.value;
+    }
+
+    if (typeof syncMindBranchCount === "function") {
+        syncMindBranchCount();
+    }
+
+    const cards = ensureCardCount("[data-mind-branches]", "[data-mind-branch]", branches.length);
+    if (!cards.length) return false;
+
+    cards.forEach((card, index) => {
+        const branch = branches[index];
+        const label = card.querySelector("[data-mind-label]");
+        const title = card.querySelector("[data-mind-title]");
+        const subtitle = card.querySelector("[data-mind-subtitle]");
+        const detail = card.querySelector("[data-mind-detail]");
+        const color = card.querySelector("[data-mind-color]");
+
+        if (label) label.textContent = `Topico ${index + 1}`;
+        if (title) title.value = branch?.title || "";
+        if (subtitle) subtitle.value = branch?.subtitle || "";
+        if (detail) detail.value = branch?.detail || "";
+        if (color && branch?.color) color.value = branch.color;
+    });
+
+    if (typeof renderMindPreview === "function") {
+        renderMindPreview();
+    }
+
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
+function applyDebateFromStructuredData(payload) {
+    const steps = Array.isArray(payload?.steps) ? payload.steps : [];
+    if (!steps.length) return false;
+
+    const titleField = document.getElementById("debate-titulo");
+    const questionField = document.getElementById("debate-pergunta");
+    const formatField = document.getElementById("debate-formato");
+    const sideAField = document.getElementById("debate-lado-a");
+    const sideBField = document.getElementById("debate-lado-b");
+    const countField = document.getElementById("debate-etapas");
+
+    if (titleField) titleField.value = payload.title || "";
+    if (questionField) questionField.value = payload.question || "";
+    if (formatField && payload.format) setSelectByText(formatField, payload.format);
+    if (sideAField) sideAField.value = payload.side_a || "";
+    if (sideBField) sideBField.value = payload.side_b || "";
+
+    if (typeof setDebateStepSelect === "function") {
+        setDebateStepSelect(steps.length);
+    } else if (countField) {
+        const option = [...countField.options].find((item) => String(item.textContent || "").includes(String(steps.length)));
+        if (option) countField.value = option.value;
+    }
+
+    if (typeof syncDebateStepCount === "function") {
+        syncDebateStepCount();
+    }
+
+    const cards = ensureCardCount("[data-debate-steps]", "[data-debate-step]", steps.length);
+    if (!cards.length) return false;
+
+    cards.forEach((card, index) => {
+        const step = steps[index];
+        const label = card.querySelector("[data-debate-label]");
+        const title = card.querySelector("[data-debate-title]");
+        const time = card.querySelector("[data-debate-time]");
+        const question = card.querySelector("[data-debate-question]");
+        const guidance = card.querySelector("[data-debate-guidance]");
+
+        if (label) label.textContent = `Etapa ${index + 1}`;
+        if (title) title.value = step?.title || "";
+        if (time) time.value = step?.time || "";
+        if (question) question.value = step?.question || "";
+        if (guidance) guidance.value = step?.guidance || "";
+    });
+
+    if (typeof renderDebatePreview === "function") {
+        renderDebatePreview();
+    }
+
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
 function buildFallbackSlides(sourceText) {
     const blocks = splitParagraphs(sourceText);
     const lines = normalizeLines(sourceText);
@@ -418,6 +576,78 @@ function buildFallbackQuiz(sourceText) {
             criteria: `Resposta alinhada ao material enviado ${index + 1}`,
             model_answer: "Resposta a ser revisada pelo professor."
         }))
+    };
+}
+
+function buildFallbackFlashcards(sourceText) {
+    const lines = normalizeLines(sourceText);
+    const cards = (lines.length ? lines : ["Conceito principal", "Definicao importante", "Exemplo de aplicacao"])
+        .slice(0, 10)
+        .map((line, index) => {
+            const pair = line.split(/\s*[-:]\s*/);
+            return {
+                front: pair[0] || `Card ${index + 1}`,
+                back: pair.slice(1).join(" - ") || summarizeBlock(line, "Definicao curta"),
+                example: ""
+            };
+        });
+
+    return {
+        title: "Flashcards estruturados",
+        cards
+    };
+}
+
+function buildFallbackMindmap(sourceText) {
+    const lines = normalizeLines(sourceText);
+    const title = lines[0] || "Tema da aula";
+    const branches = (lines.slice(1).length ? lines.slice(1) : ["Contexto", "Ideias centrais", "Exemplos", "Fechamento"])
+        .slice(0, 6)
+        .map((line, index) => ({
+            title: summarizeBlock(line, `Topico ${index + 1}`),
+            subtitle: `Ideia-chave ${index + 1}`,
+            detail: summarizeBlock(line, "Explique o conceito principal."),
+            color: ["#22c55e", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6"][index % 6]
+        }));
+
+    return {
+        title,
+        subtitle: "Panorama dos conceitos principais",
+        branches
+    };
+}
+
+function buildFallbackDebate(sourceText) {
+    const lines = normalizeLines(sourceText);
+    const title = lines[0] || "Debate guiado";
+    const question = lines.find((line) => line.includes("?")) || "Como podemos analisar esse tema por perspectivas diferentes?";
+
+    return {
+        title,
+        question,
+        format: "Dois lados",
+        side_a: "Posicao A",
+        side_b: "Posicao B",
+        steps: [
+            {
+                title: "Aquecimento",
+                time: "5 min",
+                question: question,
+                guidance: "Ative conhecimentos previos e organize as primeiras opinioes."
+            },
+            {
+                title: "Confronto de argumentos",
+                time: "8 min",
+                question: "Quais argumentos apoiam cada lado?",
+                guidance: "Peca justificativas, exemplos e respeito ao turno de fala."
+            },
+            {
+                title: "Fechamento",
+                time: "5 min",
+                question: "O que aprendemos com as duas perspectivas?",
+                guidance: "Sintetize ideias centrais e destaque pontos de convergencia."
+            }
+        ]
     };
 }
 
@@ -507,6 +737,40 @@ function materialConfig(materialType) {
         };
     }
 
+    if (materialType === "flashcards") {
+        return {
+            textId: "cards-fonte-texto",
+            fileId: "cards-arquivo",
+            actionId: "cards-acao-ia",
+            countId: "cards-quantidade-livre",
+            apply: applyFlashcardsFromStructuredData,
+            fallback: buildFallbackFlashcards
+        };
+    }
+
+    if (materialType === "mindmap") {
+        return {
+            textId: "mind-fonte-texto",
+            fileId: "mind-arquivo",
+            actionId: "mind-acao-ia",
+            countId: "mind-quantidade",
+            apply: applyMindmapFromStructuredData,
+            fallback: buildFallbackMindmap
+        };
+    }
+
+    if (materialType === "debate") {
+        return {
+            textId: "debate-fonte-texto",
+            fileId: "debate-arquivo",
+            actionId: "debate-acao-ia",
+            countId: "debate-etapas-livre",
+            formatId: "debate-formato-ia",
+            apply: applyDebateFromStructuredData,
+            fallback: buildFallbackDebate
+        };
+    }
+
     return null;
 }
 
@@ -556,7 +820,8 @@ async function generateMaterial(materialType, button) {
                 requestedCount ? `Gerar ${requestedCount} perguntas.` : "",
                 formatText ? `Formato desejado: ${formatText}.` : ""
             ].filter(Boolean).join(" ")
-            : [
+            : materialType === "slides"
+                ? [
                 action,
                 requestedCount ? `Gerar ${requestedCount} slides.` : "",
                 audienceText ? `Publico ou ano: ${audienceText}.` : "",
@@ -564,6 +829,23 @@ async function generateMaterial(materialType, button) {
                 toneText ? `Tom desejado: ${toneText}.` : "",
                 detailText ? `Nivel de detalhamento: ${detailText}.` : "",
                 imagePrefText ? `Uso de imagens: ${imagePrefText}.` : ""
+            ].filter(Boolean).join(" ")
+                : materialType === "flashcards"
+                    ? [
+                action,
+                requestedCount ? `Gerar ${requestedCount} cards.` : "",
+                document.getElementById("cards-exemplo")?.value ? `Incluir exemplos: ${document.getElementById("cards-exemplo").value}.` : ""
+            ].filter(Boolean).join(" ")
+                    : materialType === "mindmap"
+                        ? [
+                action,
+                requestedCount ? `Gerar ${requestedCount} topicos.` : "",
+                document.getElementById("mind-layout")?.value ? `Layout desejado: ${document.getElementById("mind-layout").value}.` : ""
+            ].filter(Boolean).join(" ")
+                        : [
+                action,
+                requestedCount ? `Gerar ${requestedCount} etapas.` : "",
+                formatText ? `Formato desejado: ${formatText}.` : ""
             ].filter(Boolean).join(" ");
 
         const payload = await requestStructuredMaterial(materialType, sourceText, file, generationHints);

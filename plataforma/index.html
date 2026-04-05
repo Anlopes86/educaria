@@ -27,38 +27,36 @@
                 </div>
             </a>
 
-            <div class="app-sidebar-profile">
-                <strong data-sidebar-teacher>Professor</strong>
-                <span data-sidebar-institution>Conta educacional</span>
+            <div class="app-sidebar-profile dashboard-sidebar-profile">
+                <div class="dashboard-avatar">P</div>
+                <div>
+                    <strong data-sidebar-teacher>Professor</strong>
+                    <span data-sidebar-institution>Conta educacional</span>
+                </div>
             </div>
 
-            <nav class="app-sidebar-nav">
-                <a href="index.html" class="sidebar-nav-link">Painel</a>
-
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
-                <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
-                    <div class="sidebar-subitems" data-sidebar-class-list></div>
-                </div>
+            <nav class="app-sidebar-nav dashboard-sidebar-nav">
+                <a href="index.html" class="sidebar-nav-link is-active">Painel</a>
 
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false">Criar turma</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="create-class" hidden>
-                    <div class="sidebar-create-card">
+                    <div class="sidebar-create-card" data-dashboard-tour-anchor="create-class-form">
                         <div class="platform-field">
                             <label for="sidebar-nome-turma">Nova turma</label>
                             <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma">
                         </div>
                         <div class="platform-field">
-                            <label for="sidebar-materia">Materia</label>
+                            <label for="sidebar-materia">Matéria</label>
                             <select id="sidebar-materia">
-                                <option value="">Selecione a materia</option>
-                                <option value="Matematica">Matematica</option>
-                                <option value="Portugues">Portugues</option>
-                                <option value="Ciencias">Ciencias</option>
-                                <option value="Historia">Historia</option>
+                                <option value="">Selecione a matéria</option>
+                                <option value="Matemática">Matemática</option>
+                                <option value="Português">Português</option>
+                                <option value="Ciências">Ciências</option>
+                                <option value="História">História</option>
                                 <option value="Geografia">Geografia</option>
-                                <option value="Ingles">Ingles</option>
+                                <option value="Inglês">Inglês</option>
                                 <option value="Artes">Artes</option>
-                                <option value="Educacao fisica">Educacao fisica</option>
+                                <option value="Educação física">Educação física</option>
                             </select>
                         </div>
                         <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class>Criar turma</button>
@@ -72,8 +70,8 @@
                         <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
                         <a href="slides-builder.html" class="sidebar-subitem">Slides</a>
                         <a href="flashcards-builder.html" class="sidebar-subitem">Flashcards</a>
-                        <a href="jogo-memoria-builder.html" class="sidebar-subitem">Jogo da memoria</a>
-                        <a href="roleta-builder.html" class="sidebar-subitem">Roleta editavel</a>
+                        <a href="jogo-memoria-builder.html" class="sidebar-subitem">Jogo da memória</a>
+                        <a href="roleta-builder.html" class="sidebar-subitem">Roleta</a>
                         <a href="ligar-pontos-builder.html" class="sidebar-subitem">Ligar pontos</a>
                         <a href="mapa-mental-builder.html" class="sidebar-subitem">Mapa mental</a>
                         <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
@@ -81,7 +79,13 @@
                     </div>
                 </div>
 
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Minhas turmas</button>
+                <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
+                    <div class="sidebar-subitems" data-sidebar-class-list></div>
+                </div>
+
                 <a href="biblioteca.html" class="sidebar-nav-link">Biblioteca</a>
+                <a href="configuracoes.html" class="sidebar-nav-link">Configurações</a>
             </nav>
 
             <div class="app-sidebar-footer">
@@ -89,31 +93,216 @@
             </div>
         </aside>
 
-        <main class="app-content">
-            <section class="app-page-intro">
-                <div class="app-page-intro__content">
-                    <h1>Painel do professor</h1>
-                    <p>Veja suas turmas, acompanhe quantas atividades já foram criadas e entre rápido na biblioteca ou na criação de novas atividades.</p>
+        <main class="app-content dashboard-overview-content">
+            <section class="dashboard-hero-panel">
+                <div class="dashboard-hero-copy">
+                    <span class="dashboard-eyebrow">Painel do professor</span>
+                    <h1><span data-dashboard-greeting>Bom dia</span>, <span data-sidebar-teacher>Professor</span>!</h1>
+                    <p>Pronto para transformar sua aula hoje? Explore nossas ferramentas de curadoria e crie experiências memoráveis.</p>
+
+                    <div class="dashboard-hero-actions">
+                        <a href="#activity-toolkit" class="platform-link-button platform-link-primary" data-dashboard-tour-anchor="hero-action">Criar atividade</a>
+                        <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Biblioteca</a>
+                    </div>
+                    <button type="button" class="dashboard-guide-trigger" data-dashboard-tour-start>Ver guia r&aacute;pido</button>
+                </div>
+
+                <aside class="dashboard-quick-create" data-dashboard-tour-anchor="quick-create">
+                    <span class="dashboard-next-class-tag">Criação rápida</span>
+                    <strong>Abra uma atividade em poucos cliques</strong>
+                    <p>Escolha a turma, selecione o formato e entre direto no editor correto.</p>
+
+                    <div class="dashboard-quick-create-form">
+                        <label class="dashboard-quick-field">
+                            <span>Turma</span>
+                            <select data-dashboard-quick-class>
+                                <option value="">Selecione uma turma</option>
+                            </select>
+                        </label>
+
+                        <label class="dashboard-quick-field">
+                            <span>Atividade</span>
+                            <select data-dashboard-quick-format>
+                                <option value="quiz-builder.html">Quiz</option>
+                                <option value="slides-builder.html">Slides</option>
+                                <option value="flashcards-builder.html">Flashcards</option>
+                                <option value="jogo-memoria-builder.html">Jogo da memória</option>
+                                <option value="roleta-builder.html">Roleta</option>
+                                <option value="ligar-pontos-builder.html">Ligar pontos</option>
+                                <option value="mapa-mental-builder.html">Mapa mental</option>
+                                <option value="debate-guiado-builder.html">Debate guiado</option>
+                                <option value="criar-aula.html">Aula completa</option>
+                            </select>
+                        </label>
+
+                        <button type="button" class="platform-link-button platform-link-primary" data-dashboard-quick-open>Abrir</button>
+                    </div>
+                </aside>
+            </section>
+
+            <section class="dashboard-section" id="activity-toolkit">
+                <div class="dashboard-section-head">
+                    <div>
+                        <span class="platform-section-label">Formatos para criar</span>
+                        <h2>Ferramentas de atividades</h2>
+                    </div>
+                    <a href="#activity-toolkit" class="dashboard-inline-link">Ver todas as ferramentas</a>
+                </div>
+
+                <div class="dashboard-toolkit-grid" data-dashboard-tour-anchor="toolkit">
+                    <a href="quiz-builder.html" class="dashboard-tool-card dashboard-tool-card--quiz">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <path d="M10 11v10h10"></path>
+                                <rect x="13" y="8" width="9" height="10" rx="1.6"></rect>
+                                <path d="M15 11.8c.4-1 1.2-1.6 2.4-1.6 1.4 0 2.3.9 2.3 2.1 0 1.1-.7 1.6-1.7 2.1-.9.4-1.3.8-1.3 1.8"></path>
+                                <circle cx="17.2" cy="16.7" r="0.7" fill="currentColor" stroke="none"></circle>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Quiz</h3>
+                            <p>Verificações rápidas de aprendizagem com feedback gamificado.</p>
+                        </div>
+                    </a>
+
+                    <a href="slides-builder.html" class="dashboard-tool-card dashboard-tool-card--slides">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <rect x="10" y="8.5" width="12" height="9" rx="1.6"></rect>
+                                <path d="M16 14.5v-4"></path>
+                                <path d="M13.6 12.4l2.4-2.4 2.4 2.4"></path>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Slides</h3>
+                            <p>Apresentações interativas com atividades integradas.</p>
+                        </div>
+                    </a>
+
+                    <a href="flashcards-builder.html" class="dashboard-tool-card dashboard-tool-card--flashcards">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <path d="M9.2 18.7l-1.1 2.8"></path>
+                                <path d="M22.8 9.9l1 2.3"></path>
+                                <rect x="12.6" y="8.8" width="7.8" height="12" rx="1.4" transform="rotate(-18 16.5 14.8)"></rect>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Flashcards</h3>
+                            <p>Baralhos de repetição espaçada para vocabulário e conceitos.</p>
+                        </div>
+                    </a>
+
+                    <a href="jogo-memoria-builder.html" class="dashboard-tool-card dashboard-tool-card--memory">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <path d="M13.2 9.8h2.2a2.2 2.2 0 0 1 4.4 0H22a1.8 1.8 0 0 1 1.8 1.8v2.1a2.2 2.2 0 0 1 0 4.4v2.1a1.8 1.8 0 0 1-1.8 1.8h-2.1a2.2 2.2 0 0 1-4.4 0h-2.3a1.8 1.8 0 0 1-1.8-1.8v-2.1a2.2 2.2 0 0 1 0-4.4v-2.1a1.8 1.8 0 0 1 1.8-1.8z"></path>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Jogo da memória</h3>
+                            <p>Exercícios de associação visual para diferentes faixas etárias.</p>
+                        </div>
+                    </a>
+
+                    <a href="roleta-builder.html" class="dashboard-tool-card dashboard-tool-card--wheel">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <path d="M21.6 9.7A7.6 7.6 0 1 0 23.6 16"></path>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Roleta</h3>
+                            <p>Sorteio de alunos, temas ou desafios de forma dinâmica.</p>
+                        </div>
+                    </a>
+
+                    <a href="ligar-pontos-builder.html" class="dashboard-tool-card dashboard-tool-card--match">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <path d="M8 12h12"></path>
+                                <path d="M16.5 8.5l3.5 3.5-3.5 3.5"></path>
+                                <path d="M24 20H12"></path>
+                                <path d="M15.5 16.5L12 20l3.5 3.5"></path>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Ligar pontos</h3>
+                            <p>Conecte termos, imagens e definições em atividades visuais.</p>
+                        </div>
+                    </a>
+
+                    <a href="mapa-mental-builder.html" class="dashboard-tool-card dashboard-tool-card--mindmap">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <circle cx="16" cy="16" r="2"></circle>
+                                <circle cx="16" cy="8.5" r="1.8"></circle>
+                                <circle cx="9.5" cy="12" r="1.8"></circle>
+                                <circle cx="9.5" cy="20" r="1.8"></circle>
+                                <circle cx="22.5" cy="12" r="1.8"></circle>
+                                <circle cx="22.5" cy="20" r="1.8"></circle>
+                                <path d="M16 14v-3.7"></path>
+                                <path d="M14.2 14.8l-3-2"></path>
+                                <path d="M14.2 17.2l-3 2"></path>
+                                <path d="M17.8 14.8l3-2"></path>
+                                <path d="M17.8 17.2l3 2"></path>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Mapa mental</h3>
+                            <p>Organize ideias e conexões em sessões visuais colaborativas.</p>
+                        </div>
+                    </a>
+
+                    <a href="debate-guiado-builder.html" class="dashboard-tool-card dashboard-tool-card--debate">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <path d="M8.5 10.2h8.8a1.8 1.8 0 0 1 1.8 1.8v4.4a1.8 1.8 0 0 1-1.8 1.8h-3.2l-2.8 2.3v-2.3H8.5a1.8 1.8 0 0 1-1.8-1.8V12a1.8 1.8 0 0 1 1.8-1.8z"></path>
+                                <path d="M16.1 13.7h7.4a1.8 1.8 0 0 1 1.8 1.8v4a1.8 1.8 0 0 1-1.8 1.8h-2.7l-2.6 2.2v-2.2h-2.1"></path>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Debate guiado</h3>
+                            <p>Argumentação estruturada com acompanhamento em tempo real.</p>
+                        </div>
+                    </a>
+
+                    <a href="criar-aula.html" class="dashboard-tool-card dashboard-tool-card--lesson">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <path d="M7 13.2l9-4.7 9 4.7-9 4.7-9-4.7z"></path>
+                                <path d="M11.2 15.4v3c0 1.8 2.1 3.3 4.8 3.3s4.8-1.5 4.8-3.3v-3"></path>
+                                <path d="M25 14.1v5.2"></path>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Aula completa</h3>
+                            <p>Monte trilhas completas com recursos e acompanhamento.</p>
+                        </div>
+                    </a>
                 </div>
             </section>
 
-            <section class="focus-card dashboard-panel dashboard-panel--teacher">
-                <div class="page-section-title">
+            <section class="dashboard-section">
+                <div class="dashboard-section-head">
                     <div>
-                        <span class="platform-section-label">Resumo</span>
-                        <h2>Visão geral da sua conta</h2>
+                        <span class="platform-section-label">Meu ecossistema</span>
+                        <h2>Turmas ativas</h2>
                     </div>
-                    <p>Um atalho direto para o que mais importa no dia a dia.</p>
+                    <div class="dashboard-class-nav" aria-hidden="true">
+                        <span>&lt;</span>
+                        <span>&gt;</span>
+                    </div>
                 </div>
 
-                <div class="teacher-dashboard-kpis">
+                <div class="teacher-dashboard-kpis dashboard-overview-kpis">
                     <article class="teacher-dashboard-kpi">
                         <strong data-dashboard-class-count>0</strong>
                         <span>turmas</span>
                     </article>
                     <article class="teacher-dashboard-kpi">
                         <strong data-dashboard-activity-count>0</strong>
-                        <span>atividades criadas</span>
+                        <span>atividades</span>
                     </article>
                     <article class="teacher-dashboard-kpi">
                         <strong data-dashboard-library-count>0</strong>
@@ -121,30 +310,25 @@
                     </article>
                 </div>
 
-                <div class="utility-actions">
-                    <a href="biblioteca.html" class="platform-link-button platform-link-primary">Ir para biblioteca</a>
-                    <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary" data-uses-selected-class>Criar atividades</a>
+                <div class="quick-class-grid dashboard-quick-grid dashboard-class-grid" data-dashboard-classes>
+                    <article class="quick-class-card quick-class-card--active">
+                        <span class="route-tag">Sem turmas</span>
+                        <h3>Nenhuma turma criada ainda</h3>
+                        <p>Use o botão Criar turma na lateral para começar.</p>
+                    </article>
                 </div>
             </section>
 
-            <section class="dashboard-grid dashboard-grid--single">
-                <article class="focus-card dashboard-panel">
-                    <div class="page-section-title">
-                        <div>
-                            <span class="platform-section-label">Turmas</span>
-                            <h2>Suas turmas</h2>
-                        </div>
-                        <p>Entre em uma turma existente ou crie uma nova pela barra lateral.</p>
-                    </div>
+            <section class="dashboard-library-banner">
+                <div class="dashboard-library-banner__copy">
+                    <span class="platform-section-label">Seu acervo</span>
+                    <h2>Reveja seus materiais salvos</h2>
+                    <p>A biblioteca reune as atividades e aulas que voce mesmo salvou para reutilizar, editar e organizar por turma.</p>
+                </div>
 
-                    <div class="quick-class-grid dashboard-quick-grid" data-dashboard-classes>
-                        <article class="quick-class-card quick-class-card--active">
-                            <span class="route-tag">Sem turmas</span>
-                            <h3>Nenhuma turma criada ainda</h3>
-                            <p>Use o botão Criar turma na lateral para começar.</p>
-                        </article>
-                    </div>
-                </article>
+                <div class="dashboard-library-banner__actions">
+                    <a href="biblioteca.html" class="platform-link-button platform-link-secondary" data-dashboard-tour-anchor="library">Abrir biblioteca</a>
+                </div>
             </section>
         </main>
     </div>

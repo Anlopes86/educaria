@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -14,6 +14,9 @@
     <script src="../assets/js/flashcards-generator.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/editor-disclosure.js" defer></script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/flashcards-theme-controls.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="flashcards">
     <main class="platform-shell platform-flow-shell activity-editor-shell">
@@ -27,7 +30,7 @@
             </a>
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
-                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+                <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
         <div class="builder-floating-actions">
@@ -46,24 +49,35 @@
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <details class="editor-disclosure" open>
+                <details class="editor-disclosure">
                     <summary>
                         <span>Montar com IA</span>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
-                        <div class="platform-form-grid">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label for="cards-fonte-texto">Texto ou lista de termos</label>
+                                <textarea id="cards-fonte-texto" rows="6" placeholder="Cole um texto-base, uma lista de conceitos ou um vocabulário para a IA transformar em flashcards."></textarea>
+                            </div>
                             <div class="platform-field">
-                                <label for="cards-quantidade">Quantidade</label>
-                                <select id="cards-quantidade">
-                                    <option>12 cards</option>
-                                    <option>8 cards</option>
-                                    <option>10 cards</option>
-                                    <option>15 cards</option>
+                                <label for="cards-arquivo">Arquivo de apoio</label>
+                                <input id="cards-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
+                            </div>
+                            <div class="platform-field">
+                                <label for="cards-acao-ia">Como a IA deve ajudar</label>
+                                <select id="cards-acao-ia">
+                                    <option>Organizar conceito e definição</option>
+                                    <option>Criar vocabulário para revisão</option>
+                                    <option>Transformar conteúdo teórico em estudo rápido</option>
                                 </select>
                             </div>
                             <div class="platform-field">
-                                <label for="cards-exemplo">Exemplo no preview</label>
+                                <label for="cards-quantidade-livre">Quantidade</label>
+                                <input id="cards-quantidade-livre" type="number" min="2" max="30" step="1" value="12">
+                            </div>
+                            <div class="platform-field">
+                                <label for="cards-exemplo">Anotações no preview</label>
                                 <select id="cards-exemplo">
                                     <option>Sim</option>
                                     <option>N&atilde;o</option>
@@ -75,7 +89,43 @@
                             </div>
                         </div>
                         <div class="utility-actions">
-                            <button type="button" class="platform-link-button platform-link-primary" data-generate-flashcards>Gerar cards com IA</button>
+                            <button type="button" class="platform-link-button platform-link-primary" data-generate-material="flashcards">Gerar cards com IA</button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Tema visual dos flashcards</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field">
+                                <label for="cards-tema-visual">Estilo visual</label>
+                                <select id="cards-tema-visual">
+                                    <option value="moderno">Moderno</option>
+                                    <option value="academico">Acadêmico</option>
+                                    <option value="vibrante">Vibrante</option>
+                                    <option value="minimalista">Minimalista</option>
+                                    <option value="infantil">Infantil</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="cards-tema-front">Cor da frente</label>
+                                <input id="cards-tema-front" type="color" value="#ffffff">
+                            </div>
+                            <div class="platform-field">
+                                <label for="cards-tema-back">Cor do verso</label>
+                                <input id="cards-tema-back" type="color" value="#dbeafe">
+                            </div>
+                            <div class="platform-field">
+                                <label for="cards-tema-text">Cor do texto</label>
+                                <input id="cards-tema-text" type="color" value="#0f172a">
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-secondary" data-apply-flashcards-theme>Aplicar visual em todos os cards</button>
                         </div>
                     </div>
                 </details>
@@ -91,7 +141,7 @@
                                 <div class="activity-card-header">
                                     <div>
                                         <span class="platform-section-label" data-card-label>Card 1</span>
-                                        <h3>Conteudo principal</h3>
+                                        <h3>Conteúdo principal</h3>
                                     </div>
                                     <div class="activity-card-actions">
                                         <button type="button" data-action="duplicate-flashcard" class="platform-link-button platform-link-secondary">Duplicar</button>
@@ -102,20 +152,20 @@
                                 <div class="platform-form-grid activity-essential-grid">
                                     <div class="platform-field">
                                         <label>Frente</label>
-                                        <input data-field="front" type="text" value="" placeholder="Palavra, conceito ou pergunta">
+                                        <textarea data-field="front" rows="4" class="flashcards-editor-textarea flashcards-editor-textarea--main" placeholder="Palavra, conceito ou pergunta"></textarea>
                                     </div>
                                     <div class="platform-field">
                                         <label>Verso</label>
-                                        <input data-field="back" type="text" value="" placeholder="Tradu&ccedil;&atilde;o, resposta ou defini&ccedil;&atilde;o">
+                                        <textarea data-field="back" rows="4" class="flashcards-editor-textarea flashcards-editor-textarea--main" placeholder="Tradu&ccedil;&atilde;o, resposta ou defini&ccedil;&atilde;o"></textarea>
                                     </div>
                                     <div class="platform-field platform-field-wide">
-                                        <label>Exemplo opcional</label>
+                                        <label>Anotações opcionais</label>
                                         <textarea data-field="example" rows="3" placeholder="Use apenas se o exemplo ajudar a fixar o conteúdo"></textarea>
                                     </div>
                                 </div>
 
                                 <div class="activity-optional-block">
-                                    <span class="route-tag">Aparencia opcional</span>
+                                    <span class="route-tag">Aparência opcional</span>
                                     <div class="platform-form-grid activity-style-grid">
                                         <div class="platform-field">
                                             <label>Cor da frente</label>
@@ -137,7 +187,7 @@
                                 <div class="activity-card-header">
                                     <div>
                                         <span class="platform-section-label" data-card-label>Card 2</span>
-                                        <h3>Conteudo principal</h3>
+                                        <h3>Conteúdo principal</h3>
                                     </div>
                                     <div class="activity-card-actions">
                                         <button type="button" data-action="duplicate-flashcard" class="platform-link-button platform-link-secondary">Duplicar</button>
@@ -155,13 +205,13 @@
                                         <input data-field="back" type="text" value="" placeholder="Tradu&ccedil;&atilde;o, resposta ou defini&ccedil;&atilde;o">
                                     </div>
                                     <div class="platform-field platform-field-wide">
-                                        <label>Exemplo opcional</label>
+                                        <label>Anotações opcionais</label>
                                         <textarea data-field="example" rows="3" placeholder="Use apenas se o exemplo ajudar a fixar o conteúdo"></textarea>
                                     </div>
                                 </div>
 
                                 <div class="activity-optional-block">
-                                    <span class="route-tag">Aparencia opcional</span>
+                                    <span class="route-tag">Aparência opcional</span>
                                     <div class="platform-form-grid activity-style-grid">
                                         <div class="platform-field">
                                             <label>Cor da frente</label>
@@ -189,11 +239,12 @@
 
             <aside class="platform-builder-card flashcards-preview-card activity-preview-pane">
                 <span class="platform-section-label">Preview</span>
-                <h2>Como os cards vao aparecer</h2>
-                <p>Veja se a sequencia esta clara.</p>
+                <h2>Como os cards vão aparecer</h2>
+                <p>Veja se a sequência está clara.</p>
                 <div class="live-preview-stack" data-flashcards-preview></div>
             </aside>
         </section>
     </main>
 </body>
 </html>
+

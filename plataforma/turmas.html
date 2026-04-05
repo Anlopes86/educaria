@@ -2,10 +2,130 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=index.html">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecionando | EducarIA</title>
+    <title>Turmas | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+    <script src="../assets/js/storage-scope.js" defer></script>
+    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/auth-flow.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/app-sidebar.js" defer></script>
+    <script src="../assets/js/classes-overview.js" defer></script>
 </head>
-<body>
+<body class="product-body theme-overview" data-requires-auth="true" data-page="classes-overview">
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <a href="../index.html" class="platform-brand app-sidebar-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>Turmas</strong>
+                </div>
+            </a>
+
+            <div class="app-sidebar-profile">
+                <strong data-sidebar-teacher>Professor</strong>
+                <span data-sidebar-institution>Conta educacional</span>
+            </div>
+
+            <nav class="app-sidebar-nav">
+                <a href="index.html" class="sidebar-nav-link">Painel</a>
+
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
+                <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
+                    <div class="sidebar-subitems" data-sidebar-class-list></div>
+                </div>
+
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false">Criar turma</button>
+                <div class="sidebar-subpanel" data-sidebar-panel="create-class" hidden>
+                    <div class="sidebar-create-card">
+                        <div class="platform-field">
+                            <label for="sidebar-nome-turma">Nova turma</label>
+                            <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma">
+                        </div>
+                        <div class="platform-field">
+                            <label for="sidebar-materia">Matéria</label>
+                            <select id="sidebar-materia">
+                                <option value="">Selecione a matéria</option>
+                                <option value="Matematica">Matemática</option>
+                                <option value="Portugues">Português</option>
+                                <option value="Ciencias">Ciências</option>
+                                <option value="Historia">História</option>
+                                <option value="Geografia">Geografia</option>
+                                <option value="Ingles">Inglês</option>
+                                <option value="Artes">Artes</option>
+                                <option value="Educacao fisica">Educação física</option>
+                            </select>
+                        </div>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class>Criar turma</button>
+                        <p class="sidebar-feedback" data-sidebar-class-feedback hidden></p>
+                    </div>
+                </div>
+
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false">Criar atividade</button>
+                <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
+                    <div class="sidebar-subitems">
+                        <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
+                        <a href="slides-builder.html" class="sidebar-subitem">Slides</a>
+                        <a href="flashcards-builder.html" class="sidebar-subitem">Flashcards</a>
+                        <a href="jogo-memoria-builder.html" class="sidebar-subitem">Jogo da memória</a>
+                        <a href="roleta-builder.html" class="sidebar-subitem">Roleta editável</a>
+                        <a href="ligar-pontos-builder.html" class="sidebar-subitem">Ligar pontos</a>
+                        <a href="mapa-mental-builder.html" class="sidebar-subitem">Mapa mental</a>
+                        <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
+                        <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
+                    </div>
+                </div>
+
+                <a href="biblioteca.html" class="sidebar-nav-link">Biblioteca</a>
+                <a href="configuracoes.html" class="sidebar-nav-link">Configurações</a>
+            </nav>
+
+            <div class="app-sidebar-footer">
+                <button type="button" class="platform-link-button platform-link-secondary" data-logout>Sair</button>
+            </div>
+        </aside>
+
+        <main class="app-content">
+            <section class="focus-card">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Turmas do professor</span>
+                        <h2>Cards por turma</h2>
+                    </div>
+                    <p>Use "Ver materiais" para abrir o acervo da turma ou "Criar material" para ir direto ao painel de ferramentas já com a turma selecionada.</p>
+                </div>
+
+                <div class="class-dashboard-grid" data-classes-overview-grid></div>
+            </section>
+
+<section class="focus-card dashboard-panel">
+                <div class="page-section-title">
+                    <div>
+                        <span class="platform-section-label">Resumo</span>
+                        <h2>Visão geral das turmas</h2>
+                    </div>
+                    <p>Cada card abaixo mostra o volume de materiais já criados e oferece o próximo passo mais útil para a turma.</p>
+                </div>
+
+                <div class="teacher-dashboard-kpis dashboard-overview-kpis">
+                    <article class="teacher-dashboard-kpi">
+                        <strong data-classes-overview-count>0</strong>
+                        <span>turmas</span>
+                    </article>
+                    <article class="teacher-dashboard-kpi">
+                        <strong data-classes-overview-activities>0</strong>
+                        <span>atividades</span>
+                    </article>
+                </div>
+            </section>
+        </main>
+    </div>
 </body>
 </html>
+
+

@@ -5,6 +5,35 @@ function parseFlashcardsCount() {
     return match ? Number(match[0]) : 8;
 }
 
+function upgradeFlashcardEditorFields() {
+    document.querySelectorAll('[data-flashcard]').forEach((card) => {
+        ["front", "back"].forEach((fieldName) => {
+            const field = card.querySelector(`[data-field="${fieldName}"]`);
+            if (!field || field.tagName === "TEXTAREA") return;
+
+            const textarea = document.createElement("textarea");
+            textarea.setAttribute("data-field", fieldName);
+            textarea.setAttribute("rows", "4");
+            textarea.className = "flashcards-editor-textarea flashcards-editor-textarea--main";
+            textarea.placeholder = field.getAttribute("placeholder") || "";
+            textarea.value = field.value || "";
+            field.replaceWith(textarea);
+        });
+
+        const example = card.querySelector('[data-field="example"]');
+        if (example) {
+            example.setAttribute("rows", "2");
+            example.classList.add("flashcards-editor-textarea", "flashcards-editor-textarea--example");
+            example.placeholder = "Use este campo para anotações curtas do professor.";
+
+            const label = example.closest(".platform-field")?.querySelector("label");
+            if (label) {
+                label.textContent = "Anotações opcionais";
+            }
+        }
+    });
+}
+
 function normalizeTopic(topic) {
     return String(topic || "")
         .toLowerCase()
@@ -115,6 +144,8 @@ function applyGeneratedFlashcards() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    upgradeFlashcardEditorFields();
+
     document.addEventListener("click", (event) => {
         const button = event.target.closest("[data-generate-flashcards]");
         if (!button) return;

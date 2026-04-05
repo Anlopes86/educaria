@@ -620,6 +620,73 @@ function materialGroupDescription(type) {
     return "Sequencias para conduzir a aula projetada.";
 }
 
+function selectedClassFromAvailableClasses() {
+    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
+    const current = currentClassName() || "";
+    if (current && classes.includes(current)) return current;
+    return classes[0] || "";
+}
+
+function classActivitySummary(lessons) {
+    if (!Array.isArray(lessons) || !lessons.length) {
+        return "Nenhuma atividade criada ainda.";
+    }
+
+    const counts = lessons.reduce((result, lesson) => {
+        const key = lesson.materialType || "slides";
+        result[key] = (result[key] || 0) + 1;
+        return result;
+    }, {});
+
+    const ordered = Object.entries(counts)
+        .sort((left, right) => right[1] - left[1])
+        .slice(0, 3)
+        .map(([type, count]) => `${materialGroupLabel(type)} (${count})`);
+
+    return ordered.join(" • ");
+}
+
+function hydrateClassCards() {
+    const root = document.querySelector("[data-class-cards]");
+    if (!root) return;
+
+    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
+    const selectedClass = selectedClassFromAvailableClasses();
+    if (selectedClass && selectedClass !== currentClassName()) {
+        updateCurrentClass(selectedClass);
+    }
+
+    if (!classes.length) {
+        root.innerHTML = `
+            <article class="quick-class-card quick-class-card--active">
+                <span class="route-tag">Sem turmas</span>
+                <h3>Nenhuma turma criada ainda</h3>
+                <p>Use o botao Criar turma na lateral para montar a primeira turma e comecar a salvar atividades.</p>
+            </article>
+        `;
+        return;
+    }
+
+    root.innerHTML = classes.map((className) => {
+        const lessons = classMaterials(className);
+        const latest = lessons[0]?.updatedAt ? formatLessonDate(lessons[0].updatedAt) : "Sem atividades ainda";
+        const countLabel = `${lessons.length} ${lessons.length === 1 ? "atividade" : "atividades"}`;
+        const activeClass = className === selectedClass ? " quick-class-card--active" : "";
+
+        return `
+            <a href="#atividades-salvas" class="quick-class-card${activeClass}" data-class-card-link="${className}">
+                <span class="route-tag">${countLabel}</span>
+                <h3>${className}</h3>
+                <p>${classActivitySummary(lessons)}</p>
+                <div class="lesson-history-meta">
+                    <span>${latest}</span>
+                    <span>${lessons.length ? `${new Set(lessons.map((lesson) => lesson.materialType || "slides")).size} formatos` : "0 formatos"}</span>
+                </div>
+            </a>
+        `;
+    }).join("");
+}
+
 function bindSaveLessonAction() {
     const buttons = document.querySelectorAll("[data-save-lesson]");
     if (!buttons.length) return;
@@ -670,10 +737,38 @@ function hydrateClassPage() {
     const actionsRoot = document.querySelector("[data-saved-lessons-actions]");
     if (!listRoot && !selectRoot) return;
 
-    const turma = currentClassName() || "Turma";
+    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
+    const turma = selectedClassFromAvailableClasses();
+    if (turma && turma !== currentClassName()) {
+        updateCurrentClass(turma);
+    }
+
     document.querySelectorAll("[data-class-title]").forEach((node) => {
-        node.textContent = turma;
+        node.textContent = turma || "Nenhuma turma selecionada";
     });
+
+    if (!classes.length) {
+        if (listRoot) {
+            listRoot.innerHTML = `
+                <article class="lesson-history-card">
+                    <span class="route-tag">Sem turmas</span>
+                    <h3>Crie a primeira turma para começar</h3>
+                    <p>Depois de criar a turma, as atividades salvas vao aparecer organizadas aqui.</p>
+                </article>
+            `;
+        }
+
+        if (selectRoot) {
+            selectRoot.innerHTML = `<option>Nenhuma turma criada ainda</option>`;
+            selectRoot.disabled = true;
+        }
+
+        if (actionsRoot) {
+            actionsRoot.innerHTML = "";
+        }
+        markClassPageReady();
+        return;
+    }
 
     const lessons = classMaterials(turma);
     if (!lessons.length) {
@@ -709,38 +804,49 @@ function hydrateClassPage() {
 
         const groupOrder = ["lesson", "quiz", "slides", "flashcards", "wheel", "memory", "match", "mindmap", "debate"];
         listRoot.innerHTML = groupOrder
-            .filter((key) => groupedLessons[key]?.length)
-            .map((key) => `
-                <section class="lesson-group-section">
-                    <div class="lesson-group-header">
-                        <div>
-                            <span class="platform-section-label">${materialGroupLabel(key)}</span>
-                            <h3>${materialGroupLabel(key)}</h3>
+            .map((key) => {
+                const groupItems = groupedLessons[key] || [];
+                const count = groupItems.length;
+
+                return `
+                <details class="editor-disclosure lesson-group-section lesson-group-disclosure">
+                    <summary>
+                        <span>${materialGroupLabel(key)}</span>
+                        <small>${count} ${count === 1 ? "atividade" : "atividades"}</small>
+                    </summary>
+                    <div class="editor-disclosure-body lesson-group-body">
+                        ${count ? `
+                        <div class="lesson-history-grid class-lesson-grid">
+                            ${groupItems.map((lesson) => `
+                                <article class="lesson-history-card lesson-history-card--grouped">
+                                    <span class="route-tag">${materialGroupLabel(key)}</span>
+                                    <h3>${lesson.title}</h3>
+                                    <p>${lesson.summary}</p>
+                                    <div class="lesson-history-meta">
+                                        <span>Atualizado em ${formatLessonDate(lesson.updatedAt)}</span>
+                                        <span>${lesson.type}</span>
+                                    </div>
+                                    <div class="lesson-history-actions">
+                                        <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-present-lesson="${lesson.id}">Apresentar</a>
+                                        <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-edit-lesson="${lesson.id}">Editar</a>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${lesson.id}">Adicionar a biblioteca</button>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${lesson.id}">Duplicar para outra turma</button>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Remover</button>
+                                    </div>
+                                </article>
+                            `).join("")}
                         </div>
-                        <p>${materialGroupDescription(key)}</p>
+                        ` : `
+                        <article class="lesson-history-card lesson-history-card--empty">
+                            <span class="route-tag">${materialGroupLabel(key)}</span>
+                            <h3>Nenhuma atividade salva</h3>
+                            <p>${materialGroupDescription(key)}</p>
+                        </article>
+                        `}
                     </div>
-                    <div class="lesson-history-grid class-lesson-grid">
-                        ${groupedLessons[key].map((lesson) => `
-                            <article class="lesson-history-card lesson-history-card--grouped">
-                                <span class="route-tag">${materialGroupLabel(key)}</span>
-                                <h3>${lesson.title}</h3>
-                                <p>${lesson.summary}</p>
-                                <div class="lesson-history-meta">
-                                    <span>Atualizado em ${formatLessonDate(lesson.updatedAt)}</span>
-                                    <span>${lesson.type}</span>
-                                </div>
-                                <div class="lesson-history-actions">
-                                    <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-present-lesson="${lesson.id}">Apresentar</a>
-                                    <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-edit-lesson="${lesson.id}">Editar</a>
-                                    <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${lesson.id}">Adicionar a biblioteca</button>
-                                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${lesson.id}">Duplicar para outra turma</button>
-                                    <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Remover</button>
-                                </div>
-                            </article>
-                        `).join("")}
-                    </div>
-                </section>
-            `).join("");
+                </details>
+            `;
+            }).join("");
     }
 
     if (selectRoot) {
@@ -766,6 +872,18 @@ function hydrateClassPage() {
 
 function bindLessonActivationLinks() {
     document.addEventListener("click", (event) => {
+        const classCardTrigger = event.target.closest("[data-class-card-link]");
+        if (classCardTrigger) {
+            event.preventDefault();
+            const className = classCardTrigger.dataset.classCardLink || "";
+            if (!className) return;
+            updateCurrentClass(className);
+            hydrateClassCards();
+            hydrateClassPage();
+            document.querySelector("#atividades-salvas")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            return;
+        }
+
         const libraryTrigger = event.target.closest("[data-library-lesson]");
         if (libraryTrigger) {
             event.preventDefault();
@@ -844,6 +962,19 @@ function bindLessonActivationLinks() {
     });
 }
 
+function bindClassPageRefresh() {
+    document.addEventListener("click", (event) => {
+        const createClassButton = event.target.closest("[data-sidebar-create-class]");
+        const sidebarClassLink = event.target.closest("[data-sidebar-class-link]");
+        if (!createClassButton && !sidebarClassLink) return;
+
+        window.setTimeout(() => {
+            hydrateClassCards();
+            hydrateClassPage();
+        }, 0);
+    });
+}
+
 function hydrateLibraryPage() {
     const root = document.querySelector("[data-library-materials]");
     const countNode = document.querySelector("[data-library-count]");
@@ -887,7 +1018,9 @@ function hydrateLibraryPage() {
 document.addEventListener("DOMContentLoaded", () => {
     bindSaveLessonAction();
     hydrateCompletionSummary();
+    hydrateClassCards();
     hydrateClassPage();
     hydrateLibraryPage();
     bindLessonActivationLinks();
+    bindClassPageRefresh();
 });

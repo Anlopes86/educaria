@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -12,6 +12,8 @@
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/mindmap-builder.js" defer></script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/ai-material-generator.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="mindmap">
     <main class="platform-shell platform-flow-shell activity-editor-shell">
@@ -25,7 +27,7 @@
             </a>
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
-                <a href="turma.html#formatos-criar" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+                <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
         <div class="builder-floating-actions">
@@ -44,7 +46,48 @@
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <details class="editor-disclosure" open>
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Montar com IA</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label for="mind-fonte-texto">Texto ou conteúdo-base</label>
+                                <textarea id="mind-fonte-texto" rows="6" placeholder="Cole o texto, resumo ou tópicos que a IA deve organizar em um mapa mental."></textarea>
+                            </div>
+                            <div class="platform-field">
+                                <label for="mind-arquivo">Arquivo de apoio</label>
+                                <input id="mind-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
+                            </div>
+                            <div class="platform-field">
+                                <label for="mind-acao-ia">Como a IA deve ajudar</label>
+                                <select id="mind-acao-ia">
+                                    <option>Organizar conceitos em tópicos</option>
+                                    <option>Resumir um tema em mapa mental</option>
+                                    <option>Estruturar revisão visual</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="mind-quantidade">Quantidade de tópicos</label>
+                                <input id="mind-quantidade" type="number" min="2" max="10" step="1" value="4">
+                            </div>
+                            <div class="platform-field">
+                                <label for="mind-layout">Leitura desejada</label>
+                                <select id="mind-layout">
+                                    <option>Tópicos</option>
+                                    <option>Radial</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-generate-material="mindmap">Estruturar mapa com IA</button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure">
                     <summary>
                         <span>Configuração manual</span>
                         <small>Expandir</small>
@@ -71,7 +114,7 @@
                                 <label for="mapa-layout">Leitura</label>
                                 <select id="mapa-layout">
                                     <option>Radial</option>
-                                    <option>Topicos</option>
+                                    <option>Tópicos</option>
                                 </select>
                             </div>
                         </div>
@@ -237,3 +280,5 @@
     </main>
 </body>
 </html>
+
+
