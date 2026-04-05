@@ -42,26 +42,31 @@ function parseSlideCards(stackHtml) {
             return selectedOption?.text?.trim() || "";
         };
 
-        const normalizeLayout = (value) => {
+        const normalizeLayout = (value, hasImage) => {
+            if (hasImage) return "split";
+
             const text = String(value || "")
                 .toLowerCase()
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "");
 
             if (text.includes("lado")) return "split";
-            if (text.includes("destaque")) return "feature";
             return "stack";
         };
+
+        const imageUrl = fieldValue("slide-image-url");
+        const imagePrompt = fieldValue("slide-image-prompt");
+        const hasImage = Boolean(imageUrl || imagePrompt);
 
         return {
             index,
             title: fieldValue("slide-title") || `Slide ${index + 1}`,
             subtitle: fieldValue("slide-subtitle"),
             body: fieldValue("slide-body") || "Sem conteudo definido.",
-            layoutMode: normalizeLayout(fieldLabel("slide-layout")),
+            layoutMode: normalizeLayout(fieldLabel("slide-layout"), hasImage),
             imageMode: fieldLabel("slide-image-mode") || "Sem imagem",
-            imageUrl: fieldValue("slide-image-url"),
-            imagePrompt: fieldValue("slide-image-prompt"),
+            imageUrl,
+            imagePrompt,
             fontChoice: fieldLabel("slide-font") || "Destaque moderno",
             accentColor: fieldValue("slide-accent-color") || "#0ea5e9",
             slideColor: fieldValue("slide-color") || "#d7f5f6",
@@ -120,6 +125,123 @@ function renderMediaPlaceholder(slide) {
     `;
 }
 
+function renderStructuredSlideBody(body) {
+    const lines = String(body || "")
+        .replace(/\r/g, "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+    if (!lines.length) {
+        return "<p>Sem conteudo definido.</p>";
+    }
+
+    const bulletPattern = /^[-*•â€¢]\s+/;
+    const hasBullets = lines.some((line) => bulletPattern.test(line));
+    if (hasBullets) {
+        return `
+            <ul>
+                ${lines.map((line) => renderStructuredBulletLine(line, bulletPattern)).join("")}
+            </ul>
+        `;
+    }
+
+    if (lines.length === 1) {
+        const numberedParts = lines[0]
+            .split(/(?=\d+\.\s+)/)
+            .map((line) => line.replace(/^\d+\.\s*/, "").trim())
+            .filter(Boolean);
+
+        if (numberedParts.length >= 2) {
+            return `
+                <ul>
+                    ${numberedParts.slice(0, 6).map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
+                </ul>
+            `;
+        }
+
+        const sentenceParts = lines[0]
+            .split(/(?<=[.!?;:])\s+/)
+            .map((line) => line.trim())
+            .filter(Boolean);
+
+        if (sentenceParts.length >= 3) {
+            return `
+                <ul>
+                    ${sentenceParts.slice(0, 5).map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
+                </ul>
+            `;
+        }
+    }
+
+    return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
+}
+
+function renderStructuredBulletLine(line, bulletPattern) {
+    const clean = String(line || "").replace(bulletPattern, "").trim();
+    return `<li>${escapeHtml(clean)}</li>`;
+}
+
+function clearMediaAspect(slideRoot, media) {
+    delete slideRoot.dataset.mediaAspect;
+    delete media.dataset.mediaAspect;
+}
+
+function applyMediaAspect(slideRoot, media) {
+    const image = media.querySelector("img[src]");
+    if (!image) {
+        clearMediaAspect(slideRoot, media);
+        return;
+    }
+
+    const setAspect = () => {
+        if (!image.naturalWidth || !image.naturalHeight) {
+            clearMediaAspect(slideRoot, media);
+            return;
+        }
+
+        const ratio = image.naturalWidth / image.naturalHeight;
+        const aspect = ratio >= 1.35 ? "landscape" : ratio <= 0.82 ? "portrait" : "square";
+        slideRoot.dataset.mediaAspect = aspect;
+        media.dataset.mediaAspect = aspect;
+    };
+
+    if (image.complete) {
+        setAspect();
+        return;
+    }
+
+    image.addEventListener("load", setAspect, { once: true });
+    image.addEventListener("error", () => clearMediaAspect(slideRoot, media), { once: true });
+}
+
+function applySlideDensity(slideRoot, slide) {
+    slideRoot.classList.remove(
+        "presentation-slide--comfort",
+        "presentation-slide--compact",
+        "presentation-slide--dense"
+    );
+
+    const titleLength = String(slide.title || "").length;
+    const subtitleLength = String(slide.subtitle || "").length;
+    const bodyLength = String(slide.body || "").length;
+    const lineCount = String(slide.body || "").replace(/\r/g, "").split("\n").filter((line) => line.trim()).length;
+    const hasImage = Boolean(slide.imageUrl || slide.imagePrompt);
+    const densityScore = titleLength + subtitleLength + bodyLength + (lineCount * 28) + (hasImage ? 120 : 0);
+
+    if (densityScore > 620) {
+        slideRoot.classList.add("presentation-slide--dense");
+        return;
+    }
+
+    if (densityScore > 380) {
+        slideRoot.classList.add("presentation-slide--compact");
+        return;
+    }
+
+    slideRoot.classList.add("presentation-slide--comfort");
+}
+
 function applySlideLayout(slideRoot, slide) {
     slideRoot.classList.remove(
         "presentation-slide--stack",
@@ -170,6 +292,7 @@ function renderPresentation(slides) {
     const turma = typeof readSelectedClass === "function" ? readSelectedClass() : "";
 
     const resetMediaStyles = () => {
+        clearMediaAspect(slideRoot, media);
         copyRoot.style.order = "";
         media.style.order = "";
         media.style.marginTop = "";
@@ -179,7 +302,6 @@ function renderPresentation(slides) {
         media.style.gridRow = "";
         copyRoot.style.gridColumn = "";
         copyRoot.style.gridRow = "";
-        controls.style.gridColumn = "";
     };
 
     const paint = () => {
@@ -188,7 +310,7 @@ function renderPresentation(slides) {
         slideTitle.textContent = slide.title;
         slideSubtitle.textContent = slide.subtitle || "";
         slideSubtitle.hidden = !slide.subtitle;
-        slideBody.innerHTML = renderSlideBody(slide.body);
+        slideBody.innerHTML = renderStructuredSlideBody(slide.body);
         classLabel.textContent = turma ? `${turma} • ${slide.title}` : slide.title;
         counter.textContent = `${currentIndex + 1} de ${slides.length}`;
 
@@ -199,6 +321,7 @@ function renderPresentation(slides) {
         slideTitle.style.color = slide.textColor;
         slideSubtitle.style.color = slide.textColor;
         slideBody.style.color = slide.textColor;
+        applySlideDensity(slideRoot, slide);
         slideRoot.dataset.slideFont = String(slide.fontChoice || "Destaque moderno")
             .toLowerCase()
             .normalize("NFD")
@@ -213,27 +336,33 @@ function renderPresentation(slides) {
             media.innerHTML = slide.imageUrl
                 ? `<img data-presentation-image alt="${escapeHtml(slide.imagePrompt || slide.title)}" src="${escapeHtml(slide.imageUrl)}">`
                 : renderMediaPlaceholder(slide);
+            applyMediaAspect(slideRoot, media);
 
             if (slide.layoutMode === "split") {
                 slideRoot.style.display = "grid";
                 slideRoot.style.gridTemplateColumns = "minmax(0, 1fr) minmax(320px, 0.9fr)";
-                slideRoot.style.gridTemplateRows = "1fr auto";
+                slideRoot.style.gridTemplateRows = "minmax(0, 1fr)";
                 slideRoot.style.gap = "20px";
                 slideRoot.style.alignItems = "stretch";
                 copyRoot.style.gridColumn = "1";
                 copyRoot.style.gridRow = "1";
                 media.style.gridColumn = "2";
                 media.style.gridRow = "1";
-                controls.style.gridColumn = "1 / -1";
                 media.style.marginTop = "0";
                 media.style.minHeight = "100%";
             } else if (slide.layoutMode === "feature") {
-                slideRoot.style.display = "flex";
-                slideRoot.style.flexDirection = "column";
-                copyRoot.style.order = "2";
-                media.style.order = "-1";
+                slideRoot.style.display = "grid";
+                slideRoot.style.gridTemplateColumns = "minmax(0, 1fr)";
+                slideRoot.style.gridTemplateRows = "minmax(280px, 0.58fr) minmax(0, 0.42fr)";
+                slideRoot.style.gap = "18px";
+                slideRoot.style.alignItems = "stretch";
+                media.style.gridColumn = "1";
+                media.style.gridRow = "1";
+                copyRoot.style.gridColumn = "1";
+                copyRoot.style.gridRow = "2";
                 media.style.marginTop = "0";
-                media.style.marginBottom = "18px";
+                media.style.marginBottom = "0";
+                media.style.minHeight = "100%";
             }
         } else {
             media.hidden = true;

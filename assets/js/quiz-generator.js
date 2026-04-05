@@ -1,8 +1,8 @@
 function parseQuizCount() {
     const field = document.getElementById("quiz-quantidade");
     if (!field) return 8;
-    const match = field.value.match(/\d+/);
-    return match ? Number(match[0]) : 8;
+    const value = Number(field.value);
+    return Number.isFinite(value) && value > 0 ? value : 8;
 }
 
 function normalizeQuizTopic(topic) {

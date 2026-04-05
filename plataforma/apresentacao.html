@@ -9,7 +9,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/presentation-runtime.js" defer></script>
 </head>
-<body>
+<body class="presentation-page">
     <main class="presentation-shell presentation-shell--lesson">
         <header class="presentation-topbar">
             <div class="presentation-brand">
@@ -36,13 +36,13 @@
                 <div class="presentation-media" data-presentation-media hidden>
                     <img data-presentation-image alt="">
                 </div>
-
-                <div class="presentation-controls" data-presentation-controls>
-                    <button type="button" class="platform-link-button platform-link-secondary" data-presentation-prev>Anterior</button>
-                    <span class="presentation-counter" data-presentation-counter>1 de 1</span>
-                    <button type="button" class="platform-link-button platform-link-primary" data-presentation-next>Proximo</button>
-                </div>
             </article>
+
+            <div class="presentation-controls presentation-controls--floating" data-presentation-controls>
+                <button type="button" class="presentation-nav-button presentation-nav-button--prev" data-presentation-prev aria-label="Slide anterior">Anterior</button>
+                <span class="presentation-counter" data-presentation-counter>1 de 1</span>
+                <button type="button" class="presentation-nav-button presentation-nav-button--next" data-presentation-next aria-label="Pr&oacute;ximo slide">Pr&oacute;ximo</button>
+            </div>
         </section>
     </main>
 </body>

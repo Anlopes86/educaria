@@ -205,6 +205,22 @@ function renderQuizApplication(questions, controls = {}) {
         paint();
     });
 
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft") {
+            event.preventDefault();
+            if (currentIndex === 0) return;
+            currentIndex -= 1;
+            paint();
+        }
+
+        if (event.key === "ArrowRight") {
+            event.preventDefault();
+            if (currentIndex >= questions.length - 1) return;
+            currentIndex += 1;
+            paint();
+        }
+    });
+
     paint();
 }
 

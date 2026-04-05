@@ -59,7 +59,7 @@ function buildQuizPreview() {
 
     const totalEl = document.getElementById("quiz-quantidade");
     const formatEl = document.getElementById("quiz-formato");
-    const total = totalEl ? totalEl.options[totalEl.selectedIndex].text.trim() : "Quiz";
+    const total = totalEl ? `${totalEl.value || 0} perguntas` : "Quiz";
     const format = formatEl ? formatEl.options[formatEl.selectedIndex].text.trim() : "Misto";
     const cards = [...document.querySelectorAll("[data-quiz-question]")];
 
@@ -175,9 +175,11 @@ function buildSlidesPreview() {
 
     const slides = [...document.querySelectorAll("[data-slide-card]")];
     const totalEl = document.getElementById("slides-quantidade");
-    const formatEl = document.getElementById("slides-tipo");
-    const total = totalEl ? totalEl.options[totalEl.selectedIndex].text.trim() : "Slides";
-    const format = formatEl ? formatEl.options[formatEl.selectedIndex].text.trim() : "Misto";
+    const detailEl = document.getElementById("slides-detalhamento");
+    const imagePrefEl = document.getElementById("slides-imagens-preferencia");
+    const total = totalEl ? `${totalEl.value || 0} slides` : "Slides";
+    const detail = detailEl ? detailEl.options[detailEl.selectedIndex].text.trim() : "Equilibrado";
+    const imagePref = imagePrefEl ? imagePrefEl.options[imagePrefEl.selectedIndex].text.trim() : "Quando fizer sentido";
 
     root.innerHTML = `
         <section class="live-preview-card live-preview-card--teal">
@@ -185,7 +187,8 @@ function buildSlidesPreview() {
             <h3>Sequ&ecirc;ncia de slides</h3>
             <div class="preview-chip-row">
                 <span class="preview-chip">${escapeHtml(total)}</span>
-                <span class="preview-chip">${escapeHtml(format)}</span>
+                <span class="preview-chip">${escapeHtml(detail)}</span>
+                <span class="preview-chip">${escapeHtml(imagePref)}</span>
                 <span class="preview-chip">${slides.length} slides na tela</span>
             </div>
         </section>
@@ -200,7 +203,7 @@ function buildSlidesPreview() {
             const textColor = colorValue(slide, "slide-text-color", "#0f172a");
             const accentColor = colorValue(slide, "slide-accent-color", "#0ea5e9");
             const slideFont = selectValue(slide, "slide-font") || "Destaque moderno";
-            const slideLayout = selectValue(slide, "slide-layout") || "Texto acima";
+            const slideLayout = selectValue(slide, "slide-layout") || "Lado a lado";
 
             const textBlock = `
                 <div class="slide-preview-text slide-preview-text--${escapeHtml(slideFont.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"))}" style="color: ${escapeHtml(textColor)};">
@@ -213,23 +216,9 @@ function buildSlidesPreview() {
             const mediaBlock = imageMode !== "Sem imagem" ? renderSlideMedia(title, imagePrompt, imageUrl) : "";
             let slideBody = textBlock;
 
-            if (imageMode !== "Sem imagem" && slideLayout === "Lado a lado") {
+            if (imageMode !== "Sem imagem") {
                 slideBody = `
                     <div class="slide-preview-layout slide-preview-layout--split">
-                        ${textBlock}
-                        ${mediaBlock}
-                    </div>
-                `;
-            } else if (imageMode !== "Sem imagem" && slideLayout === "Imagem em destaque") {
-                slideBody = `
-                    <div class="slide-preview-layout slide-preview-layout--feature">
-                        ${mediaBlock}
-                        ${textBlock}
-                    </div>
-                `;
-            } else if (imageMode !== "Sem imagem") {
-                slideBody = `
-                    <div class="slide-preview-layout slide-preview-layout--stack">
                         ${textBlock}
                         ${mediaBlock}
                     </div>

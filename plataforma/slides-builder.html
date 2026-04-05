@@ -15,6 +15,7 @@
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/slide-theme-controls.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="slides">
     <main class="platform-shell platform-flow-shell activity-editor-shell">
@@ -47,7 +48,7 @@
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <details class="editor-disclosure" open>
+                <details class="editor-disclosure">
                     <summary>
                         <span>Montar com IA</span>
                         <small>Expandir</small>
@@ -70,9 +71,91 @@
                                     <option>Gerar imagem quando fizer sentido</option>
                                 </select>
                             </div>
+                            <div class="platform-field">
+                                <label for="slides-quantidade">Quantidade de slides</label>
+                                <input id="slides-quantidade" type="number" min="1" max="30" step="1" value="8" placeholder="Ex.: 10">
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-detalhamento">Nivel de detalhamento</label>
+                                <select id="slides-detalhamento">
+                                    <option>Equilibrado</option>
+                                    <option>Mais enxuto</option>
+                                    <option>Mais detalhado</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-imagens-preferencia">Uso de imagens</label>
+                                <select id="slides-imagens-preferencia">
+                                    <option>Quando fizer sentido</option>
+                                    <option>So no slide inicial</option>
+                                    <option>Em varios slides</option>
+                                    <option>Sem imagens</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-publico">Ano ou publico</label>
+                                <input id="slides-publico" type="text" value="" placeholder="Ex.: 5º ano, ensino medio, EJA">
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-tom">Tom da apresentacao</label>
+                                <select id="slides-tom">
+                                    <option>Claro e equilibrado</option>
+                                    <option>Mais visual e direto</option>
+                                    <option>Mais explicativo</option>
+                                    <option>Mais inspirador</option>
+                                </select>
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label for="slides-objetivo">Objetivo da aula</label>
+                                <input id="slides-objetivo" type="text" value="" placeholder="Ex.: introduzir o tema, revisar conteudo, preparar debate">
+                            </div>
                         </div>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-primary" data-generate-material="slides">Estruturar slides com IA</button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Tema visual da apresentacao</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field">
+                                <label for="slides-tema-visual">Estilo visual</label>
+                                <select id="slides-tema-visual">
+                                    <option value="moderno">Moderno</option>
+                                    <option value="academico">Academico</option>
+                                    <option value="vibrante">Vibrante</option>
+                                    <option value="minimalista">Minimalista</option>
+                                    <option value="infantil">Infantil</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-tema-fonte">Fonte principal</label>
+                                <select id="slides-tema-fonte">
+                                    <option>Destaque moderno</option>
+                                    <option>Leitura limpa</option>
+                                    <option>Serifada classica</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-tema-accent">Cor de destaque</label>
+                                <input id="slides-tema-accent" type="color" value="#0ea5e9">
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-tema-bg">Cor do slide</label>
+                                <input id="slides-tema-bg" type="color" value="#d7f5f6">
+                            </div>
+                            <div class="platform-field">
+                                <label for="slides-tema-text">Cor do texto</label>
+                                <input id="slides-tema-text" type="color" value="#0f172a">
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-secondary" data-apply-slides-theme>Aplicar visual em todos os slides</button>
                         </div>
                     </div>
                 </details>
@@ -126,11 +209,9 @@
                                     </select>
                                 </div>
                                 <div class="platform-field">
-                                    <label>Formato do slide</label>
+                                    <label>Layout com imagem</label>
                                     <select data-field="slide-layout">
-                                        <option>Texto acima</option>
                                         <option>Lado a lado</option>
-                                        <option>Imagem em destaque</option>
                                     </select>
                                 </div>
                             </div>
@@ -256,11 +337,9 @@
                                     </select>
                                 </div>
                                 <div class="platform-field">
-                                    <label>Formato do slide</label>
+                                    <label>Layout com imagem</label>
                                     <select data-field="slide-layout">
-                                        <option>Texto acima</option>
                                         <option>Lado a lado</option>
-                                        <option>Imagem em destaque</option>
                                     </select>
                                 </div>
                             </div>

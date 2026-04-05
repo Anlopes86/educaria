@@ -47,7 +47,7 @@
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <details class="editor-disclosure" open>
+                <details class="editor-disclosure">
                     <summary>
                         <span>Montar com IA</span>
                         <small>Expandir</small>
@@ -72,11 +72,7 @@
                             </div>
                             <div class="platform-field">
                                 <label for="quiz-quantidade">Perguntas</label>
-                                <select id="quiz-quantidade">
-                                    <option>8 perguntas</option>
-                                    <option>5 perguntas</option>
-                                    <option>10 perguntas</option>
-                                </select>
+                                <input id="quiz-quantidade" type="number" min="1" max="50" step="1" value="8" placeholder="Ex.: 12">
                             </div>
                             <div class="platform-field">
                                 <label for="quiz-formato">Formato</label>

@@ -166,8 +166,20 @@ function promptFor(materialType, action, sourceText) {
         "Quebre o conteudo em uma sequencia logica, didatica e enxuta.",
         "O texto visivel no slide deve ser curto, projetavel e facil de ler pela turma.",
         "Evite paragrafos longos, frases de efeito, cliches e tom generico de apresentacao corporativa.",
-        "Prefira titulos claros, subtitulos uteis e corpo em topicos curtos quando fizer sentido.",
+        "Prefira titulos claros, subtitulos uteis e corpo em topicos curtos.",
+        "Regra forte de formatacao do body:",
+        "- Escreva o body em 2 a 5 linhas curtas.",
+        "- Quebre linhas com \\n.",
+        "- Quando listar ideias, comece cada linha com '- '.",
+        "- Cada linha deve ter uma unica ideia, de preferencia com ate 10 palavras.",
+        "- Nao escreva paragrafos corridos no body.",
+        "- Nao repita o titulo no body.",
+        "Regra forte de composicao:",
+        "- Slide de capa: 1 a 2 linhas no body.",
+        "- Slides de conteudo: priorize bullets curtos.",
+        "- Slide final: fechamento, sintese ou pergunta de revisao.",
         "Use teacher_notes para orientar a mediacao do professor sem repetir o que ja esta visivel no slide.",
+        "Mantenha teacher_notes em 1 ou 2 frases curtas.",
         "Sugira image_prompt apenas quando a imagem realmente ajudar a compreensao do conteudo.",
         "Quando sugerir image_prompt, prefira descricoes visuais educativas, neutras e adequadas ao contexto escolar brasileiro.",
         "Organize a sequencia com comeco, desenvolvimento e fechamento.",
@@ -177,9 +189,78 @@ function promptFor(materialType, action, sourceText) {
         "- Se o conteudo estiver extenso, priorize as ideias centrais.",
         "- Se o texto estiver raso, mantenha a estrutura simples e honesta.",
         "- Evite excesso de slides; prefira concisao com progressao clara.",
+        "- Respeite explicitamente quantidade de slides, nivel de detalhamento e preferencia de imagens quando o professor informar.",
         "Material de origem:",
         sourceText
     ].join("\n\n");
+}
+
+function splitIntoShortUnits(text) {
+    return String(text || "")
+        .replace(/\r/g, "\n")
+        .split(/\n|(?<=[.!?;:])\s+/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .flatMap((item) => item.split(/\s+-\s+/).map((part) => part.trim()).filter(Boolean));
+}
+
+function trimWords(text, maxWords = 12) {
+    const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+    if (words.length <= maxWords) {
+        return words.join(" ");
+    }
+
+    return `${words.slice(0, maxWords).join(" ")}...`;
+}
+
+function normalizeSlideBody(body, slideType) {
+    const raw = String(body || "").trim();
+    if (!raw) {
+        return slideType === "cover" ? "Visao geral da aula" : "Conteudo principal";
+    }
+
+    const lines = raw
+        .replace(/\r/g, "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+    const normalizedLines = (lines.length > 1 ? lines : splitIntoShortUnits(raw))
+        .map((line) => line.replace(/^[-*•]\s*/, "").trim())
+        .filter(Boolean)
+        .slice(0, slideType === "cover" ? 2 : 5)
+        .map((line, index) => {
+            const compact = trimWords(line, slideType === "cover" ? 9 : 11);
+            if (slideType === "cover") {
+                return compact;
+            }
+
+            return `- ${compact}`;
+        });
+
+    return normalizedLines.join("\n");
+}
+
+function normalizeSlidesMaterial(material) {
+    if (!material || !Array.isArray(material.slides)) {
+        return material;
+    }
+
+    return {
+        ...material,
+        slides: material.slides.map((slide, index, slides) => {
+            const slideType = slide?.type || (index === 0 ? "cover" : index === slides.length - 1 ? "closing" : "content");
+            const layout = slide?.image_prompt ? "split" : "stack";
+
+            return {
+                ...slide,
+                type: slideType,
+                body: normalizeSlideBody(slide?.body, slideType),
+                teacher_notes: trimWords(slide?.teacher_notes || "", 22),
+                layout
+            };
+        })
+    };
 }
 
 function imagePromptForSlide({ title, subtitle, body, prompt }) {
@@ -263,7 +344,10 @@ app.post("/api/ai/generate", upload.single("file"), async (request, response) =>
             }
         });
 
-        const material = JSON.parse(result.text || "{}");
+        const rawMaterial = JSON.parse(result.text || "{}");
+        const material = materialType === "slides"
+            ? normalizeSlidesMaterial(rawMaterial)
+            : rawMaterial;
         return response.json({
             ok: true,
             materialType,
