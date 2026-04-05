@@ -5,31 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EducarIA | O hub de atividades que acelera a aula do professor</title>
     <meta name="description" content="Planeje menos, engaje mais. Crie atividades prontas para usar, organize turmas e monte aulas em minutos com a EducarIA.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #f4f6ff;
-            --surface: rgba(255, 255, 255, 0.94);
-            --surface-strong: #ffffff;
-            --line: rgba(103, 120, 255, 0.12);
-            --text: #111827;
-            --muted: #4b5563;
-            --muted-soft: #64748b;
-            --navy: #101828;
-            --blue-700: #1158d6;
-            --blue-600: #1768f2;
-            --blue-500: #4b89ff;
-            --blue-100: #dfe9ff;
-            --lavender: #eef1ff;
-            --orange-500: #ff8a1f;
-            --orange-400: #ffb347;
-            --teal-500: #16b6a1;
-            --shadow: 0 28px 80px rgba(15, 23, 42, 0.12);
-            --shadow-soft: 0 16px 40px rgba(15, 23, 42, 0.08);
+            --bg: #fbfcff;
+            --section: #f3f6fb;
+            --card: #ffffff;
+            --line: #dbe4f1;
+            --text: #0f3269;
+            --text-soft: #4e6488;
+            --primary: #124da6;
+            --primary-strong: #082c67;
+            --accent: #64e0ef;
+            --mint: #dff8fb;
+            --orange: #f5c9a9;
+            --shadow: 0 18px 40px rgba(20, 66, 137, 0.12);
+            --shadow-soft: 0 10px 22px rgba(20, 66, 137, 0.08);
             --radius-xl: 30px;
-            --radius-lg: 22px;
+            --radius-lg: 24px;
             --radius-md: 18px;
-            --max: 1220px;
-            --font: Inter, "Segoe UI", system-ui, sans-serif;
+            --max: 1180px;
         }
 
         * { box-sizing: border-box; }
@@ -38,41 +35,38 @@
         body {
             margin: 0;
             min-height: 100vh;
-            font-family: var(--font);
+            font-family: "Manrope", sans-serif;
             color: var(--text);
             background:
-                radial-gradient(circle at 12% 0%, rgba(99, 132, 255, 0.18), transparent 26%),
-                radial-gradient(circle at 88% 14%, rgba(22, 182, 161, 0.12), transparent 24%),
-                linear-gradient(180deg, #fcfcff 0%, #f5f7ff 38%, #eef3ff 100%);
+                radial-gradient(circle at top left, rgba(100, 224, 239, 0.16), transparent 18%),
+                linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
         }
 
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        img {
-            display: block;
-            max-width: 100%;
-        }
+        a { color: inherit; text-decoration: none; }
+        img { display: block; max-width: 100%; }
 
         .container {
             width: min(var(--max), calc(100% - 40px));
             margin: 0 auto;
         }
 
+        .section-band {
+            background: var(--section);
+            border-top: 1px solid rgba(24, 59, 122, 0.04);
+            border-bottom: 1px solid rgba(24, 59, 122, 0.04);
+        }
+
         .landing-nav {
             position: sticky;
             top: 0;
-            z-index: 40;
-            backdrop-filter: blur(16px);
-            background: rgba(255, 255, 255, 0.84);
-            border-bottom: 1px solid rgba(103, 120, 255, 0.08);
-            overflow: visible;
+            z-index: 50;
+            backdrop-filter: blur(14px);
+            background: rgba(255, 255, 255, 0.88);
+            border-bottom: 1px solid rgba(24, 59, 122, 0.06);
         }
 
         .landing-nav-inner {
-            min-height: 50px;
+            min-height: 74px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -82,652 +76,530 @@
         .landing-brand {
             display: inline-flex;
             align-items: center;
-            height: 40px;
-            overflow: visible;
+            height: 34px;
         }
 
         .landing-brand img {
-            height: 132px;
+            height: 88px;
             width: auto;
             max-width: none;
-            margin: 10px 0 0;
+            margin-top: 6px;
         }
 
         .landing-nav-links,
-        .landing-nav-actions,
         .landing-actions,
-        .landing-cta-actions {
+        .landing-cta-actions,
+        .footer-links {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 24px;
             flex-wrap: wrap;
         }
 
         .landing-nav-links {
-            gap: 24px;
-            color: var(--muted);
-            font-size: 0.94rem;
-            font-weight: 600;
+            color: var(--text-soft);
+            font-size: 0.9rem;
+            font-weight: 700;
         }
 
-        .landing-link {
-            position: relative;
-            transition: color 0.2s ease;
-        }
-
-        .landing-link:hover {
-            color: var(--blue-700);
-        }
+        .landing-link:hover { color: var(--primary); }
 
         .landing-button {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-height: 46px;
-            padding: 0 16px;
-            border-radius: 12px;
+            min-height: 48px;
+            padding: 0 22px;
+            border-radius: 999px;
             border: 1px solid transparent;
+            font-size: 0.96rem;
             font-weight: 800;
             transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
 
-        .landing-button:hover {
-            transform: translateY(-1px);
-        }
+        .landing-button:hover { transform: translateY(-1px); }
 
         .landing-button-primary {
-            background: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-400) 100%);
-            color: #ffffff;
-            box-shadow: 0 16px 32px rgba(255, 138, 31, 0.28);
+            background: linear-gradient(135deg, var(--primary-strong) 0%, var(--primary) 100%);
+            color: #fff;
+            box-shadow: 0 14px 30px rgba(8, 44, 103, 0.22);
         }
 
         .landing-button-secondary {
-            background: rgba(255, 255, 255, 0.92);
-            color: var(--blue-700);
-            border-color: rgba(103, 120, 255, 0.14);
+            background: #fff;
+            color: var(--primary);
+            border-color: #bfd0ea;
             box-shadow: var(--shadow-soft);
         }
 
-        .landing-main {
-            padding: 40px 0 96px;
-        }
+        .landing-main section { padding: 82px 0; }
+        .landing-hero { padding-top: 56px; }
 
-        .landing-hero {
+        .hero-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.95fr);
-            gap: 34px;
-            align-items: start;
+            grid-template-columns: minmax(0, 1fr) minmax(340px, 500px);
+            gap: 26px;
+            align-items: center;
         }
 
-        .landing-copy {
-            padding: 4px 8px 28px 0;
+        .hero-copy {
+            max-width: 520px;
+            transform: translateY(-18px);
         }
 
         .landing-pill {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            width: fit-content;
             padding: 10px 14px;
             border-radius: 999px;
-            background: rgba(255, 255, 255, 0.76);
-            color: var(--blue-700);
-            border: 1px solid rgba(103, 120, 255, 0.14);
-            font-size: 0.92rem;
+            background: var(--mint);
+            color: #2d8c97;
+            font-size: 0.8rem;
             font-weight: 800;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .landing-pill::before {
             content: "";
-            width: 10px;
-            height: 10px;
-            border-radius: 999px;
-            background: var(--teal-500);
-            box-shadow: 0 0 0 6px rgba(22, 182, 161, 0.14);
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--accent);
+        }
+
+        h1, h2, h3 {
+            margin: 0;
+            font-family: "Sora", sans-serif;
+            letter-spacing: -0.04em;
         }
 
         .landing-hero h1 {
-            margin: 14px 0 0;
-            font-size: clamp(2.8rem, 5.8vw, 4.4rem);
-            line-height: 0.98;
-            letter-spacing: -0.07em;
-            max-width: 10.2ch;
-            color: var(--navy);
-        }
-
-        .landing-subtitle {
-            margin: 22px 0 0;
-            max-width: 25ch;
-            color: var(--muted);
-            font-size: 1.08rem;
-            line-height: 1.7;
-        }
-
-        .landing-actions {
-            margin-top: 34px;
-        }
-
-        .landing-hero-visual {
-            position: relative;
-            min-height: 660px;
-            padding-top: 0;
-            margin-top: 22px;
-        }
-
-        .landing-card-cloud {
-            position: relative;
-            width: 100%;
-            height: 100%;
-        }
-
-        .floating-card {
-            position: absolute;
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid rgba(103, 120, 255, 0.1);
-            border-radius: 30px;
-            box-shadow: var(--shadow);
-            padding: 28px;
-        }
-
-        .floating-card h3 {
-            margin: 14px 0 10px;
-            font-size: 1.08rem;
-            line-height: 1.25;
-            letter-spacing: -0.03em;
-            color: var(--navy);
-        }
-
-        .floating-card p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 0.98rem;
-            line-height: 1.55;
-        }
-
-        .floating-card--large {
-            width: 52%;
-            top: 8px;
-            left: 2%;
-        }
-
-        .floating-card--mid {
-            width: 44%;
-            top: 278px;
-            left: 0;
-        }
-
-        .floating-card--wide {
-            width: 48%;
-            right: 0;
-            top: 48px;
-        }
-
-        .floating-card--accent {
-            width: 50%;
-            right: 2%;
-            top: 304px;
-            background: linear-gradient(180deg, #1768f2 0%, #1158d6 100%);
-            color: #ffffff;
-            transform: rotate(2deg);
-        }
-
-        .floating-card--accent h3,
-        .floating-card--accent p {
-            color: #ffffff;
-        }
-
-        .card-icon {
-            width: 56px;
-            height: 56px;
-            display: grid;
-            place-items: center;
-            border-radius: 18px;
-            font-size: 1.4rem;
-            font-weight: 900;
-        }
-
-        .card-icon--blue {
-            background: #e8f0ff;
-            color: var(--blue-700);
-        }
-
-        .card-icon--orange {
-            background: #fff0e3;
-            color: #b45309;
-        }
-
-        .card-icon--indigo {
-            background: #e7eaff;
-            color: #4057d6;
-        }
-
-        .card-progress {
-            margin-top: 14px;
-            height: 8px;
-            border-radius: 999px;
-            background: #e7eaf6;
-            overflow: hidden;
-        }
-
-        .card-progress span {
-            display: block;
-            width: 74%;
-            height: 100%;
-            border-radius: inherit;
-            background: linear-gradient(90deg, var(--blue-700), var(--blue-500));
-        }
-
-        .card-dots {
-            display: flex;
-            gap: 8px;
-            margin-top: 16px;
-        }
-
-        .card-dots span {
-            width: 14px;
-            height: 14px;
-            border-radius: 999px;
-            background: #dbe3f5;
-        }
-
-        .card-dots span:nth-child(2) {
-            background: #c8d7ff;
-        }
-
-        .card-dots span:nth-child(3) {
-            background: #ead9cf;
-        }
-
-        .floating-card--accent .card-icon {
-            background: rgba(255, 255, 255, 0.14);
-            color: #ffffff;
-        }
-
-        .floating-shadow {
-            position: absolute;
-            inset: auto 2% 24px auto;
-            width: 56%;
-            height: 120px;
-            border-radius: 999px;
-            background: radial-gradient(circle, rgba(17, 88, 214, 0.2) 0%, rgba(17, 88, 214, 0) 70%);
-            filter: blur(12px);
-        }
-
-        .landing-section {
-            margin-top: 42px;
-        }
-
-        .landing-soft-panel {
-            padding: 42px;
-            border-radius: var(--radius-xl);
-            background: rgba(240, 243, 255, 0.82);
-            border: 1px solid rgba(103, 120, 255, 0.1);
-        }
-
-        .landing-section-header {
-            text-align: center;
-            margin-bottom: 34px;
-        }
-
-        .landing-kicker {
-            display: inline-block;
-            color: var(--blue-700);
-            background: rgba(255, 255, 255, 0.72);
-            border: 1px solid rgba(103, 120, 255, 0.12);
-            border-radius: 999px;
-            padding: 8px 12px;
-            font-size: 0.84rem;
+            margin-top: 20px;
+            font-size: clamp(2.8rem, 6vw, 4.7rem);
+            line-height: 0.95;
+            color: var(--primary-strong);
             font-weight: 800;
-            margin-bottom: 14px;
-            box-shadow: var(--shadow-soft);
         }
 
-        .landing-section h2 {
-            margin: 0;
-            font-size: clamp(2.1rem, 5vw, 3.4rem);
-            line-height: 1;
-            letter-spacing: -0.06em;
-            color: var(--navy);
-        }
-
-        .landing-section-subtitle {
-            margin: 16px auto 0;
-            color: var(--muted);
-            max-width: 60ch;
-            font-size: 1.06rem;
-            line-height: 1.7;
-        }
-
-        .landing-grid-3 {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 20px;
-        }
-
-        .landing-feature-card {
-            padding: 42px 32px;
-            border-radius: 30px;
-            background: rgba(255, 255, 255, 0.96);
-            border: 1px solid rgba(103, 120, 255, 0.1);
-            box-shadow: var(--shadow-soft);
-            text-align: center;
-        }
-
-        .landing-feature-card .card-icon {
-            margin: 0 auto 24px;
-            width: 78px;
-            height: 78px;
-            border-radius: 24px;
-            font-size: 2rem;
-        }
-
-        .landing-feature-card h3 {
-            margin: 0 0 16px;
-            font-size: 1.22rem;
-            letter-spacing: -0.03em;
-            color: var(--navy);
-        }
-
-        .landing-feature-card p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 1rem;
-            line-height: 1.62;
-        }
-
-        .landing-how {
-            display: grid;
-            gap: 24px;
-        }
-
-        .landing-step-row {
-            display: grid;
-            grid-template-columns: 96px minmax(0, 1.1fr) minmax(220px, 0.7fr);
-            gap: 28px;
-            align-items: center;
-        }
-
-        .landing-step-line {
-            position: relative;
-            display: flex;
-            justify-content: center;
-            min-height: 190px;
-        }
-
-        .landing-step-line::after {
-            content: "";
-            position: absolute;
-            top: 66px;
-            bottom: -28px;
-            width: 4px;
-            border-radius: 999px;
-            background: rgba(190, 198, 224, 0.72);
-        }
-
-        .landing-step-row:last-child .landing-step-line::after {
-            display: none;
-        }
-
-        .landing-step-number {
-            position: relative;
-            z-index: 1;
-            width: 58px;
-            height: 58px;
-            display: grid;
-            place-items: center;
-            border-radius: 999px;
-            background: linear-gradient(180deg, var(--blue-600) 0%, var(--blue-700) 100%);
-            color: #ffffff;
-            font-size: 1.55rem;
-            font-weight: 800;
-            box-shadow: 0 14px 28px rgba(23, 104, 242, 0.22);
-        }
-
-        .landing-step-copy h3 {
-            margin: 0 0 12px;
-            font-size: 1.18rem;
-            letter-spacing: -0.03em;
-            color: var(--navy);
-        }
-
-        .landing-step-copy p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 1.03rem;
-            line-height: 1.62;
-            max-width: 34ch;
-        }
-
-        .landing-step-preview {
-            min-height: 148px;
-            border-radius: 24px;
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid rgba(103, 120, 255, 0.1);
-            box-shadow: var(--shadow-soft);
-            display: grid;
-            place-items: center;
-            padding: 18px;
-        }
-
-        .preview-screen {
-            width: 164px;
-            height: 112px;
-            border-radius: 18px;
-            background: linear-gradient(180deg, #cfd3dc 0%, #aab1c1 100%);
-            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
-            position: relative;
-        }
-
-        .preview-screen::before {
-            content: "";
-            position: absolute;
-            inset: 14px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        .preview-screen--form::after {
-            content: "";
-            position: absolute;
-            inset: 28px 26px auto 26px;
-            height: 8px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow:
-                0 16px 0 rgba(255, 255, 255, 0.8),
-                0 32px 0 rgba(255, 255, 255, 0.68),
-                40px 48px 0 rgba(255, 255, 255, 0.32),
-                0 48px 0 rgba(255, 255, 255, 0.3);
-        }
-
-        .preview-screen--library {
-            background: linear-gradient(180deg, #d4d7dd 0%, #bdc3cf 100%);
-        }
-
-        .preview-screen--library::after {
-            content: "";
-            position: absolute;
-            inset: 20px;
-            border-radius: 12px;
-            background:
-                linear-gradient(90deg, rgba(255, 255, 255, 0.72) 0 18%, transparent 18% 22%, rgba(255, 255, 255, 0.72) 22% 40%, transparent 40% 44%, rgba(255, 255, 255, 0.72) 44% 62%, transparent 62% 66%, rgba(255, 255, 255, 0.72) 66% 84%, transparent 84% 88%, rgba(255, 255, 255, 0.72) 88% 100%);
-        }
-
-        .preview-screen--play::after {
-            content: "";
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            width: 0;
-            height: 0;
-            transform: translate(-34%, -50%);
-            border-top: 18px solid transparent;
-            border-bottom: 18px solid transparent;
-            border-left: 28px solid rgba(255, 255, 255, 0.92);
-        }
-
-        .landing-cta {
-            margin-top: 42px;
-            padding: 64px 48px;
-            border-radius: 44px;
-            background:
-                radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 24%),
-                linear-gradient(135deg, #1158d6 0%, #1768f2 100%);
-            color: #ffffff;
-            text-align: center;
-            box-shadow: 0 32px 80px rgba(17, 88, 214, 0.28);
-        }
-
-        .landing-cta h2 {
-            margin: 0 auto 16px;
-            max-width: 16ch;
-            font-size: clamp(2.2rem, 5.2vw, 3.9rem);
-            line-height: 1.02;
-            letter-spacing: -0.06em;
-        }
-
-        .landing-cta h2 span {
+        .landing-hero h1 span {
             display: block;
             white-space: nowrap;
         }
 
-        .landing-cta h2 span:first-child {
-            margin-left: -2em;
+        .landing-subtitle {
+            margin: 22px 0 0;
+            max-width: 34ch;
+            color: var(--text-soft);
+            font-size: 1.04rem;
+            line-height: 1.75;
         }
 
-        .landing-cta p {
-            margin: 0 auto;
-            max-width: 52ch;
-            color: rgba(255, 255, 255, 0.82);
+        .landing-actions { margin-top: 30px; gap: 14px; }
+
+        .hero-visual {
+            position: relative;
+            min-height: 470px;
+            overflow: visible;
+            margin-left: -18px;
+            transform: translateY(-34px);
+        }
+
+        .hero-card {
+            position: relative;
+            min-height: 430px;
+            width: 108%;
+            margin: 8px 0 0 -10px;
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            background: linear-gradient(180deg, #163e7c, #0c2b5b);
+            box-shadow: var(--shadow);
+            transform: rotate(3deg);
+            transform-origin: center;
+        }
+
+        .hero-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(9, 28, 55, 0.02) 0%, rgba(9, 28, 55, 0.18) 100%);
+            opacity: 1;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .hero-card img {
+            width: 100%;
+            height: 100%;
+            min-height: 430px;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .hero-badge {
+            position: absolute;
+            left: -26px;
+            bottom: 18px;
+            width: min(82%, 300px);
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.96);
+            box-shadow: var(--shadow-soft);
+            border: 1px solid #deebf8;
+        }
+
+        .hero-badge::before {
+            content: "";
+            position: absolute;
+            left: -1px;
+            top: 10px;
+            bottom: 10px;
+            width: 5px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #0fa8b4 0%, #36d7e7 100%);
+            box-shadow: 0 0 0 1px rgba(15, 168, 180, 0.08);
+        }
+
+        .hero-badge small {
+            display: block;
+            color: #36a8b3;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .hero-badge strong {
+            display: block;
+            margin-top: 6px;
+            color: var(--primary-strong);
+            font-size: 0.93rem;
+            line-height: 1.45;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 34px;
+        }
+
+        .section-header h2 {
+            font-size: clamp(2rem, 4.5vw, 3rem);
+            color: var(--primary-strong);
+        }
+
+        .section-header p {
+            margin: 12px auto 0;
+            max-width: 56ch;
+            color: var(--text-soft);
+            line-height: 1.7;
+        }
+
+        .tools-grid,
+        .pricing-grid {
+            display: grid;
+            gap: 24px;
+        }
+
+        .tools-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .tool-card,
+        .pricing-card,
+        .benefit-panel,
+        .illustration-card {
+            background: var(--card);
+            border: 1px solid #e6edf7;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .tool-card {
+            padding: 26px;
+        }
+
+        .tool-icon {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            border-radius: 14px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            font-weight: 800;
+            color: var(--primary-strong);
+            background: #eaf6ff;
+        }
+
+        .tool-card:nth-child(2) .tool-icon { background: #eef1ff; }
+        .tool-card:nth-child(3) .tool-icon { background: #fff0e6; }
+
+        .tool-card h3 {
+            font-size: 1.28rem;
+            color: var(--primary-strong);
+        }
+
+        .tool-card p {
+            margin: 12px 0 18px;
+            color: var(--text-soft);
+            line-height: 1.7;
+        }
+
+        .tool-link {
+            color: #3ab7c2;
+            font-weight: 800;
+        }
+
+        .why-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+            gap: 40px;
+            align-items: center;
+        }
+
+        .illustration-card {
+            min-height: 340px;
+            overflow: hidden;
+            position: relative;
+            background: #dce5f1;
+        }
+
+        .illustration-card img {
+            width: 100%;
+            height: 100%;
+            min-height: 340px;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        .benefit-panel { padding: 10px 6px; border: none; box-shadow: none; background: transparent; }
+        .benefit-panel h2 { color: var(--primary-strong); }
+        .benefit-list { display: grid; gap: 20px; margin-top: 26px; }
+
+        .benefit-item {
+            display: grid;
+            grid-template-columns: 42px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .benefit-check {
+            width: 42px;
+            height: 42px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #ecf9fb;
+            color: #37aeb8;
+            font-weight: 900;
+            box-shadow: inset 0 0 0 1px #d2eff2;
+        }
+
+        .benefit-item h3 {
             font-size: 1.08rem;
+            color: var(--primary-strong);
+        }
+
+        .benefit-item p {
+            margin: 8px 0 0;
+            color: var(--text-soft);
             line-height: 1.65;
         }
 
-        .landing-cta-actions {
-            justify-content: center;
-            margin-top: 30px;
+        .pricing-grid {
+            max-width: 840px;
+            margin: 0 auto;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            align-items: stretch;
         }
 
-        .landing-cta .landing-button-primary {
-            background: #ffffff;
-            color: var(--blue-700);
-            box-shadow: 0 18px 40px rgba(14, 38, 94, 0.2);
+        .pricing-card {
+            padding: 28px;
         }
 
-        .landing-cta .landing-button-secondary {
-            background: rgba(255, 255, 255, 0.12);
-            color: #ffffff;
-            border-color: rgba(255, 255, 255, 0.24);
+        .pricing-card h3 {
+            font-size: 1.18rem;
+            color: var(--primary-strong);
+        }
+
+        .pricing-card p {
+            margin: 10px 0 0;
+            color: var(--text-soft);
+            line-height: 1.6;
+        }
+
+        .price {
+            margin-top: 22px;
+            font-family: "Sora", sans-serif;
+            font-size: 2.15rem;
+            color: var(--primary-strong);
+        }
+
+        .price small {
+            font-family: "Manrope", sans-serif;
+            font-size: 0.92rem;
+            color: var(--text-soft);
+        }
+
+        .pricing-list {
+            display: grid;
+            gap: 12px;
+            margin: 22px 0 28px;
+            padding: 0;
+            list-style: none;
+            color: var(--text-soft);
+        }
+
+        .pricing-list li::before {
+            content: "•";
+            margin-right: 10px;
+            color: #34bcc7;
+            font-weight: 900;
+        }
+
+        .pricing-card.featured {
+            color: #fff;
+            background: linear-gradient(180deg, #1f62c4 0%, #11408d 100%);
+            box-shadow: 0 20px 36px rgba(17, 64, 141, 0.28);
+            position: relative;
+        }
+
+        .pricing-card.featured h3,
+        .pricing-card.featured .price,
+        .pricing-card.featured p,
+        .pricing-card.featured .pricing-list {
+            color: #fff;
+        }
+
+        .pricing-badge {
+            position: absolute;
+            top: 18px;
+            right: 18px;
+            padding: 7px 10px;
+            border-radius: 999px;
+            background: rgba(100, 224, 239, 0.2);
+            color: #b9fbff;
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .pricing-card.featured .landing-button-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #61dceb 0%, #4fd4e5 100%);
+            color: #104182;
             box-shadow: none;
         }
 
-        .landing-footer {
-            padding: 28px 0 18px;
-            color: var(--muted);
-            font-size: 0.95rem;
-            text-align: center;
+        .pricing-card:not(.featured) .landing-button-secondary {
+            width: 100%;
+            justify-content: center;
         }
 
-        @media (max-width: 1080px) {
-            .landing-hero,
-            .landing-grid-3,
-            .landing-step-row {
+        .landing-footer {
+            padding: 28px 0 34px;
+            background: #fff;
+        }
+
+        .footer-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            color: var(--text-soft);
+            font-size: 0.9rem;
+        }
+
+        .footer-brand img {
+            height: 64px;
+            margin: -6px 0 0 -10px;
+        }
+
+        .footer-copy {
+            margin-top: -10px;
+            font-size: 0.8rem;
+            color: #8b9ab3;
+        }
+
+        .footer-links { gap: 18px; font-size: 0.88rem; }
+
+        .footer-social {
+            display: flex;
+            gap: 10px;
+        }
+
+        .footer-social span {
+            width: 30px;
+            height: 30px;
+            display: grid;
+            place-items: center;
+            border-radius: 50%;
+            background: #eef3fb;
+            color: var(--primary);
+            font-size: 0.82rem;
+            font-weight: 900;
+        }
+
+        @media (max-width: 980px) {
+            .hero-grid,
+            .why-grid,
+            .tools-grid,
+            .pricing-grid {
                 grid-template-columns: 1fr;
             }
 
-            .landing-copy {
-                padding: 16px 0 0;
-            }
-
-            .landing-hero-visual {
-                min-height: 580px;
-                margin-top: 0;
-            }
-
-            .landing-step-line {
-                min-height: auto;
-                justify-content: start;
-            }
-
-            .landing-step-line::after {
-                display: none;
-            }
-        }
-
-        @media (max-width: 740px) {
-            .container {
-                width: min(var(--max), calc(100% - 24px));
-            }
-
-            .landing-nav-inner {
-                min-height: 46px;
-            }
-
-            .landing-nav-links {
-                display: none;
-            }
-
-            .landing-brand img {
-                height: 96px;
-                width: auto;
-                margin: 8px 0 0;
-            }
-
-            .landing-main {
-                padding-top: 24px;
-            }
-
+            .hero-copy,
             .landing-subtitle {
                 max-width: none;
             }
 
-            .landing-copy,
-            .landing-soft-panel {
-                padding: 28px;
+            .hero-copy {
+                transform: none;
             }
 
-            .landing-button {
+            .hero-visual {
+                max-width: 520px;
                 width: 100%;
+                margin: 0 auto;
+                transform: none;
             }
 
-            .landing-hero-visual {
-                min-height: 540px;
-                margin-top: 0;
+            .hero-card {
+                width: 100%;
+                margin-left: 0;
             }
+        }
 
-            .floating-card {
-                padding: 20px;
-                border-radius: 24px;
+        @media (max-width: 760px) {
+            .container { width: min(var(--max), calc(100% - 24px)); }
+            .landing-nav-inner { min-height: 66px; }
+            .landing-nav-links { display: none; }
+            .landing-main section { padding: 64px 0; }
+            .landing-hero { padding-top: 30px; }
+            .landing-hero h1 { font-size: clamp(2.5rem, 13vw, 3.7rem); }
+            .landing-actions,
+            .landing-cta-actions { width: 100%; }
+            .landing-button { width: 100%; }
+            .hero-card,
+            .hero-card img { min-height: 320px; }
+            .hero-card {
+                width: 100%;
+                margin: 0;
+                transform: rotate(0deg);
             }
-
-            .floating-card--large {
-                width: 70%;
-                top: 0;
-                left: 0;
+            .hero-badge {
+                left: 12px;
+                right: 12px;
+                width: auto;
+                bottom: 14px;
             }
-
-            .floating-card--mid {
-                width: 60%;
-                top: 226px;
-                left: 0;
-            }
-
-            .floating-card--wide {
-                width: 58%;
-                top: 48px;
-                right: 0;
-            }
-
-            .floating-card--accent {
-                width: 68%;
-                top: 308px;
-                right: 0;
-            }
-
-            .landing-cta {
-                padding: 40px 26px;
+            .illustration-card,
+            .illustration-card img { min-height: 280px; }
+            .footer-row {
+                flex-direction: column;
+                align-items: start;
             }
         }
     </style>
@@ -746,168 +618,175 @@
             </a>
 
             <nav class="landing-nav-links" aria-label="Seções da landing">
-                <a href="#recursos" class="landing-link">Recursos</a>
-                <a href="#como-funciona" class="landing-link">Como funciona</a>
-                <a href="#comecar" class="landing-link">Começar</a>
+                <a href="#hub" class="landing-link">Hub</a>
+                <a href="#ferramentas" class="landing-link">Ferramentas</a>
+                <a href="#planos" class="landing-link">Planos</a>
             </nav>
 
-            <div class="landing-nav-actions">
-                <a href="login.html" class="landing-button landing-button-secondary" data-landing-nav-secondary>Entrar</a>
-                <a href="cadastro.html" class="landing-button landing-button-primary" data-landing-nav-primary>Criar conta</a>
-            </div>
+            <a href="login.html" class="landing-button landing-button-primary">Login</a>
         </div>
     </header>
 
     <main class="landing-main">
-        <div class="container">
-            <section class="landing-hero">
-                <article class="landing-copy">
-                    <span class="landing-pill">Mais impacto na sala. Menos tempo criando do zero.</span>
-                    <h1>Transforme minutos de planejamento em aulas que prendem a atenção da turma.</h1>
-                    <p class="landing-subtitle">Crie slides, quizzes, flashcards e dinâmicas modernas em um hub pensado para o professor organizar seu acervo, variar a aula e manter os alunos participando do começo ao fim.</p>
+        <section class="landing-hero" id="hub">
+            <div class="container hero-grid">
+                <article class="hero-copy">
+                    <span class="landing-pill">A nova era da educação</span>
+                    <h1>
+                        <span>O Hub de IA para</span>
+                        <span>Educadores do</span>
+                        <span>Futuro</span>
+                    </h1>
+                    <p class="landing-subtitle">Simplifique sua rotina, personalize o ensino e inspire seus alunos com o poder da Inteligência Artificial.</p>
 
                     <div class="landing-actions">
-                        <a href="cadastro.html" class="landing-button landing-button-primary" data-landing-hero-primary>Começar agora</a>
-                        <a href="login.html" class="landing-button landing-button-secondary" data-landing-hero-secondary>Já tenho conta</a>
+                        <a href="cadastro.html" class="landing-button landing-button-primary" data-landing-hero-primary>Começar Agora</a>
+                        <a href="#ferramentas" class="landing-button landing-button-secondary">Ver Ferramentas</a>
                     </div>
-
                 </article>
 
-                <aside class="landing-hero-visual" aria-label="Visão geral da plataforma">
-                    <div class="landing-card-cloud">
-                        <article class="floating-card floating-card--large">
-                            <div class="card-icon card-icon--blue">✦</div>
-                            <h3>Crie com ajuda da IA</h3>
-                            <p>Comece mais rápido e transforme ideias em atividades prontas para usar.</p>
-                            <div class="card-progress"><span></span></div>
-                        </article>
+                <aside class="hero-visual" aria-label="Preview da plataforma">
+                    <div class="hero-card">
+                        <img src="img/img index.png" alt="Profissional utilizando notebook para planejar atividades com apoio da EducarIA">
+                    </div>
 
-                        <article class="floating-card floating-card--wide">
-                            <div class="card-icon card-icon--indigo">✎</div>
-                            <h3>Atividades modernas</h3>
-                            <p>Quiz, flashcards, slides, roleta, jogo da memória e outros formatos para variar a experiência da turma.</p>
-                        </article>
-
-                        <article class="floating-card floating-card--mid">
-                            <div class="card-icon card-icon--orange">⌘</div>
-                            <h3>Organize por turmas</h3>
-                            <p>Monte seu acervo do jeito que faz sentido para sua rotina.</p>
-                            <div class="card-dots">
-                                <span></span>
-                                <span></span>
-                                <span></span>
-                            </div>
-                        </article>
-
-                        <article class="floating-card floating-card--accent">
-                            <div class="card-icon">▣</div>
-                            <h3>Apresente em sala</h3>
-                            <p>Abra a atividade pronta e conduza a aula com mais ritmo, clareza e segurança.</p>
-                        </article>
-
-                        <div class="floating-shadow" aria-hidden="true"></div>
+                    <div class="hero-badge">
+                        <small>Insight IA</small>
+                        <strong>Reduza em até 60% o tempo de planejamento semanal.</strong>
                     </div>
                 </aside>
-            </section>
+            </div>
+        </section>
 
-            <section class="landing-section" id="recursos">
-                <div class="landing-soft-panel">
-                    <div class="landing-section-header">
-                        <span class="landing-kicker">Tudo o que o professor precisa</span>
-                        <h2>Um hub para preparar aulas mais vivas e mais fáceis de executar.</h2>
-                        <p class="landing-section-subtitle">A plataforma foi desenhada para economizar tempo, organizar o repertório do professor e transformar planejamento em aula prática com mais velocidade.</p>
-                    </div>
-
-                    <div class="landing-grid-3">
-                        <article class="landing-feature-card">
-                            <div class="card-icon card-icon--blue">👥</div>
-                            <h3>Turmas sempre organizadas</h3>
-                            <p>Abra a turma certa, encontre o acervo em segundos e continue seu planejamento sem retrabalho.</p>
-                        </article>
-
-                        <article class="landing-feature-card">
-                            <div class="card-icon card-icon--orange">📚</div>
-                            <h3>Biblioteca do professor</h3>
-                            <p>Salve suas melhores atividades fora da turma e reaproveite com liberdade ao longo do ano.</p>
-                        </article>
-
-                        <article class="landing-feature-card">
-                            <div class="card-icon card-icon--indigo">⚡</div>
-                            <h3>Criação sem enrolação</h3>
-                            <p>Um editor visual mais intuitivo, com preview imediato e menos passos entre a ideia e a aula pronta.</p>
-                        </article>
-                    </div>
+        <section class="section-band" id="ferramentas">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Ferramentas Inteligentes</h2>
+                    <p>Desenvolvidas especificamente para a fase de trabalho pedagógico moderno.</p>
                 </div>
-            </section>
 
-            <section class="landing-section" id="como-funciona">
-                <div class="landing-soft-panel">
-                    <div class="landing-section-header">
-                        <span class="landing-kicker">Como funciona</span>
-                        <h2>Da conta criada à aula pronta em um fluxo simples.</h2>
-                        <p class="landing-section-subtitle">Você entra, cria, salva, organiza e apresenta sem se perder. A plataforma guia o professor para a próxima ação certa.</p>
-                    </div>
+                <div class="tools-grid">
+                    <article class="tool-card">
+                        <div class="tool-icon">01</div>
+                        <h3>Gerador de Aulas</h3>
+                        <p>Crie planos de aula alinhados à BNCC em segundos, adaptados para qualquer nível de ensino.</p>
+                        <a href="cadastro.html" class="tool-link">Acessar ferramenta →</a>
+                    </article>
 
-                    <div class="landing-how">
-                        <article class="landing-step-row">
-                            <div class="landing-step-line">
-                                <div class="landing-step-number">1</div>
-                            </div>
-                            <div class="landing-step-copy">
-                                <h3>Crie sua conta</h3>
-                                <p>Rápido e sem burocracia. Cadastre-se e acesse um ambiente seguro para construir seu repertório de atividades.</p>
-                            </div>
-                            <div class="landing-step-preview">
-                                <div class="preview-screen preview-screen--form" aria-hidden="true"></div>
-                            </div>
-                        </article>
+                    <article class="tool-card">
+                        <div class="tool-icon">02</div>
+                        <h3>Criador de Quizzes</h3>
+                        <p>Gere avaliações interativas e quizzes de revisão focados na participação da turma.</p>
+                        <a href="cadastro.html" class="tool-link">Acessar ferramenta →</a>
+                    </article>
 
-                        <article class="landing-step-row">
-                            <div class="landing-step-line">
-                                <div class="landing-step-number">2</div>
-                            </div>
-                            <div class="landing-step-copy">
-                                <h3>Monte seu acervo</h3>
-                                <p>Crie materiais para uma turma específica ou salve na biblioteca para usar de novo quando quiser, sem começar do zero.</p>
-                            </div>
-                            <div class="landing-step-preview">
-                                <div class="preview-screen preview-screen--library" aria-hidden="true"></div>
-                            </div>
-                        </article>
-
-                        <article class="landing-step-row">
-                            <div class="landing-step-line">
-                                <div class="landing-step-number">3</div>
-                            </div>
-                            <div class="landing-step-copy">
-                                <h3>Apresente em sala</h3>
-                                <p>Abra sua atividade pronta, ajuste o que precisar e conduza a aula com mais segurança, ritmo e impacto.</p>
-                            </div>
-                            <div class="landing-step-preview">
-                                <div class="preview-screen preview-screen--play" aria-hidden="true"></div>
-                            </div>
-                        </article>
-                    </div>
+                    <article class="tool-card">
+                        <div class="tool-icon">03</div>
+                        <h3>Personalizador de Conteúdo</h3>
+                        <p>Ajuste o mesmo tema para diferentes idades, contextos e necessidades de aprendizagem.</p>
+                        <a href="cadastro.html" class="tool-link">Acessar ferramenta →</a>
+                    </article>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <section class="landing-cta" id="comecar">
-                <h2>
-                    <span>Comece hoje a montar aulas que</span>
-                    <span>seus alunos realmente</span>
-                    <span>acompanham</span>
-                </h2>
-                <p>Entre agora e continue seu acervo. Se ainda não tem conta, crie seu acesso e prepare sua primeira atividade em poucos minutos.</p>
-                <div class="landing-cta-actions">
-                    <a href="cadastro.html" class="landing-button landing-button-primary" data-landing-cta-primary>Criar conta</a>
-                    <a href="login.html" class="landing-button landing-button-secondary" data-landing-cta-secondary>Entrar</a>
+        <section>
+            <div class="container why-grid">
+                <div class="illustration-card">
+                    <img src="img/img index2.png" alt="Professora apresentando quiz interativo em sala de aula">
                 </div>
-            </section>
 
-            <footer class="landing-footer">
-                EducarIA. O melhor hub de atividades para professores do Brasil.
-            </footer>
-        </div>
+                <article class="benefit-panel">
+                    <h2>Por que escolher o EducarIA?</h2>
+
+                    <div class="benefit-list">
+                        <div class="benefit-item">
+                            <div class="benefit-check">✓</div>
+                            <div>
+                                <h3>Economize Tempo</h3>
+                                <p>Reduza horas de trabalho burocrático para focar no que realmente importa: ensinar bem.</p>
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <div class="benefit-check">✓</div>
+                            <div>
+                                <h3>Aumente o Engajamento</h3>
+                                <p>Conteúdos dinâmicos e personalizados que captam a atenção da geração digital.</p>
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <div class="benefit-check">✓</div>
+                            <div>
+                                <h3>Feedback Instantâneo</h3>
+                                <p>Apoio em tempo real para construção de atividades e sugestões de melhoria pedagógica.</p>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-band" id="planos">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Planos que acompanham você</h2>
+                    <p>Escolha o ideal para o seu momento educacional.</p>
+                </div>
+
+                <div class="pricing-grid">
+                    <article class="pricing-card">
+                        <h3>Plano Basic</h3>
+                        <p>Ideal para começar, com ferramentas para criar e testar sua rotina.</p>
+                        <div class="price">Grátis <small>/ mês</small></div>
+                        <ul class="pricing-list">
+                            <li>5 gerações por mês</li>
+                            <li>Acesso a modelos básicos</li>
+                            <li>Exportação em PDF</li>
+                        </ul>
+                        <a href="cadastro.html" class="landing-button landing-button-secondary" data-landing-cta-secondary>Começar agora</a>
+                    </article>
+
+                    <article class="pricing-card featured">
+                        <span class="pricing-badge">Mais popular</span>
+                        <h3>Plano Pro</h3>
+                        <p>Perfeito para professores e escolas que querem escalar produtividade.</p>
+                        <div class="price">R$ 29,90 <small>/ mês</small></div>
+                        <ul class="pricing-list">
+                            <li>Gerações ilimitadas</li>
+                            <li>IA de última geração GPT-4</li>
+                            <li>Suporte prioritário 24/7</li>
+                            <li>Acesso antecipado a novas ferramentas</li>
+                        </ul>
+                        <a href="cadastro.html" class="landing-button landing-button-primary" data-landing-cta-primary>Assinar Agora</a>
+                    </article>
+                </div>
+            </div>
+        </section>
     </main>
+
+    <footer class="landing-footer">
+        <div class="container footer-row">
+            <div>
+                <a href="index.html" class="footer-brand" aria-label="EducarIA">
+                    <img src="assets/images/educar-logo-fhd.png" alt="EducarIA">
+                </a>
+                <div class="footer-copy">EducarIA Assistant. The intelligent center for your teaching flow.</div>
+            </div>
+
+            <nav class="footer-links" aria-label="Links do rodapé">
+                <a href="#planos">Pricing Policy</a>
+                <a href="#ferramentas">Term of Service</a>
+                <a href="login.html">Contact Us</a>
+                <a href="cadastro.html">My Class</a>
+            </nav>
+
+            <div class="footer-social" aria-label="Redes sociais">
+                <span>f</span>
+                <span>in</span>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
