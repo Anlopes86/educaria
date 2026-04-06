@@ -2,6 +2,11 @@ const TURMA_CONTEXT_KEY = "educaria:selectedClass";
 const TURMA_LIST_KEY = "educaria:classList";
 const EDUCARIA_RESET_KEY = "educaria:reset:empty-state-v1";
 const DEFAULT_CLASSES = [];
+const TURMA_REMOTE_COLLECTION = "platform";
+const TURMA_REMOTE_DOC = "classes";
+
+let classesSyncPromise = null;
+let lastClassesSyncUid = "";
 
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
@@ -9,6 +14,40 @@ function scopedStorageKey(baseKey) {
 
 function normalizeClassLabel(value) {
     return typeof value === "string" ? value.trim() : "";
+}
+
+function uniqueClassList(classes) {
+    return [...new Set((Array.isArray(classes) ? classes : []).map(normalizeClassLabel).filter(Boolean))];
+}
+
+function emitClassesUpdated(source = "local") {
+    document.dispatchEvent(new CustomEvent("educaria-classes-updated", {
+        detail: {
+            source,
+            classes: getAvailableClasses()
+        }
+    }));
+}
+
+function firebaseClassesRef() {
+    if (typeof firebaseServices !== "function" || typeof readCurrentTeacher !== "function") return null;
+
+    const teacher = readCurrentTeacher();
+    if (!teacher?.uid) return null;
+
+    const services = firebaseServices();
+    if (!services?.db) return null;
+
+    return services.db
+        .collection("teachers")
+        .doc(teacher.uid)
+        .collection(TURMA_REMOTE_COLLECTION)
+        .doc(TURMA_REMOTE_DOC);
+}
+
+function readRemoteClassesPayload(snapshot) {
+    if (!snapshot?.exists) return [];
+    return uniqueClassList(snapshot.data()?.classes || []);
 }
 
 function ensureEmptyStartState() {
@@ -24,24 +63,79 @@ function ensureEmptyStartState() {
 function readStoredClasses() {
     try {
         const parsed = JSON.parse(localStorage.getItem(scopedStorageKey(TURMA_LIST_KEY)) || "[]");
-        return Array.isArray(parsed) ? parsed.map(normalizeClassLabel).filter(Boolean) : [];
+        return uniqueClassList(parsed);
     } catch (error) {
         console.warn("EducarIA class list unavailable:", error);
         return [];
     }
 }
 
-function saveClassList(classes) {
+function writeClassListLocally(classes, source = "local") {
+    const normalized = uniqueClassList(classes);
+
     try {
-        localStorage.setItem(scopedStorageKey(TURMA_LIST_KEY), JSON.stringify(classes));
+        localStorage.setItem(scopedStorageKey(TURMA_LIST_KEY), JSON.stringify(normalized));
     } catch (error) {
         console.warn("EducarIA class list unavailable:", error);
     }
+
+    emitClassesUpdated(source);
+    return normalized;
+}
+
+async function syncClassesWithFirebase() {
+    const teacher = typeof readCurrentTeacher === "function" ? readCurrentTeacher() : null;
+    const uid = teacher?.uid || "";
+    const ref = firebaseClassesRef();
+
+    if (!uid || !ref) {
+        lastClassesSyncUid = "";
+        return getAvailableClasses();
+    }
+
+    if (classesSyncPromise) return classesSyncPromise;
+
+    classesSyncPromise = (async () => {
+        try {
+            const localClasses = getAvailableClasses();
+            const snapshot = await ref.get();
+            const remoteClasses = readRemoteClassesPayload(snapshot);
+            const mergedClasses = uniqueClassList([...remoteClasses, ...localClasses]);
+
+            writeClassListLocally(mergedClasses, "firebase");
+
+            const remoteChanged = mergedClasses.length !== remoteClasses.length
+                || mergedClasses.some((item, index) => item !== remoteClasses[index]);
+
+            if (remoteChanged || lastClassesSyncUid !== uid) {
+                await ref.set({
+                    classes: mergedClasses,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            }
+
+            lastClassesSyncUid = uid;
+            return mergedClasses;
+        } catch (error) {
+            console.warn("EducarIA class sync unavailable:", error);
+            return getAvailableClasses();
+        } finally {
+            classesSyncPromise = null;
+        }
+    })();
+
+    return classesSyncPromise;
+}
+
+function saveClassList(classes) {
+    const normalized = writeClassListLocally(classes, "local");
+    syncClassesWithFirebase();
+    return normalized;
 }
 
 function getAvailableClasses() {
     const merged = [...DEFAULT_CLASSES, ...readStoredClasses()];
-    return [...new Set(merged.map(normalizeClassLabel).filter(Boolean))];
+    return uniqueClassList(merged);
 }
 
 function saveSelectedClass(value) {
@@ -194,6 +288,17 @@ function hydrateClassPages() {
 document.addEventListener("DOMContentLoaded", () => {
     ensureEmptyStartState();
     initClassPicker();
+    hydrateCreateLessonPage();
+    hydrateClassPages();
+    syncClassesWithFirebase();
+});
+
+document.addEventListener("educaria-auth-changed", () => {
+    syncClassesWithFirebase();
+});
+
+document.addEventListener("educaria-classes-updated", () => {
+    populateClassPicker();
     hydrateCreateLessonPage();
     hydrateClassPages();
 });

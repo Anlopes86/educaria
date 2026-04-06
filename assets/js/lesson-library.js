@@ -1,8 +1,13 @@
 const LESSONS_LIBRARY_KEY = "educaria:lessons";
 const ACTIVE_LESSON_KEY = "educaria:activeLessonId";
 const CLASS_CONTEXT_KEY = "educaria:selectedClass";
+const DELETED_LESSONS_KEY = "educaria:deletedLessons";
 const LESSON_SCOPE_LIBRARY = "library";
 const LESSON_SCOPE_CLASS = "class";
+const LESSONS_REMOTE_COLLECTION = "lessons";
+
+let lessonsSyncPromise = null;
+let lastLessonsSyncUid = "";
 
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
@@ -38,23 +43,154 @@ function stackSelectorForType(type) {
     return "[data-slides-stack]";
 }
 
+function lessonTimestampValue(lesson) {
+    const parsed = Date.parse(lesson?.updatedAt || "");
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function sortLessonsByUpdatedAt(lessons) {
+    return [...lessons].sort((left, right) => {
+        const timestampDiff = lessonTimestampValue(right) - lessonTimestampValue(left);
+        if (timestampDiff !== 0) return timestampDiff;
+        return String(right?.id || "").localeCompare(String(left?.id || ""));
+    });
+}
+
+function normalizeLessonRecord(lesson) {
+    if (!lesson || typeof lesson !== "object") return null;
+
+    const materialType = String(lesson.materialType || "slides").trim() || "slides";
+    const className = String(lesson.className || "").trim();
+    const scope = lesson.scope || (className ? LESSON_SCOPE_CLASS : LESSON_SCOPE_LIBRARY);
+
+    return {
+        id: String(lesson.id || `lesson-${Date.now()}`),
+        className: scope === LESSON_SCOPE_CLASS ? className : "",
+        scope,
+        title: String(lesson.title || "").trim() || "Material sem titulo",
+        summary: String(lesson.summary || "").trim() || "Material salvo sem resumo definido.",
+        type: String(lesson.type || materialGroupLabel(materialType)).trim() || materialGroupLabel(materialType),
+        materialType,
+        updatedAt: String(lesson.updatedAt || new Date().toISOString()),
+        draft: typeof lesson.draft === "string" ? lesson.draft : ""
+    };
+}
+
+function mergeLessonRecords(localLessons, remoteLessons) {
+    const merged = new Map();
+
+    remoteLessons.forEach((lesson) => {
+        const normalized = normalizeLessonRecord(lesson);
+        if (normalized) {
+            merged.set(normalized.id, normalized);
+        }
+    });
+
+    localLessons.forEach((lesson) => {
+        const normalized = normalizeLessonRecord(lesson);
+        if (!normalized) return;
+
+        const existing = merged.get(normalized.id);
+        if (!existing || lessonTimestampValue(normalized) >= lessonTimestampValue(existing)) {
+            merged.set(normalized.id, normalized);
+        }
+    });
+
+    return sortLessonsByUpdatedAt([...merged.values()]);
+}
+
+function lessonsAreEqual(leftLessons, rightLessons) {
+    const left = sortLessonsByUpdatedAt(leftLessons.map(normalizeLessonRecord).filter(Boolean));
+    const right = sortLessonsByUpdatedAt(rightLessons.map(normalizeLessonRecord).filter(Boolean));
+    return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function emitLessonsUpdated(source = "local") {
+    document.dispatchEvent(new CustomEvent("educaria-lessons-updated", {
+        detail: {
+            source,
+            lessons: readLessonsLibrary()
+        }
+    }));
+}
+
+function firebaseLessonsCollection() {
+    if (typeof firebaseServices !== "function" || typeof readCurrentTeacher !== "function") return null;
+
+    const teacher = readCurrentTeacher();
+    if (!teacher?.uid) return null;
+
+    const services = firebaseServices();
+    if (!services?.db) return null;
+
+    return services.db
+        .collection("teachers")
+        .doc(teacher.uid)
+        .collection(LESSONS_REMOTE_COLLECTION);
+}
+
+function readDeletedLessonIds() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(scopedStorageKey(DELETED_LESSONS_KEY)) || "[]");
+        return [...new Set((Array.isArray(parsed) ? parsed : []).map((item) => String(item || "").trim()).filter(Boolean))];
+    } catch (error) {
+        console.warn("EducarIA deleted lessons unavailable:", error);
+        return [];
+    }
+}
+
+function writeDeletedLessonIds(ids) {
+    const normalized = [...new Set((Array.isArray(ids) ? ids : []).map((item) => String(item || "").trim()).filter(Boolean))];
+
+    try {
+        localStorage.setItem(scopedStorageKey(DELETED_LESSONS_KEY), JSON.stringify(normalized));
+    } catch (error) {
+        console.warn("EducarIA deleted lessons unavailable:", error);
+    }
+
+    return normalized;
+}
+
+function queueDeletedLessonId(id) {
+    const lessonId = String(id || "").trim();
+    if (!lessonId) return;
+    writeDeletedLessonIds([...readDeletedLessonIds(), lessonId]);
+}
+
+function clearDeletedLessonId(id) {
+    const lessonId = String(id || "").trim();
+    if (!lessonId) return;
+    writeDeletedLessonIds(readDeletedLessonIds().filter((item) => item !== lessonId));
+}
+
 function readLessonsLibrary() {
     try {
         const raw = localStorage.getItem(LESSONS_LIBRARY_KEY);
         const scopedRaw = localStorage.getItem(scopedStorageKey(LESSONS_LIBRARY_KEY));
-        return scopedRaw ? JSON.parse(scopedRaw) : (raw ? JSON.parse(raw) : []);
+        const parsed = scopedRaw ? JSON.parse(scopedRaw) : (raw ? JSON.parse(raw) : []);
+        return mergeLessonRecords(Array.isArray(parsed) ? parsed : [], []);
     } catch (error) {
         console.warn("EducarIA lessons unavailable:", error);
         return [];
     }
 }
 
-function writeLessonsLibrary(lessons) {
+function writeLessonsLibrary(lessons, options = {}) {
+    const normalized = mergeLessonRecords(Array.isArray(lessons) ? lessons : [], []);
+
     try {
-        localStorage.setItem(scopedStorageKey(LESSONS_LIBRARY_KEY), JSON.stringify(lessons));
+        localStorage.setItem(scopedStorageKey(LESSONS_LIBRARY_KEY), JSON.stringify(normalized));
     } catch (error) {
         console.warn("EducarIA lessons unavailable:", error);
     }
+
+    emitLessonsUpdated(options.source || "local");
+
+    if (!options.skipSync) {
+        syncLessonsWithFirebase();
+    }
+
+    return normalized;
 }
 
 function normalizeLessonScope(lesson) {
@@ -64,6 +200,7 @@ function normalizeLessonScope(lesson) {
 
 function removeLessonById(id) {
     const lessons = readLessonsLibrary().filter((lesson) => lesson.id !== id);
+    queueDeletedLessonId(id);
     writeLessonsLibrary(lessons);
 
     if (readActiveLessonId() === id) {
@@ -84,10 +221,7 @@ function duplicateLessonToClass(id, targetClass) {
         updatedAt: new Date().toISOString()
     };
 
-    const lessons = readLessonsLibrary();
-    lessons.unshift(copy);
-    writeLessonsLibrary(lessons);
-    return copy;
+    return persistLessonRecord(copy);
 }
 
 function addLessonToLibrary(id) {
@@ -102,10 +236,71 @@ function addLessonToLibrary(id) {
         updatedAt: new Date().toISOString()
     };
 
-    const lessons = readLessonsLibrary();
-    lessons.unshift(copy);
-    writeLessonsLibrary(lessons);
-    return copy;
+    return persistLessonRecord(copy);
+}
+
+async function syncLessonsWithFirebase() {
+    const teacher = typeof readCurrentTeacher === "function" ? readCurrentTeacher() : null;
+    const uid = teacher?.uid || "";
+    const collection = firebaseLessonsCollection();
+
+    if (!uid || !collection) {
+        lastLessonsSyncUid = "";
+        return readLessonsLibrary();
+    }
+
+    if (lessonsSyncPromise) return lessonsSyncPromise;
+
+    lessonsSyncPromise = (async () => {
+        try {
+            const localLessons = readLessonsLibrary();
+            const deletedIds = readDeletedLessonIds();
+            const snapshot = await collection.get();
+            const remoteLessons = [];
+
+            snapshot.forEach((doc) => {
+                if (deletedIds.includes(doc.id)) return;
+                const normalized = normalizeLessonRecord({ id: doc.id, ...doc.data() });
+                if (normalized) {
+                    remoteLessons.push(normalized);
+                }
+            });
+
+            const mergedLessons = mergeLessonRecords(localLessons, remoteLessons);
+            const remoteNeedsRefresh = lastLessonsSyncUid !== uid
+                || deletedIds.length > 0
+                || !lessonsAreEqual(remoteLessons, mergedLessons);
+
+            writeLessonsLibrary(mergedLessons, { skipSync: true, source: "firebase" });
+
+            if (deletedIds.length) {
+                await Promise.all(deletedIds.map(async (lessonId) => {
+                    try {
+                        await collection.doc(lessonId).delete();
+                    } catch (error) {
+                        console.warn("EducarIA lesson delete unavailable:", error);
+                    }
+                }));
+                writeDeletedLessonIds([]);
+            }
+
+            if (remoteNeedsRefresh) {
+                await Promise.all(mergedLessons.map((lesson) => {
+                    return collection.doc(lesson.id).set(lesson, { merge: true });
+                }));
+            }
+
+            lastLessonsSyncUid = uid;
+            return mergedLessons;
+        } catch (error) {
+            console.warn("EducarIA lessons sync unavailable:", error);
+            return readLessonsLibrary();
+        } finally {
+            lessonsSyncPromise = null;
+        }
+    })();
+
+    return lessonsSyncPromise;
 }
 
 function ensureLibraryToast() {
@@ -569,17 +764,21 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
 
 function persistLessonRecord(record) {
     const lessons = readLessonsLibrary();
-    const nextLessons = lessons.filter((lesson) => lesson.id !== record.id);
-    nextLessons.unshift(record);
+    const normalizedRecord = normalizeLessonRecord(record);
+    if (!normalizedRecord) return null;
+
+    const nextLessons = lessons.filter((lesson) => lesson.id !== normalizedRecord.id);
+    nextLessons.unshift(normalizedRecord);
+    clearDeletedLessonId(normalizedRecord.id);
     writeLessonsLibrary(nextLessons);
-    writeActiveLessonId(record.id);
-    if (record.className) {
-        updateCurrentClass(record.className);
+    writeActiveLessonId(normalizedRecord.id);
+    if (normalizedRecord.className) {
+        updateCurrentClass(normalizedRecord.className);
     }
     if (typeof setCurrentMaterialType === "function") {
-        setCurrentMaterialType(record.materialType || "slides");
+        setCurrentMaterialType(normalizedRecord.materialType || "slides");
     }
-    return record;
+    return normalizedRecord;
 }
 
 function saveCurrentLessonToClass(preferredType = "") {
@@ -1089,4 +1288,21 @@ document.addEventListener("DOMContentLoaded", () => {
     hydrateLibraryPage();
     bindLessonActivationLinks();
     bindClassPageRefresh();
+    syncLessonsWithFirebase();
+});
+
+document.addEventListener("educaria-auth-changed", () => {
+    syncLessonsWithFirebase();
+});
+
+document.addEventListener("educaria-classes-updated", () => {
+    hydrateClassCards();
+    hydrateClassPage();
+});
+
+document.addEventListener("educaria-lessons-updated", () => {
+    hydrateCompletionSummary();
+    hydrateClassCards();
+    hydrateClassPage();
+    hydrateLibraryPage();
 });

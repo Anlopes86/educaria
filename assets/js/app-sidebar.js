@@ -237,3 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("educaria-auth-changed", () => {
     hydrateSidebarTeacher();
 });
+
+document.addEventListener("educaria-classes-updated", () => {
+    renderSidebarClasses();
+});
