@@ -481,18 +481,18 @@ function summarizeWheelDraft(rawDraft) {
 
 function summarizeHangmanDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "For\u00e7a sem titulo", summary: "Material salvo sem resumo definido.", type: "For\u00e7a", materialType: "hangman" };
+        return { title: "forca sem titulo", summary: "Material salvo sem resumo definido.", type: "forca", materialType: "hangman" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
-    const title = parsed.controls?.["forca-titulo"] || "For\u00e7a";
+    const title = parsed.controls?.["forca-titulo"] || "forca";
     const words = [...doc.querySelectorAll("[data-hangman-entry]")].map((card) => {
         return card.querySelector("[data-hangman-answer]")?.value?.trim()
             || card.querySelector('[data-field="answer"]')?.value?.trim()
             || "";
     }).filter(Boolean);
     const firstWord = words[0] || "Sem palavra inicial";
-    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "For\u00e7a", materialType: "hangman" };
+    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "forca", materialType: "hangman" };
 }
 
 function summarizeCrosswordDraft(rawDraft) {
@@ -849,10 +849,24 @@ function editorPathForLesson(lesson) {
 }
 
 function presentationPathForLesson(lesson) {
-    if (typeof presentationPathForMaterial === "function") {
-        return presentationPathForMaterial(lesson.materialType || "slides");
+    const materialPath = typeof presentationPathForMaterial === "function"
+        ? presentationPathForMaterial(lesson.materialType || "slides")
+        : "apresentacao.html";
+
+    if (!lesson?.id) {
+        return materialPath;
     }
-    return "apresentacao.html";
+
+    const params = new URLSearchParams();
+    params.set("lesson", lesson.id);
+    if (lesson.materialType) {
+        params.set("material", lesson.materialType);
+    }
+
+    const query = params.toString();
+    if (!query) return materialPath;
+
+    return `${materialPath}?${query}`;
 }
 
 function materialGroupLabel(type) {
@@ -860,7 +874,7 @@ function materialGroupLabel(type) {
     if (type === "quiz") return "Quiz";
     if (type === "flashcards") return "Flashcards";
     if (type === "wheel") return "Roleta";
-    if (type === "hangman") return "For\u00e7a";
+    if (type === "hangman") return "forca";
     if (type === "crossword") return "Palavras cruzadas";
     if (type === "wordsearch") return "Caca-palavras";
     if (type === "memory") return "Jogo da memoria";
@@ -1262,22 +1276,55 @@ function hydrateLibraryPage() {
         return;
     }
 
-    root.innerHTML = lessons.map((lesson) => `
-        <article class="lesson-history-card lesson-history-card--grouped">
-            <span class="route-tag">${materialGroupLabel(lesson.materialType || "slides")}</span>
-            <h3>${lesson.title}</h3>
-            <p>${lesson.summary}</p>
-            <div class="lesson-history-meta">
-                <span>Atualizado em ${formatLessonDate(lesson.updatedAt)}</span>
-                <span>${lesson.type}</span>
-            </div>
-            <div class="lesson-history-actions">
-                <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-edit-lesson="${lesson.id}">Editar</a>
-                <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-present-lesson="${lesson.id}">Apresentar</a>
-                <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Excluir</button>
-            </div>
-        </article>
-    `).join("");
+    const groupedLessons = lessons.reduce((groups, lesson) => {
+        const key = lesson.materialType || "slides";
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(lesson);
+        return groups;
+    }, {});
+
+    const groupOrder = ["lesson", "quiz", "slides", "flashcards", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"];
+    root.innerHTML = groupOrder.map((key) => {
+        const groupItems = groupedLessons[key] || [];
+        const count = groupItems.length;
+
+        return `
+            <details class="editor-disclosure lesson-group-section lesson-group-disclosure">
+                <summary>
+                    <span>${materialGroupLabel(key)}</span>
+                    <small>${count} ${count === 1 ? "material" : "materiais"}</small>
+                </summary>
+                <div class="editor-disclosure-body lesson-group-body">
+                    ${count ? `
+                    <div class="lesson-history-grid class-lesson-grid">
+                        ${groupItems.map((lesson) => `
+                            <article class="lesson-history-card lesson-history-card--grouped">
+                                <span class="route-tag">${materialGroupLabel(key)}</span>
+                                <h3>${lesson.title}</h3>
+                                <p>${lesson.summary}</p>
+                                <div class="lesson-history-meta">
+                                    <span>Atualizado em ${formatLessonDate(lesson.updatedAt)}</span>
+                                    <span>${lesson.type}</span>
+                                </div>
+                                <div class="lesson-history-actions">
+                                    <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-edit-lesson="${lesson.id}">Editar</a>
+                                    <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-present-lesson="${lesson.id}">Apresentar</a>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Excluir</button>
+                                </div>
+                            </article>
+                        `).join("")}
+                    </div>
+                    ` : `
+                    <article class="lesson-history-card lesson-history-card--empty">
+                        <span class="route-tag">${materialGroupLabel(key)}</span>
+                        <h3>Nenhum material salvo</h3>
+                        <p>${materialGroupDescription(key)}</p>
+                    </article>
+                    `}
+                </div>
+            </details>
+        `;
+    }).join("");
 }
 
 document.addEventListener("DOMContentLoaded", () => {

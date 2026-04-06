@@ -1,7 +1,75 @@
 const EDUCARIA_MATERIAL_TYPE_KEY = "educaria:currentMaterialType";
+const EDUCARIA_ACTIVE_LESSON_KEY = "educaria:activeLessonId";
+const EDUCARIA_ACTIVE_LESSON_SEQUENCE_KEY = "educaria:activeLessonSequenceId";
+const EDUCARIA_CLASS_CONTEXT_KEY = "educaria:selectedClass";
+const EDUCARIA_LESSONS_LIBRARY_KEY = "educaria:lessons";
 
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
+}
+
+function draftStorageKeyForType(type) {
+    if (type === "lesson") return scopedStorageKey("educaria:builder:lesson");
+    if (type === "quiz") return scopedStorageKey("educaria:builder:quiz");
+    if (type === "flashcards") return scopedStorageKey("educaria:builder:flashcards");
+    if (type === "wheel") return scopedStorageKey("educaria:builder:wheel");
+    if (type === "hangman") return scopedStorageKey("educaria:builder:hangman");
+    if (type === "crossword") return scopedStorageKey("educaria:builder:crossword");
+    if (type === "wordsearch") return scopedStorageKey("educaria:builder:wordsearch");
+    if (type === "memory") return scopedStorageKey("educaria:builder:memory");
+    if (type === "match") return scopedStorageKey("educaria:builder:match");
+    if (type === "mindmap") return scopedStorageKey("educaria:builder:mindmap");
+    if (type === "debate") return scopedStorageKey("educaria:builder:debate");
+    return scopedStorageKey("educaria:builder:slides");
+}
+
+function readStoredLessonsCache() {
+    try {
+        const raw = localStorage.getItem(EDUCARIA_LESSONS_LIBRARY_KEY);
+        const scopedRaw = localStorage.getItem(scopedStorageKey(EDUCARIA_LESSONS_LIBRARY_KEY));
+        const parsed = scopedRaw ? JSON.parse(scopedRaw) : (raw ? JSON.parse(raw) : []);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        console.warn("EducarIA lesson cache unavailable:", error);
+        return [];
+    }
+}
+
+function lessonIdFromUrl() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("lesson") || "";
+    } catch (error) {
+        console.warn("EducarIA lesson url unavailable:", error);
+        return "";
+    }
+}
+
+function hydrateLessonFromUrl() {
+    const lessonId = lessonIdFromUrl();
+    if (!lessonId) return;
+
+    const lesson = readStoredLessonsCache().find((item) => String(item?.id || "") === lessonId);
+    if (!lesson) return;
+
+    const materialType = String(lesson.materialType || "slides").trim() || "slides";
+
+    try {
+        localStorage.setItem(scopedStorageKey(EDUCARIA_ACTIVE_LESSON_KEY), lesson.id);
+        if (materialType === "lesson") {
+            localStorage.setItem(scopedStorageKey(EDUCARIA_ACTIVE_LESSON_SEQUENCE_KEY), lesson.id);
+        }
+        if (lesson.className) {
+            localStorage.setItem(scopedStorageKey(EDUCARIA_CLASS_CONTEXT_KEY), lesson.className);
+        }
+        if (typeof lesson.draft === "string" && lesson.draft) {
+            localStorage.setItem(draftStorageKeyForType(materialType), lesson.draft);
+        }
+    } catch (error) {
+        console.warn("EducarIA lesson hydration unavailable:", error);
+    }
+
+    setCurrentMaterialType(materialType);
 }
 
 function setCurrentMaterialType(type) {
@@ -41,7 +109,7 @@ function presentationLabelForMaterial(type) {
     if (type === "flashcards") return "Flashcards";
     if (type === "quiz") return "Quiz";
     if (type === "wheel") return "Roleta";
-    if (type === "hangman") return "For\u00e7a";
+    if (type === "hangman") return "forca";
     if (type === "crossword") return "Palavras cruzadas";
     if (type === "wordsearch") return "Caca-palavras";
     if (type === "memory") return "Jogo da memoria";
@@ -80,6 +148,8 @@ function hydratePresentationLinks() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    hydrateLessonFromUrl();
+
     const urlType = materialTypeFromUrl();
     const pageType = document.body.dataset.materialType || urlType;
     if (pageType) {
