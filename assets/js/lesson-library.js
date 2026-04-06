@@ -62,6 +62,9 @@ function normalizeLessonRecord(lesson) {
     const materialType = String(lesson.materialType || "slides").trim() || "slides";
     const className = String(lesson.className || "").trim();
     const scope = lesson.scope || (className ? LESSON_SCOPE_CLASS : LESSON_SCOPE_LIBRARY);
+    const normalizedType = materialType === "hangman"
+        ? "Forca"
+        : (String(lesson.type || materialGroupLabel(materialType)).trim() || materialGroupLabel(materialType));
 
     return {
         id: String(lesson.id || `lesson-${Date.now()}`),
@@ -69,7 +72,7 @@ function normalizeLessonRecord(lesson) {
         scope,
         title: String(lesson.title || "").trim() || "Material sem titulo",
         summary: String(lesson.summary || "").trim() || "Material salvo sem resumo definido.",
-        type: String(lesson.type || materialGroupLabel(materialType)).trim() || materialGroupLabel(materialType),
+        type: normalizedType,
         materialType,
         updatedAt: String(lesson.updatedAt || new Date().toISOString()),
         draft: typeof lesson.draft === "string" ? lesson.draft : ""
@@ -481,18 +484,18 @@ function summarizeWheelDraft(rawDraft) {
 
 function summarizeHangmanDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "forca sem titulo", summary: "Material salvo sem resumo definido.", type: "forca", materialType: "hangman" };
+        return { title: "Forca sem titulo", summary: "Material salvo sem resumo definido.", type: "Forca", materialType: "hangman" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
-    const title = parsed.controls?.["forca-titulo"] || "forca";
+    const title = parsed.controls?.["forca-titulo"] || "Forca";
     const words = [...doc.querySelectorAll("[data-hangman-entry]")].map((card) => {
         return card.querySelector("[data-hangman-answer]")?.value?.trim()
             || card.querySelector('[data-field="answer"]')?.value?.trim()
             || "";
     }).filter(Boolean);
     const firstWord = words[0] || "Sem palavra inicial";
-    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "forca", materialType: "hangman" };
+    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Forca", materialType: "hangman" };
 }
 
 function summarizeCrosswordDraft(rawDraft) {
@@ -874,7 +877,7 @@ function materialGroupLabel(type) {
     if (type === "quiz") return "Quiz";
     if (type === "flashcards") return "Flashcards";
     if (type === "wheel") return "Roleta";
-    if (type === "hangman") return "forca";
+    if (type === "hangman") return "Forca";
     if (type === "crossword") return "Palavras cruzadas";
     if (type === "wordsearch") return "Caca-palavras";
     if (type === "memory") return "Jogo da memoria";
@@ -1309,6 +1312,7 @@ function hydrateLibraryPage() {
                                 <div class="lesson-history-actions">
                                     <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-edit-lesson="${lesson.id}">Editar</a>
                                     <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-present-lesson="${lesson.id}">Apresentar</a>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${lesson.id}">Adicionar a turma</button>
                                     <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Excluir</button>
                                 </div>
                             </article>

@@ -109,7 +109,7 @@ function presentationLabelForMaterial(type) {
     if (type === "flashcards") return "Flashcards";
     if (type === "quiz") return "Quiz";
     if (type === "wheel") return "Roleta";
-    if (type === "hangman") return "forca";
+    if (type === "hangman") return "Forca";
     if (type === "crossword") return "Palavras cruzadas";
     if (type === "wordsearch") return "Caca-palavras";
     if (type === "memory") return "Jogo da memoria";

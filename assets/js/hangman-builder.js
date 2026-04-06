@@ -81,7 +81,7 @@ function renderHangmanPreview() {
 
     renumberHangmanEntries();
 
-    const title = document.getElementById("forca-titulo")?.value.trim() || "Jogo da forca";
+    const title = document.getElementById("forca-titulo")?.value.trim() || "Jogo da Forca";
     const subtitle = document.getElementById("forca-subtitulo")?.value.trim() || "Descubra as palavras usando as dicas.";
     const maxErrors = Number(document.getElementById("forca-tentativas")?.value || 6);
     const entries = api.sanitizeEntries(collectHangmanEntries());

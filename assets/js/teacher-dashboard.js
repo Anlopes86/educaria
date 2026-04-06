@@ -177,7 +177,7 @@ function dashboardTourSteps() {
         {
             selector: '[data-dashboard-tour-anchor="quick-create"]',
             title: "Entre direto no editor",
-            description: "Depois de escolher uma turma, use a cria\u00e7\u00e3o r\u00e1pida para selecionar o formato da atividade e abrir a ferramenta certa."
+            description: "Depois de escolher uma turma, use a cria\u00e7\u00e3o r\u00e1pida para selecionar o formato da atividade e criar direto na ferramenta certa."
         },
         {
             selector: '[data-dashboard-tour-anchor="toolkit"]',

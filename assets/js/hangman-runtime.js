@@ -47,7 +47,7 @@ function renderHangmanApplication() {
     ];
     const entries = api.sanitizeEntries(parseHangmanEntries(draft?.stackHtml || ""));
     const rounds = entries.length ? entries : api.sanitizeEntries(fallbackEntries);
-    const title = String(controls["forca-titulo"] || "").trim() || "Jogo da forca";
+    const title = String(controls["forca-titulo"] || "").trim() || "Jogo da Forca";
     const subtitle = String(controls["forca-subtitulo"] || "").trim() || "Descubra as palavras usando as dicas.";
     const maxErrors = Math.max(4, Math.min(8, Number(controls["forca-tentativas"] || 6)));
     const titleRoot = document.querySelector("[data-hangman-stage-title]");
