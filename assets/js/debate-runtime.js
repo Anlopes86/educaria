@@ -1,4 +1,4 @@
-const DEBATE_DRAFT_KEY = "educaria:builder:debate";
+﻿const DEBATE_DRAFT_KEY = "educaria:builder:debate";
 
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
@@ -34,6 +34,14 @@ function escapeDebateText(value) {
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;");
+}
+
+function normalizeDebateToken(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
 }
 
 function formatDebateGuidanceHtml(text) {
@@ -90,10 +98,16 @@ function renderDebateApplication() {
 
     const title = controls["debate-titulo"] || "Debate guiado";
     const format = controls["debate-formato"] || "Dois lados";
+    const aiMode = controls["debate-acao-ia"] || "Organizar roteiro de debate";
     const mainQuestion = controls["debate-pergunta"] || "Pergunta central do debate";
     const sideA = controls["debate-lado-a"] || "Posicao A";
     const sideB = controls["debate-lado-b"] || "Posicao B";
 
+    const cardRoot = document.querySelector(".debate-stage-card");
+    const sidesRoot = document.querySelector(".debate-stage-sides");
+    const sideALabelRoot = document.querySelector("[data-debate-stage-side-a-label]");
+    const sideBLabelRoot = document.querySelector("[data-debate-stage-side-b-label]");
+    const guidanceLabelRoot = document.querySelector("[data-debate-stage-guidance-label]");
     const titleRoot = document.querySelector("[data-debate-stage-title]");
     const formatRoot = document.querySelector("[data-debate-stage-format]");
     const counterRoot = document.querySelector("[data-debate-stage-counter]");
@@ -108,12 +122,50 @@ function renderDebateApplication() {
     const nextButton = document.querySelector("[data-debate-stage-next]");
 
     let activeIndex = 0;
+    const normalizedFormat = normalizeDebateToken(format);
+    const normalizedAiMode = normalizeDebateToken(aiMode);
+
+    const variantClass = normalizedFormat.includes("roda guiada")
+        ? "debate-variant--circle"
+        : normalizedFormat.includes("grupos")
+            ? "debate-variant--groups"
+            : "debate-variant--sides";
+
+    const modeClass = normalizedAiMode.includes("criar pergunta central")
+        ? "debate-mode--question"
+        : normalizedAiMode.includes("discussao guiada")
+            ? "debate-mode--guided"
+            : "debate-mode--balanced";
+
+    if (cardRoot) {
+        cardRoot.classList.remove("debate-variant--circle", "debate-variant--groups", "debate-variant--sides");
+        cardRoot.classList.remove("debate-mode--question", "debate-mode--guided", "debate-mode--balanced");
+        cardRoot.classList.add(variantClass, modeClass);
+    }
 
     if (titleRoot) titleRoot.textContent = title;
     if (formatRoot) formatRoot.textContent = format;
     if (mainQuestionRoot) mainQuestionRoot.textContent = mainQuestion;
     if (sideARoot) sideARoot.textContent = sideA;
     if (sideBRoot) sideBRoot.textContent = sideB;
+
+    if (sidesRoot) {
+        sidesRoot.hidden = variantClass === "debate-variant--circle";
+    }
+
+    if (sideALabelRoot) {
+        sideALabelRoot.textContent = variantClass === "debate-variant--groups" ? "Grupo 1" : "Lado A";
+    }
+
+    if (sideBLabelRoot) {
+        sideBLabelRoot.textContent = variantClass === "debate-variant--groups" ? "Grupo 2" : "Lado B";
+    }
+
+    if (guidanceLabelRoot) {
+        guidanceLabelRoot.textContent = modeClass === "debate-mode--guided"
+            ? "Conducao"
+                        : "Mediacao";
+    }
 
     const renderStep = () => {
         const step = safeSteps[activeIndex];
@@ -125,7 +177,10 @@ function renderDebateApplication() {
         if (stepQuestionRoot) stepQuestionRoot.textContent = step.question;
         if (guidanceRoot) guidanceRoot.innerHTML = formatDebateGuidanceHtml(step.guidance);
         if (prevButton) prevButton.disabled = activeIndex === 0;
-        if (nextButton) nextButton.disabled = activeIndex === safeSteps.length - 1;
+        if (nextButton) {
+            nextButton.disabled = activeIndex === safeSteps.length - 1;
+            nextButton.textContent = activeIndex === safeSteps.length - 1 ? "Ãšltima etapa" : "PrÃ³xima etapa";
+        }
     };
 
     renderStep();
@@ -145,6 +200,19 @@ function renderDebateApplication() {
             renderStep();
         });
     }
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft" && activeIndex > 0) {
+            activeIndex -= 1;
+            renderStep();
+        }
+
+        if (event.key === "ArrowRight" && activeIndex < safeSteps.length - 1) {
+            activeIndex += 1;
+            renderStep();
+        }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", renderDebateApplication);
+

@@ -52,8 +52,25 @@ function lessonPlayerBlocks() {
 }
 
 function lessonForPlayerBlock(block) {
-    if (!block?.lessonRefId) return null;
+    if (!block?.lessonRefId || typeof readLessonsLibrary !== "function") return null;
     return readLessonsLibrary().find((lesson) => lesson.id === block.lessonRefId) || null;
+}
+
+function hydrateBlockDraft(block, fallbackLesson = null) {
+    if (!block) return;
+
+    const draft = block.lessonDraft || fallbackLesson?.draft || "";
+    if (draft && typeof writeCurrentDraftByType === "function") {
+        writeCurrentDraftByType(block.materialType || "slides", draft);
+    }
+
+    if (typeof setCurrentMaterialType === "function") {
+        setCurrentMaterialType(block.materialType || fallbackLesson?.materialType || "slides");
+    }
+}
+
+function blockPresentationPath(block, lesson) {
+    return presentationPathForLesson(lesson || { materialType: block?.materialType || "slides" });
 }
 
 function renderLessonPlayerList() {
@@ -73,26 +90,25 @@ function renderLessonPlayerList() {
 }
 
 function renderLessonPlayerCurrent() {
-    const currentCard = document.querySelector("[data-lesson-player-current]");
     const embed = document.querySelector("[data-lesson-player-embed]");
+    const empty = document.querySelector("[data-lesson-player-empty]");
     const iframe = document.querySelector("[data-lesson-player-iframe]");
     const counter = document.querySelector("[data-lesson-player-counter]");
     const prevButton = document.querySelector("[data-lesson-player-prev]");
     const nextButton = document.querySelector("[data-lesson-player-next]");
     const openLink = document.querySelector("[data-lesson-player-open]");
-    if (!currentCard || !embed || !iframe || !counter || !prevButton || !nextButton || !openLink) return;
+    const titleNode = document.querySelector("[data-lesson-player-current-title]");
+    if (!embed || !iframe || !counter || !prevButton || !nextButton || !openLink) return;
 
     const blocks = lessonPlayerBlocks();
     const currentBlock = blocks[lessonPlayerIndex];
     const currentLesson = lessonForPlayerBlock(currentBlock);
+    const currentTitle = currentBlock?.lessonTitle || currentLesson?.title || currentBlock?.label || "Material";
 
-    if (!currentBlock || !currentLesson) {
-        currentCard.innerHTML = `
-            <span class="route-tag">Sem bloco</span>
-            <h2>Essa aula ainda não tem atividades na sequência</h2>
-            <p>Volte para o editor e adicione pelo menos um material salvo.</p>
-        `;
+    if (!currentBlock) {
         embed.hidden = true;
+        if (empty) empty.hidden = false;
+        if (titleNode) titleNode.textContent = "Sem atividade";
         counter.textContent = "0 de 0";
         prevButton.disabled = true;
         nextButton.disabled = true;
@@ -100,28 +116,16 @@ function renderLessonPlayerCurrent() {
         return;
     }
 
-    if (typeof writeActiveLessonId === "function") {
+    if (currentLesson && typeof writeActiveLessonId === "function") {
         writeActiveLessonId(currentLesson.id);
     }
-    if (typeof setCurrentMaterialType === "function") {
-        setCurrentMaterialType(currentLesson.materialType || "slides");
-    }
-
-    currentCard.innerHTML = `
-        <span class="route-tag">${materialGroupLabel(currentBlock.materialType || "slides")}</span>
-        <h2>${currentBlock.label || currentLesson.title}</h2>
-        <p>${currentLesson.summary || "Material sem resumo definido."}</p>
-        <div class="lesson-sequence-player-meta">
-            <span>${currentBlock.duration || 0} min</span>
-            <span>${currentLesson.title}</span>
-        </div>
-        ${currentBlock.note ? `<div class="lesson-sequence-note">${currentBlock.note}</div>` : ""}
-    `;
+    hydrateBlockDraft(currentBlock, currentLesson);
 
     embed.hidden = false;
-    iframe.src = presentationPathForLesson(currentLesson);
-    openLink.setAttribute("href", presentationPathForLesson(currentLesson));
-    openLink.dataset.presentLesson = currentLesson.id;
+    if (empty) empty.hidden = true;
+    if (titleNode) titleNode.textContent = currentBlock.label || currentTitle;
+    iframe.src = blockPresentationPath(currentBlock, currentLesson);
+    openLink.setAttribute("href", blockPresentationPath(currentBlock, currentLesson));
     counter.textContent = `${lessonPlayerIndex + 1} de ${blocks.length}`;
     prevButton.disabled = lessonPlayerIndex === 0;
     nextButton.disabled = lessonPlayerIndex === blocks.length - 1;
@@ -138,7 +142,7 @@ function renderLessonPlayerMeta() {
     if (objective) {
         objective.textContent = lessonPlayerState.objective
             ? lessonPlayerState.objective
-            : "Selecione um bloco para trocar a atividade exibida.";
+            : "Use os controles para avançar pelos blocos da aula em sequência.";
     }
 }
 
@@ -170,6 +174,23 @@ function bindLessonPlayerEvents() {
 
         if (event.target.closest("[data-lesson-player-next]")) {
             selectLessonPlayerIndex(lessonPlayerIndex + 1);
+            return;
+        }
+
+        if (event.target.closest("[data-lesson-player-open]")) {
+            const block = lessonPlayerBlocks()[lessonPlayerIndex];
+            const lesson = lessonForPlayerBlock(block);
+            hydrateBlockDraft(block, lesson);
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowLeft") {
+            selectLessonPlayerIndex(lessonPlayerIndex - 1);
+        }
+
+        if (event.key === "ArrowRight") {
+            selectLessonPlayerIndex(lessonPlayerIndex + 1);
         }
     });
 }
@@ -187,6 +208,7 @@ function initLessonSequencePlayer() {
     } catch (error) {
         console.warn("EducarIA lesson player unavailable:", error);
     }
+
     lessonPlayerState = parentLesson || { title: activeLesson?.title || "Aula completa", objective: "", blocks: [] };
     bindLessonPlayerEvents();
     renderLessonPlayer();

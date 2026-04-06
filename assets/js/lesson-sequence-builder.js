@@ -1,4 +1,4 @@
-const LESSON_SEQUENCE_DRAFT_KEY = "educaria:builder:lesson";
+﻿const LESSON_SEQUENCE_DRAFT_KEY = "educaria:builder:lesson";
 const ACTIVE_LESSON_SEQUENCE_KEY = "educaria:activeLessonSequenceId";
 
 function scopedStorageKey(baseKey) {
@@ -86,7 +86,8 @@ function normalizeLessonSequenceState(rawState) {
                 duration: Number(block.duration || 0),
                 note: block.note || "",
                 lessonTitle: block.lessonTitle || "Material",
-                lessonSummary: block.lessonSummary || ""
+                lessonSummary: block.lessonSummary || "",
+                lessonDraft: block.lessonDraft || ""
             }))
             : []
     };
@@ -120,9 +121,9 @@ function hydrateMetaFields() {
 }
 
 function syncStateFromFields() {
-    lessonSequenceState.title = document.getElementById("lesson-title")?.value?.trim() || buildDefaultLessonSequenceState().title;
-    lessonSequenceState.objective = document.getElementById("lesson-objective")?.value?.trim() || "";
-    lessonSequenceState.duration = Number(document.getElementById("lesson-duration")?.value || 0);
+    lessonSequenceState.title = document.getElementById("lesson-title")?.value?.trim() || lessonSequenceState.title || buildDefaultLessonSequenceState().title;
+    lessonSequenceState.objective = document.getElementById("lesson-objective")?.value?.trim() || lessonSequenceState.objective || "";
+    lessonSequenceState.duration = Number(document.getElementById("lesson-duration")?.value || lessonSequenceState.duration || 0);
 }
 
 function populateTypeSelect() {
@@ -166,12 +167,14 @@ function renderPreview() {
 
     const block = lessonSequenceState.blocks.find((item) => item.id === selectedBlockId);
     const lesson = block ? findLessonById(block.lessonRefId) : null;
+    const summary = block?.lessonSummary || lesson?.summary || "Material sem resumo.";
+    const sourceTitle = block?.lessonTitle || lesson?.title || block?.label || "Material";
 
-    if (!block || !lesson) {
+    if (!block) {
         previewCard.innerHTML = `
             <span class="route-tag">Sem bloco</span>
             <h3>Selecione uma atividade</h3>
-            <p>Ao clicar em um bloco da sequência, os detalhes aparecem aqui.</p>
+            <p>Ao clicar em um bloco da sequÃªncia, os detalhes aparecem aqui.</p>
         `;
         previewActions.hidden = true;
         return;
@@ -180,18 +183,18 @@ function renderPreview() {
     previewCard.innerHTML = `
         <span class="route-tag">${materialGroupLabel(block.materialType)}</span>
         <h3>${block.label}</h3>
-        <p>${lesson.summary || "Material sem resumo."}</p>
+        <p>${summary}</p>
         <div class="lesson-sequence-preview-meta">
             <span>${block.duration || 0} min</span>
-            <span>${lesson.title}</span>
+            <span>${sourceTitle}</span>
         </div>
         ${block.note ? `<div class="lesson-sequence-note">${block.note}</div>` : ""}
     `;
     previewActions.hidden = false;
-    editLink.href = editorPathForLesson(lesson);
-    editLink.dataset.editLesson = lesson.id;
-    presentLink.href = presentationPathForLesson(lesson);
-    presentLink.dataset.presentLesson = lesson.id;
+    editLink.href = editorPathForLesson(lesson || { materialType: block.materialType });
+    editLink.dataset.lessonPreviewEdit = block.id;
+    presentLink.href = presentationPathForLesson(lesson || { materialType: block.materialType });
+    presentLink.dataset.lessonPreviewPresent = block.id;
 }
 
 function renderLessonSequence() {
@@ -200,12 +203,12 @@ function renderLessonSequence() {
     const count = document.querySelector("[data-lesson-sequence-count]");
     const duration = document.querySelector("[data-lesson-sequence-duration]");
     const classNode = document.querySelector("[data-lesson-sequence-class]");
-    if (!list || !empty || !count || !duration || !classNode) return;
+    if (!list || !empty) return;
 
     const turma = typeof currentClassName === "function" ? currentClassName() : "Turma";
-    classNode.textContent = turma || "Turma";
-    count.textContent = `${lessonSequenceState.blocks.length} ${lessonSequenceState.blocks.length === 1 ? "bloco" : "blocos"}`;
-    duration.textContent = `${lessonSequenceState.duration || totalBlocksDuration()} min`;
+    if (classNode) classNode.textContent = turma || "Turma";
+    if (count) count.textContent = `${lessonSequenceState.blocks.length} ${lessonSequenceState.blocks.length === 1 ? "bloco" : "blocos"}`;
+    if (duration) duration.textContent = `${lessonSequenceState.duration || totalBlocksDuration()} min`;
 
     if (!lessonSequenceState.blocks.length) {
         empty.hidden = false;
@@ -217,8 +220,8 @@ function renderLessonSequence() {
     empty.hidden = true;
     list.innerHTML = lessonSequenceState.blocks.map((block, index) => {
         const linkedLesson = findLessonById(block.lessonRefId);
-        const summary = linkedLesson?.summary || block.lessonSummary || "Material sem resumo.";
-        const title = linkedLesson?.title || block.lessonTitle || block.label;
+        const summary = block.lessonSummary || linkedLesson?.summary || "Material sem resumo.";
+        const title = block.lessonTitle || linkedLesson?.title || block.label;
         return `
         <article class="lesson-sequence-item ${block.id === selectedBlockId ? "is-selected" : ""}" data-lesson-block-id="${block.id}">
             <button type="button" class="lesson-sequence-item-main" data-select-lesson-block="${block.id}">
@@ -240,7 +243,7 @@ function renderLessonSequence() {
                     <input type="number" min="1" step="1" value="${block.duration || 0}" data-block-field="duration" data-block-id="${block.id}">
                 </div>
                 <div class="platform-field platform-field-wide">
-                    <label>Observação do professor</label>
+                    <label>ObservaÃ§Ã£o do professor</label>
                     <input type="text" value="${block.note || ""}" placeholder="Ex.: retomar a resposta da turma antes do quiz" data-block-field="note" data-block-id="${block.id}">
                 </div>
             </div>
@@ -248,7 +251,7 @@ function renderLessonSequence() {
             <div class="lesson-history-actions">
                 <button type="button" class="platform-link-button platform-link-secondary" data-move-lesson-block="${block.id}" data-direction="up" ${index === 0 ? "disabled" : ""}>Subir</button>
                 <button type="button" class="platform-link-button platform-link-secondary" data-move-lesson-block="${block.id}" data-direction="down" ${index === lessonSequenceState.blocks.length - 1 ? "disabled" : ""}>Descer</button>
-                <a href="${editorPathForLesson(linkedLesson || { materialType: block.materialType })}" class="platform-link-button platform-link-secondary" data-edit-lesson="${block.lessonRefId}" title="${title}">Editar material</a>
+                <a href="${editorPathForLesson(linkedLesson || { materialType: block.materialType })}" class="platform-link-button platform-link-secondary" data-open-lesson-block-editor="${block.id}" title="${title}">Editar material</a>
                 <button type="button" class="platform-link-button platform-link-secondary" data-remove-lesson-block="${block.id}">Remover</button>
             </div>
         </article>
@@ -278,7 +281,8 @@ function addBlockToSequence() {
         duration: Number(durationField?.value || 8),
         note: "",
         lessonTitle: lesson.title,
-        lessonSummary: lesson.summary || ""
+        lessonSummary: lesson.summary || "",
+        lessonDraft: lesson.draft || ""
     };
 
     lessonSequenceState.blocks.push(block);
@@ -349,6 +353,31 @@ function bindLessonSequenceEvents() {
         const removeTrigger = event.target.closest("[data-remove-lesson-block]");
         if (removeTrigger) {
             removeBlock(removeTrigger.dataset.removeLessonBlock || "");
+            return;
+        }
+
+        const openEditorTrigger = event.target.closest("[data-open-lesson-block-editor]");
+        if (openEditorTrigger) {
+            const block = lessonSequenceState.blocks.find((item) => item.id === (openEditorTrigger.dataset.openLessonBlockEditor || ""));
+            if (block?.lessonDraft && typeof writeCurrentDraftByType === "function") {
+                writeCurrentDraftByType(block.materialType || "slides", block.lessonDraft);
+            }
+            if (typeof setCurrentMaterialType === "function") {
+                setCurrentMaterialType(block?.materialType || "slides");
+            }
+            return;
+        }
+
+        const previewTrigger = event.target.closest("[data-lesson-preview-edit], [data-lesson-preview-present]");
+        if (previewTrigger) {
+            const blockId = previewTrigger.dataset.lessonPreviewEdit || previewTrigger.dataset.lessonPreviewPresent || "";
+            const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
+            if (block?.lessonDraft && typeof writeCurrentDraftByType === "function") {
+                writeCurrentDraftByType(block.materialType || "slides", block.lessonDraft);
+            }
+            if (typeof setCurrentMaterialType === "function") {
+                setCurrentMaterialType(block?.materialType || "slides");
+            }
         }
     });
 
@@ -439,3 +468,6 @@ function initLessonSequenceBuilder() {
 window.saveLessonSequenceToClass = saveLessonSequenceToLibrary;
 
 document.addEventListener("DOMContentLoaded", initLessonSequenceBuilder);
+
+
+

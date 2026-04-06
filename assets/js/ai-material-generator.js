@@ -426,6 +426,139 @@ function applyFlashcardsFromStructuredData(payload) {
     return true;
 }
 
+function activityColorPalette() {
+    return ["#22c55e", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#6366f1", "#84cc16", "#f97316", "#06b6d4", "#a855f7"];
+}
+
+function applyMemoryFromStructuredData(payload) {
+    const pairs = Array.isArray(payload?.pairs) ? payload.pairs : [];
+    if (!pairs.length) return false;
+
+    const titleField = document.getElementById("memoria-titulo");
+    if (titleField) {
+        titleField.value = payload.title || "Jogo da memória";
+    }
+
+    if (typeof setMemoryCountSelect === "function") {
+        setMemoryCountSelect(pairs.length);
+    }
+    if (typeof syncMemoryPairCount === "function") {
+        syncMemoryPairCount();
+    }
+
+    const cards = ensureCardCount("[data-memory-pairs]", "[data-memory-pair]", pairs.length);
+    if (!cards.length) return false;
+
+    cards.forEach((card, index) => {
+        const pair = pairs[index] || {};
+        const label = card.querySelector("[data-memory-label]");
+        const front = card.querySelector("[data-memory-front]");
+        const back = card.querySelector("[data-memory-back]");
+        const color = card.querySelector("[data-memory-color]");
+
+        if (label) label.textContent = `Par ${index + 1}`;
+        if (front) front.value = pair.front || "";
+        if (back) back.value = pair.back || "";
+        if (color) color.value = pair.color || activityColorPalette()[index % activityColorPalette().length];
+    });
+
+    if (typeof renderMemoryPreview === "function") {
+        renderMemoryPreview();
+    }
+
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
+function applyMatchFromStructuredData(payload) {
+    const pairs = Array.isArray(payload?.pairs) ? payload.pairs : [];
+    if (!pairs.length) return false;
+
+    const titleField = document.getElementById("ligar-titulo");
+    const leftLabelField = document.getElementById("ligar-coluna-a");
+    const rightLabelField = document.getElementById("ligar-coluna-b");
+    const shuffleField = document.getElementById("ligar-embaralhar");
+    const colorModeField = document.getElementById("ligar-cores");
+
+    if (titleField) titleField.value = payload.title || "Ligar pontos";
+    if (leftLabelField) leftLabelField.value = payload.left_label || "Coluna A";
+    if (rightLabelField) rightLabelField.value = payload.right_label || "Coluna B";
+    if (shuffleField) shuffleField.value = payload.shuffle_right ? "Sim" : "Nao";
+    if (colorModeField) colorModeField.value = "manual";
+
+    if (typeof setMatchCountSelect === "function") {
+        setMatchCountSelect(pairs.length);
+    }
+    if (typeof syncMatchPairCount === "function") {
+        syncMatchPairCount();
+    }
+
+    const cards = ensureCardCount("[data-match-pairs]", "[data-match-pair]", pairs.length);
+    if (!cards.length) return false;
+
+    cards.forEach((card, index) => {
+        const pair = pairs[index] || {};
+        const label = card.querySelector("[data-match-label]");
+        const left = card.querySelector("[data-match-left]");
+        const right = card.querySelector("[data-match-right]");
+        const color = card.querySelector("[data-match-color]");
+
+        if (label) label.textContent = `Par ${index + 1}`;
+        if (left) left.value = pair.left || "";
+        if (right) right.value = pair.right || "";
+        if (color) color.value = pair.color || activityColorPalette()[index % activityColorPalette().length];
+    });
+
+    if (typeof renderMatchPreview === "function") {
+        renderMatchPreview();
+    }
+
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
+function applyWheelFromStructuredData(payload) {
+    const segments = Array.isArray(payload?.segments) ? payload.segments : [];
+    if (!segments.length) return false;
+
+    const titleField = document.getElementById("roleta-titulo");
+    const eliminationField = document.getElementById("roleta-eliminacao");
+
+    if (titleField) titleField.value = payload.title || "Roleta";
+    if (eliminationField) eliminationField.value = payload.eliminate_used ? "Sim" : "Nao";
+
+    if (typeof setWheelCountSelect === "function") {
+        setWheelCountSelect(segments.length);
+    }
+    if (typeof syncWheelSegmentCount === "function") {
+        syncWheelSegmentCount();
+    }
+
+    const cards = ensureCardCount("[data-wheel-segments]", "[data-wheel-segment]", segments.length);
+    if (!cards.length) return false;
+
+    cards.forEach((card, index) => {
+        const segment = segments[index] || {};
+        const label = card.querySelector("[data-wheel-label]");
+        const text = card.querySelector("[data-wheel-text]");
+        const color = card.querySelector("[data-wheel-color]");
+
+        if (label) label.textContent = `Espaço ${index + 1}`;
+        if (text) text.value = segment.text || "";
+        if (color) color.value = segment.color || activityColorPalette()[index % activityColorPalette().length];
+    });
+
+    if (typeof renderWheelPreview === "function") {
+        renderWheelPreview();
+    }
+
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
 function applyMindmapFromStructuredData(payload) {
     const branches = Array.isArray(payload?.branches) ? payload.branches : [];
     if (!branches.length) return false;
@@ -532,14 +665,14 @@ function applyDebateFromStructuredData(payload) {
     return true;
 }
 
-function buildFallbackSlides(sourceText) {
+function buildFallbackSlides(sourceText, requestedCount) {
     const blocks = splitParagraphs(sourceText);
     const lines = normalizeLines(sourceText);
     const sentenceUnits = lines.join(" ").split(/(?<=[.!?])\s+/).filter(Boolean);
     const units = blocks.length > 1 ? blocks : sentenceUnits;
     const title = lines[0] || "Aula";
     const slides = (units.length ? units : ["Introducao ao tema", "Desenvolvimento do conteudo", "Fechamento e revisao"])
-        .slice(0, 6)
+        .slice(0, requestedCount || 6)
         .map((block, index) => ({
             type: index === 0 ? "cover" : "content",
             title: index === 0 ? summarizeBlock(title, "Aula") : `Ponto ${index}`,
@@ -579,10 +712,10 @@ function buildFallbackQuiz(sourceText) {
     };
 }
 
-function buildFallbackFlashcards(sourceText) {
+function buildFallbackFlashcards(sourceText, requestedCount) {
     const lines = normalizeLines(sourceText);
     const cards = (lines.length ? lines : ["Conceito principal", "Definicao importante", "Exemplo de aplicacao"])
-        .slice(0, 10)
+        .slice(0, requestedCount || 10)
         .map((line, index) => {
             const pair = line.split(/\s*[-:]\s*/);
             return {
@@ -648,6 +781,66 @@ function buildFallbackDebate(sourceText) {
                 guidance: "Sintetize ideias centrais e destaque pontos de convergencia."
             }
         ]
+    };
+}
+
+function buildFallbackMemory(sourceText, requestedCount) {
+    const lines = normalizeLines(sourceText);
+    const palette = activityColorPalette();
+    const pairs = (lines.length ? lines : ["Conceito principal - Definição curta", "Pergunta - Resposta objetiva", "Evento - Data importante"])
+        .map((line, index) => {
+            const parts = line.split(/\s*[—–:-]\s*/).filter(Boolean);
+            return {
+                front: summarizeBlock(parts[0] || line, `Par ${index + 1}`),
+                back: summarizeBlock(parts.slice(1).join(" - ") || line, "Resposta"),
+                color: palette[index % palette.length]
+            };
+        })
+        .slice(0, requestedCount || 6);
+
+    return {
+        title: "Jogo da memória estruturado",
+        pairs
+    };
+}
+
+function buildFallbackMatch(sourceText, requestedCount) {
+    const lines = normalizeLines(sourceText);
+    const palette = activityColorPalette();
+    const pairs = (lines.length ? lines : ["Conceito - Definição", "País - Capital", "Autor - Obra", "Evento - Data"])
+        .map((line, index) => {
+            const parts = line.split(/\s*[—–:-]\s*/).filter(Boolean);
+            return {
+                left: summarizeBlock(parts[0] || `Item ${index + 1}`, `Item ${index + 1}`),
+                right: summarizeBlock(parts.slice(1).join(" - ") || line, `Resposta ${index + 1}`),
+                color: palette[index % palette.length]
+            };
+        })
+        .slice(0, requestedCount || 6);
+
+    return {
+        title: "Ligar pontos estruturado",
+        left_label: "Coluna A",
+        right_label: "Coluna B",
+        shuffle_right: true,
+        pairs
+    };
+}
+
+function buildFallbackWheel(sourceText, requestedCount) {
+    const lines = normalizeLines(sourceText);
+    const palette = activityColorPalette();
+    const segments = (lines.length ? lines : ["Pergunta 1", "Pergunta 2", "Desafio rápido", "Curiosidade", "Revisão", "Exemplo"])
+        .slice(0, requestedCount || 8)
+        .map((line, index) => ({
+            text: summarizeBlock(line, `Espaço ${index + 1}`),
+            color: palette[index % palette.length]
+        }));
+
+    return {
+        title: "Roleta estruturada",
+        eliminate_used: false,
+        segments
     };
 }
 
@@ -748,12 +941,46 @@ function materialConfig(materialType) {
         };
     }
 
+    if (materialType === "memory") {
+        return {
+            textId: "memoria-fonte-texto",
+            fileId: "memoria-arquivo",
+            actionId: "memoria-acao-ia",
+            countId: "memoria-quantidade-livre",
+            apply: applyMemoryFromStructuredData,
+            fallback: buildFallbackMemory
+        };
+    }
+
+    if (materialType === "match") {
+        return {
+            textId: "ligar-fonte-texto",
+            fileId: "ligar-arquivo",
+            actionId: "ligar-acao-ia",
+            countId: "ligar-quantidade-livre",
+            apply: applyMatchFromStructuredData,
+            fallback: buildFallbackMatch
+        };
+    }
+
+    if (materialType === "wheel") {
+        return {
+            textId: "roleta-fonte-texto",
+            fileId: "roleta-arquivo",
+            actionId: "roleta-acao-ia",
+            countId: "roleta-quantidade-livre",
+            apply: applyWheelFromStructuredData,
+            fallback: buildFallbackWheel
+        };
+    }
+
     if (materialType === "mindmap") {
         return {
             textId: "mind-fonte-texto",
             fileId: "mind-arquivo",
             actionId: "mind-acao-ia",
             countId: "mind-quantidade",
+            layoutId: "mind-layout-ia",
             apply: applyMindmapFromStructuredData,
             fallback: buildFallbackMindmap
         };
@@ -783,6 +1010,7 @@ async function generateMaterial(materialType, button) {
     const actionField = document.getElementById(config.actionId);
     const countField = config.countId ? document.getElementById(config.countId) : null;
     const formatField = config.formatId ? document.getElementById(config.formatId) : null;
+    const layoutField = config.layoutId ? document.getElementById(config.layoutId) : null;
     const detailField = config.detailId ? document.getElementById(config.detailId) : null;
     const imagePrefField = config.imagePrefId ? document.getElementById(config.imagePrefId) : null;
     const audienceField = config.audienceId ? document.getElementById(config.audienceId) : null;
@@ -795,6 +1023,7 @@ async function generateMaterial(materialType, button) {
     const action = actionField ? actionField.options[actionField.selectedIndex].text.trim() : "";
     const countText = countField ? String(countField.value || "").trim() : "";
     const formatText = formatField ? formatField.options[formatField.selectedIndex].text.trim() : "";
+    const layoutText = layoutField ? layoutField.options[layoutField.selectedIndex].text.trim() : "";
     const detailText = detailField ? detailField.options[detailField.selectedIndex].text.trim() : "";
     const imagePrefText = imagePrefField ? imagePrefField.options[imagePrefField.selectedIndex].text.trim() : "";
     const audienceText = audienceField ? String(audienceField.value || "").trim() : "";
@@ -840,7 +1069,27 @@ async function generateMaterial(materialType, button) {
                         ? [
                 action,
                 requestedCount ? `Gerar ${requestedCount} topicos.` : "",
-                document.getElementById("mind-layout")?.value ? `Layout desejado: ${document.getElementById("mind-layout").value}.` : ""
+                layoutText ? `Leitura desejada: ${layoutText}.` : ""
+            ].filter(Boolean).join(" ")
+                        : materialType === "memory"
+                            ? [
+                action,
+                requestedCount ? `Gerar ${requestedCount} pares.` : "",
+                document.getElementById("memoria-titulo")?.value ? `Título desejado: ${document.getElementById("memoria-titulo").value}.` : ""
+            ].filter(Boolean).join(" ")
+                            : materialType === "match"
+                                ? [
+                action,
+                requestedCount ? `Gerar ${requestedCount} pares.` : "",
+                document.getElementById("ligar-coluna-a")?.value ? `Nome da coluna A: ${document.getElementById("ligar-coluna-a").value}.` : "",
+                document.getElementById("ligar-coluna-b")?.value ? `Nome da coluna B: ${document.getElementById("ligar-coluna-b").value}.` : "",
+                document.getElementById("ligar-embaralhar")?.value === "Sim" ? "Embaralhar a coluna B." : "Manter a coluna B na ordem normal."
+            ].filter(Boolean).join(" ")
+                                : materialType === "wheel"
+                                    ? [
+                action,
+                requestedCount ? `Gerar ${requestedCount} espaços.` : "",
+                document.getElementById("roleta-eliminacao")?.value === "Sim" ? "Eliminar item sorteado após uso." : "Não eliminar item sorteado."
             ].filter(Boolean).join(" ")
                         : [
                 action,
@@ -855,13 +1104,17 @@ async function generateMaterial(materialType, button) {
         }
     } catch (error) {
         console.warn("EducarIA AI generation fallback:", error);
-        const fallbackPayload = config.fallback(sourceText);
+        const fallbackPayload = config.fallback(sourceText, requestedCount);
         if (fallbackPayload) {
             config.apply(fallbackPayload);
         }
         const endpoint = resolveAiEndpoint();
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
-        window.alert(`A IA real nao respondeu. O editor usou um modo local simplificado.\n\nDetalhe: ${detail}\nEndpoint: ${endpoint}`);
+        const normalizedDetail = String(detail).toLowerCase();
+        const quotaMessage = normalizedDetail.includes("quota") || normalizedDetail.includes("429") || normalizedDetail.includes("resource_exhausted")
+            ? "A cota da API Gemini foi excedida. O editor usou um modo local simplificado."
+            : "A IA real nao respondeu. O editor usou um modo local simplificado.";
+        window.alert(`${quotaMessage}\n\nDetalhe: ${detail}\nEndpoint: ${endpoint}`);
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;

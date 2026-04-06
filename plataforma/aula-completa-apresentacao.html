@@ -11,50 +11,34 @@
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/lesson-sequence-player.js" defer></script>
 </head>
-<body data-material-type="lesson">
-    <main class="presentation-shell presentation-shell--lesson lesson-sequence-player-shell">
-        <header class="presentation-topbar">
-            <div class="presentation-brand">
-                <div class="platform-brand-mark">EI</div>
-                <div>
-                    <strong data-lesson-player-title>Aula completa</strong>
-                    <span data-lesson-player-class>Turma</span>
-                </div>
-            </div>
-            <div class="platform-top-actions">
+<body class="lesson-sequence-stage-page" data-material-type="lesson">
+    <main class="lesson-sequence-stage-shell">
+        <header class="lesson-sequence-stage-topbar">
+            <div class="lesson-sequence-stage-actions">
                 <a href="criar-aula.html" class="platform-link-button platform-link-secondary">Voltar à edição</a>
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para a turma</a>
-                <a href="apresentacao.html" class="platform-link-button platform-link-primary" data-lesson-player-open>Abrir bloco atual</a>
+            </div>
+            <div class="lesson-sequence-stage-status">
+                <span class="lesson-sequence-stage-title" data-lesson-player-current-title>Sem atividade</span>
+                <span class="presentation-counter lesson-sequence-stage-counter" data-lesson-player-counter>0 de 0</span>
             </div>
         </header>
 
-        <section class="presentation-frame lesson-sequence-player-stage">
-            <aside class="presentation-side-panel lesson-sequence-player-sidebar">
-                <div class="page-section-title page-section-title--compact">
-                    <div>
-                        <span class="platform-section-label">Sequência</span>
-                        <h2>Blocos da aula</h2>
-                    </div>
-                    <p data-lesson-player-objective>Selecione um bloco para trocar a atividade exibida.</p>
-                </div>
-                <div class="lesson-sequence-player-list" data-lesson-player-list></div>
-            </aside>
+        <section class="lesson-sequence-stage-frame">
+            <div class="lesson-sequence-stage-embed" data-lesson-player-embed hidden>
+                <iframe title="Apresentação da atividade" data-lesson-player-iframe></iframe>
+            </div>
 
-            <section class="lesson-sequence-player-frame">
-                <div class="lesson-sequence-player-current" data-lesson-player-current>
-                    <span class="route-tag">Sem bloco</span>
-                    <h2>Essa aula ainda não tem atividades na sequência</h2>
-                    <p>Volte para o editor e adicione pelo menos um material salvo.</p>
-                </div>
-                <div class="lesson-sequence-player-embed" data-lesson-player-embed hidden>
-                    <iframe title="Preview da atividade" data-lesson-player-iframe></iframe>
-                </div>
-                <div class="presentation-controls lesson-sequence-player-controls">
-                    <button type="button" class="platform-link-button platform-link-secondary" data-lesson-player-prev>Anterior</button>
-                    <span class="presentation-counter" data-lesson-player-counter>0 de 0</span>
-                    <button type="button" class="platform-link-button platform-link-primary" data-lesson-player-next>Próximo</button>
-                </div>
-            </section>
+            <div class="lesson-sequence-stage-empty" data-lesson-player-empty>
+                <span class="route-tag">Sem bloco</span>
+                <h2>Nenhuma atividade na sequência</h2>
+                <p>Volte para o editor e adicione pelo menos um material salvo.</p>
+            </div>
+
+            <a href="apresentacao.html" class="lesson-sequence-stage-open" data-lesson-player-open aria-label="Abrir bloco atual em uma nova guia" target="_blank" rel="noopener noreferrer">Abrir bloco</a>
+
+            <button type="button" class="presentation-nav-button presentation-nav-button--prev lesson-sequence-stage-nav" data-lesson-player-prev aria-label="Bloco anterior"></button>
+            <button type="button" class="presentation-nav-button presentation-nav-button--next lesson-sequence-stage-nav" data-lesson-player-next aria-label="Próximo bloco"></button>
         </section>
     </main>
 </body>

@@ -136,6 +136,78 @@ const flashcardsSchema = {
     }
 };
 
+const memorySchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "pairs"],
+    properties: {
+        title: { type: "string" },
+        pairs: {
+            type: "array",
+            minItems: 2,
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["front", "back"],
+                properties: {
+                    front: { type: "string" },
+                    back: { type: "string" },
+                    color: { type: "string" }
+                }
+            }
+        }
+    }
+};
+
+const matchSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "left_label", "right_label", "shuffle_right", "pairs"],
+    properties: {
+        title: { type: "string" },
+        left_label: { type: "string" },
+        right_label: { type: "string" },
+        shuffle_right: { type: "boolean" },
+        pairs: {
+            type: "array",
+            minItems: 2,
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["left", "right"],
+                properties: {
+                    left: { type: "string" },
+                    right: { type: "string" },
+                    color: { type: "string" }
+                }
+            }
+        }
+    }
+};
+
+const wheelSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "eliminate_used", "segments"],
+    properties: {
+        title: { type: "string" },
+        eliminate_used: { type: "boolean" },
+        segments: {
+            type: "array",
+            minItems: 2,
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["text"],
+                properties: {
+                    text: { type: "string" },
+                    color: { type: "string" }
+                }
+            }
+        }
+    }
+};
+
 const mindmapSchema = {
     type: "object",
     additionalProperties: false,
@@ -214,6 +286,30 @@ function schemaFor(materialType) {
         };
     }
 
+    if (materialType === "memory") {
+        return {
+            name: "educaria_memory",
+            description: "Jogo da memoria estruturado para o builder da EducarIA",
+            schema: memorySchema
+        };
+    }
+
+    if (materialType === "match") {
+        return {
+            name: "educaria_match",
+            description: "Ligar pontos estruturado para o builder da EducarIA",
+            schema: matchSchema
+        };
+    }
+
+    if (materialType === "wheel") {
+        return {
+            name: "educaria_wheel",
+            description: "Roleta estruturada para o builder da EducarIA",
+            schema: wheelSchema
+        };
+    }
+
     if (materialType === "mindmap") {
         return {
             name: "educaria_mindmap",
@@ -285,7 +381,110 @@ function promptFor(materialType, action, sourceText) {
         ].join("\n\n");
     }
 
+    if (materialType === "memory") {
+        return [
+            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Monte um jogo da memoria claro, rapido de jogar e fiel ao texto-base.",
+            "Crie pares curtos, legiveis e bons para memorizacao em sala.",
+            "Cada front deve ser breve: termo, pergunta curta, data, palavra-chave ou conceito.",
+            "Cada back deve trazer a resposta correspondente, definicao curta ou associacao correta.",
+            "Evite frases longas, pares redundantes ou conteudos vagos.",
+            "Prefira conceitos centrais, datas importantes, relacoes diretas e vocabulario util.",
+            "Se o texto-base trouxer listas ja associadas, preserve essa logica.",
+            `Objetivo do professor: ${action || "Estruturar jogo da memoria a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Respeite a quantidade de pares pedida quando ela for informada.",
+            "- Cada lado do par deve caber bem em um card curto.",
+            "- Nao invente fatos fora do tema.",
+            "Material de origem:",
+            sourceText
+        ].join("\n\n");
+    }
+
+    if (materialType === "match") {
+        return [
+            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Monte uma atividade de ligar pontos clara, curta e facil de aplicar em sala.",
+            "Organize pares entre coluna A e coluna B com associacoes objetivas e corretas.",
+            "Cada item deve ser curto e legivel em poucas palavras.",
+            "Evite frases longas, ambiguidades ou pares muito parecidos entre si.",
+            "Prefira conceito-definicao, evento-data, autor-obra, pais-capital ou relacoes equivalentes ao texto-base.",
+            "Defina left_label e right_label de forma clara para o professor.",
+            `Objetivo do professor: ${action || "Estruturar ligar pontos a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Respeite a quantidade de pares pedida quando ela for informada.",
+            "- Use shuffle_right true quando fizer sentido para a atividade.",
+            "- Nao invente fatos fora do tema.",
+            "Material de origem:",
+            sourceText
+        ].join("\n\n");
+    }
+
+    if (materialType === "wheel") {
+        return [
+            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Monte uma roleta editavel com itens curtos, claros e bons para sorteio em sala.",
+            "Cada segmento deve ter um texto enxuto, facil de ler dentro da roleta.",
+            "Prefira perguntas curtas, desafios rapidos, temas de revisao ou comandos objetivos.",
+            "Evite segmentos longos, frases com varias ideias ou instrucoes vagas.",
+            "Se o texto-base for teorico, transforme em itens de revisao ou provocacoes curtas.",
+            `Objetivo do professor: ${action || "Estruturar roleta a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Respeite a quantidade de espacos pedida quando ela for informada.",
+            "- Cada segmento deve caber bem em uma fatia da roleta.",
+            "- Nao invente fatos fora do tema.",
+            "Material de origem:",
+            sourceText
+        ].join("\n\n");
+    }
+
     if (materialType === "mindmap") {
+        const normalizedAction = String(action || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+
+        const approachInstructions = normalizedAction.includes("conceitos em topicos")
+            ? [
+                "Modo selecionado pelo professor: organizar conceitos em topicos.",
+                "Priorize estrutura conceitual e hierarquica.",
+                "Cada branch deve representar um conceito central do tema.",
+                "O subtitle deve nomear a ideia-chave do conceito.",
+                "O detail deve explicar o conceito e trazer 2 a 4 bullets curtos quando isso ajudar."
+            ]
+            : normalizedAction.includes("resumir um tema")
+                ? [
+                    "Modo selecionado pelo professor: resumir um tema em mapa mental.",
+                    "Priorize sintese e panorama geral.",
+                    "Use menos detalhes e mais clareza global do assunto.",
+                    "Cada branch deve resumir um eixo importante do tema.",
+                    "O detail deve ser enxuto, sem excesso de aprofundamento."
+                ]
+                : normalizedAction.includes("revisao visual")
+                    ? [
+                        "Modo selecionado pelo professor: estruturar revisao visual.",
+                        "Priorize memorizacao, revisao rapida e linguagem projetavel.",
+                        "Cada branch deve funcionar bem como ponto de revisao.",
+                        "No detail, prefira bullets curtos, diretos e faceis de reler.",
+                        "Destaque palavras-chave, etapas, causas, exemplos ou classificacoes."
+                    ]
+                    : [];
+
+        const layoutInstructions = normalizedAction.includes("leitura desejada: radial")
+            ? [
+                "Leitura desejada: radial.",
+                "Crie branches mais independentes entre si, com subtitulos curtos e forte contraste de ideias."
+            ]
+            : normalizedAction.includes("leitura desejada: topicos")
+                ? [
+                    "Leitura desejada: topicos.",
+                    "Crie progressao mais linear, com detalhes que funcionem bem como lista e revisao sequencial."
+                ]
+                : [];
+
         return [
             "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
             "Responda apenas em JSON compativel com o schema fornecido.",
@@ -295,6 +494,8 @@ function promptFor(materialType, action, sourceText) {
             "No detail, voce pode usar um pequeno paragrafo e bullets curtos separados por \\n quando isso ajudar.",
             "Evite topicos redundantes, vagos ou amplos demais.",
             "Prefira conceitos centrais, relacoes entre ideias e organizacao hierarquica simples.",
+            ...approachInstructions,
+            ...layoutInstructions,
             `Objetivo do professor: ${action || "Estruturar mapa mental a partir do material enviado."}`,
             "Regras adicionais:",
             "- Respeite a quantidade de topicos pedida quando for informada.",
@@ -306,6 +507,41 @@ function promptFor(materialType, action, sourceText) {
     }
 
     if (materialType === "debate") {
+        const normalizedAction = String(action || "")
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .toLowerCase();
+
+        const formatInstructions = normalizedAction.includes("formato desejado: roda guiada")
+            ? [
+                "Formato desejado: roda guiada.",
+                "Evite organizar o debate como confronto fixo entre dois lados.",
+                "Priorize escuta, participacao coletiva, aprofundamento e mediacao do professor."
+            ]
+            : normalizedAction.includes("formato desejado: grupos com mediacao")
+                ? [
+                    "Formato desejado: grupos com mediacao.",
+                    "Estruture o debate para trabalho entre grupos, com comparacao de argumentos e mediacao docente."
+                ]
+                : [
+                    "Formato desejado: dois lados.",
+                    "Estruture o debate com contraste claro entre duas perspectivas."
+                ];
+
+        const assistanceInstructions = normalizedAction.includes("criar pergunta central e etapas")
+            ? [
+                "Modo de ajuda selecionado: criar pergunta central e etapas.",
+                "Priorize uma pergunta principal forte, debatível e um roteiro muito claro de progressao."
+            ]
+            : normalizedAction.includes("transformar texto em discussao guiada")
+                ? [
+                    "Modo de ajuda selecionado: transformar texto em discussao guiada.",
+                    "Priorize conducao do professor, retomada do texto-base e aprofundamento progressivo."
+                ]
+                : [
+                    "Modo de ajuda selecionado: organizar roteiro de debate.",
+                    "Busque equilibrio entre estrutura, pergunta central e mediacao."
+                ];
         return [
             "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
             "Responda apenas em JSON compativel com o schema fornecido.",
@@ -315,6 +551,8 @@ function promptFor(materialType, action, sourceText) {
             "O guidance deve ajudar o professor a conduzir a discussao, nao repetir a pergunta.",
             "Evite polarizacoes artificiais ou formulacoes agressivas.",
             "Prefira perguntas debatíveis, adequadas ao ambiente escolar e ligadas ao conteudo-base.",
+            ...formatInstructions,
+            ...assistanceInstructions,
             `Objetivo do professor: ${action || "Estruturar debate guiado a partir do material enviado."}`,
             "Regras adicionais:",
             "- Respeite o numero de etapas e o formato pedidos pelo professor quando forem informados.",

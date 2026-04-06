@@ -11,6 +11,8 @@
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/editor-disclosure.js" defer></script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/ai-material-generator.js" defer></script>
     <script src="../assets/js/memory-builder.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="memory">
@@ -44,7 +46,41 @@
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <details class="editor-disclosure" open>
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Montar com IA</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label for="memoria-fonte-texto">Texto, conceitos ou pares de estudo</label>
+                                <textarea id="memoria-fonte-texto" rows="6" placeholder="Cole um conteúdo, uma lista de termos ou pares já prontos para a IA transformar em jogo da memória."></textarea>
+                            </div>
+                            <div class="platform-field">
+                                <label for="memoria-arquivo">Arquivo de apoio</label>
+                                <input id="memoria-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
+                            </div>
+                            <div class="platform-field">
+                                <label for="memoria-acao-ia">Como a IA deve ajudar</label>
+                                <select id="memoria-acao-ia">
+                                    <option>Criar pares de revisão</option>
+                                    <option>Transformar conceitos em associação rápida</option>
+                                    <option>Organizar vocabulário para memorização</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="memoria-quantidade-livre">Quantidade de pares</label>
+                                <input id="memoria-quantidade-livre" type="number" min="2" max="20" step="1" value="6">
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-generate-material="memory">Gerar pares com IA</button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure">
                     <summary>
                         <span>Configuração manual</span>
                         <small>Expandir</small>

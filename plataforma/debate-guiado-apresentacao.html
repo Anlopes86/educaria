@@ -10,7 +10,7 @@
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/debate-runtime.js" defer></script>
 </head>
-<body data-material-type="debate">
+<body class="debate-presentation-shell" data-material-type="debate">
     <main class="presentation-shell debate-stage-shell">
         <header class="presentation-topbar presentation-topbar--minimal">
             <div class="platform-top-actions">
@@ -33,11 +33,11 @@
 
                 <div class="debate-stage-sides">
                     <article class="debate-stage-side">
-                        <span class="platform-section-label">Lado A</span>
+                        <span class="platform-section-label" data-debate-stage-side-a-label>Lado A</span>
                         <strong data-debate-stage-side-a>Posicao A</strong>
                     </article>
                     <article class="debate-stage-side">
-                        <span class="platform-section-label">Lado B</span>
+                        <span class="platform-section-label" data-debate-stage-side-b-label>Lado B</span>
                         <strong data-debate-stage-side-b>Posicao B</strong>
                     </article>
                 </div>
@@ -49,7 +49,7 @@
                         <h3 data-debate-stage-step-question>Pergunta da etapa</h3>
                     </section>
                     <aside class="debate-stage-guidance">
-                        <span class="platform-section-label">Mediacao</span>
+                        <span class="platform-section-label" data-debate-stage-guidance-label>Mediacao</span>
                         <div class="debate-stage-guidance-text" data-debate-stage-guidance>Orientacao para conduzir essa etapa.</div>
                     </aside>
                 </div>

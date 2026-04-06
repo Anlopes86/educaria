@@ -36,6 +36,11 @@ function escapeMindText(value) {
         .replaceAll(">", "&gt;");
 }
 
+function formatMindInlineHtml(text) {
+    const escaped = escapeMindText(text);
+    return escaped.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+}
+
 function formatMindDetailHtml(text) {
     const lines = String(text || "").split(/\r?\n/);
     const blocks = [];
@@ -44,13 +49,27 @@ function formatMindDetailHtml(text) {
 
     const flushParagraph = () => {
         if (!paragraph.length) return;
-        blocks.push(`<p>${paragraph.map((line) => escapeMindText(line)).join("<br>")}</p>`);
+        if (paragraph.length > 1) {
+            blocks.push(`<ul>${paragraph.map((line) => `<li>${formatMindInlineHtml(line)}</li>`).join("")}</ul>`);
+        } else {
+            const line = paragraph[0];
+            const sentenceParts = line
+                .split(/\s*[;•]\s*|(?<=\.)\s+(?=[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])/)
+                .map((item) => item.trim())
+                .filter(Boolean);
+
+            if (sentenceParts.length > 1) {
+                blocks.push(`<ul>${sentenceParts.map((item) => `<li>${formatMindInlineHtml(item)}</li>`).join("")}</ul>`);
+            } else {
+                blocks.push(`<p>${formatMindInlineHtml(line)}</p>`);
+            }
+        }
         paragraph = [];
     };
 
     const flushBullets = () => {
         if (!bullets.length) return;
-        blocks.push(`<ul>${bullets.map((line) => `<li>${escapeMindText(line)}</li>`).join("")}</ul>`);
+        blocks.push(`<ul>${bullets.map((line) => `<li>${formatMindInlineHtml(line)}</li>`).join("")}</ul>`);
         bullets = [];
     };
 
@@ -62,9 +81,9 @@ function formatMindDetailHtml(text) {
             return;
         }
 
-        if (/^[-*]\s+/.test(line)) {
+        if (/^[-*•]\s+/.test(line)) {
             flushParagraph();
-            bullets.push(line.replace(/^[-*]\s+/, ""));
+            bullets.push(line.replace(/^[-*•]\s+/, ""));
             return;
         }
 
@@ -75,7 +94,7 @@ function formatMindDetailHtml(text) {
     flushParagraph();
     flushBullets();
 
-    return blocks.join("") || `<p>${escapeMindText(text)}</p>`;
+    return blocks.join("") || `<p>${formatMindInlineHtml(text)}</p>`;
 }
 
 function renderMindmapApplication() {
@@ -91,10 +110,12 @@ function renderMindmapApplication() {
 
     const center = controls["mapa-centro"] || "Tema da aula";
     const subtitle = controls["mapa-subtitulo"] || "Panorama dos conceitos principais";
+    const layout = controls["mapa-layout"] || "Radial";
     const titleRoot = document.querySelector("[data-mind-stage-title]");
     const subtitleRoot = document.querySelector("[data-mind-stage-subtitle]");
     const countRoot = document.querySelector("[data-mind-stage-count]");
     const mapRoot = document.querySelector("[data-mind-stage-map]");
+    const detailRoot = document.querySelector(".mind-stage-detail");
     const detailTitleRoot = document.querySelector("[data-mind-stage-detail-title]");
     const detailSubtitleRoot = document.querySelector("[data-mind-stage-detail-subtitle]");
     const detailTextRoot = document.querySelector("[data-mind-stage-detail-text]");
@@ -108,6 +129,7 @@ function renderMindmapApplication() {
     const renderDetail = () => {
         const branch = safeBranches[activeIndex];
         if (!branch) return;
+        if (detailRoot) detailRoot.style.setProperty("--mind-accent", branch.color || "#22c55e");
         if (detailTitleRoot) detailTitleRoot.textContent = branch.title;
         if (detailSubtitleRoot) detailSubtitleRoot.textContent = branch.subtitle;
         if (detailTextRoot) detailTextRoot.innerHTML = formatMindDetailHtml(branch.detail);
@@ -115,9 +137,13 @@ function renderMindmapApplication() {
 
     const renderMap = () => {
         if (!mapRoot) return;
+        const normalizedLayout = String(layout).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const isTopics = normalizedLayout.includes("topicos");
+        mapRoot.classList.toggle("is-topics", isTopics);
+        mapRoot.classList.toggle("is-radial", !isTopics);
         mapRoot.innerHTML = `
             ${safeBranches.map((branch, index) => `
-                <button type="button" class="mind-stage-branch${index === activeIndex ? " is-active" : ""}" data-mind-stage-branch="${index}" style="--mind-accent:${branch.color};">
+                <button type="button" class="mind-stage-branch mind-stage-branch--${isTopics ? "topics" : "radial"}${index === activeIndex ? " is-active" : ""}" data-mind-stage-branch="${index}" style="--mind-accent:${branch.color};">
                     <strong>${escapeMindText(branch.title)}</strong>
                     <em>${escapeMindText(branch.subtitle)}</em>
                 </button>
