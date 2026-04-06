@@ -187,16 +187,18 @@ function clearMediaAspect(slideRoot, media) {
     delete media.dataset.mediaAspect;
 }
 
-function applyMediaAspect(slideRoot, media) {
+function applyMediaAspect(slideRoot, media, onChange) {
     const image = media.querySelector("img[src]");
     if (!image) {
         clearMediaAspect(slideRoot, media);
+        onChange?.();
         return;
     }
 
     const setAspect = () => {
         if (!image.naturalWidth || !image.naturalHeight) {
             clearMediaAspect(slideRoot, media);
+            onChange?.();
             return;
         }
 
@@ -204,6 +206,7 @@ function applyMediaAspect(slideRoot, media) {
         const aspect = ratio >= 1.35 ? "landscape" : ratio <= 0.82 ? "portrait" : "square";
         slideRoot.dataset.mediaAspect = aspect;
         media.dataset.mediaAspect = aspect;
+        onChange?.();
     };
 
     if (image.complete) {
@@ -212,34 +215,65 @@ function applyMediaAspect(slideRoot, media) {
     }
 
     image.addEventListener("load", setAspect, { once: true });
-    image.addEventListener("error", () => clearMediaAspect(slideRoot, media), { once: true });
+    image.addEventListener("error", () => {
+        clearMediaAspect(slideRoot, media);
+        onChange?.();
+    }, { once: true });
 }
 
-function applySlideDensity(slideRoot, slide) {
+function setSlideDensityClass(slideRoot, densityClass) {
     slideRoot.classList.remove(
         "presentation-slide--comfort",
         "presentation-slide--compact",
         "presentation-slide--dense"
     );
 
+    slideRoot.classList.add(densityClass);
+}
+
+function isSlideOverflowing(slideRoot, copyRoot) {
+    return slideRoot.scrollHeight > slideRoot.clientHeight + 4
+        || copyRoot.scrollHeight > copyRoot.clientHeight + 4;
+}
+
+function applySlideDensity(slideRoot, copyRoot, slide, viewport = {}) {
+    const densityOrder = [
+        "presentation-slide--comfort",
+        "presentation-slide--compact",
+        "presentation-slide--dense"
+    ];
+
     const titleLength = String(slide.title || "").length;
     const subtitleLength = String(slide.subtitle || "").length;
     const bodyLength = String(slide.body || "").length;
     const lineCount = String(slide.body || "").replace(/\r/g, "").split("\n").filter((line) => line.trim()).length;
     const hasImage = Boolean(slide.imageUrl || slide.imagePrompt);
-    const densityScore = titleLength + subtitleLength + bodyLength + (lineCount * 28) + (hasImage ? 120 : 0);
+    const stageHeight = Number(viewport.stageHeight || window.innerHeight);
+    const stageWidth = Number(viewport.stageWidth || window.innerWidth);
+    const viewportPenalty = Math.max(0, 700 - stageHeight) * 1.45 + Math.max(0, 1240 - stageWidth) * 0.2;
+    const densityScore = titleLength
+        + subtitleLength
+        + bodyLength
+        + (lineCount * 28)
+        + (hasImage ? 120 : 0)
+        + viewportPenalty;
+
+    let densityIndex = 0;
 
     if (densityScore > 620) {
-        slideRoot.classList.add("presentation-slide--dense");
-        return;
+        densityIndex = 2;
+    } else if (densityScore > 380) {
+        densityIndex = 1;
     }
 
-    if (densityScore > 380) {
-        slideRoot.classList.add("presentation-slide--compact");
-        return;
+    for (let index = densityIndex; index < densityOrder.length; index += 1) {
+        setSlideDensityClass(slideRoot, densityOrder[index]);
+        if (!copyRoot || !isSlideOverflowing(slideRoot, copyRoot)) {
+            return;
+        }
     }
 
-    slideRoot.classList.add("presentation-slide--comfort");
+    setSlideDensityClass(slideRoot, densityOrder[densityOrder.length - 1]);
 }
 
 function applySlideLayout(slideRoot, slide) {
@@ -275,6 +309,24 @@ function applySlideLayout(slideRoot, slide) {
     slideRoot.classList.add("presentation-slide--stack");
 }
 
+function resolveSplitMediaOffset(slideRoot, media) {
+    const mediaAspect = slideRoot.dataset.mediaAspect || media.dataset.mediaAspect || "";
+
+    if (mediaAspect === "portrait") {
+        return "clamp(-52px, -1.8vh, -18px)";
+    }
+
+    if (mediaAspect === "square") {
+        return "clamp(-84px, -3.4vh, -30px)";
+    }
+
+    if (mediaAspect === "landscape") {
+        return "clamp(-128px, -6vh, -52px)";
+    }
+
+    return "clamp(-76px, -3.2vh, -28px)";
+}
+
 function renderPresentation(slides) {
     const slideRoot = document.querySelector("[data-presentation-slide]");
     const copyRoot = document.querySelector("[data-presentation-copy]");
@@ -287,14 +339,48 @@ function renderPresentation(slides) {
     const counter = document.querySelector("[data-presentation-counter]");
     const media = document.querySelector("[data-presentation-media]");
     const controls = document.querySelector("[data-presentation-controls]");
+    const shell = document.querySelector(".presentation-shell--lesson");
+    const topbar = document.querySelector(".presentation-topbar");
+    const frame = document.querySelector(".presentation-frame--solo");
     let currentIndex = 0;
+    let viewport = {
+        stageHeight: window.innerHeight,
+        stageWidth: window.innerWidth
+    };
+    let resizeFrame = 0;
 
     const turma = typeof readSelectedClass === "function" ? readSelectedClass() : "";
+
+    const updateViewportMetrics = () => {
+        const shellStyles = shell ? getComputedStyle(shell) : null;
+        const frameStyles = frame ? getComputedStyle(frame) : null;
+        const shellPadding = shellStyles
+            ? parseFloat(shellStyles.paddingTop || 0) + parseFloat(shellStyles.paddingBottom || 0)
+            : 0;
+        const shellGap = shellStyles ? parseFloat(shellStyles.rowGap || shellStyles.gap || 0) : 0;
+        const frameGap = frameStyles ? parseFloat(frameStyles.rowGap || frameStyles.gap || 0) : 0;
+        const topbarHeight = topbar?.offsetHeight || 0;
+        const controlsHeight = controls?.offsetHeight || 0;
+        const frameWidth = frame?.clientWidth || window.innerWidth;
+        const stageHeight = Math.max(320, window.innerHeight - shellPadding - shellGap - topbarHeight - frameGap - controlsHeight - 20);
+        const stageWidth = Math.max(320, frameWidth - 8);
+
+        viewport = {
+            stageHeight,
+            stageWidth
+        };
+
+        document.documentElement.style.setProperty("--presentation-stage-height", `${stageHeight}px`);
+        document.documentElement.style.setProperty("--presentation-stage-width", `${stageWidth}px`);
+        document.body.classList.toggle("presentation-page--compact", stageHeight < 620 || frameWidth < 1180);
+    };
 
     const resetMediaStyles = () => {
         clearMediaAspect(slideRoot, media);
         copyRoot.style.order = "";
         media.style.order = "";
+        media.style.alignSelf = "";
+        media.style.height = "";
         media.style.marginTop = "";
         media.style.marginBottom = "";
         media.style.minHeight = "";
@@ -321,7 +407,6 @@ function renderPresentation(slides) {
         slideTitle.style.color = slide.textColor;
         slideSubtitle.style.color = slide.textColor;
         slideBody.style.color = slide.textColor;
-        applySlideDensity(slideRoot, slide);
         slideRoot.dataset.slideFont = String(slide.fontChoice || "Destaque moderno")
             .toLowerCase()
             .normalize("NFD")
@@ -336,20 +421,28 @@ function renderPresentation(slides) {
             media.innerHTML = slide.imageUrl
                 ? `<img data-presentation-image alt="${escapeHtml(slide.imagePrompt || slide.title)}" src="${escapeHtml(slide.imageUrl)}">`
                 : renderMediaPlaceholder(slide);
-            applyMediaAspect(slideRoot, media);
+            applyMediaAspect(slideRoot, media, () => {
+                if (slide.layoutMode === "split") {
+                    media.style.marginTop = resolveSplitMediaOffset(slideRoot, media);
+                }
+
+                applySlideDensity(slideRoot, copyRoot, slide, viewport);
+            });
 
             if (slide.layoutMode === "split") {
                 slideRoot.style.display = "grid";
                 slideRoot.style.gridTemplateColumns = "minmax(0, 1fr) minmax(320px, 0.9fr)";
                 slideRoot.style.gridTemplateRows = "minmax(0, 1fr)";
                 slideRoot.style.gap = "20px";
-                slideRoot.style.alignItems = "stretch";
+                slideRoot.style.alignItems = "start";
                 copyRoot.style.gridColumn = "1";
                 copyRoot.style.gridRow = "1";
                 media.style.gridColumn = "2";
                 media.style.gridRow = "1";
-                media.style.marginTop = "0";
-                media.style.minHeight = "100%";
+                media.style.alignSelf = "end";
+                media.style.marginTop = resolveSplitMediaOffset(slideRoot, media);
+                media.style.minHeight = "0";
+                media.style.height = "auto";
             } else if (slide.layoutMode === "feature") {
                 slideRoot.style.display = "grid";
                 slideRoot.style.gridTemplateColumns = "minmax(0, 1fr)";
@@ -367,6 +460,7 @@ function renderPresentation(slides) {
         } else {
             media.hidden = true;
             media.innerHTML = '<img data-presentation-image alt="">';
+            applySlideDensity(slideRoot, copyRoot, slide, viewport);
         }
 
         prevButton.disabled = currentIndex === 0;
@@ -402,7 +496,19 @@ function renderPresentation(slides) {
         }
     });
 
+    updateViewportMetrics();
     paint();
+
+    window.addEventListener("resize", () => {
+        if (resizeFrame) {
+            window.cancelAnimationFrame(resizeFrame);
+        }
+
+        resizeFrame = window.requestAnimationFrame(() => {
+            updateViewportMetrics();
+            paint();
+        });
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
