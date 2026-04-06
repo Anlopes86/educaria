@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresenta&ccedil;&atilde;o da For&ccedil;a | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/storage-scope.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/hangman-core.js" defer></script>
+    <script src="../assets/js/hangman-runtime.js" defer></script>
+</head>
+<body data-material-type="hangman">
+    <main class="presentation-shell hangman-presentation-shell">
+        <header class="presentation-topbar">
+            <div class="presentation-topbar-group">
+                <a href="atividade-reservada.html" class="platform-link-button platform-link-secondary">Voltar &agrave; edi&ccedil;&atilde;o</a>
+                <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
+            </div>
+        </header>
+
+        <section class="hangman-stage-card">
+            <div class="hangman-stage-head">
+                <div>
+                    <span class="platform-section-label">Modo apresenta&ccedil;&atilde;o</span>
+                    <h1 data-hangman-stage-title>Jogo da for&ccedil;a</h1>
+                    <p data-hangman-stage-subtitle>Descubra as palavras usando as dicas.</p>
+                </div>
+                <div class="hangman-stage-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-hangman-reset>Reiniciar rodada</button>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-hangman-reveal>Mostrar resposta</button>
+                </div>
+            </div>
+
+            <div class="preview-chip-row hangman-stage-meta">
+                <span class="preview-chip" data-hangman-stage-count>0 palavras</span>
+                <span class="preview-chip" data-hangman-stage-attempts>0/6 erros</span>
+                <span class="preview-chip" data-hangman-stage-round>Rodada 1 de 1</span>
+            </div>
+
+            <div class="hangman-stage-layout">
+                <section class="hangman-board-panel">
+                    <div class="hangman-figure" data-hangman-stage-figure data-errors="0">
+                        <span class="hangman-gallows hangman-gallows-base"></span>
+                        <span class="hangman-gallows hangman-gallows-pole"></span>
+                        <span class="hangman-gallows hangman-gallows-top"></span>
+                        <span class="hangman-gallows hangman-gallows-rope"></span>
+                        <span class="hangman-part hangman-part-head"></span>
+                        <span class="hangman-part hangman-part-body"></span>
+                        <span class="hangman-part hangman-part-arm-left"></span>
+                        <span class="hangman-part hangman-part-arm-right"></span>
+                        <span class="hangman-part hangman-part-leg-left"></span>
+                        <span class="hangman-part hangman-part-leg-right"></span>
+                    </div>
+
+                    <div class="hangman-word-slots hangman-word-slots--stage" data-hangman-stage-word></div>
+
+                    <div class="hangman-keyboard" data-hangman-stage-keyboard></div>
+                </section>
+
+                <aside class="hangman-stage-sidebar">
+                    <section class="hangman-stage-info">
+                        <span class="platform-section-label">Dica</span>
+                        <p data-hangman-stage-clue>Sem dica informada.</p>
+                    </section>
+                    <section class="hangman-stage-info">
+                        <span class="platform-section-label">Categoria</span>
+                        <p data-hangman-stage-category>Sem categoria</p>
+                    </section>
+                    <section class="hangman-stage-info">
+                        <span class="platform-section-label">Letras erradas</span>
+                        <p data-hangman-stage-wrong>Nenhuma letra errada ainda.</p>
+                    </section>
+
+                    <div class="hangman-stage-nav">
+                        <button type="button" class="platform-link-button platform-link-secondary" data-hangman-prev>Anterior</button>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-hangman-next>Pr&oacute;xima</button>
+                    </div>
+
+                    <div class="hangman-round-list" data-hangman-stage-list></div>
+                    <p class="hangman-preview-note hangman-stage-note" data-hangman-stage-note hidden></p>
+                </aside>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

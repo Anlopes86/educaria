@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For&ccedil;a | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/storage-scope.js" defer></script>
+    <script src="../assets/js/local-persistence.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
+    <script src="../assets/js/hangman-core.js" defer></script>
+    <script src="../assets/js/hangman-builder.js" defer></script>
+</head>
+<body class="product-body theme-editor" data-material-type="hangman">
+    <main class="platform-shell platform-flow-shell activity-editor-shell">
+        <header class="platform-topbar">
+            <a href="turma.html" class="platform-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>For&ccedil;a</strong>
+                </div>
+            </a>
+            <div class="platform-top-actions">
+                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+            </div>
+        </header>
+        <div class="builder-floating-actions">
+            <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="hangman" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="hangman" data-save-target="turma.html">Salvar na turma</button>
+            <a href="forca-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
+        </div>
+
+        <section class="activity-editor-context">
+            <div>
+                <span class="focus-eyebrow">Editor de for&ccedil;a</span>
+                <h1>Monte palavras, dicas e acompanhe a rodada no preview.</h1>
+                <p>Ideal para revisar vocabul&aacute;rio, ortografia e conceitos-chave de forma r&aacute;pida.</p>
+            </div>
+        </section>
+
+        <section class="platform-quiz-layout activity-workspace">
+            <article class="platform-builder-card highlight-surface activity-builder-pane">
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Configura&ccedil;&atilde;o manual</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="forca-titulo">T&iacute;tulo da atividade</label>
+                                <input id="forca-titulo" type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label for="forca-tentativas">Limite de erros</label>
+                                <select id="forca-tentativas">
+                                    <option value="5">5 erros</option>
+                                    <option value="6" selected>6 erros</option>
+                                    <option value="7">7 erros</option>
+                                    <option value="8">8 erros</option>
+                                </select>
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label for="forca-subtitulo">Instru&ccedil;&atilde;o ou contexto</label>
+                                <input id="forca-subtitulo" type="text" value="" placeholder="Ex.: Descubra a palavra relacionada ao tema estudado nesta aula.">
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Editar palavras</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-question-stack activity-card-stack" data-hangman-entries>
+                            <section class="platform-question-card activity-content-card hangman-entry-card" data-hangman-entry>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-hangman-label>Palavra 1</span>
+                                        <h3>Resposta e dica</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-hangman-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Palavra</label>
+                                        <input data-hangman-answer data-field="answer" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Dica</label>
+                                        <input data-hangman-clue data-field="clue" type="text" value="">
+                                    </div>
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Categoria opcional</label>
+                                        <input data-hangman-category data-field="category" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="platform-question-card activity-content-card hangman-entry-card" data-hangman-entry>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-hangman-label>Palavra 2</span>
+                                        <h3>Resposta e dica</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-hangman-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Palavra</label>
+                                        <input data-hangman-answer data-field="answer" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Dica</label>
+                                        <input data-hangman-clue data-field="clue" type="text" value="">
+                                    </div>
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Categoria opcional</label>
+                                        <input data-hangman-category data-field="category" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="platform-question-card activity-content-card hangman-entry-card" data-hangman-entry>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-hangman-label>Palavra 3</span>
+                                        <h3>Resposta e dica</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-hangman-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Palavra</label>
+                                        <input data-hangman-answer data-field="answer" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Dica</label>
+                                        <input data-hangman-clue data-field="clue" type="text" value="">
+                                    </div>
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Categoria opcional</label>
+                                        <input data-hangman-category data-field="category" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="platform-question-card activity-content-card hangman-entry-card" data-hangman-entry>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-hangman-label>Palavra 4</span>
+                                        <h3>Resposta e dica</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-hangman-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Palavra</label>
+                                        <input data-hangman-answer data-field="answer" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Dica</label>
+                                        <input data-hangman-clue data-field="clue" type="text" value="">
+                                    </div>
+                                    <div class="platform-field platform-field-wide">
+                                        <label>Categoria opcional</label>
+                                        <input data-hangman-category data-field="category" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="platform-form-actions activity-stack-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-hangman-add>Adicionar palavra</button>
+                        </div>
+                    </div>
+                </details>
+            </article>
+
+            <aside class="platform-builder-card activity-preview-pane hangman-preview-pane">
+                <span class="platform-section-label">Preview</span>
+                <h2>Veja a for&ccedil;a pronta</h2>
+                <p>Confira a primeira rodada antes de apresentar para a turma.</p>
+                <div class="live-preview-stack">
+                    <section class="live-preview-card live-preview-card--teal">
+                        <span class="platform-section-label">Resumo</span>
+                        <h3 data-hangman-preview-title>Jogo da for&ccedil;a</h3>
+                        <p data-hangman-preview-subtitle>Descubra as palavras usando as dicas.</p>
+                        <div class="preview-chip-row">
+                            <span class="preview-chip" data-hangman-preview-count>0 palavras</span>
+                            <span class="preview-chip" data-hangman-preview-attempts>6 erros</span>
+                        </div>
+                    </section>
+
+                    <section class="live-preview-card hangman-preview-card">
+                        <div class="hangman-preview-stage">
+                            <div class="hangman-word-slots" data-hangman-preview-word></div>
+                            <div class="hangman-preview-meta">
+                                <span class="route-tag" data-hangman-preview-category>Sem categoria</span>
+                                <p data-hangman-preview-clue>As dicas aparecem aqui.</p>
+                            </div>
+                        </div>
+                        <div class="hangman-preview-sidebar">
+                            <span class="platform-section-label">Rodadas</span>
+                            <ol class="hangman-preview-list" data-hangman-preview-list></ol>
+                        </div>
+                        <p class="hangman-preview-note" data-hangman-preview-note hidden></p>
+                    </section>
+                </div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>

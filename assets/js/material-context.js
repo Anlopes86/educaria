@@ -26,6 +26,9 @@ function presentationPathForMaterial(type) {
     if (type === "quiz") return "quiz-aplicacao.html";
     if (type === "flashcards") return "flashcards-apresentacao.html";
     if (type === "wheel") return "roleta-apresentacao.html";
+    if (type === "hangman") return "forca-apresentacao.html";
+    if (type === "crossword") return "palavras-cruzadas-apresentacao.html";
+    if (type === "wordsearch") return "caca-palavras-apresentacao.html";
     if (type === "memory") return "jogo-memoria-apresentacao.html";
     if (type === "match") return "ligar-pontos-apresentacao.html";
     if (type === "mindmap") return "mapa-mental-apresentacao.html";
@@ -38,6 +41,9 @@ function presentationLabelForMaterial(type) {
     if (type === "flashcards") return "Flashcards";
     if (type === "quiz") return "Quiz";
     if (type === "wheel") return "Roleta";
+    if (type === "hangman") return "For\u00e7a";
+    if (type === "crossword") return "Palavras cruzadas";
+    if (type === "wordsearch") return "Caca-palavras";
     if (type === "memory") return "Jogo da memoria";
     if (type === "match") return "Ligar pontos";
     if (type === "mindmap") return "Mapa mental";
@@ -49,7 +55,7 @@ function materialTypeFromUrl() {
     try {
         const params = new URLSearchParams(window.location.search);
         const value = params.get("material");
-        if (["lesson", "flashcards", "slides", "quiz", "wheel", "memory", "match", "mindmap", "debate"].includes(value)) {
+        if (["lesson", "flashcards", "slides", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"].includes(value)) {
             return value;
         }
     } catch (error) {

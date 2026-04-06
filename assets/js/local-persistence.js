@@ -92,6 +92,36 @@ function builderConfig() {
         };
     }
 
+    if (document.querySelector("[data-crossword-entries]")) {
+        return {
+            key: scopedStorageKey("educaria:builder:crossword"),
+            stackSelector: "[data-crossword-entries]",
+            cardSelector: "[data-crossword-entry]",
+            labelPrefix: "Entrada",
+            labelSelector: "[data-crossword-label]"
+        };
+    }
+
+    if (document.querySelector("[data-hangman-entries]")) {
+        return {
+            key: scopedStorageKey("educaria:builder:hangman"),
+            stackSelector: "[data-hangman-entries]",
+            cardSelector: "[data-hangman-entry]",
+            labelPrefix: "Palavra",
+            labelSelector: "[data-hangman-label]"
+        };
+    }
+
+    if (document.querySelector("[data-wordsearch-words]")) {
+        return {
+            key: scopedStorageKey("educaria:builder:wordsearch"),
+            stackSelector: "[data-wordsearch-words]",
+            cardSelector: "[data-wordsearch-word]",
+            labelPrefix: "Palavra",
+            labelSelector: "[data-wordsearch-label]"
+        };
+    }
+
     if (document.querySelector("[data-memory-pairs]")) {
         return {
             key: scopedStorageKey("educaria:builder:memory"),

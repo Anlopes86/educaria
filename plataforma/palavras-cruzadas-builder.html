@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Palavras cruzadas | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/storage-scope.js" defer></script>
+    <script src="../assets/js/local-persistence.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
+    <script src="../assets/js/crossword-core.js" defer></script>
+    <script src="../assets/js/crossword-builder.js" defer></script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/ai-material-generator.js" defer></script>
+</head>
+<body class="product-body theme-editor" data-material-type="crossword">
+    <main class="platform-shell platform-flow-shell activity-editor-shell">
+        <header class="platform-topbar">
+            <a href="turma.html" class="platform-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>Palavras cruzadas</strong>
+                </div>
+            </a>
+            <div class="platform-top-actions">
+                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+            </div>
+        </header>
+        <div class="builder-floating-actions">
+            <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="crossword" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="crossword" data-save-target="turma.html">Salvar na turma</button>
+            <a href="palavras-cruzadas-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
+        </div>
+
+        <section class="activity-editor-context">
+            <div>
+                <span class="focus-eyebrow">Editor de palavras cruzadas</span>
+                <h1>Monte respostas, pistas e acompanhe a grade no preview.</h1>
+                <p>Perfeito para revisar conceitos, vocabulário e definições em sala.</p>
+            </div>
+        </section>
+
+        <section class="platform-quiz-layout activity-workspace">
+            <article class="platform-builder-card highlight-surface activity-builder-pane">
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Montar com IA</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label for="cruzada-fonte-texto">Tema, texto-base ou lista de conceitos</label>
+                                <textarea id="cruzada-fonte-texto" rows="6" placeholder="Ex.: sistema solar&#10;ou&#10;Mercúrio - planeta mais próximo do Sol&#10;Vênus - planeta conhecido como estrela-d'alva&#10;Terra - planeta onde vivemos"></textarea>
+                            </div>
+                            <div class="platform-field">
+                                <label for="cruzada-arquivo">Arquivo de apoio</label>
+                                <input id="cruzada-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
+                            </div>
+                            <div class="platform-field">
+                                <label for="cruzada-acao-ia">Como a IA deve ajudar</label>
+                                <select id="cruzada-acao-ia">
+                                    <option>Montar cruzadinha a partir do tema</option>
+                                    <option>Criar respostas e pistas para revisão</option>
+                                    <option>Transformar texto em palavras cruzadas</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="cruzada-quantidade">Quantidade de entradas</label>
+                                <input id="cruzada-quantidade" type="number" min="4" max="12" step="1" value="8">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label for="cruzada-titulo-ia">Título desejado</label>
+                                <input id="cruzada-titulo-ia" type="text" value="" placeholder="Ex.: Cruzadinha do sistema solar">
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-generate-material="crossword">Gerar palavras cruzadas com IA</button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Configuração manual</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="cruzada-titulo">Título da atividade</label>
+                                <input id="cruzada-titulo" type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label for="cruzada-grade">Tamanho base da grade</label>
+                                <select id="cruzada-grade">
+                                    <option value="9">9 x 9</option>
+                                    <option value="11" selected>11 x 11</option>
+                                    <option value="13">13 x 13</option>
+                                    <option value="15">15 x 15</option>
+                                    <option value="17">17 x 17</option>
+                                </select>
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label for="cruzada-subtitulo">Orientação ou contexto</label>
+                                <input id="cruzada-subtitulo" type="text" value="" placeholder="Ex.: Complete a cruzadinha usando os conceitos estudados nesta aula.">
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Editar entradas</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-question-stack activity-card-stack" data-crossword-entries>
+                            <section class="platform-question-card activity-content-card crossword-entry-card" data-crossword-entry>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-crossword-label>Entrada 1</span>
+                                        <h3>Resposta e pista</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-crossword-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Resposta</label>
+                                        <input data-crossword-answer data-field="answer" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Pista</label>
+                                        <input data-crossword-clue data-field="clue" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="platform-question-card activity-content-card crossword-entry-card" data-crossword-entry>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-crossword-label>Entrada 2</span>
+                                        <h3>Resposta e pista</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-crossword-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Resposta</label>
+                                        <input data-crossword-answer data-field="answer" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Pista</label>
+                                        <input data-crossword-clue data-field="clue" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="platform-question-card activity-content-card crossword-entry-card" data-crossword-entry>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-crossword-label>Entrada 3</span>
+                                        <h3>Resposta e pista</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-crossword-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Resposta</label>
+                                        <input data-crossword-answer data-field="answer" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Pista</label>
+                                        <input data-crossword-clue data-field="clue" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="platform-question-card activity-content-card crossword-entry-card" data-crossword-entry>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-crossword-label>Entrada 4</span>
+                                        <h3>Resposta e pista</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-crossword-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Resposta</label>
+                                        <input data-crossword-answer data-field="answer" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Pista</label>
+                                        <input data-crossword-clue data-field="clue" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="platform-form-actions activity-stack-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-crossword-add>Adicionar entrada</button>
+                        </div>
+                    </div>
+                </details>
+            </article>
+
+            <aside class="platform-builder-card activity-preview-pane crossword-preview-pane">
+                <span class="platform-section-label">Preview</span>
+                <h2>Veja a cruzadinha pronta</h2>
+                <p>Acompanhe a grade e a lista de pistas antes de apresentar.</p>
+                <div class="live-preview-stack">
+                    <section class="live-preview-card live-preview-card--teal">
+                        <span class="platform-section-label">Resumo</span>
+                        <h3 data-crossword-preview-title>Nova cruzadinha</h3>
+                        <p data-crossword-preview-subtitle>Adicione respostas e pistas para montar a grade.</p>
+                        <div class="preview-chip-row">
+                            <span class="preview-chip" data-crossword-preview-count>0 entradas</span>
+                            <span class="preview-chip" data-crossword-preview-size>11 x 11</span>
+                        </div>
+                    </section>
+
+                    <section class="live-preview-card crossword-preview-card">
+                        <div class="crossword-preview-layout">
+                            <div class="crossword-board-shell">
+                                <div data-crossword-preview-board></div>
+                            </div>
+                            <div class="crossword-clues-panel">
+                                <section class="crossword-clues-group">
+                                    <span class="platform-section-label">Horizontal</span>
+                                    <div data-crossword-preview-across></div>
+                                </section>
+                                <section class="crossword-clues-group">
+                                    <span class="platform-section-label">Vertical</span>
+                                    <div data-crossword-preview-down></div>
+                                </section>
+                            </div>
+                        </div>
+                        <p class="crossword-preview-note" data-crossword-preview-note hidden></p>
+                    </section>
+                </div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>

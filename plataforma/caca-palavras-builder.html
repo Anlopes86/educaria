@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ca&ccedil;a-palavras | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/storage-scope.js" defer></script>
+    <script src="../assets/js/local-persistence.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/editor-disclosure.js" defer></script>
+    <script src="../assets/js/wordsearch-core.js" defer></script>
+    <script src="../assets/js/wordsearch-builder.js" defer></script>
+</head>
+<body class="product-body theme-editor" data-material-type="wordsearch">
+    <main class="platform-shell platform-flow-shell activity-editor-shell">
+        <header class="platform-topbar">
+            <a href="turma.html" class="platform-brand">
+                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
+                <div>
+                    <span>EducarIA</span>
+                    <strong>Ca&ccedil;a-palavras</strong>
+                </div>
+            </a>
+            <div class="platform-top-actions">
+                <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
+            </div>
+        </header>
+        <div class="builder-floating-actions">
+            <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="wordsearch" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="wordsearch" data-save-target="turma.html">Salvar na turma</button>
+            <a href="caca-palavras-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
+        </div>
+
+        <section class="activity-editor-context">
+            <div>
+                <span class="focus-eyebrow">Editor de ca&ccedil;a-palavras</span>
+                <h1>Monte a grade, ajuste o tamanho e acompanhe tudo no preview.</h1>
+                <p>Palavras, pistas e distribui&ccedil;&atilde;o prontos para projetar em sala.</p>
+            </div>
+        </section>
+
+        <section class="platform-quiz-layout activity-workspace">
+            <article class="platform-builder-card highlight-surface activity-builder-pane">
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Configura&ccedil;&atilde;o manual</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="caca-titulo">T&iacute;tulo da atividade</label>
+                                <input id="caca-titulo" type="text" value="">
+                            </div>
+                            <div class="platform-field">
+                                <label for="caca-grade">Tamanho inicial da grade</label>
+                                <select id="caca-grade">
+                                    <option value="6">6 x 10</option>
+                                    <option value="8" selected>8 x 14</option>
+                                    <option value="10">10 x 17</option>
+                                    <option value="12">12 x 20</option>
+                                    <option value="14">14 x 24</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="caca-direcoes">Dire&ccedil;&otilde;es das palavras</label>
+                                <select id="caca-direcoes">
+                                    <option value="basic">Horizontal e vertical</option>
+                                    <option value="diagonal" selected>Com diagonais</option>
+                                    <option value="full">Todas as dire&ccedil;&otilde;es</option>
+                                </select>
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label for="caca-subtitulo">Subt&iacute;tulo ou orienta&ccedil;&atilde;o</label>
+                                <input id="caca-subtitulo" type="text" value="" placeholder="Ex.: Encontre os termos principais do conte&uacute;do estudado.">
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Editar palavras</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-question-stack activity-card-stack" data-wordsearch-words>
+                            <section class="platform-question-card activity-content-card wordsearch-word-card" data-wordsearch-word>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-wordsearch-label>Palavra 1</span>
+                                        <h3>Conte&uacute;do da palavra</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-wordsearch-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Palavra</label>
+                                        <input data-wordsearch-term data-field="term" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Pista opcional</label>
+                                        <input data-wordsearch-clue data-field="clue" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="platform-question-card activity-content-card wordsearch-word-card" data-wordsearch-word>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-wordsearch-label>Palavra 2</span>
+                                        <h3>Conte&uacute;do da palavra</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-wordsearch-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Palavra</label>
+                                        <input data-wordsearch-term data-field="term" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Pista opcional</label>
+                                        <input data-wordsearch-clue data-field="clue" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="platform-question-card activity-content-card wordsearch-word-card" data-wordsearch-word>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-wordsearch-label>Palavra 3</span>
+                                        <h3>Conte&uacute;do da palavra</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-wordsearch-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Palavra</label>
+                                        <input data-wordsearch-term data-field="term" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Pista opcional</label>
+                                        <input data-wordsearch-clue data-field="clue" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="platform-question-card activity-content-card wordsearch-word-card" data-wordsearch-word>
+                                <div class="activity-card-header">
+                                    <div>
+                                        <span class="platform-section-label" data-wordsearch-label>Palavra 4</span>
+                                        <h3>Conte&uacute;do da palavra</h3>
+                                    </div>
+                                    <div class="activity-card-actions">
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-wordsearch-remove>Remover</button>
+                                    </div>
+                                </div>
+                                <div class="platform-form-grid">
+                                    <div class="platform-field">
+                                        <label>Palavra</label>
+                                        <input data-wordsearch-term data-field="term" type="text" value="">
+                                    </div>
+                                    <div class="platform-field">
+                                        <label>Pista opcional</label>
+                                        <input data-wordsearch-clue data-field="clue" type="text" value="">
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="platform-form-actions activity-stack-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-wordsearch-add>Adicionar palavra</button>
+                        </div>
+                    </div>
+                </details>
+            </article>
+
+            <aside class="platform-builder-card activity-preview-pane wordsearch-preview-pane">
+                <span class="platform-section-label">Preview</span>
+                <h2>Veja a grade pronta</h2>
+                <p>Confira a distribui&ccedil;&atilde;o das letras antes de apresentar.</p>
+                <div class="live-preview-stack">
+                    <section class="live-preview-card live-preview-card--teal">
+                        <span class="platform-section-label">Resumo</span>
+                        <h3 data-wordsearch-preview-title>Novo ca&ccedil;a-palavras</h3>
+                        <p data-wordsearch-preview-subtitle>Adicione palavras para montar a grade.</p>
+                        <div class="preview-chip-row">
+                            <span class="preview-chip" data-wordsearch-preview-count>0 palavras</span>
+                            <span class="preview-chip" data-wordsearch-preview-size>8 x 14</span>
+                            <span class="preview-chip" data-wordsearch-preview-mode>Com diagonais</span>
+                        </div>
+                    </section>
+                    <section class="live-preview-card wordsearch-preview-card">
+                        <div class="wordsearch-preview-layout">
+                            <div class="wordsearch-preview-board-shell">
+                                <div class="wordsearch-grid wordsearch-grid--preview" data-wordsearch-preview-board></div>
+                            </div>
+                            <div class="wordsearch-preview-bank" data-wordsearch-preview-bank></div>
+                        </div>
+                        <p class="wordsearch-preview-note" data-wordsearch-preview-note hidden></p>
+                    </section>
+                </div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>

@@ -13,6 +13,9 @@ function draftKeyForType(type) {
     if (type === "quiz") return scopedStorageKey("educaria:builder:quiz");
     if (type === "flashcards") return scopedStorageKey("educaria:builder:flashcards");
     if (type === "wheel") return scopedStorageKey("educaria:builder:wheel");
+    if (type === "hangman") return scopedStorageKey("educaria:builder:hangman");
+    if (type === "crossword") return scopedStorageKey("educaria:builder:crossword");
+    if (type === "wordsearch") return scopedStorageKey("educaria:builder:wordsearch");
     if (type === "memory") return scopedStorageKey("educaria:builder:memory");
     if (type === "match") return scopedStorageKey("educaria:builder:match");
     if (type === "mindmap") return scopedStorageKey("educaria:builder:mindmap");
@@ -25,6 +28,9 @@ function stackSelectorForType(type) {
     if (type === "quiz") return "[data-quiz-stack]";
     if (type === "flashcards") return "[data-flashcards-stack]";
     if (type === "wheel") return "[data-wheel-segments]";
+    if (type === "hangman") return "[data-hangman-entries]";
+    if (type === "crossword") return "[data-crossword-entries]";
+    if (type === "wordsearch") return "[data-wordsearch-words]";
     if (type === "memory") return "[data-memory-pairs]";
     if (type === "match") return "[data-match-pairs]";
     if (type === "mindmap") return "[data-mind-branches]";
@@ -278,6 +284,54 @@ function summarizeWheelDraft(rawDraft) {
     return { title, summary: `${count} espacos - ${firstItem}`, type: "Roleta", materialType: "wheel" };
 }
 
+function summarizeHangmanDraft(rawDraft) {
+    if (!rawDraft) {
+        return { title: "For\u00e7a sem titulo", summary: "Material salvo sem resumo definido.", type: "For\u00e7a", materialType: "hangman" };
+    }
+
+    const { parsed, doc } = parseDraftHtml(rawDraft);
+    const title = parsed.controls?.["forca-titulo"] || "For\u00e7a";
+    const words = [...doc.querySelectorAll("[data-hangman-entry]")].map((card) => {
+        return card.querySelector("[data-hangman-answer]")?.value?.trim()
+            || card.querySelector('[data-field="answer"]')?.value?.trim()
+            || "";
+    }).filter(Boolean);
+    const firstWord = words[0] || "Sem palavra inicial";
+    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "For\u00e7a", materialType: "hangman" };
+}
+
+function summarizeCrosswordDraft(rawDraft) {
+    if (!rawDraft) {
+        return { title: "Palavras cruzadas sem titulo", summary: "Material salvo sem resumo definido.", type: "Palavras cruzadas", materialType: "crossword" };
+    }
+
+    const { parsed, doc } = parseDraftHtml(rawDraft);
+    const title = parsed.controls?.["cruzada-titulo"] || "Palavras cruzadas";
+    const entries = [...doc.querySelectorAll("[data-crossword-entry]")].map((card) => {
+        return card.querySelector("[data-crossword-answer]")?.value?.trim()
+            || card.querySelector('[data-field="answer"]')?.value?.trim()
+            || "";
+    }).filter(Boolean);
+    const firstEntry = entries[0] || "Sem resposta inicial";
+    return { title, summary: `${entries.length} entradas - ${firstEntry}`, type: "Palavras cruzadas", materialType: "crossword" };
+}
+
+function summarizeWordsearchDraft(rawDraft) {
+    if (!rawDraft) {
+        return { title: "Caca-palavras sem titulo", summary: "Material salvo sem resumo definido.", type: "Caca-palavras", materialType: "wordsearch" };
+    }
+
+    const { parsed, doc } = parseDraftHtml(rawDraft);
+    const title = parsed.controls?.["caca-titulo"] || "Caca-palavras";
+    const words = [...doc.querySelectorAll("[data-wordsearch-word]")].map((card) => {
+        return card.querySelector("[data-wordsearch-term]")?.value?.trim()
+            || card.querySelector('[data-field="term"]')?.value?.trim()
+            || "";
+    }).filter(Boolean);
+    const firstWord = words[0] || "Sem palavra inicial";
+    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Caca-palavras", materialType: "wordsearch" };
+}
+
 function summarizeMemoryDraft(rawDraft) {
     if (!rawDraft) {
         return { title: "Jogo da memoria sem titulo", summary: "Material salvo sem resumo definido.", type: "Jogo da memoria", materialType: "memory" };
@@ -355,6 +409,9 @@ function summarizeCurrentDraft(preferredType = "") {
         if (currentType === "flashcards") return { rawDraft: currentDraft, summary: summarizeFlashcardsDraft(currentDraft), materialType: "flashcards" };
         if (currentType === "quiz") return { rawDraft: currentDraft, summary: summarizeQuizDraft(currentDraft), materialType: "quiz" };
         if (currentType === "wheel") return { rawDraft: currentDraft, summary: summarizeWheelDraft(currentDraft), materialType: "wheel" };
+        if (currentType === "hangman") return { rawDraft: currentDraft, summary: summarizeHangmanDraft(currentDraft), materialType: "hangman" };
+        if (currentType === "crossword") return { rawDraft: currentDraft, summary: summarizeCrosswordDraft(currentDraft), materialType: "crossword" };
+        if (currentType === "wordsearch") return { rawDraft: currentDraft, summary: summarizeWordsearchDraft(currentDraft), materialType: "wordsearch" };
         if (currentType === "memory") return { rawDraft: currentDraft, summary: summarizeMemoryDraft(currentDraft), materialType: "memory" };
         if (currentType === "match") return { rawDraft: currentDraft, summary: summarizeMatchDraft(currentDraft), materialType: "match" };
         if (currentType === "mindmap") return { rawDraft: currentDraft, summary: summarizeMindmapDraft(currentDraft), materialType: "mindmap" };
@@ -362,7 +419,7 @@ function summarizeCurrentDraft(preferredType = "") {
         return { rawDraft: currentDraft, summary: summarizeSlidesDraft(currentDraft), materialType: "slides" };
     }
 
-    const fallbackOrder = ["lesson", "slides", "flashcards", "quiz", "wheel", "memory", "match", "mindmap", "debate"];
+    const fallbackOrder = ["lesson", "slides", "flashcards", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"];
     for (const type of fallbackOrder) {
         const draft = readCurrentDraftByType(type);
         if (!draft) continue;
@@ -582,6 +639,9 @@ function editorPathForLesson(lesson) {
     if (lesson.materialType === "quiz") return "quiz-builder.html";
     if (lesson.materialType === "flashcards") return "flashcards-builder.html";
     if (lesson.materialType === "wheel") return "roleta-builder.html";
+    if (lesson.materialType === "hangman") return "atividade-reservada.html";
+    if (lesson.materialType === "crossword") return "palavras-cruzadas-builder.html";
+    if (lesson.materialType === "wordsearch") return "caca-palavras-builder.html";
     if (lesson.materialType === "memory") return "jogo-memoria-builder.html";
     if (lesson.materialType === "match") return "ligar-pontos-builder.html";
     if (lesson.materialType === "mindmap") return "mapa-mental-builder.html";
@@ -601,6 +661,9 @@ function materialGroupLabel(type) {
     if (type === "quiz") return "Quiz";
     if (type === "flashcards") return "Flashcards";
     if (type === "wheel") return "Roleta";
+    if (type === "hangman") return "For\u00e7a";
+    if (type === "crossword") return "Palavras cruzadas";
+    if (type === "wordsearch") return "Caca-palavras";
     if (type === "memory") return "Jogo da memoria";
     if (type === "match") return "Ligar pontos";
     if (type === "mindmap") return "Mapa mental";
@@ -613,6 +676,9 @@ function materialGroupDescription(type) {
     if (type === "quiz") return "Perguntas para revisar, aplicar e projetar em sala.";
     if (type === "flashcards") return "Cards para retomada rapida e revisao visual.";
     if (type === "wheel") return "Sorteios, comandos e desafios prontos para a turma.";
+    if (type === "hangman") return "Palavras com dicas para revisar vocabulario, ortografia e conceitos de forma dinamica.";
+    if (type === "crossword") return "Grades com respostas cruzadas para revisar conceitos, vocabulario e definicoes.";
+    if (type === "wordsearch") return "Grades com palavras escondidas para revisar vocabulario, conceitos e temas.";
     if (type === "memory") return "Pares para jogar, revisar e memorizar em sala.";
     if (type === "match") return "Associacoes em duas colunas para ligar e revisar em sala.";
     if (type === "mindmap") return "Topicos conectados para organizar, explicar e revisar conteudos.";
@@ -802,7 +868,7 @@ function hydrateClassPage() {
             return groups;
         }, {});
 
-        const groupOrder = ["lesson", "quiz", "slides", "flashcards", "wheel", "memory", "match", "mindmap", "debate"];
+        const groupOrder = ["lesson", "quiz", "slides", "flashcards", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"];
         listRoot.innerHTML = groupOrder
             .map((key) => {
                 const groupItems = groupedLessons[key] || [];

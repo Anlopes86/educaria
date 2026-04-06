@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresentação de Palavras Cruzadas | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/storage-scope.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/crossword-core.js" defer></script>
+    <script src="../assets/js/crossword-runtime.js" defer></script>
+</head>
+<body data-material-type="crossword">
+    <main class="presentation-shell crossword-presentation-shell">
+        <header class="presentation-topbar presentation-topbar--minimal">
+            <div class="platform-top-actions">
+                <a href="palavras-cruzadas-builder.html" class="platform-link-button platform-link-secondary">Voltar à edição</a>
+                <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
+            </div>
+        </header>
+
+        <section class="crossword-stage-layout crossword-stage-layout--full">
+            <article class="crossword-stage-card crossword-stage-card--full">
+                <div class="crossword-stage-head">
+                    <div>
+                        <span class="platform-section-label">Palavras cruzadas</span>
+                        <h1 data-crossword-stage-title>Palavras cruzadas</h1>
+                        <p data-crossword-stage-subtitle>Preencha as respostas usando as pistas horizontais e verticais.</p>
+                    </div>
+                    <div class="crossword-stage-actions">
+                        <button type="button" class="platform-link-button platform-link-secondary" data-crossword-check>Conferir</button>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-crossword-toggle-solution>Mostrar gabarito</button>
+                    </div>
+                </div>
+
+                <div class="preview-chip-row crossword-stage-meta">
+                    <span class="preview-chip" data-crossword-stage-count>0 entradas</span>
+                    <span class="preview-chip" data-crossword-stage-size>11 x 11</span>
+                </div>
+
+                <div class="crossword-stage-body">
+                    <div class="crossword-board-shell crossword-board-shell--stage">
+                        <div data-crossword-stage-board></div>
+                    </div>
+                    <aside class="crossword-stage-sidebar">
+                        <section class="crossword-clues-group">
+                            <span class="platform-section-label">Horizontal</span>
+                            <div data-crossword-stage-across></div>
+                        </section>
+                        <section class="crossword-clues-group">
+                            <span class="platform-section-label">Vertical</span>
+                            <div data-crossword-stage-down></div>
+                        </section>
+                        <p class="crossword-preview-note crossword-stage-note" data-crossword-stage-note hidden></p>
+                    </aside>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

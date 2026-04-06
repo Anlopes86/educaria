@@ -519,6 +519,74 @@ function applyMatchFromStructuredData(payload) {
     return true;
 }
 
+function normalizeCrosswordWord(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Za-z0-9]/g, "")
+        .toUpperCase();
+}
+
+function suggestedCrosswordSize(entries) {
+    const options = [9, 11, 13, 15, 17];
+    const longest = entries.reduce((max, entry) => Math.max(max, normalizeCrosswordWord(entry.answer).length), 0);
+    const density = Math.max(longest + 2, Math.ceil(entries.length * 1.2) + 4);
+    return String(options.find((size) => size >= density) || 17);
+}
+
+function applyCrosswordFromStructuredData(payload) {
+    const entries = Array.isArray(payload?.entries) ? payload.entries : [];
+    if (!entries.length) return false;
+
+    const normalizedEntries = entries
+        .map((entry, index) => ({
+            answer: String(entry?.answer || "").trim(),
+            clue: String(entry?.clue || "").trim() || `Pista ${index + 1}`
+        }))
+        .filter((entry) => normalizeCrosswordWord(entry.answer).length >= 2);
+    if (!normalizedEntries.length) return false;
+
+    const titleField = document.getElementById("cruzada-titulo");
+    const subtitleField = document.getElementById("cruzada-subtitulo");
+    const sizeField = document.getElementById("cruzada-grade");
+    const aiTitleField = document.getElementById("cruzada-titulo-ia");
+
+    if (titleField) {
+        titleField.value = payload.title || aiTitleField?.value.trim() || "Palavras cruzadas";
+    }
+    if (subtitleField) {
+        subtitleField.value = payload.subtitle || "Complete a cruzadinha usando as pistas.";
+    }
+    if (sizeField) {
+        sizeField.value = suggestedCrosswordSize(normalizedEntries);
+    }
+
+    const cards = ensureCardCount("[data-crossword-entries]", "[data-crossword-entry]", normalizedEntries.length);
+    if (!cards.length) return false;
+
+    cards.forEach((card, index) => {
+        const item = normalizedEntries[index] || {};
+        const label = card.querySelector("[data-crossword-label]");
+        const answer = card.querySelector("[data-crossword-answer]");
+        const clue = card.querySelector("[data-crossword-clue]");
+
+        if (label) label.textContent = `Entrada ${index + 1}`;
+        if (answer) answer.value = item.answer || "";
+        if (clue) clue.value = item.clue || "";
+    });
+
+    if (typeof renumberCrosswordEntries === "function") {
+        renumberCrosswordEntries();
+    }
+    if (typeof renderCrosswordPreview === "function") {
+        renderCrosswordPreview();
+    }
+
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
 function applyWheelFromStructuredData(payload) {
     const segments = Array.isArray(payload?.segments) ? payload.segments : [];
     if (!segments.length) return false;
@@ -827,6 +895,89 @@ function buildFallbackMatch(sourceText, requestedCount) {
     };
 }
 
+function extractCrosswordEntriesFromDelimitedLines(lines, requestedCount) {
+    return lines
+        .map((line) => {
+            const parts = line.split(/\s*[â€”â€“:-]\s*/).filter(Boolean);
+            if (parts.length < 2) return null;
+            return {
+                answer: summarizeBlock(parts[0], "Termo"),
+                clue: summarizeBlock(parts.slice(1).join(" - "), "Pista")
+            };
+        })
+        .filter(Boolean)
+        .slice(0, requestedCount || 8);
+}
+
+function buildKeywordEntriesForCrossword(sourceText, requestedCount) {
+    const lines = normalizeLines(sourceText);
+    const cleanSentences = String(sourceText || "")
+        .replace(/\r/g, "")
+        .split(/(?<=[.!?])\s+|\n+/)
+        .map((item) => item.replace(/\s+/g, " ").trim())
+        .filter(Boolean);
+    const stopwords = new Set([
+        "A", "AS", "O", "OS", "UM", "UMA", "UNS", "UMAS", "DE", "DA", "DO", "DAS", "DOS", "E", "EM", "NO", "NA", "NOS", "NAS",
+        "PARA", "POR", "COM", "SEM", "SOBRE", "AO", "AOS", "QUE", "SE", "SER", "SAO", "EH", "FOI", "ERA", "COMO", "MAIS",
+        "MENOS", "MUITO", "MUITA", "MUITOS", "MUITAS", "JA", "TAMBEM", "ENTRE", "SEU", "SUA", "SEUS", "SUAS", "NUM", "NUMA",
+        "NESTE", "NESTA", "NESSE", "NESSA", "ESTE", "ESTA", "ESSE", "ESSA", "TEMA", "AULA", "ASSUNTO", "TOPICO"
+    ]);
+    const frequency = new Map();
+    const displayMap = new Map();
+
+    cleanSentences.forEach((sentence) => {
+        sentence.split(/[^A-Za-zÀ-ÿ0-9]+/)
+            .map((word) => String(word || "").trim())
+            .filter(Boolean)
+            .forEach((word) => {
+                const normalized = normalizeCrosswordWord(word);
+                if (normalized.length < 3 || normalized.length > 14 || stopwords.has(normalized)) return;
+
+                frequency.set(normalized, (frequency.get(normalized) || 0) + 1);
+                if (!displayMap.has(normalized)) {
+                    displayMap.set(normalized, word);
+                }
+            });
+    });
+
+    return [...frequency.entries()]
+        .sort((left, right) => {
+            if (right[1] !== left[1]) return right[1] - left[1];
+            if (right[0].length !== left[0].length) return right[0].length - left[0].length;
+            return left[0].localeCompare(right[0]);
+        })
+        .slice(0, requestedCount || 8)
+        .map(([normalized], index) => {
+            const answer = displayMap.get(normalized) || normalized;
+            const sentence = cleanSentences.find((item) => normalizeCrosswordWord(item).includes(normalized)) || lines[index] || "";
+            const clue = sentence && normalizeCrosswordWord(sentence) !== normalized
+                ? summarizeBlock(sentence, "Palavra-chave do tema")
+                : "Palavra-chave relacionada ao tema.";
+            return { answer, clue };
+        });
+}
+
+function buildFallbackCrossword(sourceText, requestedCount) {
+    const lines = normalizeLines(sourceText);
+    const requested = Math.max(4, Math.min(12, requestedCount || 8));
+    const explicitEntries = extractCrosswordEntriesFromDelimitedLines(lines, requested);
+    const generatedEntries = explicitEntries.length >= 2
+        ? explicitEntries
+        : buildKeywordEntriesForCrossword(sourceText, requested);
+    const topic = lines[0] || "tema";
+
+    return {
+        title: document.getElementById("cruzada-titulo-ia")?.value.trim() || `Cruzadinha sobre ${summarizeBlock(topic, "o tema")}`,
+        subtitle: `Complete a cruzadinha com base no tema estudado: ${summarizeBlock(topic, "conteúdo da aula")}.`,
+        entries: generatedEntries.length >= 2
+            ? generatedEntries
+            : [
+                { answer: summarizeBlock(topic.split(/\s+/)[0] || "Tema", "Tema"), clue: "Palavra principal do tema." },
+                { answer: summarizeBlock(topic.split(/\s+/)[1] || "Aula", "Aula"), clue: "Segunda palavra relacionada ao tema." }
+            ]
+    };
+}
+
 function buildFallbackWheel(sourceText, requestedCount) {
     const lines = normalizeLines(sourceText);
     const palette = activityColorPalette();
@@ -952,6 +1103,17 @@ function materialConfig(materialType) {
         };
     }
 
+    if (materialType === "crossword") {
+        return {
+            textId: "cruzada-fonte-texto",
+            fileId: "cruzada-arquivo",
+            actionId: "cruzada-acao-ia",
+            countId: "cruzada-quantidade",
+            apply: applyCrosswordFromStructuredData,
+            fallback: buildFallbackCrossword
+        };
+    }
+
     if (materialType === "match") {
         return {
             textId: "ligar-fonte-texto",
@@ -1070,6 +1232,13 @@ async function generateMaterial(materialType, button) {
                 action,
                 requestedCount ? `Gerar ${requestedCount} topicos.` : "",
                 layoutText ? `Leitura desejada: ${layoutText}.` : ""
+            ].filter(Boolean).join(" ")
+                        : materialType === "crossword"
+                            ? [
+                action,
+                requestedCount ? `Gerar ${requestedCount} entradas.` : "",
+                document.getElementById("cruzada-titulo-ia")?.value ? `Titulo desejado: ${document.getElementById("cruzada-titulo-ia").value}.` : "",
+                "Retornar respostas curtas e pistas objetivas em portugues do Brasil."
             ].filter(Boolean).join(" ")
                         : materialType === "memory"
                             ? [

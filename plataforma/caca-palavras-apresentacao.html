@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apresenta&ccedil;&atilde;o do Ca&ccedil;a-palavras | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="../assets/js/storage-scope.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/wordsearch-core.js" defer></script>
+    <script src="../assets/js/wordsearch-runtime.js" defer></script>
+</head>
+<body data-material-type="wordsearch">
+    <main class="presentation-shell wordsearch-presentation-shell">
+        <header class="presentation-topbar presentation-topbar--minimal">
+            <div class="platform-top-actions">
+                <a href="caca-palavras-builder.html" class="platform-link-button platform-link-secondary">Voltar &agrave; edi&ccedil;&atilde;o</a>
+                <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
+            </div>
+        </header>
+
+        <section class="wordsearch-stage-layout wordsearch-stage-layout--full">
+            <article class="wordsearch-stage-card wordsearch-stage-card--full">
+                <div class="wordsearch-stage-head">
+                    <div>
+                        <span class="platform-section-label">Ca&ccedil;a-palavras</span>
+                        <h1 data-wordsearch-stage-title>Ca&ccedil;a-palavras</h1>
+                        <p data-wordsearch-stage-subtitle>Encontre os termos escondidos na grade.</p>
+                    </div>
+                    <div class="wordsearch-stage-actions">
+                        <button type="button" class="platform-link-button platform-link-secondary" data-wordsearch-toggle-solution>Mostrar gabarito</button>
+                    </div>
+                </div>
+
+                <div class="preview-chip-row wordsearch-stage-meta">
+                    <span class="preview-chip" data-wordsearch-stage-count>0 palavras</span>
+                    <span class="preview-chip" data-wordsearch-stage-size>8 x 14</span>
+                    <span class="preview-chip" data-wordsearch-stage-mode>Com diagonais</span>
+                </div>
+
+                <div class="wordsearch-stage-body">
+                    <div class="wordsearch-stage-board-shell">
+                        <div class="wordsearch-grid wordsearch-grid--stage" data-wordsearch-stage-board></div>
+                    </div>
+                    <aside class="wordsearch-stage-sidebar">
+                        <div class="wordsearch-stage-bank" data-wordsearch-stage-bank></div>
+                        <p class="wordsearch-stage-note" data-wordsearch-stage-note hidden></p>
+                    </aside>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>
