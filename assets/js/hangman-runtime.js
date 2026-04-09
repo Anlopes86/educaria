@@ -145,6 +145,37 @@ function renderHangmanApplication() {
         }).join("");
     }
 
+    function renderWordMask(mask) {
+        const groups = [];
+        let currentGroup = [];
+
+        mask.forEach((token) => {
+            if (token.char === " ") {
+                if (currentGroup.length) {
+                    groups.push(currentGroup);
+                    currentGroup = [];
+                }
+                return;
+            }
+
+            currentGroup.push(token);
+        });
+
+        if (currentGroup.length) {
+            groups.push(currentGroup);
+        }
+
+        return groups.map((group) => `
+            <span class="hangman-word-group">
+                ${group.map((token) => `
+                    <span class="hangman-letter-slot ${token.guessable ? "" : "is-static"} ${token.visible && token.guessable ? "is-revealed" : ""}">
+                        ${api.escapeHtml(token.display)}
+                    </span>
+                `).join("")}
+            </span>
+        `).join("");
+    }
+
     function renderStage() {
         const entry = currentEntry();
         const mask = currentMaskedWord();
@@ -159,11 +190,7 @@ function renderHangmanApplication() {
         if (wrongRoot) wrongRoot.textContent = wrongLetters.size ? [...wrongLetters].join(", ") : "Nenhuma letra errada ainda.";
 
         if (wordRoot) {
-            wordRoot.innerHTML = mask.map((token) => `
-                <span class="hangman-letter-slot ${token.guessable ? "" : "is-static"} ${token.visible && token.guessable ? "is-revealed" : ""}">
-                    ${api.escapeHtml(token.display)}
-                </span>
-            `).join("");
+            wordRoot.innerHTML = renderWordMask(mask);
         }
 
         if (figureRoot) {

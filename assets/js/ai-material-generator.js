@@ -6,12 +6,128 @@ function readTextFile(file) {
     return file.text().catch(() => "");
 }
 
+function readTemplateFile(file) {
+    if (!file) {
+        return Promise.resolve("");
+    }
+
+    return file.text().then((content) => {
+        const fileName = String(file.name || "").toLowerCase();
+
+        if (file.type === "text/plain" || fileName.endsWith(".txt")) {
+            return content;
+        }
+
+        if (fileName.endsWith(".rtf")) {
+            return String(content || "")
+                .replace(/\\par[d]?/g, "\n")
+                .replace(/\\'[0-9a-fA-F]{2}/g, "")
+                .replace(/\\[a-z]+\d* ?/g, "")
+                .replace(/[{}]/g, "")
+                .replace(/\r/g, "")
+                .replace(/\n{2,}/g, "\n")
+                .trim();
+        }
+
+        return "";
+    }).catch(() => "");
+}
+
+function escapeAttr(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+}
+
+function aiReadyModalTemplate() {
+    return `
+        <div class="platform-modal-backdrop" data-ai-ready-modal hidden>
+            <div class="platform-modal-card" role="dialog" aria-modal="true" aria-labelledby="ai-ready-modal-title">
+                <div class="page-section-title page-section-title--compact">
+                    <div>
+                        <span class="platform-section-label">Montar com IA</span>
+                        <h2 id="ai-ready-modal-title">Apresentação pronta!</h2>
+                    </div>
+                    <p>Apresentação pronta! Confira as informações em 'editar manualmente' antes de utilizar.</p>
+                </div>
+                <div class="utility-actions">
+                    <button type="button" class="platform-link-button platform-link-primary" data-ai-ready-modal-close>Entendi</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function ensureAiReadyModal() {
+    let modal = document.querySelector("[data-ai-ready-modal]");
+    if (modal) return modal;
+
+    document.body.insertAdjacentHTML("beforeend", aiReadyModalTemplate());
+    return document.querySelector("[data-ai-ready-modal]");
+}
+
+function closeAiReadyModal() {
+    const modal = document.querySelector("[data-ai-ready-modal]");
+    if (!modal) return;
+    modal.hidden = true;
+}
+
+function openAiReadyModal() {
+    const modal = ensureAiReadyModal();
+    if (!modal) return;
+    modal.hidden = false;
+}
+
 function normalizeLines(text) {
     return String(text || "")
         .replace(/\r/g, "")
         .split("\n")
         .map((line) => line.trim())
         .filter(Boolean);
+}
+
+function parseWheelTemplateTextLocal(sourceText) {
+    const normalizedLines = String(sourceText || "")
+        .replace(/\r/g, "")
+        .split("\n")
+        .map((line) => line.replace(/\s+/g, " ").trim())
+        .filter(Boolean);
+
+    const segments = normalizedLines
+        .map((line) => {
+            const match = line.match(/^espac[oó]\s*\d+\s*:\s*(.+)$/i);
+            if (!match) return null;
+
+            const value = String(match[1] || "").trim().replace(/^_+|_+$/g, "").trim();
+            if (!value) return null;
+            if (/^revisao rapida$/i.test(value) || /^pergunta surpresa$/i.test(value) || /^explique um conceito$/i.test(value)) {
+                return { text: value, example: true };
+            }
+
+            return { text: value, example: false };
+        })
+        .filter(Boolean);
+
+    const usableSegments = (segments.filter((item) => !item.example).length >= 2
+        ? segments.filter((item) => !item.example)
+        : segments)
+        .slice(0, 24)
+        .map((segment, index) => ({
+            text: segment.text,
+            color: activityColorPalette()[index % activityColorPalette().length]
+        }));
+
+    if (usableSegments.length < 2) {
+        throw new Error("Preencha pelo menos dois campos do modelo da roleta antes de gerar.");
+    }
+
+    return {
+        title: "Roleta estruturada pelo modelo",
+        eliminate_used: false,
+        segments: usableSegments
+    };
 }
 
 function summarizeBlock(text, fallback = "") {
@@ -627,6 +743,60 @@ function applyWheelFromStructuredData(payload) {
     return true;
 }
 
+function applyWordsearchFromStructuredData(payload) {
+    const words = Array.isArray(payload?.words) ? payload.words : [];
+    const normalizedWords = words
+        .map((entry) => ({
+            term: String(entry?.term || "").trim(),
+            clue: String(entry?.clue || "").trim()
+        }))
+        .filter((entry) => entry.term);
+    const stack = document.querySelector("[data-wordsearch-words]");
+
+    if (!stack || normalizedWords.length < 2) return false;
+
+    const titleField = document.getElementById("caca-titulo");
+    const subtitleField = document.getElementById("caca-subtitulo");
+
+    if (titleField) titleField.value = payload.title || "Novo caca-palavras";
+    if (subtitleField) subtitleField.value = payload.subtitle || "Encontre os termos principais do conteudo.";
+
+    stack.innerHTML = normalizedWords.map((entry, index) => `
+        <section class="platform-question-card activity-content-card wordsearch-word-card" data-wordsearch-word>
+            <div class="activity-card-header">
+                <div>
+                    <span class="platform-section-label" data-wordsearch-label>Palavra ${index + 1}</span>
+                    <h3>Conteudo da palavra</h3>
+                </div>
+                <div class="activity-card-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-wordsearch-remove>Remover</button>
+                </div>
+            </div>
+            <div class="platform-form-grid">
+                <div class="platform-field">
+                    <label>Palavra</label>
+                    <input data-wordsearch-term data-field="term" type="text" value="${escapeAttr(entry.term)}">
+                </div>
+                <div class="platform-field">
+                    <label>Pista opcional</label>
+                    <input data-wordsearch-clue data-field="clue" type="text" value="${escapeAttr(entry.clue)}">
+                </div>
+            </div>
+        </section>
+    `).join("");
+
+    if (typeof renumberWordsearchCards === "function") {
+        renumberWordsearchCards();
+    }
+    if (typeof renderWordsearchPreview === "function") {
+        renderWordsearchPreview();
+    }
+
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
 function applyMindmapFromStructuredData(payload) {
     const branches = Array.isArray(payload?.branches) ? payload.branches : [];
     if (!branches.length) return false;
@@ -995,6 +1165,28 @@ function buildFallbackWheel(sourceText, requestedCount) {
     };
 }
 
+function buildFallbackWordsearch(sourceText, requestedCount) {
+    const lines = normalizeLines(sourceText);
+    const requested = Math.max(2, Math.min(20, requestedCount || 8));
+    const words = (lines.length ? lines : ["Tema", "Conceito", "Exemplo", "Revisao", "Conteudo", "Aula", "Termo", "Palavra"])
+        .map((line) => {
+            const parts = line.split(/\s*[â€”â€“:-]\s*/).filter(Boolean);
+            return {
+                term: summarizeBlock(parts[0] || line, "Palavra"),
+                clue: summarizeBlock(parts.slice(1).join(" - "), "")
+            };
+        })
+        .filter((entry) => entry.term)
+        .slice(0, requested);
+
+    const topic = lines[0] || "o tema";
+    return {
+        title: `Caca-palavras sobre ${summarizeBlock(topic, "o tema")}`,
+        subtitle: "Encontre os termos principais escondidos na grade.",
+        words
+    };
+}
+
 function resolveAiEndpoint() {
     if (window.EDUCARIA_AI_ENDPOINT) {
         return window.EDUCARIA_AI_ENDPOINT;
@@ -1014,6 +1206,11 @@ function resolveAiEndpoint() {
 function resolveAiHealthEndpoint() {
     const endpoint = resolveAiEndpoint();
     return endpoint.replace(/\/api\/ai\/generate$/, "/api/health");
+}
+
+function resolveTemplateEndpoint() {
+    const endpoint = resolveAiEndpoint();
+    return endpoint.replace(/\/api\/ai\/generate$/, "/api/model-template/generate");
 }
 
 async function checkAiHealth() {
@@ -1047,6 +1244,28 @@ async function requestStructuredMaterial(materialType, sourceText, file, action)
     if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
         throw new Error(errorPayload?.error || "Nao foi possivel gerar o material com IA.");
+    }
+
+    return response.json();
+}
+
+async function requestTemplateStructuredMaterial(materialType, file) {
+    const endpoint = resolveTemplateEndpoint();
+    const formData = new FormData();
+    formData.append("materialType", materialType);
+
+    if (file) {
+        formData.append("file", file);
+    }
+
+    const response = await fetch(endpoint, {
+        method: "POST",
+        body: formData
+    });
+
+    if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        throw new Error(errorPayload?.error || "Nao foi possivel estruturar o arquivo modelo.");
     }
 
     return response.json();
@@ -1136,6 +1355,16 @@ function materialConfig(materialType) {
         };
     }
 
+    if (materialType === "wordsearch") {
+        return {
+            textId: "caca-fonte-texto",
+            fileId: "caca-arquivo",
+            countId: "caca-quantidade-ia",
+            apply: applyWordsearchFromStructuredData,
+            fallback: buildFallbackWordsearch
+        };
+    }
+
     if (materialType === "mindmap") {
         return {
             textId: "mind-fonte-texto",
@@ -1161,6 +1390,51 @@ function materialConfig(materialType) {
     }
 
     return null;
+}
+
+async function generateMaterialFromTemplate(materialType, button) {
+    const config = materialConfig(materialType);
+    if (!config) return;
+
+    const fileField = document.getElementById(config.fileId);
+    const file = fileField?.files?.[0] || null;
+
+    if (!file) {
+        window.alert("Envie um arquivo preenchido com o modelo antes de usar esta opcao.");
+        return;
+    }
+
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = "Lendo modelo...";
+
+    try {
+        let material = null;
+
+        if (materialType === "wheel") {
+            const fileText = await readTemplateFile(file);
+            if (!fileText) {
+                throw new Error("Use o arquivo modelo baixado da roleta em formato RTF ou TXT.");
+            }
+            material = parseWheelTemplateTextLocal(fileText);
+        } else {
+            const payload = await requestTemplateStructuredMaterial(materialType, file);
+            material = payload?.material;
+        }
+
+        const applied = config.apply(material);
+        if (!applied) {
+            throw new Error("O arquivo modelo nao trouxe dados suficientes para preencher o editor.");
+        }
+
+        openAiReadyModal();
+    } catch (error) {
+        const detail = error instanceof Error ? error.message : "Erro desconhecido.";
+        window.alert(`Nao foi possivel montar o material a partir do arquivo modelo.\n\nDetalhe: ${detail}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+    }
 }
 
 async function generateMaterial(materialType, button) {
@@ -1205,7 +1479,7 @@ async function generateMaterial(materialType, button) {
     try {
         await checkAiHealth();
 
-        const generationHints = materialType === "quiz"
+        let generationHints = materialType === "quiz"
             ? [
                 action,
                 requestedCount ? `Gerar ${requestedCount} perguntas.` : "",
@@ -1266,11 +1540,20 @@ async function generateMaterial(materialType, button) {
                 formatText ? `Formato desejado: ${formatText}.` : ""
             ].filter(Boolean).join(" ");
 
+        if (materialType === "wordsearch") {
+            generationHints = [
+                requestedCount ? `Gerar ${requestedCount} palavras.` : "",
+                "Prefira termos curtos, claros e adequados para um caca-palavras."
+            ].filter(Boolean).join(" ");
+        }
+
         const payload = await requestStructuredMaterial(materialType, sourceText, file, generationHints);
         const applied = config.apply(payload?.material);
         if (!applied) {
             throw new Error("A resposta da IA nao trouxe dados suficientes para preencher o editor.");
         }
+
+        openAiReadyModal();
     } catch (error) {
         console.warn("EducarIA AI generation fallback:", error);
         const fallbackPayload = config.fallback(sourceText, requestedCount);
@@ -1298,6 +1581,27 @@ function bindAiMaterialGenerator() {
         event.preventDefault();
         const materialType = button.dataset.generateMaterial;
         generateMaterial(materialType, button);
+    });
+
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-generate-model-material]");
+        if (!button) return;
+
+        event.preventDefault();
+        const materialType = button.dataset.generateModelMaterial;
+        generateMaterialFromTemplate(materialType, button);
+    });
+
+    document.addEventListener("click", (event) => {
+        if (event.target.matches("[data-ai-ready-modal]") || event.target.closest("[data-ai-ready-modal-close]")) {
+            closeAiReadyModal();
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+            closeAiReadyModal();
+        }
     });
 }
 

@@ -26,6 +26,7 @@
             </a>
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Voltar a biblioteca</a>
                 <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
@@ -40,11 +41,31 @@
                 <span class="focus-eyebrow">Editor de for&ccedil;a</span>
                 <h1>Monte palavras, dicas e acompanhe a rodada no preview.</h1>
                 <p>Ideal para revisar vocabul&aacute;rio, ortografia e conceitos-chave de forma r&aacute;pida.</p>
+                <p>Para criar sem utilizar a IA, baixe o modelo com os campos prontos, preencha os espa&ccedil;os, salve o arquivo e selecione em 'arquivo de apoio' logo acima.</p>
             </div>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Arquivo modelo</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label for="forca-arquivo-modelo">Arquivo de apoio</label>
+                                <input id="forca-arquivo-modelo" type="file" accept=".txt,.rtf">
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <a href="../assets/templates/modelo-forca.rtf" download="modelo-forca.rtf" class="platform-link-button model-file-button model-file-button--download">Baixar modelo para Word</a>
+                            <button type="button" class="platform-link-button model-file-button model-file-button--generate" data-hangman-load-model>Gerar com arquivo modelo</button>
+                        </div>
+                    </div>
+                </details>
+
                 <details class="editor-disclosure" open>
                     <summary>
                         <span>Configura&ccedil;&atilde;o manual</span>
@@ -194,7 +215,7 @@
 
             <aside class="platform-builder-card activity-preview-pane hangman-preview-pane">
                 <span class="platform-section-label">Preview</span>
-                <h2>Veja a for&ccedil;a pronta</h2>
+                <h2>Veja a forca pronta</h2>
                 <p>Confira a primeira rodada antes de apresentar para a turma.</p>
                 <div class="live-preview-stack">
                     <section class="live-preview-card live-preview-card--teal">

@@ -6,6 +6,31 @@ function wordsearchEscapeAttr(value) {
         .replaceAll(">", "&gt;");
 }
 
+function readWordsearchModelFile(file) {
+    if (!file) return Promise.resolve("");
+
+    return file.text().then((content) => {
+        const fileName = String(file.name || "").toLowerCase();
+
+        if (file.type === "text/plain" || fileName.endsWith(".txt")) {
+            return content;
+        }
+
+        if (fileName.endsWith(".rtf")) {
+            return String(content || "")
+                .replace(/\\par[d]?/g, "\n")
+                .replace(/\\'[0-9a-fA-F]{2}/g, "")
+                .replace(/\\[a-z]+\d* ?/g, "")
+                .replace(/[{}]/g, "")
+                .replace(/\r/g, "")
+                .replace(/\n{2,}/g, "\n")
+                .trim();
+        }
+
+        return "";
+    }).catch(() => "");
+}
+
 function wordsearchCardTemplate(index, term = "", clue = "") {
     return `
         <section class="platform-question-card activity-content-card wordsearch-word-card" data-wordsearch-word>
@@ -30,6 +55,114 @@ function wordsearchCardTemplate(index, term = "", clue = "") {
             </div>
         </section>
     `;
+}
+
+function parseWordsearchTemplateText(sourceText) {
+    const normalizedLines = String(sourceText || "")
+        .replace(/\r/g, "")
+        .split("\n")
+        .map((line) => line.replace(/\s+/g, " ").trim())
+        .filter(Boolean);
+
+    const wordsMap = new Map();
+    let title = "";
+    let subtitle = "";
+
+    normalizedLines.forEach((line) => {
+        const titleMatch = line.match(/^titulo da atividade\s*:\s*(.*)$/i);
+        if (titleMatch) {
+            title = String(titleMatch[1] || "").trim();
+            return;
+        }
+
+        const subtitleMatch = line.match(/^subtitulo ou orientac[aã]o\s*:\s*(.*)$/i);
+        if (subtitleMatch) {
+            subtitle = String(subtitleMatch[1] || "").trim();
+            return;
+        }
+
+        const termMatch = line.match(/^palavra\s*(\d+)\s*:\s*(.*)$/i);
+        if (termMatch) {
+            const index = Number(termMatch[1] || 0);
+            if (!wordsMap.has(index)) wordsMap.set(index, { term: "", clue: "" });
+            wordsMap.get(index).term = String(termMatch[2] || "").trim();
+            return;
+        }
+
+        const clueMatch = line.match(/^pista\s*(\d+)\s*:\s*(.*)$/i);
+        if (clueMatch) {
+            const index = Number(clueMatch[1] || 0);
+            if (!wordsMap.has(index)) wordsMap.set(index, { term: "", clue: "" });
+            wordsMap.get(index).clue = String(clueMatch[2] || "").trim();
+        }
+    });
+
+    const words = [...wordsMap.entries()]
+        .sort((left, right) => left[0] - right[0])
+        .map(([, value]) => value)
+        .filter((entry) => entry.term);
+
+    if (words.length < 2) {
+        throw new Error("Preencha pelo menos duas palavras no modelo do caça-palavras.");
+    }
+
+    return { title, subtitle, words };
+}
+
+function applyWordsearchTemplateData(payload) {
+    const stack = document.querySelector("[data-wordsearch-words]");
+    if (!stack) return false;
+
+    const words = Array.isArray(payload?.words) ? payload.words.filter((entry) => entry?.term) : [];
+    if (words.length < 2) return false;
+
+    const titleField = document.getElementById("caca-titulo");
+    const subtitleField = document.getElementById("caca-subtitulo");
+
+    if (titleField && payload.title) titleField.value = payload.title;
+    if (subtitleField && payload.subtitle) subtitleField.value = payload.subtitle;
+
+    stack.innerHTML = words.map((entry, index) => (
+        wordsearchCardTemplate(index, entry.term || "", entry.clue || "")
+    )).join("");
+
+    renumberWordsearchCards();
+    renderWordsearchPreview();
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
+async function loadWordsearchModelFile(button) {
+    const fileField = document.getElementById("caca-arquivo-modelo");
+    const file = fileField?.files?.[0] || null;
+
+    if (!file) {
+        window.alert("Selecione um arquivo de apoio do caça-palavras antes de gerar.");
+        return;
+    }
+
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = "Lendo modelo...";
+
+    try {
+        const fileText = await readWordsearchModelFile(file);
+        if (!fileText) {
+            throw new Error("Use o arquivo modelo do caça-palavras em formato RTF ou TXT.");
+        }
+
+        const payload = parseWordsearchTemplateText(fileText);
+        if (!applyWordsearchTemplateData(payload)) {
+            throw new Error("O arquivo modelo do caça-palavras nao trouxe dados suficientes.");
+        }
+    } catch (error) {
+        const detail = error instanceof Error ? error.message : "Erro desconhecido.";
+        window.alert(`Nao foi possivel montar o caça-palavras com o arquivo modelo.\n\nDetalhe: ${detail}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+    }
 }
 
 function collectWordsearchWords() {
@@ -195,6 +328,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const presentLink = event.target.closest('a[href="caca-palavras-apresentacao.html"]');
         if (presentLink && typeof forceSyncDraftFromPage === "function") {
             forceSyncDraftFromPage("wordsearch");
+        }
+
+        const loadModelButton = event.target.closest("[data-wordsearch-load-model]");
+        if (loadModelButton) {
+            event.preventDefault();
+            loadWordsearchModelFile(loadModelButton);
         }
     });
 });

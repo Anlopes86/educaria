@@ -841,7 +841,7 @@ function editorPathForLesson(lesson) {
     if (lesson.materialType === "quiz") return "quiz-builder.html";
     if (lesson.materialType === "flashcards") return "flashcards-builder.html";
     if (lesson.materialType === "wheel") return "roleta-builder.html";
-    if (lesson.materialType === "hangman") return "atividade-reservada.html";
+    if (lesson.materialType === "hangman") return "forca-builder.html";
     if (lesson.materialType === "crossword") return "palavras-cruzadas-builder.html";
     if (lesson.materialType === "wordsearch") return "caca-palavras-builder.html";
     if (lesson.materialType === "memory") return "jogo-memoria-builder.html";
@@ -1356,4 +1356,15 @@ document.addEventListener("educaria-lessons-updated", () => {
     hydrateClassCards();
     hydrateClassPage();
     hydrateLibraryPage();
+});
+
+window.addEventListener("pageshow", (event) => {
+    hydrateCompletionSummary();
+    hydrateClassCards();
+    hydrateClassPage();
+    hydrateLibraryPage();
+
+    if (event.persisted) {
+        syncLessonsWithFirebase();
+    }
 });

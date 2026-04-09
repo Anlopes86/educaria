@@ -6,6 +6,31 @@ function hangmanEscapeAttr(value) {
         .replaceAll(">", "&gt;");
 }
 
+function readHangmanModelFile(file) {
+    if (!file) return Promise.resolve("");
+
+    return file.text().then((content) => {
+        const fileName = String(file.name || "").toLowerCase();
+
+        if (file.type === "text/plain" || fileName.endsWith(".txt")) {
+            return content;
+        }
+
+        if (fileName.endsWith(".rtf")) {
+            return String(content || "")
+                .replace(/\\par[d]?/g, "\n")
+                .replace(/\\'[0-9a-fA-F]{2}/g, "")
+                .replace(/\\[a-z]+\d* ?/g, "")
+                .replace(/[{}]/g, "")
+                .replace(/\r/g, "")
+                .replace(/\n{2,}/g, "\n")
+                .trim();
+        }
+
+        return "";
+    }).catch(() => "");
+}
+
 function hangmanEntryTemplate(index, answer = "", clue = "", category = "") {
     return `
         <section class="platform-question-card activity-content-card hangman-entry-card" data-hangman-entry>
@@ -34,6 +59,122 @@ function hangmanEntryTemplate(index, answer = "", clue = "", category = "") {
             </div>
         </section>
     `;
+}
+
+function parseHangmanTemplateText(sourceText) {
+    const normalizedLines = String(sourceText || "")
+        .replace(/\r/g, "")
+        .split("\n")
+        .map((line) => line.replace(/\s+/g, " ").trim())
+        .filter(Boolean);
+
+    const entriesMap = new Map();
+    let title = "";
+    let subtitle = "";
+
+    normalizedLines.forEach((line) => {
+        const titleMatch = line.match(/^titulo da atividade\s*:\s*(.*)$/i);
+        if (titleMatch) {
+            title = String(titleMatch[1] || "").trim();
+            return;
+        }
+
+        const subtitleMatch = line.match(/^instruc[aã]o ou contexto\s*:\s*(.*)$/i);
+        if (subtitleMatch) {
+            subtitle = String(subtitleMatch[1] || "").trim();
+            return;
+        }
+
+        const answerMatch = line.match(/^palavra\s*(\d+)\s*:\s*(.*)$/i);
+        if (answerMatch) {
+            const index = Number(answerMatch[1] || 0);
+            if (!entriesMap.has(index)) entriesMap.set(index, { answer: "", clue: "", category: "" });
+            entriesMap.get(index).answer = String(answerMatch[2] || "").trim();
+            return;
+        }
+
+        const clueMatch = line.match(/^dica\s*(\d+)\s*:\s*(.*)$/i);
+        if (clueMatch) {
+            const index = Number(clueMatch[1] || 0);
+            if (!entriesMap.has(index)) entriesMap.set(index, { answer: "", clue: "", category: "" });
+            entriesMap.get(index).clue = String(clueMatch[2] || "").trim();
+            return;
+        }
+
+        const categoryMatch = line.match(/^categoria\s*(\d+)\s*:\s*(.*)$/i);
+        if (categoryMatch) {
+            const index = Number(categoryMatch[1] || 0);
+            if (!entriesMap.has(index)) entriesMap.set(index, { answer: "", clue: "", category: "" });
+            entriesMap.get(index).category = String(categoryMatch[2] || "").trim();
+        }
+    });
+
+    const entries = [...entriesMap.entries()]
+        .sort((left, right) => left[0] - right[0])
+        .map(([, value]) => value)
+        .filter((entry) => entry.answer);
+
+    if (entries.length < 2) {
+        throw new Error("Preencha pelo menos duas palavras no modelo da forca.");
+    }
+
+    return { title, subtitle, entries };
+}
+
+function applyHangmanTemplateData(payload) {
+    const stack = document.querySelector("[data-hangman-entries]");
+    if (!stack) return false;
+
+    const entries = Array.isArray(payload?.entries) ? payload.entries.filter((entry) => entry?.answer) : [];
+    if (entries.length < 2) return false;
+
+    const titleField = document.getElementById("forca-titulo");
+    const subtitleField = document.getElementById("forca-subtitulo");
+
+    if (titleField && payload.title) titleField.value = payload.title;
+    if (subtitleField && payload.subtitle) subtitleField.value = payload.subtitle;
+
+    stack.innerHTML = entries.map((entry, index) => (
+        hangmanEntryTemplate(index, entry.answer || "", entry.clue || "", entry.category || "")
+    )).join("");
+
+    renumberHangmanEntries();
+    renderHangmanPreview();
+    document.dispatchEvent(new Event("input"));
+    document.dispatchEvent(new Event("change"));
+    return true;
+}
+
+async function loadHangmanModelFile(button) {
+    const fileField = document.getElementById("forca-arquivo-modelo");
+    const file = fileField?.files?.[0] || null;
+
+    if (!file) {
+        window.alert("Selecione um arquivo de apoio da forca antes de gerar.");
+        return;
+    }
+
+    const originalLabel = button.textContent;
+    button.disabled = true;
+    button.textContent = "Lendo modelo...";
+
+    try {
+        const fileText = await readHangmanModelFile(file);
+        if (!fileText) {
+            throw new Error("Use o arquivo modelo da forca em formato RTF ou TXT.");
+        }
+
+        const payload = parseHangmanTemplateText(fileText);
+        if (!applyHangmanTemplateData(payload)) {
+            throw new Error("O arquivo modelo da forca nao trouxe dados suficientes.");
+        }
+    } catch (error) {
+        const detail = error instanceof Error ? error.message : "Erro desconhecido.";
+        window.alert(`Nao foi possivel montar a forca com o arquivo modelo.\n\nDetalhe: ${detail}`);
+    } finally {
+        button.disabled = false;
+        button.textContent = originalLabel;
+    }
 }
 
 function collectHangmanEntries() {
@@ -179,6 +320,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const presentLink = event.target.closest('a[href="forca-apresentacao.html"]');
         if (presentLink && typeof forceSyncDraftFromPage === "function") {
             forceSyncDraftFromPage("hangman");
+        }
+
+        const loadModelButton = event.target.closest("[data-hangman-load-model]");
+        if (loadModelButton) {
+            event.preventDefault();
+            loadHangmanModelFile(loadModelButton);
         }
     });
 });

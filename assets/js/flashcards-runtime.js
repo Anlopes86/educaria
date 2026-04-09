@@ -50,35 +50,16 @@ function buildFallbackFlashcards() {
     ];
 }
 
-function condenseFlashcardText(value, maxChars, maxWords) {
-    const clean = String(value || "").replace(/\s+/g, " ").trim();
-    if (!clean) return "";
-
-    const words = clean.split(" ").filter(Boolean);
-    let candidate = words.slice(0, maxWords).join(" ");
-
-    if (candidate.length > maxChars) {
-        candidate = candidate.slice(0, maxChars);
-        const punctuationBreak = Math.max(
-            candidate.lastIndexOf("."),
-            candidate.lastIndexOf(":"),
-            candidate.lastIndexOf(";"),
-            candidate.lastIndexOf(",")
-        );
-        const wordBreak = candidate.lastIndexOf(" ");
-        const breakAt = punctuationBreak > maxChars * 0.55 ? punctuationBreak + 1 : wordBreak;
-        candidate = candidate.slice(0, breakAt > 0 ? breakAt : maxChars).trim();
-    }
-
-    return candidate.trim();
+function normalizeFlashcardText(value) {
+    return String(value || "").replace(/\s+/g, " ").trim();
 }
 
 function normalizeFlashcardForStage(card) {
     return {
         ...card,
-        front: condenseFlashcardText(card.front, 56, 8),
-        back: condenseFlashcardText(card.back, 120, 18),
-        example: condenseFlashcardText(card.example, 140, 20)
+        front: normalizeFlashcardText(card.front),
+        back: normalizeFlashcardText(card.back),
+        example: normalizeFlashcardText(card.example)
     };
 }
 
@@ -90,6 +71,48 @@ function flashcardDensityForText(text, includeExample = false) {
     if (includeExample || length > 78 || words > 12) return "dense";
     if (length > 52 || words > 8) return "compact";
     return "comfort";
+}
+
+function fitFlashcardFaceContent(face) {
+    if (!face) return;
+
+    const title = face.querySelector("strong");
+    if (!title) return;
+
+    const exampleBlock = face.querySelector("[data-flashcard-example-block]");
+    const exampleText = exampleBlock?.querySelector("p");
+    const availableWidth = Math.max(face.clientWidth - 56, 220);
+
+    title.style.maxWidth = `${availableWidth}px`;
+    title.style.fontSize = "";
+
+    if (exampleBlock) {
+        exampleBlock.style.maxWidth = `${availableWidth}px`;
+    }
+
+    if (exampleText) {
+        exampleText.style.fontSize = "";
+        exampleText.style.lineHeight = "";
+    }
+
+    let titleSize = parseFloat(window.getComputedStyle(title).fontSize) || 40;
+    let exampleSize = exampleText ? parseFloat(window.getComputedStyle(exampleText).fontSize) || 16 : 0;
+    let attempts = 0;
+
+    while (face.scrollHeight > face.clientHeight - 4 && attempts < 80) {
+        if (titleSize > 18) {
+            titleSize -= 1;
+            title.style.fontSize = `${titleSize}px`;
+        } else if (exampleText && !exampleBlock?.hidden && exampleSize > 12) {
+            exampleSize -= 0.5;
+            exampleText.style.fontSize = `${exampleSize}px`;
+            exampleText.style.lineHeight = exampleSize > 14 ? "1.45" : "1.35";
+        } else {
+            break;
+        }
+
+        attempts += 1;
+    }
 }
 
 function renderFlashcardsPresentation(cards, controls = {}) {
@@ -112,6 +135,11 @@ function renderFlashcardsPresentation(cards, controls = {}) {
     const turma = typeof readSelectedClass === "function" ? readSelectedClass() : "";
     const includeExample = (controls["cards-exemplo"] || "Sim") === "Sim";
     const materialTheme = controls["cards-tema"] || "Flashcards";
+
+    const fitVisibleText = () => {
+        fitFlashcardFaceContent(frontFace);
+        fitFlashcardFaceContent(backFace);
+    };
 
     const paint = () => {
         const card = normalizeFlashcardForStage(cards[currentIndex]);
@@ -138,6 +166,8 @@ function renderFlashcardsPresentation(cards, controls = {}) {
         flipButton.textContent = isFlipped ? "Ver frente" : "Ver verso";
         prevButton.disabled = currentIndex === 0;
         nextButton.disabled = currentIndex === cards.length - 1;
+
+        window.requestAnimationFrame(fitVisibleText);
     };
 
     flipButton.addEventListener("click", () => {
@@ -190,6 +220,7 @@ function renderFlashcardsPresentation(cards, controls = {}) {
     });
 
     paint();
+    window.addEventListener("resize", fitVisibleText);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

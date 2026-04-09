@@ -208,6 +208,29 @@ const wheelSchema = {
     }
 };
 
+const wordsearchSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "subtitle", "words"],
+    properties: {
+        title: { type: "string" },
+        subtitle: { type: "string" },
+        words: {
+            type: "array",
+            minItems: 2,
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["term"],
+                properties: {
+                    term: { type: "string" },
+                    clue: { type: "string" }
+                }
+            }
+        }
+    }
+};
+
 const mindmapSchema = {
     type: "object",
     additionalProperties: false,
@@ -310,6 +333,14 @@ function schemaFor(materialType) {
         };
     }
 
+    if (materialType === "wordsearch") {
+        return {
+            name: "educaria_wordsearch",
+            description: "Caca-palavras estruturado para o builder da EducarIA",
+            schema: wordsearchSchema
+        };
+    }
+
     if (materialType === "mindmap") {
         return {
             name: "educaria_mindmap",
@@ -327,6 +358,61 @@ function schemaFor(materialType) {
     }
 
     return null;
+}
+
+function extractTextFromRtf(buffer) {
+    return String(buffer?.toString("utf8") || "")
+        .replace(/\\par[d]?/g, "\n")
+        .replace(/\\'[0-9a-fA-F]{2}/g, "")
+        .replace(/\\[a-z]+\d* ?/g, "")
+        .replace(/[{}]/g, "")
+        .replace(/\r/g, "")
+        .replace(/\n{2,}/g, "\n")
+        .trim();
+}
+
+function parseWheelTemplateText(sourceText) {
+    const palette = ["#22c55e", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#6366f1", "#84cc16", "#f97316", "#06b6d4", "#a855f7"];
+    const normalizedLines = String(sourceText || "")
+        .replace(/\r/g, "")
+        .split("\n")
+        .map((line) => line.replace(/\s+/g, " ").trim())
+        .filter(Boolean);
+
+    const segments = normalizedLines
+        .map((line) => {
+            const match = line.match(/^espac[oó]\s*\d+\s*:\s*(.+)$/i);
+            if (!match) return null;
+            const value = String(match[1] || "").trim().replace(/^_+|_+$/g, "").trim();
+            if (!value) return null;
+            if (/^revisao rapida$/i.test(value) || /^pergunta surpresa$/i.test(value) || /^explique um conceito$/i.test(value)) {
+                return { text: value, example: true };
+            }
+            return { text: value, example: false };
+        })
+        .filter(Boolean);
+
+    const nonExampleSegments = segments.filter((item) => !item.example);
+    const finalSegments = (nonExampleSegments.length >= 2 ? nonExampleSegments : segments)
+        .slice(0, 24)
+        .map((segment, index) => ({
+            text: segment.text,
+            color: palette[index % palette.length]
+        }));
+
+    if (!finalSegments.length) {
+        throw new Error("Preencha pelo menos dois campos do modelo da roleta antes de enviar o arquivo.");
+    }
+
+    if (finalSegments.length < 2) {
+        throw new Error("O arquivo modelo precisa ter pelo menos dois espacos preenchidos.");
+    }
+
+    return {
+        title: "Roleta estruturada pelo modelo",
+        eliminate_used: false,
+        segments: finalSegments
+    };
 }
 
 function promptFor(materialType, action, sourceText) {
@@ -436,6 +522,27 @@ function promptFor(materialType, action, sourceText) {
             "- Respeite a quantidade de espacos pedida quando ela for informada.",
             "- Cada segmento deve caber bem em uma fatia da roleta.",
             "- Nao invente fatos fora do tema.",
+            "Material de origem:",
+            sourceText
+        ].join("\n\n");
+    }
+
+    if (materialType === "wordsearch") {
+        return [
+            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Monte um caca-palavras didatico, claro e facil de usar em sala.",
+            "Selecione palavras-chave realmente importantes do tema enviado.",
+            "Cada term deve ser curto o bastante para caber bem na grade.",
+            "Prefira palavras entre 3 e 12 caracteres, sem frases longas.",
+            "Use clue apenas quando ajudar a revisao; ela deve ser curta e objetiva.",
+            "Evite termos redundantes, genericos demais ou longos demais.",
+            "Se o texto-base for teorico, transforme em um banco de palavras de revisao fiel ao tema.",
+            `Objetivo do professor: ${action || "Estruturar caca-palavras a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Respeite a quantidade de palavras pedida quando ela for informada.",
+            "- Nao invente fatos fora do tema.",
+            "- Prefira palavras variadas, nao repeticoes do mesmo conceito.",
             "Material de origem:",
             sourceText
         ].join("\n\n");
@@ -696,6 +803,10 @@ async function extractTextFromFile(file) {
         return result.value || "";
     }
 
+    if (fileName.endsWith(".rtf")) {
+        return extractTextFromRtf(file.buffer);
+    }
+
     if (fileName.endsWith(".pdf")) {
         const result = await pdfParse(file.buffer);
         return result.text || "";
@@ -762,6 +873,33 @@ app.post("/api/ai/generate", upload.single("file"), async (request, response) =>
         return response.status(500).json({
             error: "Falha ao gerar material com IA.",
             detail: error instanceof Error ? error.message : "unknown_error"
+        });
+    }
+});
+
+app.post("/api/model-template/generate", upload.single("file"), async (request, response) => {
+    try {
+        const materialType = String(request.body.materialType || "").trim();
+
+        if (materialType !== "wheel") {
+            return response.status(400).json({ error: "Tipo de material ainda nao suportado para arquivo modelo." });
+        }
+
+        const sourceText = await extractTextFromFile(request.file);
+        if (!sourceText) {
+            return response.status(400).json({ error: "Envie um arquivo preenchido com o modelo da roleta." });
+        }
+
+        const material = parseWheelTemplateText(sourceText);
+        return response.json({
+            ok: true,
+            materialType,
+            material
+        });
+    } catch (error) {
+        console.error("EducarIA template parser error:", error);
+        return response.status(500).json({
+            error: error instanceof Error ? error.message : "Falha ao ler o arquivo modelo."
         });
     }
 });

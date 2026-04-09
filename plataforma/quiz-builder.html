@@ -29,6 +29,7 @@
             </a>
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Voltar a biblioteca</a>
                 <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
@@ -57,7 +58,7 @@
                         <div class="platform-form-grid ai-structure-grid">
                             <div class="platform-field platform-field-wide">
                                 <label for="quiz-fonte-texto">Texto ou perguntas do professor</label>
-                                <textarea id="quiz-fonte-texto" rows="6" placeholder="Cole perguntas com ou sem alternativas. Ex.:&#10;1. Qual é o maior planeta do sistema solar?&#10;a) Marte&#10;b) Terra&#10;c) Júpiter&#10;d) Netuno"></textarea>
+                                <textarea id="quiz-fonte-texto" rows="6" placeholder="Escreva um tópico e deixe a IA montar a apresentação ou adicione um arquivo pessoal (Word ou PDF)."></textarea>
                             </div>
                             <div class="platform-field">
                                 <label for="quiz-arquivo">Arquivo de apoio</label>
@@ -91,6 +92,25 @@
                         </div>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-primary" data-generate-material="quiz">Estruturar quiz com IA</button>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="editor-disclosure" open>
+                    <summary>
+                        <span>Arquivo modelo</span>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid">
+                            <div class="platform-field platform-field-wide">
+                                <label for="quiz-arquivo-modelo">Arquivo de apoio</label>
+                                <input id="quiz-arquivo-modelo" type="file" accept=".txt,.rtf">
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <a href="../assets/templates/modelo-quiz.rtf" download="modelo-quiz.rtf" class="platform-link-button model-file-button model-file-button--download">Baixar modelo para Word</a>
+                            <button type="button" class="platform-link-button model-file-button model-file-button--generate" data-quiz-load-model>Gerar com arquivo modelo</button>
                         </div>
                     </div>
                 </details>

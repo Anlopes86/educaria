@@ -1458,6 +1458,26 @@ body.product-body.theme-editor {
     resize: vertical;
 }
 
+.platform-field input[type="file"] {
+    display: flex;
+    align-items: center;
+    padding: 6px 10px;
+    line-height: 1.2;
+}
+
+.platform-field input[type="file"]::file-selector-button {
+    height: 36px;
+    margin-right: 12px;
+    padding: 0 14px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f8fbff 0%, #eef7ff 100%);
+    color: var(--navy-dark);
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .platform-field input:focus,
 .platform-field select:focus,
 .platform-field textarea:focus {
@@ -4769,12 +4789,20 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 .hangman-word-slots {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    column-gap: 16px;
+    row-gap: 10px;
     align-items: center;
 }
 
 .hangman-word-slots--stage {
     justify-content: center;
+}
+
+.hangman-word-group {
+    display: inline-flex;
+    flex-wrap: nowrap;
+    gap: 10px;
+    align-items: center;
 }
 
 .hangman-letter-slot {
@@ -5530,6 +5558,36 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     gap: 10px;
 }
 
+.activity-editor-shell .platform-top-actions .platform-link-button,
+.lesson-review-shell .platform-top-actions .platform-link-button {
+    color: #0f172a;
+    border: 1px solid transparent;
+    box-shadow: 0 14px 24px -20px rgba(15, 23, 42, 0.28);
+}
+
+.activity-editor-shell .platform-top-actions .platform-link-button:nth-child(1),
+.lesson-review-shell .platform-top-actions .platform-link-button:nth-child(1) {
+    background: linear-gradient(135deg, rgba(191, 219, 254, 0.96) 0%, rgba(224, 242, 254, 0.96) 100%);
+    border-color: rgba(59, 130, 246, 0.22);
+}
+
+.activity-editor-shell .platform-top-actions .platform-link-button:nth-child(2),
+.lesson-review-shell .platform-top-actions .platform-link-button:nth-child(2) {
+    background: linear-gradient(135deg, rgba(220, 252, 231, 0.96) 0%, rgba(236, 253, 245, 0.96) 100%);
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.activity-editor-shell .platform-top-actions .platform-link-button:nth-child(3),
+.lesson-review-shell .platform-top-actions .platform-link-button:nth-child(3) {
+    background: linear-gradient(135deg, rgba(254, 240, 138, 0.95) 0%, rgba(255, 247, 237, 0.96) 100%);
+    border-color: rgba(245, 158, 11, 0.24);
+}
+
+.activity-editor-shell .platform-top-actions .platform-link-button:hover,
+.lesson-review-shell .platform-top-actions .platform-link-button:hover {
+    box-shadow: 0 18px 28px -22px rgba(15, 23, 42, 0.3);
+}
+
 .builder-floating-actions {
     position: fixed;
     right: 22px;
@@ -5542,7 +5600,33 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .builder-floating-actions .platform-link-button {
     min-width: 200px;
+    border: 1px solid rgba(15, 23, 42, 0.18);
     box-shadow: 0 18px 32px -22px rgba(15, 23, 42, 0.3);
+}
+
+.builder-floating-actions .platform-link-button:nth-child(1) {
+    color: #f8fbff;
+    background: linear-gradient(135deg, #2464bf 0%, #3e8ff0 100%);
+    border-color: rgba(36, 100, 191, 0.38);
+    box-shadow: 0 18px 32px -22px rgba(36, 100, 191, 0.58);
+}
+
+.builder-floating-actions .platform-link-button:nth-child(2) {
+    color: #f5feff;
+    background: linear-gradient(135deg, #1fa7c8 0%, #39c7df 100%);
+    border-color: rgba(31, 167, 200, 0.36);
+    box-shadow: 0 18px 32px -22px rgba(31, 167, 200, 0.56);
+}
+
+.builder-floating-actions .platform-link-button:nth-child(3) {
+    color: #0f3f67;
+    background: linear-gradient(135deg, #d8efff 0%, #f4fbff 100%);
+    border-color: rgba(154, 205, 241, 0.72);
+    box-shadow: 0 18px 32px -22px rgba(121, 184, 232, 0.46);
+}
+
+.builder-floating-actions .platform-link-button:nth-child(3):hover {
+    color: #0b3556;
 }
 
 .presentation-shell {
@@ -6621,10 +6705,10 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .flashcards-stage-inner {
     position: relative;
-    width: min(100%, 720px);
-    height: min(76vh, 700px);
+    width: min(100%, 820px);
+    height: min(80vh, 740px);
     max-height: 100%;
-    min-height: min(68vh, 590px);
+    min-height: min(72vh, 640px);
     transform-style: preserve-3d;
     transition: transform 600ms ease;
     cursor: pointer;
@@ -6640,8 +6724,8 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     display: grid;
     align-content: start;
     justify-items: center;
-    gap: 12px;
-    padding: clamp(16px, 2.6vw, 24px) clamp(24px, 4vw, 40px) clamp(24px, 4vw, 34px);
+    gap: 10px;
+    padding: clamp(14px, 2.2vw, 20px) clamp(18px, 3.2vw, 28px) clamp(18px, 3vw, 24px);
     border-radius: 34px;
     border: 1px solid rgba(148, 163, 184, 0.16);
     box-shadow: 0 32px 50px -36px rgba(15, 23, 42, 0.42);
@@ -6653,10 +6737,10 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 .flashcards-stage-face::before {
     content: "";
     position: absolute;
-    top: 14px;
-    right: 16px;
-    bottom: 22px;
-    left: 16px;
+    top: 12px;
+    right: 14px;
+    bottom: 16px;
+    left: 14px;
     border-radius: 24px;
     border: 2px dashed rgba(15, 23, 42, 0.08);
     pointer-events: none;
@@ -6685,24 +6769,27 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 .flashcards-stage-face strong {
     position: relative;
     z-index: 1;
+    display: block;
+    width: 100%;
     font-family: var(--font-display);
     font-size: clamp(2.1rem, 3.8vw, 3.6rem);
     line-height: 1.04;
-    max-width: 15ch;
+    max-width: 100%;
     margin-top: 2px;
     overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .flashcards-stage-face[data-density="compact"] strong {
     font-size: clamp(1.8rem, 3.25vw, 3rem);
     line-height: 1.02;
-    max-width: 16ch;
+    max-width: 100%;
 }
 
 .flashcards-stage-face[data-density="dense"] strong {
     font-size: clamp(1.5rem, 2.7vw, 2.35rem);
     line-height: 1.06;
-    max-width: 18ch;
+    max-width: 100%;
 }
 
 .flashcards-stage-example {
@@ -6710,8 +6797,9 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     z-index: 1;
     display: grid;
     gap: 10px;
-    width: min(100%, 540px);
-    padding: 18px 20px;
+    width: min(100%, 100%);
+    max-width: 100%;
+    padding: 16px 18px;
     border-radius: 24px;
     background: rgba(255, 255, 255, 0.62);
     text-align: left;
@@ -7018,6 +7106,66 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     margin-bottom: 0;
 }
 
+.activity-builder-pane .editor-disclosure {
+    --builder-panel-tint: rgba(191, 219, 254, 0.28);
+    --builder-panel-tint-strong: rgba(191, 219, 254, 0.42);
+    --builder-panel-border: rgba(59, 130, 246, 0.16);
+    --builder-panel-accent-bg: rgba(59, 130, 246, 0.12);
+    --builder-panel-accent-text: #215a96;
+}
+
+.activity-builder-pane .editor-disclosure:nth-of-type(2) {
+    --builder-panel-tint: rgba(207, 250, 254, 0.26);
+    --builder-panel-tint-strong: rgba(165, 243, 252, 0.38);
+    --builder-panel-border: rgba(34, 211, 238, 0.16);
+    --builder-panel-accent-bg: rgba(34, 211, 238, 0.12);
+    --builder-panel-accent-text: #0f7490;
+}
+
+.activity-builder-pane .editor-disclosure:nth-of-type(3) {
+    --builder-panel-tint: rgba(239, 248, 255, 0.82);
+    --builder-panel-tint-strong: rgba(219, 234, 254, 0.92);
+    --builder-panel-border: rgba(147, 197, 253, 0.2);
+    --builder-panel-accent-bg: rgba(191, 219, 254, 0.3);
+    --builder-panel-accent-text: #3b6b94;
+}
+
+.activity-builder-pane .editor-disclosure {
+    border-color: var(--builder-panel-border);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.94) 100%);
+}
+
+.activity-builder-pane .editor-disclosure summary {
+    background:
+        linear-gradient(135deg, var(--builder-panel-tint) 0%, rgba(255, 255, 255, 0.95) 88%);
+}
+
+.activity-builder-pane .editor-disclosure summary:hover {
+    background:
+        linear-gradient(135deg, var(--builder-panel-tint-strong) 0%, rgba(255, 255, 255, 0.96) 88%);
+}
+
+.activity-builder-pane .editor-disclosure[open] {
+    border-color: var(--builder-panel-border);
+    box-shadow: 0 14px 28px -26px rgba(15, 23, 42, 0.18);
+}
+
+.activity-builder-pane .editor-disclosure[open] summary {
+    background:
+        linear-gradient(135deg, var(--builder-panel-tint-strong) 0%, rgba(255, 255, 255, 0.96) 88%);
+}
+
+.activity-builder-pane .editor-disclosure summary::after {
+    background: var(--builder-panel-accent-bg);
+    color: var(--builder-panel-accent-text);
+}
+
+.activity-builder-pane .editor-disclosure[open] summary::after {
+    background: var(--builder-panel-accent-bg);
+    color: var(--builder-panel-accent-text);
+}
+
 .activity-editor-shell .activity-optional-block,
 .activity-editor-shell .resource-panel {
     margin-top: 18px;
@@ -7044,6 +7192,27 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     grid-template-columns: minmax(0, max-content);
     justify-content: start;
     gap: 12px;
+}
+
+.model-file-button {
+    color: #ffffff;
+    border: 1px solid transparent;
+}
+
+.model-file-button--download {
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    box-shadow: 0 18px 30px -24px rgba(124, 58, 237, 0.72);
+}
+
+.model-file-button--generate {
+    background: linear-gradient(135deg, #ea580c 0%, #f59e0b 100%);
+    box-shadow: 0 18px 30px -24px rgba(234, 88, 12, 0.72);
+}
+
+.model-file-button:hover,
+.model-file-button:focus-visible {
+    color: #ffffff;
+    box-shadow: 0 20px 34px -24px rgba(15, 23, 42, 0.28);
 }
 
 .wheel-presentation-shell,
@@ -7604,6 +7773,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 }
 
 .wheel-stage-svg {
+    position: relative;
     width: min(100%, min(78vh, 820px));
     aspect-ratio: 1;
     display: grid;
@@ -7615,6 +7785,57 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     max-width: 640px;
     transform-origin: center center;
     will-change: transform;
+}
+
+.wheel-stage-labels {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 1;
+    transform-origin: center center;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.wheel-stage-label {
+    position: absolute;
+    display: grid;
+    gap: 2px;
+    width: 42%;
+    min-height: 16%;
+    padding: 6px 8px;
+    align-content: center;
+    text-align: center;
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
+    color: #0f172a;
+    font-family: Arial, sans-serif;
+    font-weight: 700;
+    line-height: 1.05;
+    will-change: transform;
+}
+
+.wheel-stage-label.is-wide {
+    width: 46%;
+    font-size: 0.95rem;
+}
+
+.wheel-stage-label.is-regular {
+    width: 43%;
+    font-size: 0.86rem;
+}
+
+.wheel-stage-label.is-compact {
+    width: 39%;
+    font-size: 0.76rem;
+}
+
+.wheel-stage-label span {
+    display: block;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .wheel-stage-svg svg {
@@ -7676,13 +7897,14 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     height: 100%;
     display: grid;
     place-items: center;
-    gap: 10px;
+    gap: 8px;
     padding: 18px;
     border-radius: 26px;
     border: 1px solid rgba(14, 165, 233, 0.12);
     background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
     color: #ffffff;
     text-align: center;
+    overflow: hidden;
     cursor: pointer;
     transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
@@ -7701,27 +7923,16 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     box-shadow: inset 0 0 0 4px var(--memory-accent), 0 22px 34px -30px rgba(15, 23, 42, 0.35);
 }
 
-.memory-stage-tile-role {
-    position: absolute;
-    top: 14px;
-    left: 50%;
-    transform: translateX(-50%);
-    min-width: 92px;
-    padding: 6px 10px;
-    border-radius: 999px;
-    background: rgba(15, 23, 42, 0.08);
-    font-size: 0.8rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
 .memory-stage-tile strong {
     margin: 0;
+    display: block;
+    width: 100%;
     font-family: var(--font-display);
     font-size: clamp(1.68rem, 2.65vw, 3rem);
-    line-height: 1.15;
-    max-width: 12ch;
+    line-height: 1.1;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .match-stage-shell,

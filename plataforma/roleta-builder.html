@@ -27,6 +27,7 @@
             </a>
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para turma</a>
+                <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Voltar a biblioteca</a>
                 <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
@@ -55,26 +56,21 @@
                         <div class="platform-form-grid ai-structure-grid">
                             <div class="platform-field platform-field-wide">
                                 <label for="roleta-fonte-texto">Lista de temas, perguntas ou desafios</label>
-                                <textarea id="roleta-fonte-texto" rows="6" placeholder="Cole um texto com tópicos, perguntas, desafios ou itens que a IA deve distribuir na roleta."></textarea>
+                                <textarea id="roleta-fonte-texto" rows="6" placeholder="Escreva um tópico e deixe a IA montar a apresentação ou adicione um arquivo pessoal (Word ou PDF)."></textarea>
                             </div>
                             <div class="platform-field">
                                 <label for="roleta-arquivo">Arquivo de apoio</label>
                                 <input id="roleta-arquivo" type="file" accept=".txt,.doc,.docx,.pdf">
                             </div>
                             <div class="platform-field">
-                                <label for="roleta-acao-ia">Como a IA deve ajudar</label>
-                                <select id="roleta-acao-ia">
-                                    <option>Distribuir perguntas na roleta</option>
-                                    <option>Criar desafios curtos</option>
-                                    <option>Transformar conteúdo em sorteio rápido</option>
-                                </select>
-                            </div>
-                            <div class="platform-field">
                                 <label for="roleta-quantidade-livre">Quantidade de espaços</label>
                                 <input id="roleta-quantidade-livre" type="number" min="2" max="24" step="1" value="8">
                             </div>
                         </div>
+                        <p>Para criar sem utilizar a IA, baixe o modelo com os campos prontos, preencha os espaços, salve o arquivo e selecione em 'arquivo de apoio' logo acima.</p>
                         <div class="utility-actions">
+                            <a href="../assets/templates/modelo-roleta.rtf" download="modelo-roleta.rtf" class="platform-link-button model-file-button model-file-button--download">Baixar modelo para Word</a>
+                            <button type="button" class="platform-link-button model-file-button model-file-button--generate" data-generate-model-material="wheel">Gerar com arquivo modelo</button>
                             <button type="button" class="platform-link-button platform-link-primary" data-generate-material="wheel">Gerar roleta com IA</button>
                         </div>
                     </div>
@@ -307,7 +303,6 @@
             <aside class="platform-builder-card activity-preview-pane wheel-preview-pane">
                 <span class="platform-section-label">Preview</span>
                 <h2>Veja a roleta pronta</h2>
-                <p>Veja como a atividade vai ficar.</p>
                 <div class="live-preview-stack">
                     <section class="live-preview-card live-preview-card--teal">
                         <span class="platform-section-label">Resumo</span>
@@ -329,4 +324,3 @@
     </main>
 </body>
 </html>
-

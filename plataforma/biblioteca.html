@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Biblioteca | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
@@ -79,7 +82,7 @@
                         <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
                         <a href="caca-palavras-builder.html" class="sidebar-subitem">Ca&ccedil;a-palavras</a>
                         <a href="palavras-cruzadas-builder.html" class="sidebar-subitem">Palavras cruzadas</a>
-                        <a href="atividade-reservada.html" class="sidebar-subitem">Forca</a>
+                        <a href="forca-builder.html" class="sidebar-subitem">Forca</a>
                         <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
                     </div>
                 </div>
@@ -98,7 +101,48 @@
                 <div class="page-section-title">
                     <div>
                         <span class="platform-section-label">Materiais</span>
-                        <h2 data-library-count>Seu acervo da biblioteca</h2>
+                        <h2 data-library-count></h2>
+                        <script>
+                            (function () {
+                                function currentUserScope() {
+                                    try {
+                                        var rawTeacher = localStorage.getItem("educaria:auth:teacher-cache") || "";
+                                        if (!rawTeacher) return "guest";
+                                        var teacher = JSON.parse(rawTeacher);
+                                        var source = String((teacher && (teacher.uid || teacher.email)) || "guest").trim().toLowerCase();
+                                        return source.replace(/[^a-z0-9_-]+/g, "-") || "guest";
+                                    } catch (error) {
+                                        return "guest";
+                                    }
+                                }
+
+                                function scopedKey(baseKey) {
+                                    return baseKey + ":" + currentUserScope();
+                                }
+
+                                function countLibraryMaterials() {
+                                    try {
+                                        var raw = localStorage.getItem(scopedKey("educaria:lessons")) || localStorage.getItem("educaria:lessons") || "[]";
+                                        var parsed = JSON.parse(raw);
+                                        var lessons = Array.isArray(parsed) ? parsed : [];
+
+                                        return lessons.filter(function (lesson) {
+                                            var className = String((lesson && lesson.className) || "").trim();
+                                            var scope = String((lesson && lesson.scope) || (className ? "class" : "library")).trim().toLowerCase();
+                                            return scope === "library";
+                                        }).length;
+                                    } catch (error) {
+                                        return 0;
+                                    }
+                                }
+
+                                var root = document.currentScript.previousElementSibling;
+                                if (!root) return;
+
+                                var count = countLibraryMaterials();
+                                root.textContent = count + " " + (count === 1 ? "material salvo" : "materiais salvos");
+                            }());
+                        </script>
                     </div>
                     <p>Abra, edite ou apresente qualquer material salvo independentemente de turma.</p>
                 </div>

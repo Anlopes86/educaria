@@ -27,7 +27,50 @@ function parseWheelSegments(stackHtml) {
     }));
 }
 
-function buildWheelSvg(segments) {
+function escapeWheelText(value) {
+    return String(value || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function wrapWheelLabel(text, maxCharsPerLine = 10, maxLines = 2) {
+    const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return ["Item"];
+
+    const lines = [];
+    let current = "";
+
+    words.forEach((word) => {
+        const candidate = current ? `${current} ${word}` : word;
+        if (candidate.length <= maxCharsPerLine) {
+            current = candidate;
+            return;
+        }
+
+        if (current) {
+            lines.push(current);
+            current = word;
+            return;
+        }
+
+        lines.push(word.slice(0, maxCharsPerLine));
+        current = word.slice(maxCharsPerLine);
+    });
+
+    if (current) lines.push(current);
+
+    return lines.slice(0, maxLines).map((line, index, allLines) => {
+        if (index === allLines.length - 1 && lines.length > maxLines) {
+            return `${line.slice(0, Math.max(0, maxCharsPerLine - 3))}...`;
+        }
+        return line;
+    });
+}
+
+function buildWheelDiscSvg(segments) {
     const size = 560;
     const cx = 280;
     const cy = 280;
@@ -39,66 +82,15 @@ function buildWheelSvg(segments) {
         y: cy + Math.sin(angle) * radius
     });
 
-    const wrapLabel = (text, maxCharsPerLine = 10, maxLines = 2) => {
-        const words = String(text || "").trim().split(/\s+/).filter(Boolean);
-        if (!words.length) return ["Item"];
-
-        const lines = [];
-        let current = "";
-
-        words.forEach((word) => {
-            const candidate = current ? `${current} ${word}` : word;
-            if (candidate.length <= maxCharsPerLine) {
-                current = candidate;
-                return;
-            }
-
-            if (current) {
-                lines.push(current);
-                current = word;
-                return;
-            }
-
-            lines.push(word.slice(0, maxCharsPerLine));
-            current = word.slice(maxCharsPerLine);
-        });
-
-        if (current) lines.push(current);
-
-        return lines.slice(0, maxLines).map((line, index, allLines) => {
-            if (index === allLines.length - 1 && lines.length > maxLines) {
-                return `${line.slice(0, Math.max(0, maxCharsPerLine - 3))}...`;
-            }
-            return line;
-        });
-    };
-
     const paths = segments.map((segment, index) => {
         const startAngle = -Math.PI / 2 + index * slice;
         const endAngle = startAngle + slice;
         const start = polar(startAngle);
         const end = polar(endAngle);
         const largeArc = slice > Math.PI ? 1 : 0;
-        const midAngle = startAngle + slice / 2;
-        const labelRadius = radius * (segments.length >= 10 ? 0.68 : 0.62);
-        const labelX = cx + Math.cos(midAngle) * labelRadius;
-        const labelY = cy + Math.sin(midAngle) * labelRadius;
-        const baseRotation = (midAngle * 180) / Math.PI + 90;
-        const textRotation = baseRotation > 90 && baseRotation < 270 ? baseRotation + 180 : baseRotation;
-        const maxChars = segments.length >= 10 ? 7 : 10;
-        const fontSize = segments.length >= 10 ? 12 : 14;
-        const lines = wrapLabel(segment.text, maxChars, 2);
 
         return `
             <path d="M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z" fill="${segment.color}" stroke="#ffffff" stroke-width="4"></path>
-            <g transform="translate(${labelX} ${labelY}) rotate(${textRotation})">
-                <text text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="700" fill="#0f172a">
-                    ${lines.map((line, lineIndex) => {
-                        const offset = lines.length === 1 ? 0 : lineIndex === 0 ? -8 : 10;
-                        return `<tspan x="0" y="${offset}">${line}</tspan>`;
-                    }).join("")}
-                </text>
-            </g>
         `;
     }).join("");
 
@@ -106,10 +98,30 @@ function buildWheelSvg(segments) {
         <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Roleta da atividade">
             <circle cx="${cx}" cy="${cy}" r="${radius + 10}" fill="#ffffff"></circle>
             ${paths}
-            <circle cx="${cx}" cy="${cy}" r="76" fill="#0f172a"></circle>
+            <circle cx="${cx}" cy="${cy}" r="58" fill="#0f172a"></circle>
             <circle cx="${cx}" cy="${cy}" r="20" fill="#ffffff"></circle>
         </svg>
     `;
+}
+
+function buildWheelLabels(segments) {
+    const slice = (Math.PI * 2) / segments.length;
+    const labelRadius = segments.length >= 10 ? 35 : segments.length >= 7 ? 33 : 31;
+    const maxChars = segments.length >= 10 ? 8 : segments.length >= 7 ? 10 : 13;
+    const fontClass = segments.length >= 10 ? "is-compact" : segments.length >= 7 ? "is-regular" : "is-wide";
+
+    return segments.map((segment, index) => {
+        const midAngle = -Math.PI / 2 + index * slice + slice / 2;
+        const x = 50 + Math.cos(midAngle) * labelRadius;
+        const y = 50 + Math.sin(midAngle) * labelRadius;
+        const lines = wrapWheelLabel(segment.text, maxChars, 4);
+
+        return `
+            <div class="wheel-stage-label ${fontClass}" style="left:${x}%;top:${y}%;">
+                ${lines.map((line) => `<span>${escapeWheelText(line)}</span>`).join("")}
+            </div>
+        `;
+    }).join("");
 }
 
 function renderWheelApplication() {
@@ -135,13 +147,34 @@ function renderWheelApplication() {
 
     const normalizedRotation = () => ((currentRotation % 360) + 360) % 360;
 
+    const applyRotation = (rotation, transition) => {
+        const disc = svgRoot?.querySelector("[data-wheel-stage-disc]");
+        const labels = svgRoot?.querySelector("[data-wheel-stage-labels]");
+        const labelItems = svgRoot ? [...svgRoot.querySelectorAll(".wheel-stage-label")] : [];
+
+        if (disc) {
+            disc.style.transition = transition;
+            disc.style.transform = `rotate(${rotation}deg)`;
+        }
+
+        if (labels) {
+            labels.style.transition = transition;
+            labels.style.transform = `rotate(${rotation}deg)`;
+        }
+
+        labelItems.forEach((item) => {
+            item.style.transition = transition;
+            item.style.transform = `translate(-50%, -50%) rotate(${-rotation}deg)`;
+        });
+    };
+
     const renderDisc = () => {
         if (!svgRoot || !activeSegments.length) return;
-        svgRoot.innerHTML = `<div class="wheel-stage-disc" data-wheel-stage-disc>${buildWheelSvg(activeSegments)}</div>`;
-        const disc = svgRoot.querySelector("[data-wheel-stage-disc]");
-        if (disc) {
-            disc.style.transform = `rotate(${normalizedRotation()}deg)`;
-        }
+        svgRoot.innerHTML = `
+            <div class="wheel-stage-disc" data-wheel-stage-disc>${buildWheelDiscSvg(activeSegments)}</div>
+            <div class="wheel-stage-labels" data-wheel-stage-labels>${buildWheelLabels(activeSegments)}</div>
+        `;
+        applyRotation(normalizedRotation(), "none");
     };
 
     const updateButtonsAvailability = (disabled) => {
@@ -183,14 +216,9 @@ function renderWheelApplication() {
         const delta = (targetRotation - normalizedCurrent + 360) % 360;
         currentRotation += extraTurns + delta;
 
-        const disc = document.querySelector("[data-wheel-stage-disc]");
-        if (disc) {
-            disc.style.transition = "none";
-            disc.style.transform = `rotate(${normalizedCurrent}deg)`;
-            void disc.offsetWidth;
-            disc.style.transition = "transform 4.8s cubic-bezier(0.08, 0.82, 0.18, 1)";
-            disc.style.transform = `rotate(${currentRotation}deg)`;
-        }
+        applyRotation(normalizedCurrent, "none");
+        void svgRoot.offsetWidth;
+        applyRotation(currentRotation, "transform 4.8s cubic-bezier(0.08, 0.82, 0.18, 1)");
 
         if (resultRoot) {
             resultRoot.textContent = "Girando...";

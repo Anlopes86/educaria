@@ -37,6 +37,33 @@ function shuffle(items) {
     return copy;
 }
 
+function fitMemoryTileLabel(label) {
+    if (!label) return;
+
+    const tile = label.closest(".memory-stage-tile");
+    if (!tile) return;
+
+    const availableWidth = Math.max(tile.clientWidth - 36, 72);
+    const availableHeight = Math.max(tile.clientHeight - 36, 52);
+    let fontSize = Math.min(48, availableWidth / 4.2, availableHeight / 2.2);
+    const minFontSize = 14;
+
+    label.style.maxWidth = `${availableWidth}px`;
+    label.style.fontSize = `${Math.max(fontSize, minFontSize)}px`;
+
+    let safety = 0;
+    while (fontSize > minFontSize && safety < 40) {
+        const exceedsWidth = label.scrollWidth > availableWidth + 1;
+        const exceedsHeight = label.scrollHeight > availableHeight + 1;
+
+        if (!exceedsWidth && !exceedsHeight) break;
+
+        fontSize -= 1;
+        label.style.fontSize = `${fontSize}px`;
+        safety += 1;
+    }
+}
+
 function renderMemoryApplication() {
     const draft = readMemoryDraft();
     const controls = draft?.controls || {};
@@ -55,6 +82,13 @@ function renderMemoryApplication() {
 
     let selected = [];
     let locked = false;
+
+    function fitVisibleLabels() {
+        if (!gridRoot) return;
+        gridRoot.querySelectorAll(".memory-stage-tile strong").forEach((label) => {
+            fitMemoryTileLabel(label);
+        });
+    }
 
     function updateGridMetrics() {
         if (!gridRoot) return;
@@ -93,11 +127,12 @@ function renderMemoryApplication() {
             const isOpen = selected.includes(card.id) || card.found;
             return `
                 <button type="button" class="memory-stage-tile ${isOpen ? "is-open" : ""} ${card.found ? "is-found" : ""}" data-memory-tile="${card.id}" style="--memory-accent:${card.color};">
-                    <span class="memory-stage-tile-role">${isOpen ? card.role : ""}</span>
                     <strong>${isOpen ? card.text : "?"}</strong>
                 </button>
             `;
         }).join("");
+
+        window.requestAnimationFrame(fitVisibleLabels);
     }
 
     function resetGame() {
@@ -141,10 +176,11 @@ function renderMemoryApplication() {
             selected = [];
             locked = false;
             paint();
-        }, 900);
+        }, 1600);
     });
 
     paint();
+    window.addEventListener("resize", fitVisibleLabels);
 }
 
 document.addEventListener("DOMContentLoaded", renderMemoryApplication);
