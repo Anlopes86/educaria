@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Painel do Professor | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
@@ -375,6 +378,129 @@
                         <p>Use o botão Criar turma na lateral para começar.</p>
                     </article>
                 </div>
+                <script>
+                    (function () {
+                        function currentUserScope() {
+                            try {
+                                var rawTeacher = localStorage.getItem("educaria:auth:teacher-cache") || "";
+                                if (!rawTeacher) return "guest";
+                                var teacher = JSON.parse(rawTeacher);
+                                var source = String((teacher && (teacher.uid || teacher.email)) || "guest").trim().toLowerCase();
+                                return source.replace(/[^a-z0-9_-]+/g, "-") || "guest";
+                            } catch (error) {
+                                return "guest";
+                            }
+                        }
+
+                        function scopedKey(baseKey) {
+                            return baseKey + ":" + currentUserScope();
+                        }
+
+                        function escapeHtml(value) {
+                            return String(value || "")
+                                .replaceAll("&", "&amp;")
+                                .replaceAll("<", "&lt;")
+                                .replaceAll(">", "&gt;")
+                                .replaceAll('"', "&quot;");
+                        }
+
+                        function readTeacher() {
+                            try {
+                                return JSON.parse(localStorage.getItem("educaria:auth:teacher-cache") || "{}") || {};
+                            } catch (error) {
+                                return {};
+                            }
+                        }
+
+                        function readClasses() {
+                            try {
+                                var raw = localStorage.getItem(scopedKey("educaria:classList")) || "[]";
+                                var parsed = JSON.parse(raw);
+                                return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+                            } catch (error) {
+                                return [];
+                            }
+                        }
+
+                        function readLessons() {
+                            try {
+                                var scopedRaw = localStorage.getItem(scopedKey("educaria:lessons")) || "";
+                                var raw = scopedRaw || localStorage.getItem("educaria:lessons") || "[]";
+                                var parsed = JSON.parse(raw);
+                                return Array.isArray(parsed) ? parsed : [];
+                            } catch (error) {
+                                return [];
+                            }
+                        }
+
+                        function greeting() {
+                            var hour = new Date().getHours();
+                            if (hour < 12) return "Bom dia";
+                            if (hour < 18) return "Boa tarde";
+                            return "Boa noite";
+                        }
+
+                        var teacher = readTeacher();
+                        var classes = readClasses();
+                        var lessons = readLessons();
+                        var libraryItems = lessons.filter(function (lesson) {
+                            var className = String((lesson && lesson.className) || "").trim();
+                            var scope = String((lesson && lesson.scope) || (className ? "class" : "library")).trim().toLowerCase();
+                            return scope === "library";
+                        });
+                        var teacherName = String(teacher.name || "Professor").trim() || "Professor";
+                        var institution = String(teacher.institution || "Conta educacional").trim() || "Conta educacional";
+
+                        document.querySelectorAll("[data-sidebar-teacher]").forEach(function (element) {
+                            element.textContent = teacherName;
+                        });
+
+                        document.querySelectorAll("[data-sidebar-institution]").forEach(function (element) {
+                            element.textContent = institution;
+                        });
+
+                        document.querySelectorAll("[data-dashboard-greeting]").forEach(function (element) {
+                            element.textContent = greeting();
+                        });
+
+                        var classCount = document.querySelector("[data-dashboard-class-count]");
+                        var activityCount = document.querySelector("[data-dashboard-activity-count]");
+                        var libraryCount = document.querySelector("[data-dashboard-library-count]");
+                        if (classCount) classCount.textContent = String(classes.length);
+                        if (activityCount) activityCount.textContent = String(lessons.length);
+                        if (libraryCount) libraryCount.textContent = String(libraryItems.length);
+
+                        var classesRoot = document.querySelector("[data-dashboard-classes]");
+                        if (!classesRoot) return;
+
+                        if (!classes.length) {
+                            classesRoot.innerHTML = [
+                                '<article class="quick-class-card quick-class-card--active">',
+                                '<span class="route-tag">Sem turmas</span>',
+                                '<h3>Nenhuma turma criada ainda</h3>',
+                                '<p>Use o botao Criar turma na lateral para comecar.</p>',
+                                '</article>'
+                            ].join("");
+                            return;
+                        }
+
+                        classesRoot.innerHTML = classes.map(function (className) {
+                            var classActivities = lessons.filter(function (lesson) {
+                                var lessonClass = String((lesson && lesson.className) || "").trim();
+                                var scope = String((lesson && lesson.scope) || (lessonClass ? "class" : "library")).trim().toLowerCase();
+                                return scope === "class" && lessonClass === className;
+                            });
+
+                            return [
+                                '<a href="turma.html" class="quick-class-card" data-dashboard-class-link="' + escapeHtml(className) + '">',
+                                '<span class="route-tag">' + classActivities.length + " " + (classActivities.length === 1 ? "atividade" : "atividades") + '</span>',
+                                '<h3>' + escapeHtml(className) + '</h3>',
+                                '<p>Abra a turma para criar novas atividades ou retomar o acervo ja salvo.</p>',
+                                '</a>'
+                            ].join("");
+                        }).join("");
+                    }());
+                </script>
             </section>
 
             <section class="dashboard-library-banner">

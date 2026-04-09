@@ -472,3 +472,9 @@ document.addEventListener("DOMContentLoaded", () => {
         startDashboardTour(false);
     }, 480);
 });
+
+window.addEventListener("pageshow", () => {
+    hydrateTeacherDashboard();
+    hydrateDashboardGreeting();
+    hydrateQuickCreateForm();
+});

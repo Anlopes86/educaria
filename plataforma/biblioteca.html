@@ -34,11 +34,84 @@
                 <strong data-sidebar-teacher>Professor</strong>
                 <span data-sidebar-institution>Conta educacional</span>
             </div>
+            <script>
+                (function () {
+                    function currentUserScope() {
+                        try {
+                            var rawTeacher = localStorage.getItem("educaria:auth:teacher-cache") || "";
+                            if (!rawTeacher) return "guest";
+                            var teacher = JSON.parse(rawTeacher);
+                            var source = String((teacher && (teacher.uid || teacher.email)) || "guest").trim().toLowerCase();
+                            return source.replace(/[^a-z0-9_-]+/g, "-") || "guest";
+                        } catch (error) {
+                            return "guest";
+                        }
+                    }
+
+                    function scopedKey(baseKey) {
+                        return baseKey + ":" + currentUserScope();
+                    }
+
+                    function escapeHtml(value) {
+                        return String(value || "")
+                            .replaceAll("&", "&amp;")
+                            .replaceAll("<", "&lt;")
+                            .replaceAll(">", "&gt;")
+                            .replaceAll('"', "&quot;");
+                    }
+
+                    var teacher = {};
+                    var classes = [];
+
+                    try {
+                        teacher = JSON.parse(localStorage.getItem("educaria:auth:teacher-cache") || "{}") || {};
+                    } catch (error) {
+                        teacher = {};
+                    }
+
+                    try {
+                        var rawClasses = localStorage.getItem(scopedKey("educaria:classList")) || "[]";
+                        var parsedClasses = JSON.parse(rawClasses);
+                        classes = Array.isArray(parsedClasses) ? parsedClasses.filter(Boolean) : [];
+                    } catch (error) {
+                        classes = [];
+                    }
+
+                    var teacherName = String(teacher.name || "Professor").trim() || "Professor";
+                    var institution = String(teacher.institution || "Conta educacional").trim() || "Conta educacional";
+
+                    document.querySelectorAll("[data-sidebar-teacher]").forEach(function (element) {
+                        element.textContent = teacherName;
+                    });
+
+                    document.querySelectorAll("[data-sidebar-institution]").forEach(function (element) {
+                        element.textContent = institution;
+                    });
+
+                    var classListRoot = document.querySelector("[data-sidebar-class-list]");
+                    if (!classListRoot) return;
+
+                    if (!classes.length) {
+                        classListRoot.innerHTML = [
+                            '<div class="sidebar-empty-state">',
+                            '<strong>Nenhuma turma criada</strong>',
+                            '<span>Crie a primeira turma no formulario abaixo.</span>',
+                            '</div>'
+                        ].join("");
+                        return;
+                    }
+
+                    classListRoot.innerHTML = classes.map(function (className) {
+                        return '<a href="turma.html" class="sidebar-subitem" data-sidebar-class-link="' + escapeHtml(className) + '">' + escapeHtml(className) + '</a>';
+                    }).join("");
+                }());
+            </script>
 
             <nav class="app-sidebar-nav">
                 <a href="index.html" class="sidebar-nav-link">Painel</a>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
+                <a href="turmas.html" class="sidebar-nav-link" data-sidebar-classes-page-link>Turmas</a>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas rápidas</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
                     <div class="sidebar-subitems" data-sidebar-class-list></div>
                 </div>
