@@ -69,7 +69,7 @@ function parseWordsearchTemplateText(sourceText) {
     let subtitle = "";
 
     normalizedLines.forEach((line) => {
-        const titleMatch = line.match(/^titulo da atividade\s*:\s*(.*)$/i);
+        const titleMatch = line.match(/^título da atividade\s*:\s*(.*)$/i);
         if (titleMatch) {
             title = String(titleMatch[1] || "").trim();
             return;
@@ -154,11 +154,11 @@ async function loadWordsearchModelFile(button) {
 
         const payload = parseWordsearchTemplateText(fileText);
         if (!applyWordsearchTemplateData(payload)) {
-            throw new Error("O arquivo modelo do caça-palavras nao trouxe dados suficientes.");
+            throw new Error("O arquivo modelo do caça-palavras não trouxe dados suficientes.");
         }
     } catch (error) {
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
-        window.alert(`Nao foi possivel montar o caça-palavras com o arquivo modelo.\n\nDetalhe: ${detail}`);
+        window.alert(`Não foi possível montar o caça-palavras com o arquivo modelo.\n\nDetalhe: ${detail}`);
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;

@@ -159,7 +159,7 @@ function renderMatchApplication() {
             return;
         }
 
-        updateStatus("Esse par nao corresponde. Tente novamente");
+        updateStatus("Esse par não corresponde. Tente novamente");
         clearSelection();
         renderLists();
     };

@@ -1,5 +1,22 @@
 const DASHBOARD_TOUR_STORAGE_PREFIX = "educaria:dashboard-tour:";
 const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
+const DASHBOARD_CORE_FORMATS = [
+    { href: "quiz-builder.html", label: "Quiz" },
+    { href: "slides-builder.html", label: "Slides" },
+    { href: "flashcards-builder.html", label: "Flashcards" },
+    { href: "jogo-memoria-builder.html", label: "Jogo da memória" }
+];
+const DASHBOARD_EXTRA_FORMATS = [
+    { href: "criar-aula.html", label: "Aula completa" },
+    { href: "roleta-builder.html", label: "Roleta" },
+    { href: "ligar-pontos-builder.html", label: "Ligar pontos" },
+    { href: "mapa-mental-builder.html", label: "Mapa mental" },
+    { href: "debate-guiado-builder.html", label: "Debate guiado" },
+    { href: "caca-palavras-builder.html", label: "Caça-palavras" },
+    { href: "palavras-cruzadas-builder.html", label: "Palavras cruzadas" },
+    { href: "forca-builder.html", label: "Força" }
+];
+const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
 
 let dashboardTourState = null;
 
@@ -55,6 +72,60 @@ function hydrateDashboardGreeting() {
     });
 }
 
+function syncDashboardFormatHierarchy() {
+    const quickCopy = document.querySelector(".dashboard-quick-create p");
+    if (quickCopy) {
+        quickCopy.textContent = "Escolha a turma, selecione um formato principal e entre direto no editor para comecar a criar.";
+    }
+
+    const toolkitSection = document.getElementById("activity-toolkit");
+    if (!toolkitSection) return;
+
+    const sectionLabel = toolkitSection.querySelector(".platform-section-label");
+    const sectionTitle = toolkitSection.querySelector("h2");
+    const sectionLink = toolkitSection.querySelector(".dashboard-inline-link");
+    if (sectionLabel) sectionLabel.textContent = "Formatos principais";
+    if (sectionTitle) sectionTitle.textContent = "Escolha um formato:";
+    if (sectionLink) {
+        sectionLink.textContent = "Ver formatos extras";
+        sectionLink.setAttribute("href", "#extra-formats");
+    }
+
+    const grid = toolkitSection.querySelector(".dashboard-toolkit-grid");
+    if (!grid) return;
+
+    grid.querySelectorAll(".dashboard-tool-card").forEach((card) => {
+        const href = card.getAttribute("href") || "";
+        if (DASHBOARD_CORE_FORMAT_PATHS.has(href)) return;
+        card.remove();
+    });
+
+    const quizCard = grid.querySelector('.dashboard-tool-card--quiz .dashboard-tool-content p');
+    if (quizCard) {
+        quizCard.textContent = "Crie rapidamente um quiz para suas aulas";
+    }
+
+    let secondary = toolkitSection.querySelector(".dashboard-toolkit-secondary");
+    if (!secondary) {
+        secondary = document.createElement("div");
+        secondary.className = "dashboard-toolkit-secondary";
+        secondary.id = "extra-formats";
+        grid.insertAdjacentElement("afterend", secondary);
+    }
+
+    secondary.innerHTML = `
+        <div>
+            <strong>Mais formatos</strong>
+            <p>Explore outros formatos disponíveis para variar a dinâmica da aula e enriquecer o repertório com a turma.</p>
+        </div>
+        <div class="dashboard-toolkit-links">
+            ${DASHBOARD_EXTRA_FORMATS.map((format) => `
+                <a href="${format.href}" class="dashboard-toolkit-link">${format.label}</a>
+            `).join("")}
+        </div>
+    `;
+}
+
 function hydrateQuickCreateForm() {
     const classSelect = document.querySelector("[data-dashboard-quick-class]");
     const formatSelect = document.querySelector("[data-dashboard-quick-format]");
@@ -75,6 +146,10 @@ function hydrateQuickCreateForm() {
     classSelect.disabled = false;
     formatSelect.disabled = false;
     openButton.disabled = false;
+
+    formatSelect.innerHTML = DASHBOARD_CORE_FORMATS.map((format) => {
+        return `<option value="${format.href}">${format.label}</option>`;
+    }).join("");
 
     classSelect.innerHTML = classes.map((className) => {
         const selected = className === current ? " selected" : "";
@@ -128,6 +203,7 @@ function bindQuickCreateRefresh() {
 }
 
 function refreshTeacherDashboard() {
+    syncDashboardFormatHierarchy();
     hydrateTeacherDashboard();
     hydrateDashboardGreeting();
     hydrateQuickCreateForm();
@@ -220,17 +296,17 @@ function dashboardTourSteps() {
         {
             selector: '[data-dashboard-tour-anchor="quick-create"]',
             title: "Entre direto no editor",
-            description: "Depois de escolher uma turma, use a cria\u00e7\u00e3o r\u00e1pida para selecionar o formato da atividade e criar direto na ferramenta certa."
+            description: "Depois de escolher uma turma, use a cria\u00e7\u00e3o r\u00e1pida para entrar direto em um dos formatos principais."
         },
         {
             selector: '[data-dashboard-tour-anchor="toolkit"]',
-            title: "Explore os formatos",
-            description: "Aqui ficam todos os tipos de atividade. Clique em qualquer card para come\u00e7ar do zero no formato que fizer mais sentido para a aula."
+            title: "Comece pelos principais",
+            description: "Aqui ficam os quatro formatos principais da plataforma. Os extras continuam disponíveis logo abaixo quando você precisar variar a dinâmica."
         },
         {
             selector: '[data-dashboard-tour-anchor="library"]',
-            title: "Guarde seu proprio acervo",
-            description: "A biblioteca concentra os materiais que voce salvou nos builders, para revisar, editar e reutilizar depois."
+            title: "Guarde seu próprio acervo",
+            description: "A biblioteca concentra os materiais que você salvou nos builders, para revisar, editar e reutilizar depois."
         }
     ];
 }

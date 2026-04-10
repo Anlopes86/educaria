@@ -145,7 +145,7 @@ function mapFirebaseError(error) {
     if (code === "auth/user-not-found") return "Nenhuma conta encontrada com esse email.";
     if (code === "auth/wrong-password") return "Senha incorreta.";
     if (code === "auth/invalid-credential") return "Email ou senha incorretos.";
-    return "Nao foi possivel concluir a autenticacao agora.";
+    return "Não foi possível concluir a autenticação agora.";
 }
 
 function readTeacherProfileFromFirebase(user) {
@@ -235,7 +235,7 @@ function bindRegisterForm() {
         }
 
         if (password !== passwordConfirm) {
-            updateAuthFeedback("As senhas nao coincidem. Confira e tente novamente.", "error");
+            updateAuthFeedback("As senhas não coincidem. Confira e tente novamente.", "error");
             return;
         }
 

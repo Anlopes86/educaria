@@ -34,79 +34,6 @@
                 <strong data-sidebar-teacher>Professor</strong>
                 <span data-sidebar-institution>Conta educacional</span>
             </div>
-            <script>
-                (function () {
-                    function currentUserScope() {
-                        try {
-                            var rawTeacher = localStorage.getItem("educaria:auth:teacher-cache") || "";
-                            if (!rawTeacher) return "guest";
-                            var teacher = JSON.parse(rawTeacher);
-                            var source = String((teacher && (teacher.uid || teacher.email)) || "guest").trim().toLowerCase();
-                            return source.replace(/[^a-z0-9_-]+/g, "-") || "guest";
-                        } catch (error) {
-                            return "guest";
-                        }
-                    }
-
-                    function scopedKey(baseKey) {
-                        return baseKey + ":" + currentUserScope();
-                    }
-
-                    function escapeHtml(value) {
-                        return String(value || "")
-                            .replaceAll("&", "&amp;")
-                            .replaceAll("<", "&lt;")
-                            .replaceAll(">", "&gt;")
-                            .replaceAll('"', "&quot;");
-                    }
-
-                    var teacher = {};
-                    var classes = [];
-
-                    try {
-                        teacher = JSON.parse(localStorage.getItem("educaria:auth:teacher-cache") || "{}") || {};
-                    } catch (error) {
-                        teacher = {};
-                    }
-
-                    try {
-                        var rawClasses = localStorage.getItem(scopedKey("educaria:classList")) || "[]";
-                        var parsedClasses = JSON.parse(rawClasses);
-                        classes = Array.isArray(parsedClasses) ? parsedClasses.filter(Boolean) : [];
-                    } catch (error) {
-                        classes = [];
-                    }
-
-                    var teacherName = String(teacher.name || "Professor").trim() || "Professor";
-                    var institution = String(teacher.institution || "Conta educacional").trim() || "Conta educacional";
-
-                    document.querySelectorAll("[data-sidebar-teacher]").forEach(function (element) {
-                        element.textContent = teacherName;
-                    });
-
-                    document.querySelectorAll("[data-sidebar-institution]").forEach(function (element) {
-                        element.textContent = institution;
-                    });
-
-                    var classListRoot = document.querySelector("[data-sidebar-class-list]");
-                    if (!classListRoot) return;
-
-                    if (!classes.length) {
-                        classListRoot.innerHTML = [
-                            '<div class="sidebar-empty-state">',
-                            '<strong>Nenhuma turma criada</strong>',
-                            '<span>Crie a primeira turma no formulario abaixo.</span>',
-                            '</div>'
-                        ].join("");
-                        return;
-                    }
-
-                    classListRoot.innerHTML = classes.map(function (className) {
-                        return '<a href="turma.html" class="sidebar-subitem" data-sidebar-class-link="' + escapeHtml(className) + '">' + escapeHtml(className) + '</a>';
-                    }).join("");
-                }());
-            </script>
-
             <nav class="app-sidebar-nav">
                 <a href="index.html" class="sidebar-nav-link">Painel</a>
 
@@ -155,7 +82,7 @@
                         <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
                         <a href="caca-palavras-builder.html" class="sidebar-subitem">Ca&ccedil;a-palavras</a>
                         <a href="palavras-cruzadas-builder.html" class="sidebar-subitem">Palavras cruzadas</a>
-                        <a href="forca-builder.html" class="sidebar-subitem">Forca</a>
+                        <a href="forca-builder.html" class="sidebar-subitem">Força</a>
                         <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
                     </div>
                 </div>
@@ -175,47 +102,6 @@
                     <div>
                         <span class="platform-section-label">Materiais</span>
                         <h2 data-library-count></h2>
-                        <script>
-                            (function () {
-                                function currentUserScope() {
-                                    try {
-                                        var rawTeacher = localStorage.getItem("educaria:auth:teacher-cache") || "";
-                                        if (!rawTeacher) return "guest";
-                                        var teacher = JSON.parse(rawTeacher);
-                                        var source = String((teacher && (teacher.uid || teacher.email)) || "guest").trim().toLowerCase();
-                                        return source.replace(/[^a-z0-9_-]+/g, "-") || "guest";
-                                    } catch (error) {
-                                        return "guest";
-                                    }
-                                }
-
-                                function scopedKey(baseKey) {
-                                    return baseKey + ":" + currentUserScope();
-                                }
-
-                                function countLibraryMaterials() {
-                                    try {
-                                        var raw = localStorage.getItem(scopedKey("educaria:lessons")) || localStorage.getItem("educaria:lessons") || "[]";
-                                        var parsed = JSON.parse(raw);
-                                        var lessons = Array.isArray(parsed) ? parsed : [];
-
-                                        return lessons.filter(function (lesson) {
-                                            var className = String((lesson && lesson.className) || "").trim();
-                                            var scope = String((lesson && lesson.scope) || (className ? "class" : "library")).trim().toLowerCase();
-                                            return scope === "library";
-                                        }).length;
-                                    } catch (error) {
-                                        return 0;
-                                    }
-                                }
-
-                                var root = document.currentScript.previousElementSibling;
-                                if (!root) return;
-
-                                var count = countLibraryMaterials();
-                                root.textContent = count + " " + (count === 1 ? "material salvo" : "materiais salvos");
-                            }());
-                        </script>
                     </div>
                     <p>Abra, edite ou apresente qualquer material salvo independentemente de turma.</p>
                 </div>

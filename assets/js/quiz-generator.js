@@ -156,7 +156,7 @@ function parseQuizTemplateText(sourceText) {
 
         if (!key) return;
 
-        if (key === "tema" || key === "tema do quiz" || key === "titulo do quiz") {
+        if (key === "tema" || key === "tema do quiz" || key === "título do quiz") {
             title = value;
             return;
         }
@@ -348,11 +348,11 @@ async function loadQuizModelFile(button) {
 
         const payload = parseQuizTemplateText(fileText);
         if (!applyQuizTemplateData(payload)) {
-            throw new Error("O arquivo modelo do quiz nao trouxe dados suficientes.");
+            throw new Error("O arquivo modelo do quiz não trouxe dados suficientes.");
         }
     } catch (error) {
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
-        window.alert(`Nao foi possivel montar o quiz com o arquivo modelo.\n\nDetalhe: ${detail}`);
+        window.alert(`Não foi possível montar o quiz com o arquivo modelo.\n\nDetalhe: ${detail}`);
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;

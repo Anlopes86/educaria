@@ -25,7 +25,7 @@ function parseDebateSteps(stackHtml) {
         title: step.querySelector("[data-debate-title]")?.value?.trim() || `Etapa ${index + 1}`,
         time: step.querySelector("[data-debate-time]")?.value?.trim() || "5 min",
         question: step.querySelector("[data-debate-question]")?.value?.trim() || "Pergunta da etapa",
-        guidance: step.querySelector("[data-debate-guidance]")?.value?.trim() || "Orientacao para conduzir essa etapa."
+        guidance: step.querySelector("[data-debate-guidance]")?.value?.trim() || "Orienta??o para conduzir esta etapa."
     }));
 }
 
@@ -91,8 +91,8 @@ function renderDebateApplication() {
     const controls = draft?.controls || {};
     const steps = parseDebateSteps(draft?.stackHtml || "");
     const safeSteps = steps.length ? steps : [
-        { title: "Abertura", time: "5 min", question: "Qual e a pergunta que vai orientar o debate?", guidance: "Apresente o tema e organize as primeiras falas." },
-        { title: "Argumentacao", time: "8 min", question: "Quais sao os argumentos mais fortes de cada lado?", guidance: "Estimule justificativas e exemplos concretos." },
+        { title: "Abertura", time: "5 min", question: "Qual ? a pergunta que vai orientar o debate?", guidance: "Apresente o tema e organize as primeiras falas." },
+        { title: "Argumentação", time: "8 min", question: "Quais são os argumentos mais fortes de cada lado?", guidance: "Estimule justificativas e exemplos concretos." },
         { title: "Fechamento", time: "5 min", question: "O que podemos concluir com base no que foi discutido?", guidance: "Retome os pontos principais e feche a atividade." }
     ];
 
@@ -100,8 +100,8 @@ function renderDebateApplication() {
     const format = controls["debate-formato"] || "Dois lados";
     const aiMode = controls["debate-acao-ia"] || "Organizar roteiro de debate";
     const mainQuestion = controls["debate-pergunta"] || "Pergunta central do debate";
-    const sideA = controls["debate-lado-a"] || "Posicao A";
-    const sideB = controls["debate-lado-b"] || "Posicao B";
+    const sideA = controls["debate-lado-a"] || "Posição A";
+    const sideB = controls["debate-lado-b"] || "Posição B";
 
     const cardRoot = document.querySelector(".debate-stage-card");
     const sidesRoot = document.querySelector(".debate-stage-sides");
@@ -163,8 +163,8 @@ function renderDebateApplication() {
 
     if (guidanceLabelRoot) {
         guidanceLabelRoot.textContent = modeClass === "debate-mode--guided"
-            ? "Conducao"
-                        : "Mediacao";
+            ? "Condução"
+                        : "Mediação";
     }
 
     const renderStep = () => {
@@ -179,7 +179,7 @@ function renderDebateApplication() {
         if (prevButton) prevButton.disabled = activeIndex === 0;
         if (nextButton) {
             nextButton.disabled = activeIndex === safeSteps.length - 1;
-            nextButton.textContent = activeIndex === safeSteps.length - 1 ? "Ãšltima etapa" : "PrÃ³xima etapa";
+            nextButton.textContent = activeIndex === safeSteps.length - 1 ? "Última etapa" : "Próxima etapa";
         }
     };
 

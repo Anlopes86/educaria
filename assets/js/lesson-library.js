@@ -5,6 +5,8 @@ const DELETED_LESSONS_KEY = "educaria:deletedLessons";
 const LESSON_SCOPE_LIBRARY = "library";
 const LESSON_SCOPE_CLASS = "class";
 const LESSONS_REMOTE_COLLECTION = "lessons";
+const LESSON_STATUS_DRAFT = "draft";
+const LESSON_STATUS_READY = "ready";
 
 let lessonsSyncPromise = null;
 let lastLessonsSyncUid = "";
@@ -48,6 +50,20 @@ function lessonTimestampValue(lesson) {
     return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function isoTimestampOrEmpty(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+
+    const parsed = Date.parse(raw);
+    return Number.isFinite(parsed) ? new Date(parsed).toISOString() : "";
+}
+
+function normalizeLessonStatus(value) {
+    return String(value || "").trim().toLowerCase() === LESSON_STATUS_READY
+        ? LESSON_STATUS_READY
+        : LESSON_STATUS_DRAFT;
+}
+
 function sortLessonsByUpdatedAt(lessons) {
     return [...lessons].sort((left, right) => {
         const timestampDiff = lessonTimestampValue(right) - lessonTimestampValue(left);
@@ -62,19 +78,27 @@ function normalizeLessonRecord(lesson) {
     const materialType = String(lesson.materialType || "slides").trim() || "slides";
     const className = String(lesson.className || "").trim();
     const scope = lesson.scope || (className ? LESSON_SCOPE_CLASS : LESSON_SCOPE_LIBRARY);
+    const updatedAt = isoTimestampOrEmpty(lesson.updatedAt) || new Date().toISOString();
+    const createdAt = isoTimestampOrEmpty(lesson.createdAt) || updatedAt;
     const normalizedType = materialType === "hangman"
-        ? "Forca"
+        ? "Força"
         : (String(lesson.type || materialGroupLabel(materialType)).trim() || materialGroupLabel(materialType));
 
     return {
         id: String(lesson.id || `lesson-${Date.now()}`),
         className: scope === LESSON_SCOPE_CLASS ? className : "",
         scope,
-        title: String(lesson.title || "").trim() || "Material sem titulo",
+        title: String(lesson.title || "").trim() || "Material sem título",
         summary: String(lesson.summary || "").trim() || "Material salvo sem resumo definido.",
         type: normalizedType,
         materialType,
-        updatedAt: String(lesson.updatedAt || new Date().toISOString()),
+        createdAt,
+        updatedAt,
+        status: normalizeLessonStatus(lesson.status),
+        lastOpenedAt: isoTimestampOrEmpty(lesson.lastOpenedAt),
+        lastPresentedAt: isoTimestampOrEmpty(lesson.lastPresentedAt),
+        lastUsedAt: isoTimestampOrEmpty(lesson.lastUsedAt),
+        usageCount: Number.isFinite(Number(lesson.usageCount)) ? Math.max(0, Number(lesson.usageCount)) : 0,
         draft: typeof lesson.draft === "string" ? lesson.draft : ""
     };
 }
@@ -211,17 +235,70 @@ function removeLessonById(id) {
     }
 }
 
+function updateLessonRecordById(id, updater, options = {}) {
+    const lessonId = String(id || "").trim();
+    if (!lessonId || typeof updater !== "function") return null;
+
+    const lessons = readLessonsLibrary();
+    const current = lessons.find((lesson) => lesson.id === lessonId);
+    if (!current) return null;
+
+    const nextRecord = normalizeLessonRecord(updater({ ...current }));
+    if (!nextRecord) return null;
+
+    const nextLessons = lessons.filter((lesson) => lesson.id !== lessonId);
+    nextLessons.unshift(nextRecord);
+    writeLessonsLibrary(nextLessons, options);
+    return nextRecord;
+}
+
+function markLessonOpened(id) {
+    const now = new Date().toISOString();
+    return updateLessonRecordById(id, (lesson) => ({
+        ...lesson,
+        lastOpenedAt: now
+    }), { source: "usage" });
+}
+
+function markLessonPresented(id) {
+    const now = new Date().toISOString();
+    return updateLessonRecordById(id, (lesson) => ({
+        ...lesson,
+        status: lesson.status || LESSON_STATUS_DRAFT,
+        lastPresentedAt: now,
+        lastUsedAt: now,
+        usageCount: Number(lesson.usageCount || 0) + 1
+    }), { source: "usage" });
+}
+
+function updateLessonStatus(id, status) {
+    return updateLessonRecordById(id, (lesson) => ({
+        ...lesson,
+        status: normalizeLessonStatus(status)
+    }));
+}
+
+function markLessonReady(id) {
+    return updateLessonStatus(id, LESSON_STATUS_READY);
+}
+
 function duplicateLessonToClass(id, targetClass) {
     const lesson = readLessonsLibrary().find((item) => item.id === id);
     const turma = String(targetClass || "").trim();
     if (!lesson || !turma) return null;
 
+    const now = new Date().toISOString();
     const copy = {
         ...lesson,
         id: `lesson-${Date.now()}`,
         className: turma,
         scope: LESSON_SCOPE_CLASS,
-        updatedAt: new Date().toISOString()
+        createdAt: now,
+        updatedAt: now,
+        lastOpenedAt: "",
+        lastPresentedAt: "",
+        lastUsedAt: "",
+        usageCount: 0
     };
 
     return persistLessonRecord(copy);
@@ -231,12 +308,18 @@ function addLessonToLibrary(id) {
     const lesson = readLessonsLibrary().find((item) => item.id === id);
     if (!lesson) return null;
 
+    const now = new Date().toISOString();
     const copy = {
         ...lesson,
         id: `lesson-${Date.now()}`,
         className: "",
         scope: LESSON_SCOPE_LIBRARY,
-        updatedAt: new Date().toISOString()
+        createdAt: now,
+        updatedAt: now,
+        lastOpenedAt: "",
+        lastPresentedAt: "",
+        lastUsedAt: "",
+        usageCount: 0
     };
 
     return persistLessonRecord(copy);
@@ -435,19 +518,19 @@ function parseDraftHtml(rawDraft) {
 
 function summarizeSlidesDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Aula sem titulo", summary: "Material salvo sem resumo definido.", type: "Aula com slides", materialType: "slides" };
+        return { title: "Aula sem título", summary: "Material salvo sem resumo definido.", type: "Aula com slides", materialType: "slides" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
     const firstSlide = doc.querySelector("[data-slide-card]");
-    const title = firstSlide?.querySelector('[data-field="slide-title"]')?.value?.trim() || "Aula sem titulo";
+    const title = firstSlide?.querySelector('[data-field="slide-title"]')?.value?.trim() || "Aula sem título";
     const summary = firstSlide?.querySelector('[data-field="slide-body"]')?.value?.trim() || "Material salvo sem resumo definido.";
     return { title, summary, type: "Aula com slides", materialType: "slides" };
 }
 
 function summarizeFlashcardsDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Flashcards sem titulo", summary: "Material salvo sem resumo definido.", type: "Flashcards", materialType: "flashcards" };
+        return { title: "Flashcards sem título", summary: "Material salvo sem resumo definido.", type: "Flashcards", materialType: "flashcards" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
@@ -460,7 +543,7 @@ function summarizeFlashcardsDraft(rawDraft) {
 
 function summarizeQuizDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Quiz sem titulo", summary: "Material salvo sem resumo definido.", type: "Quiz", materialType: "quiz" };
+        return { title: "Quiz sem título", summary: "Material salvo sem resumo definido.", type: "Quiz", materialType: "quiz" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
@@ -472,35 +555,35 @@ function summarizeQuizDraft(rawDraft) {
 
 function summarizeWheelDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Roleta sem titulo", summary: "Material salvo sem resumo definido.", type: "Roleta", materialType: "wheel" };
+        return { title: "Roleta sem título", summary: "Material salvo sem resumo definido.", type: "Roleta", materialType: "wheel" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
     const title = parsed.controls?.["roleta-titulo"] || "Roleta";
-    const firstItem = doc.querySelector("[data-wheel-text]")?.value?.trim() || "Sem espaco inicial";
+    const firstItem = doc.querySelector("[data-wheel-text]")?.value?.trim() || "Sem espaço inicial";
     const count = doc.querySelectorAll("[data-wheel-segment]").length || 0;
-    return { title, summary: `${count} espacos - ${firstItem}`, type: "Roleta", materialType: "wheel" };
+    return { title, summary: `${count} espaços - ${firstItem}`, type: "Roleta", materialType: "wheel" };
 }
 
 function summarizeHangmanDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Forca sem titulo", summary: "Material salvo sem resumo definido.", type: "Forca", materialType: "hangman" };
+        return { title: "Força sem título", summary: "Material salvo sem resumo definido.", type: "Força", materialType: "hangman" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
-    const title = parsed.controls?.["forca-titulo"] || "Forca";
+    const title = parsed.controls?.["forca-titulo"] || "Força";
     const words = [...doc.querySelectorAll("[data-hangman-entry]")].map((card) => {
         return card.querySelector("[data-hangman-answer]")?.value?.trim()
             || card.querySelector('[data-field="answer"]')?.value?.trim()
             || "";
     }).filter(Boolean);
     const firstWord = words[0] || "Sem palavra inicial";
-    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Forca", materialType: "hangman" };
+    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Força", materialType: "hangman" };
 }
 
 function summarizeCrosswordDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Palavras cruzadas sem titulo", summary: "Material salvo sem resumo definido.", type: "Palavras cruzadas", materialType: "crossword" };
+        return { title: "Palavras cruzadas sem título", summary: "Material salvo sem resumo definido.", type: "Palavras cruzadas", materialType: "crossword" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
@@ -516,35 +599,35 @@ function summarizeCrosswordDraft(rawDraft) {
 
 function summarizeWordsearchDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Caca-palavras sem titulo", summary: "Material salvo sem resumo definido.", type: "Caca-palavras", materialType: "wordsearch" };
+        return { title: "Caça-palavras sem título", summary: "Material salvo sem resumo definido.", type: "Caça-palavras", materialType: "wordsearch" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
-    const title = parsed.controls?.["caca-titulo"] || "Caca-palavras";
+    const title = parsed.controls?.["caca-titulo"] || "Caça-palavras";
     const words = [...doc.querySelectorAll("[data-wordsearch-word]")].map((card) => {
         return card.querySelector("[data-wordsearch-term]")?.value?.trim()
             || card.querySelector('[data-field="term"]')?.value?.trim()
             || "";
     }).filter(Boolean);
     const firstWord = words[0] || "Sem palavra inicial";
-    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Caca-palavras", materialType: "wordsearch" };
+    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Caça-palavras", materialType: "wordsearch" };
 }
 
 function summarizeMemoryDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Jogo da memoria sem titulo", summary: "Material salvo sem resumo definido.", type: "Jogo da memoria", materialType: "memory" };
+        return { title: "Jogo da memória sem título", summary: "Material salvo sem resumo definido.", type: "Jogo da memória", materialType: "memory" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
-    const title = parsed.controls?.["memoria-titulo"] || "Jogo da memoria";
+    const title = parsed.controls?.["memoria-titulo"] || "Jogo da memória";
     const firstFront = doc.querySelector("[data-memory-front]")?.value?.trim() || "Sem frente inicial";
     const firstBack = doc.querySelector("[data-memory-back]")?.value?.trim() || "Sem verso inicial";
-    return { title, summary: `${firstFront} - ${firstBack}`, type: "Jogo da memoria", materialType: "memory" };
+    return { title, summary: `${firstFront} - ${firstBack}`, type: "Jogo da memória", materialType: "memory" };
 }
 
 function summarizeMatchDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Ligar pontos sem titulo", summary: "Material salvo sem resumo definido.", type: "Ligar pontos", materialType: "match" };
+        return { title: "Ligar pontos sem título", summary: "Material salvo sem resumo definido.", type: "Ligar pontos", materialType: "match" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
@@ -556,19 +639,19 @@ function summarizeMatchDraft(rawDraft) {
 
 function summarizeMindmapDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Mapa mental sem titulo", summary: "Material salvo sem resumo definido.", type: "Mapa mental", materialType: "mindmap" };
+        return { title: "Mapa mental sem título", summary: "Material salvo sem resumo definido.", type: "Mapa mental", materialType: "mindmap" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
     const title = parsed.controls?.["mapa-centro"] || "Mapa mental";
-    const firstBranch = doc.querySelector("[data-mind-title]")?.value?.trim() || "Sem topico inicial";
+    const firstBranch = doc.querySelector("[data-mind-title]")?.value?.trim() || "Sem tópico inicial";
     const count = doc.querySelectorAll("[data-mind-branch]").length || 0;
-    return { title, summary: `${count} topicos - ${firstBranch}`, type: "Mapa mental", materialType: "mindmap" };
+    return { title, summary: `${count} tópicos - ${firstBranch}`, type: "Mapa mental", materialType: "mindmap" };
 }
 
 function summarizeDebateDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Debate guiado sem titulo", summary: "Material salvo sem resumo definido.", type: "Debate guiado", materialType: "debate" };
+        return { title: "Debate guiado sem título", summary: "Material salvo sem resumo definido.", type: "Debate guiado", materialType: "debate" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
@@ -580,7 +663,7 @@ function summarizeDebateDraft(rawDraft) {
 
 function summarizeLessonSequenceDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Aula completa sem titulo", summary: "Sequencia ainda sem blocos definidos.", type: "Aula completa", materialType: "lesson" };
+        return { title: "Aula completa sem título", summary: "Sequência ainda sem blocos definidos.", type: "Aula completa", materialType: "lesson" };
     }
 
     try {
@@ -590,11 +673,11 @@ function summarizeLessonSequenceDraft(rawDraft) {
         const totalDuration = Number(parsed.duration || 0);
         const title = (parsed.title || "").trim() || "Aula completa";
         const summary = blocks.length
-            ? `${blocks.length} blocos - ${firstBlock?.label || firstBlock?.lessonTitle || "Inicio da sequencia"}${totalDuration ? ` - ${totalDuration} min` : ""}`
-            : "Sequencia ainda sem blocos definidos.";
+            ? `${blocks.length} blocos - ${firstBlock?.label || firstBlock?.lessonTitle || "Início da sequência"}${totalDuration ? ` - ${totalDuration} min` : ""}`
+            : "Sequência ainda sem blocos definidos.";
         return { title, summary, type: "Aula completa", materialType: "lesson" };
     } catch (error) {
-        return { title: "Aula completa", summary: "Sequencia ainda sem blocos definidos.", type: "Aula completa", materialType: "lesson" };
+        return { title: "Aula completa", summary: "Sequência ainda sem blocos definidos.", type: "Aula completa", materialType: "lesson" };
     }
 }
 
@@ -751,6 +834,8 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
         && normalizeLessonScope(existing) === scope
         ? existing.id
         : `lesson-${Date.now()}`;
+    const now = new Date().toISOString();
+    const createdAt = existing?.createdAt || now;
 
     return {
         id: lessonId,
@@ -760,7 +845,13 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
         summary: summary.summary,
         type: summary.type,
         materialType,
-        updatedAt: new Date().toISOString(),
+        createdAt,
+        updatedAt: now,
+        status: existing?.status || LESSON_STATUS_DRAFT,
+        lastOpenedAt: existing?.lastOpenedAt || "",
+        lastPresentedAt: existing?.lastPresentedAt || "",
+        lastUsedAt: existing?.lastUsedAt || "",
+        usageCount: Number(existing?.usageCount || 0),
         draft: rawDraft
     };
 }
@@ -877,10 +968,10 @@ function materialGroupLabel(type) {
     if (type === "quiz") return "Quiz";
     if (type === "flashcards") return "Flashcards";
     if (type === "wheel") return "Roleta";
-    if (type === "hangman") return "Forca";
+    if (type === "hangman") return "Força";
     if (type === "crossword") return "Palavras cruzadas";
-    if (type === "wordsearch") return "Caca-palavras";
-    if (type === "memory") return "Jogo da memoria";
+    if (type === "wordsearch") return "Caça-palavras";
+    if (type === "memory") return "Jogo da memória";
     if (type === "match") return "Ligar pontos";
     if (type === "mindmap") return "Mapa mental";
     if (type === "debate") return "Debate guiado";
@@ -888,18 +979,18 @@ function materialGroupLabel(type) {
 }
 
 function materialGroupDescription(type) {
-    if (type === "lesson") return "Sequencias que combinam varias atividades em uma unica aula.";
+    if (type === "lesson") return "Sequências que combinam várias atividades em uma única aula.";
     if (type === "quiz") return "Perguntas para revisar, aplicar e projetar em sala.";
-    if (type === "flashcards") return "Cards para retomada rapida e revisao visual.";
+    if (type === "flashcards") return "Cards para retomada rápida e revisão visual.";
     if (type === "wheel") return "Sorteios, comandos e desafios prontos para a turma.";
-    if (type === "hangman") return "Palavras com dicas para revisar vocabulario, ortografia e conceitos de forma dinamica.";
-    if (type === "crossword") return "Grades com respostas cruzadas para revisar conceitos, vocabulario e definicoes.";
-    if (type === "wordsearch") return "Grades com palavras escondidas para revisar vocabulario, conceitos e temas.";
+    if (type === "hangman") return "Palavras com dicas para revisar vocabulário, ortografia e conceitos de forma dinâmica.";
+    if (type === "crossword") return "Grades com respostas cruzadas para revisar conceitos, vocabulário e definições.";
+    if (type === "wordsearch") return "Grades com palavras escondidas para revisar vocabulário, conceitos e temas.";
     if (type === "memory") return "Pares para jogar, revisar e memorizar em sala.";
-    if (type === "match") return "Associacoes em duas colunas para ligar e revisar em sala.";
-    if (type === "mindmap") return "Topicos conectados para organizar, explicar e revisar conteudos.";
-    if (type === "debate") return "Roteiros de mediacao para discutir, argumentar e fechar o tema em sala.";
-    return "Sequencias para conduzir a aula projetada.";
+    if (type === "match") return "Associações em duas colunas para ligar e revisar em sala.";
+    if (type === "mindmap") return "Tópicos conectados para organizar, explicar e revisar conteúdos.";
+    if (type === "debate") return "Roteiros de mediação para discutir, argumentar e fechar o tema em sala.";
+    return "Sequências para conduzir a aula projetada.";
 }
 
 function selectedClassFromAvailableClasses() {
@@ -1009,7 +1100,7 @@ function hydrateCompletionSummary() {
 
     const summary = document.querySelector("[data-lesson-summary]");
     if (summary) {
-        summary.innerHTML = `<strong>Turma:</strong> ${lesson.className}<br><strong>Conteudo:</strong> ${lesson.title}<br><strong>Tipo:</strong> ${lesson.type}.`;
+        summary.innerHTML = `<strong>Turma:</strong> ${lesson.className}<br><strong>Conteúdo:</strong> ${lesson.title}<br><strong>Tipo:</strong> ${lesson.type}.`;
     }
 }
 
@@ -1188,6 +1279,11 @@ function bindLessonActivationLinks() {
 
         const lessonId = trigger.dataset.editLesson || trigger.dataset.presentLesson;
         if (!lessonId) return;
+        if (trigger.dataset.editLesson) {
+            markLessonOpened(lessonId);
+        } else if (trigger.dataset.presentLesson) {
+            markLessonPresented(lessonId);
+        }
         activateLessonById(lessonId);
     });
 
@@ -1357,6 +1453,11 @@ document.addEventListener("educaria-lessons-updated", () => {
     hydrateClassPage();
     hydrateLibraryPage();
 });
+
+window.markLessonOpened = markLessonOpened;
+window.markLessonPresented = markLessonPresented;
+window.markLessonReady = markLessonReady;
+window.updateLessonStatus = updateLessonStatus;
 
 window.addEventListener("pageshow", (event) => {
     hydrateCompletionSummary();

@@ -62,7 +62,7 @@ function parseSlideCards(stackHtml) {
             index,
             title: fieldValue("slide-title") || `Slide ${index + 1}`,
             subtitle: fieldValue("slide-subtitle"),
-            body: fieldValue("slide-body") || "Sem conteudo definido.",
+            body: fieldValue("slide-body") || "Sem conteúdo definido.",
             layoutMode: normalizeLayout(fieldLabel("slide-layout"), hasImage),
             imageMode: fieldLabel("slide-image-mode") || "Sem imagem",
             imageUrl,
@@ -79,7 +79,7 @@ function buildFallbackSlides() {
     return [{
         index: 0,
         title: "Has technology changed education?",
-        subtitle: "Observe a transformacao da sala de aula",
+        subtitle: "Observe a transformação da sala de aula",
         body: "Observe as imagens e pense no que mudou na sala de aula ao longo dos anos.",
         layoutMode: "stack",
         imageMode: "Sem imagem",
@@ -100,7 +100,7 @@ function renderSlideBody(body) {
         .filter(Boolean);
 
     if (!lines.length) {
-        return "<p>Sem conteudo definido.</p>";
+        return "<p>Sem conteúdo definido.</p>";
     }
 
     const hasBullets = lines.some((line) => /^[-*•]\s+/.test(line));
@@ -120,7 +120,7 @@ function renderMediaPlaceholder(slide) {
         <div class="presentation-media-placeholder">
             <span class="platform-section-label">Imagem sugerida</span>
             <strong>${escapeHtml(slide.title)}</strong>
-            <p>${escapeHtml(slide.imagePrompt || "Ilustracao educativa para apoiar o slide.")}</p>
+            <p>${escapeHtml(slide.imagePrompt || "Ilustração educativa para apoiar o slide.")}</p>
         </div>
     `;
 }
@@ -133,10 +133,10 @@ function renderStructuredSlideBody(body) {
         .filter(Boolean);
 
     if (!lines.length) {
-        return "<p>Sem conteudo definido.</p>";
+        return "<p>Sem conteúdo definido.</p>";
     }
 
-    const bulletPattern = /^[-*•â€¢]\s+/;
+    const bulletPattern = /^[-*••]\s+/;
     const hasBullets = lines.some((line) => bulletPattern.test(line));
     if (hasBullets) {
         return `

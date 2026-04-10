@@ -3543,6 +3543,21 @@ body.product-body.theme-class[data-page="class-detail"] .lesson-history-card--gr
     gap: 8px;
 }
 
+.sidebar-subgroup {
+    display: grid;
+    gap: 8px;
+}
+
+.sidebar-subgroup-label {
+    display: block;
+    padding: 0 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(148, 163, 184, 0.82);
+}
+
 .sidebar-subitem {
     display: flex;
     align-items: center;
@@ -3962,8 +3977,57 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 
 .dashboard-toolkit-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 14px;
+}
+
+.dashboard-toolkit-secondary {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+    padding: 18px;
+    border: 1px solid rgba(245, 158, 11, 0.28);
+    border-left: 6px solid rgba(245, 158, 11, 0.88);
+    background:
+        linear-gradient(135deg, rgba(255, 247, 237, 0.98) 0%, rgba(254, 249, 195, 0.92) 100%);
+    box-shadow: 0 18px 32px -26px rgba(217, 119, 6, 0.24);
+}
+
+.dashboard-toolkit-secondary strong {
+    display: block;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--navy-dark);
+}
+
+.dashboard-toolkit-secondary p {
+    margin: 6px 0 0;
+    color: #7c4a03;
+}
+
+.dashboard-toolkit-links {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.dashboard-toolkit-link {
+    display: block;
+    padding: 12px 14px;
+    border: 1px solid rgba(245, 158, 11, 0.22);
+    text-decoration: none;
+    color: var(--navy-dark);
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.84);
+    transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.dashboard-toolkit-link:hover,
+.dashboard-toolkit-link:focus-visible {
+    background: #ffffff;
+    border-color: rgba(217, 119, 6, 0.4);
+    transform: translateY(-1px);
 }
 
 .dashboard-tool-card {
@@ -5524,6 +5588,10 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
         grid-template-columns: 1fr;
     }
 
+    .dashboard-toolkit-links {
+        grid-template-columns: 1fr 1fr;
+    }
+
     .settings-grid {
         grid-template-columns: 1fr;
     }
@@ -5544,7 +5612,8 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     .dashboard-hero-panel,
     .dashboard-toolkit-grid,
     .dashboard-class-grid,
-    .dashboard-overview-kpis {
+    .dashboard-overview-kpis,
+    .dashboard-toolkit-links {
         grid-template-columns: 1fr;
     }
 

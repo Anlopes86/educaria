@@ -87,7 +87,7 @@ function builderConfig() {
             key: scopedStorageKey("educaria:builder:wheel"),
             stackSelector: "[data-wheel-segments]",
             cardSelector: "[data-wheel-segment]",
-            labelPrefix: "Espaco",
+            labelPrefix: "Espaço",
             labelSelector: "[data-wheel-label]"
         };
     }
@@ -224,7 +224,7 @@ function normalizeSlideBuilder(stack) {
             const wrapper = document.createElement("div");
             wrapper.className = "platform-field platform-field-wide";
             wrapper.innerHTML = `
-                <label>Subtitulo do slide</label>
+                <label>Subtítulo do slide</label>
                 <input data-field="slide-subtitle" type="text" value="">
             `;
             grid.insertBefore(wrapper, bodyField);

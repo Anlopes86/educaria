@@ -20,8 +20,8 @@ function mindBranchTemplate(index, title = "", subtitle = "", detail = "", color
         <section class="platform-question-card activity-content-card mind-branch-card" data-mind-branch>
             <div class="activity-card-header">
                 <div>
-                    <span class="platform-section-label" data-mind-label>Topico ${index + 1}</span>
-                    <h3>Conteudo do topico</h3>
+                    <span class="platform-section-label" data-mind-label>Tópico ${index + 1}</span>
+                    <h3>Conteúdo do tópico</h3>
                 </div>
                 <div class="activity-card-actions">
                     <button type="button" class="platform-link-button platform-link-secondary" data-mind-remove>Remover</button>
@@ -29,11 +29,11 @@ function mindBranchTemplate(index, title = "", subtitle = "", detail = "", color
             </div>
             <div class="platform-form-grid">
                 <div class="platform-field">
-                    <label>Titulo do topico</label>
+                    <label>Título do tópico</label>
                     <input data-mind-title type="text" value="${escapeMindAttr(title)}">
                 </div>
                 <div class="platform-field">
-                    <label>Subtitulo do topico</label>
+                    <label>Subtítulo do tópico</label>
                     <input data-mind-subtitle type="text" value="${escapeMindAttr(subtitle)}">
                 </div>
                 <div class="platform-field">
@@ -41,8 +41,8 @@ function mindBranchTemplate(index, title = "", subtitle = "", detail = "", color
                     <input data-mind-color type="color" value="${color}">
                 </div>
                 <div class="platform-field platform-field-wide">
-                    <label>Explicacao do topico</label>
-                    <textarea data-mind-detail rows="4" placeholder="Paragrafo inicial&#10;&#10;- Topico 1&#10;- Topico 2">${escapeMindAttr(detail)}</textarea>
+                    <label>Explicação do tópico</label>
+                    <textarea data-mind-detail rows="4" placeholder="Parágrafo inicial&#10;&#10;- Tópico 1&#10;- Tópico 2">${escapeMindAttr(detail)}</textarea>
                 </div>
             </div>
         </section>
@@ -52,8 +52,8 @@ function mindBranchTemplate(index, title = "", subtitle = "", detail = "", color
 function collectMindBranches() {
     return [...document.querySelectorAll("[data-mind-branch]")].map((branch, index) => ({
         index,
-        title: branch.querySelector("[data-mind-title]")?.value.trim() || `Topico ${index + 1}`,
-        subtitle: branch.querySelector("[data-mind-subtitle]")?.value.trim() || "Ideia-chave deste topico",
+        title: branch.querySelector("[data-mind-title]")?.value.trim() || `Tópico ${index + 1}`,
+        subtitle: branch.querySelector("[data-mind-subtitle]")?.value.trim() || "Ideia-chave deste tópico",
         detail: branch.querySelector("[data-mind-detail]")?.value.trim() || "Explique aqui o ponto principal deste topico.",
         color: branch.querySelector("[data-mind-color]")?.value || mindPalette[index % mindPalette.length]
     }));
@@ -76,7 +76,7 @@ function setMindCountSelect(count) {
 
     const highest = options[options.length - 1];
     if (highest) {
-        highest.textContent = `${count} topicos`;
+        highest.textContent = `${count} tópicos`;
         highest.value = highest.textContent;
         quantity.value = highest.value;
     }
@@ -100,7 +100,7 @@ function syncMindBranchCount() {
     }
 
     [...stack.querySelectorAll("[data-mind-label]")].forEach((label, index) => {
-        label.textContent = `Topico ${index + 1}`;
+        label.textContent = `Tópico ${index + 1}`;
     });
 }
 
@@ -143,10 +143,10 @@ function renderMindPreview() {
 
     if (titleRoot) titleRoot.textContent = center;
     if (subtitleRoot) subtitleRoot.textContent = subtitle;
-    if (countRoot) countRoot.textContent = `${branches.length} topicos`;
+    if (countRoot) countRoot.textContent = `${branches.length} tópicos`;
 
     if (mapRoot) {
-        mapRoot.classList.toggle("is-topics", layout === "Topicos");
+        mapRoot.classList.toggle("is-topics", layout === "Tópicos");
         mapRoot.innerHTML = `
             <article class="mind-preview-center">
                 <strong>${escapeMindAttr(center)}</strong>

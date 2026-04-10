@@ -21,7 +21,7 @@ function memoryPairTemplate(index, front = "", back = "", color = "#22c55e") {
             <div class="activity-card-header">
                 <div>
                     <span class="platform-section-label" data-memory-label>Par ${index + 1}</span>
-                    <h3>Conteudo do par</h3>
+                    <h3>Conteúdo do par</h3>
                 </div>
                 <div class="activity-card-actions">
                     <button type="button" class="platform-link-button platform-link-secondary" data-memory-remove>Remover</button>

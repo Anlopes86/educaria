@@ -102,7 +102,7 @@ function parseWheelTemplateTextLocal(sourceText) {
 
             const value = String(match[1] || "").trim().replace(/^_+|_+$/g, "").trim();
             if (!value) return null;
-            if (/^revisao rapida$/i.test(value) || /^pergunta surpresa$/i.test(value) || /^explique um conceito$/i.test(value)) {
+            if (/^revisão rápida$/i.test(value) || /^pergunta surpresa$/i.test(value) || /^explique um conceito$/i.test(value)) {
                 return { text: value, example: true };
             }
 
@@ -152,7 +152,7 @@ function trimWords(text, maxWords = 11) {
 function normalizeSlideBodyText(body, slideType = "content") {
     const raw = String(body || "").replace(/\r/g, "\n").trim();
     if (!raw) {
-        return slideType === "cover" ? "Visao geral da aula" : "- Conteudo principal";
+        return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     }
 
     const lineParts = raw
@@ -166,7 +166,7 @@ function normalizeSlideBodyText(body, slideType = "content") {
         .slice(0, slideType === "cover" ? 2 : 5);
 
     if (!units.length) {
-        return slideType === "cover" ? "Visao geral da aula" : "- Conteudo principal";
+        return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     }
 
     if (slideType === "cover") {
@@ -184,7 +184,7 @@ function refineSlideBodyText(body, slideType = "content") {
         .map((line) => line.trim())
         .filter(Boolean)
         .flatMap((line) => {
-            const clean = line.replace(/^[-*•â€¢]\s*/, "").trim();
+            const clean = line.replace(/^[-*••]\s*/, "").trim();
             return clean
                 .split(/(?<=:)\s+|;\s+|(?<=[.!?])\s+/)
                 .map((part) => part.trim())
@@ -193,7 +193,7 @@ function refineSlideBodyText(body, slideType = "content") {
         .slice(0, slideType === "cover" ? 2 : 5);
 
     if (!lines.length) {
-        return slideType === "cover" ? "Visao geral da aula" : "- Conteudo principal";
+        return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     }
 
     if (slideType === "cover") {
@@ -222,7 +222,7 @@ function restoreSlideAbbreviationsSafe(text) {
 function refineSlideBodyTextSafe(body, slideType = "content") {
     const raw = String(body || "").replace(/\r/g, "\n").trim();
     if (!raw) {
-        return slideType === "cover" ? "Visao geral da aula" : "- Conteudo principal";
+        return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     }
 
     const protectedRaw = protectSlideAbbreviationsSafe(raw);
@@ -232,7 +232,7 @@ function refineSlideBodyTextSafe(body, slideType = "content") {
         .filter(Boolean);
 
     const logicalUnits = (sourceLines.length > 1 ? sourceLines : protectedRaw.split(/(?<=[!?;])\s+|(?<=\.)\s+(?=[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])/))
-        .map((item) => restoreSlideAbbreviationsSafe(item).replace(/^[-*•â€¢Ã¢â‚¬Â¢]\s*/, "").trim())
+        .map((item) => restoreSlideAbbreviationsSafe(item).replace(/^[-*••ââ‚¬Â¢]\s*/, "").trim())
         .filter(Boolean)
         .flatMap((item) => protectSlideAbbreviationsSafe(item)
             .split(/;\s+|(?<=[!?])\s+|(?<=\.)\s+(?=[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])/)
@@ -241,7 +241,7 @@ function refineSlideBodyTextSafe(body, slideType = "content") {
         .slice(0, slideType === "cover" ? 2 : 5);
 
     if (!logicalUnits.length) {
-        return slideType === "cover" ? "Visao geral da aula" : "- Conteudo principal";
+        return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     }
 
     if (slideType === "cover") {
@@ -254,7 +254,7 @@ function refineSlideBodyTextSafe(body, slideType = "content") {
 function compactSlideBodyText(body, slideType = "content") {
     const raw = String(body || "").replace(/\r/g, "\n").trim();
     if (!raw) {
-        return slideType === "cover" ? "Visao geral da aula" : "- Conteudo principal";
+        return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     }
 
     const protectedRaw = raw
@@ -279,7 +279,7 @@ function compactSlideBodyText(body, slideType = "content") {
         .slice(0, slideType === "cover" ? 2 : 5);
 
     if (!baseUnits.length) {
-        return slideType === "cover" ? "Visao geral da aula" : "- Conteudo principal";
+        return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     }
 
     if (slideType === "cover") {
@@ -758,15 +758,15 @@ function applyWordsearchFromStructuredData(payload) {
     const titleField = document.getElementById("caca-titulo");
     const subtitleField = document.getElementById("caca-subtitulo");
 
-    if (titleField) titleField.value = payload.title || "Novo caca-palavras";
-    if (subtitleField) subtitleField.value = payload.subtitle || "Encontre os termos principais do conteudo.";
+    if (titleField) titleField.value = payload.title || "Novo caça-palavras";
+    if (subtitleField) subtitleField.value = payload.subtitle || "Encontre os termos principais do conteúdo.";
 
     stack.innerHTML = normalizedWords.map((entry, index) => `
         <section class="platform-question-card activity-content-card wordsearch-word-card" data-wordsearch-word>
             <div class="activity-card-header">
                 <div>
                     <span class="platform-section-label" data-wordsearch-label>Palavra ${index + 1}</span>
-                    <h3>Conteudo da palavra</h3>
+                    <h3>Conteúdo da palavra</h3>
                 </div>
                 <div class="activity-card-actions">
                     <button type="button" class="platform-link-button platform-link-secondary" data-wordsearch-remove>Remover</button>
@@ -808,7 +808,7 @@ function applyMindmapFromStructuredData(payload) {
 
     if (titleField) titleField.value = payload.title || "";
     if (subtitleField) subtitleField.value = payload.subtitle || "";
-    if (layoutField) setSelectByText(layoutField, "Topicos");
+    if (layoutField) setSelectByText(layoutField, "Tópicos");
 
     if (typeof setMindCountSelect === "function") {
         setMindCountSelect(branches.length);
@@ -832,7 +832,7 @@ function applyMindmapFromStructuredData(payload) {
         const detail = card.querySelector("[data-mind-detail]");
         const color = card.querySelector("[data-mind-color]");
 
-        if (label) label.textContent = `Topico ${index + 1}`;
+        if (label) label.textContent = `Tópico ${index + 1}`;
         if (title) title.value = branch?.title || "";
         if (subtitle) subtitle.value = branch?.subtitle || "";
         if (detail) detail.value = branch?.detail || "";
@@ -909,14 +909,14 @@ function buildFallbackSlides(sourceText, requestedCount) {
     const sentenceUnits = lines.join(" ").split(/(?<=[.!?])\s+/).filter(Boolean);
     const units = blocks.length > 1 ? blocks : sentenceUnits;
     const title = lines[0] || "Aula";
-    const slides = (units.length ? units : ["Introducao ao tema", "Desenvolvimento do conteudo", "Fechamento e revisao"])
+    const slides = (units.length ? units : ["Introdução ao tema", "Desenvolvimento do conteúdo", "Fechamento e revisão"])
         .slice(0, requestedCount || 6)
         .map((block, index) => ({
             type: index === 0 ? "cover" : "content",
             title: index === 0 ? summarizeBlock(title, "Aula") : `Ponto ${index}`,
-            subtitle: index === 0 ? "Visao geral da aula" : "",
-            body: summarizeBlock(block, "Conteudo do slide"),
-            image_prompt: index === 0 ? `Ilustracao educativa sobre ${summarizeBlock(title, "o tema")}` : ""
+            subtitle: index === 0 ? "Visão geral da aula" : "",
+            body: summarizeBlock(block, "Conteúdo do slide"),
+            image_prompt: index === 0 ? `Ilustração educativa sobre ${summarizeBlock(title, "o tema")}` : ""
         }));
 
     return { title, slides };
@@ -952,13 +952,13 @@ function buildFallbackQuiz(sourceText) {
 
 function buildFallbackFlashcards(sourceText, requestedCount) {
     const lines = normalizeLines(sourceText);
-    const cards = (lines.length ? lines : ["Conceito principal", "Definicao importante", "Exemplo de aplicacao"])
+    const cards = (lines.length ? lines : ["Conceito principal", "Definição importante", "Exemplo de aplicação"])
         .slice(0, requestedCount || 10)
         .map((line, index) => {
             const pair = line.split(/\s*[-:]\s*/);
             return {
                 front: pair[0] || `Card ${index + 1}`,
-                back: pair.slice(1).join(" - ") || summarizeBlock(line, "Definicao curta"),
+                back: pair.slice(1).join(" - ") || summarizeBlock(line, "Definição curta"),
                 example: ""
             };
         });
@@ -975,7 +975,7 @@ function buildFallbackMindmap(sourceText) {
     const branches = (lines.slice(1).length ? lines.slice(1) : ["Contexto", "Ideias centrais", "Exemplos", "Fechamento"])
         .slice(0, 6)
         .map((line, index) => ({
-            title: summarizeBlock(line, `Topico ${index + 1}`),
+            title: summarizeBlock(line, `Tópico ${index + 1}`),
             subtitle: `Ideia-chave ${index + 1}`,
             detail: summarizeBlock(line, "Explique o conceito principal."),
             color: ["#22c55e", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6"][index % 6]
@@ -997,8 +997,8 @@ function buildFallbackDebate(sourceText) {
         title,
         question,
         format: "Dois lados",
-        side_a: "Posicao A",
-        side_b: "Posicao B",
+        side_a: "Posição A",
+        side_b: "Posição B",
         steps: [
             {
                 title: "Aquecimento",
@@ -1068,7 +1068,7 @@ function buildFallbackMatch(sourceText, requestedCount) {
 function extractCrosswordEntriesFromDelimitedLines(lines, requestedCount) {
     return lines
         .map((line) => {
-            const parts = line.split(/\s*[â€”â€“:-]\s*/).filter(Boolean);
+            const parts = line.split(/\s*[—–:-]\s*/).filter(Boolean);
             if (parts.length < 2) return null;
             return {
                 answer: summarizeBlock(parts[0], "Termo"),
@@ -1168,9 +1168,9 @@ function buildFallbackWheel(sourceText, requestedCount) {
 function buildFallbackWordsearch(sourceText, requestedCount) {
     const lines = normalizeLines(sourceText);
     const requested = Math.max(2, Math.min(20, requestedCount || 8));
-    const words = (lines.length ? lines : ["Tema", "Conceito", "Exemplo", "Revisao", "Conteudo", "Aula", "Termo", "Palavra"])
+    const words = (lines.length ? lines : ["Tema", "Conceito", "Exemplo", "Revisão", "Conteúdo", "Aula", "Termo", "Palavra"])
         .map((line) => {
-            const parts = line.split(/\s*[â€”â€“:-]\s*/).filter(Boolean);
+            const parts = line.split(/\s*[—–:-]\s*/).filter(Boolean);
             return {
                 term: summarizeBlock(parts[0] || line, "Palavra"),
                 clue: summarizeBlock(parts.slice(1).join(" - "), "")
@@ -1181,7 +1181,7 @@ function buildFallbackWordsearch(sourceText, requestedCount) {
 
     const topic = lines[0] || "o tema";
     return {
-        title: `Caca-palavras sobre ${summarizeBlock(topic, "o tema")}`,
+        title: `Caça-palavras sobre ${summarizeBlock(topic, "o tema")}`,
         subtitle: "Encontre os termos principais escondidos na grade.",
         words
     };
@@ -1249,7 +1249,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action)
                 detail: { credits: errorPayload.credits }
             }));
         }
-        throw new Error(errorPayload?.error || "Nao foi possivel gerar o material com IA.");
+        throw new Error(errorPayload?.error || "Não foi possível gerar o material com IA.");
     }
 
     const payload = await response.json();
@@ -1276,7 +1276,7 @@ async function requestTemplateStructuredMaterial(materialType, file) {
 
     if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
-        throw new Error(errorPayload?.error || "Nao foi possivel estruturar o arquivo modelo.");
+        throw new Error(errorPayload?.error || "Não foi possível estruturar o arquivo modelo.");
     }
 
     return response.json();
@@ -1435,13 +1435,13 @@ async function generateMaterialFromTemplate(materialType, button) {
 
         const applied = config.apply(material);
         if (!applied) {
-            throw new Error("O arquivo modelo nao trouxe dados suficientes para preencher o editor.");
+            throw new Error("O arquivo modelo não trouxe dados suficientes para preencher o editor.");
         }
 
         openAiReadyModal();
     } catch (error) {
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
-        window.alert(`Nao foi possivel montar o material a partir do arquivo modelo.\n\nDetalhe: ${detail}`);
+        window.alert(`Não foi possível montar o material a partir do arquivo modelo.\n\nDetalhe: ${detail}`);
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;
@@ -1500,10 +1500,10 @@ async function generateMaterial(materialType, button) {
                 ? [
                 action,
                 requestedCount ? `Gerar ${requestedCount} slides.` : "",
-                audienceText ? `Publico ou ano: ${audienceText}.` : "",
+                audienceText ? `Público ou ano: ${audienceText}.` : "",
                 objectiveText ? `Objetivo da aula: ${objectiveText}.` : "",
                 toneText ? `Tom desejado: ${toneText}.` : "",
-                detailText ? `Nivel de detalhamento: ${detailText}.` : "",
+                detailText ? `Nível de detalhamento: ${detailText}.` : "",
                 imagePrefText ? `Uso de imagens: ${imagePrefText}.` : ""
             ].filter(Boolean).join(" ")
                 : materialType === "flashcards"
@@ -1515,14 +1515,14 @@ async function generateMaterial(materialType, button) {
                     : materialType === "mindmap"
                         ? [
                 action,
-                requestedCount ? `Gerar ${requestedCount} topicos.` : "",
+                requestedCount ? `Gerar ${requestedCount} tópicos.` : "",
                 layoutText ? `Leitura desejada: ${layoutText}.` : ""
             ].filter(Boolean).join(" ")
                         : materialType === "crossword"
                             ? [
                 action,
                 requestedCount ? `Gerar ${requestedCount} entradas.` : "",
-                document.getElementById("cruzada-titulo-ia")?.value ? `Titulo desejado: ${document.getElementById("cruzada-titulo-ia").value}.` : "",
+                document.getElementById("cruzada-titulo-ia")?.value ? `Título desejado: ${document.getElementById("cruzada-titulo-ia").value}.` : "",
                 "Retornar respostas curtas e pistas objetivas em portugues do Brasil."
             ].filter(Boolean).join(" ")
                         : materialType === "memory"
@@ -1561,7 +1561,7 @@ async function generateMaterial(materialType, button) {
         const payload = await requestStructuredMaterial(materialType, sourceText, file, generationHints);
         const applied = config.apply(payload?.material);
         if (!applied) {
-            throw new Error("A resposta da IA nao trouxe dados suficientes para preencher o editor.");
+            throw new Error("A resposta da IA não trouxe dados suficientes para preencher o editor.");
         }
 
         openAiReadyModal();
@@ -1576,7 +1576,7 @@ async function generateMaterial(materialType, button) {
         const normalizedDetail = String(detail).toLowerCase();
         const quotaMessage = normalizedDetail.includes("quota") || normalizedDetail.includes("429") || normalizedDetail.includes("resource_exhausted")
             ? "A cota da API Gemini foi excedida. O editor usou um modo local simplificado."
-            : "A IA real nao respondeu. O editor usou um modo local simplificado.";
+            : "A IA real não respondeu. O editor usou um modo local simplificado.";
         window.alert(`${quotaMessage}\n\nDetalhe: ${detail}\nEndpoint: ${endpoint}`);
     } finally {
         button.disabled = false;

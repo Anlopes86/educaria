@@ -14,6 +14,33 @@ function sidebarTeacherInstitution() {
     return "Conta educacional";
 }
 
+const SIDEBAR_FORMATS = {
+    core: [
+        { href: "quiz-builder.html", label: "Quiz" },
+        { href: "slides-builder.html", label: "Slides" },
+        { href: "flashcards-builder.html", label: "Flashcards" },
+        { href: "jogo-memoria-builder.html", label: "Jogo da memória" }
+    ],
+    extra: [
+        { href: "criar-aula.html", label: "Aula completa" },
+        { href: "roleta-builder.html", label: "Roleta" },
+        { href: "ligar-pontos-builder.html", label: "Ligar pontos" },
+        { href: "mapa-mental-builder.html", label: "Mapa mental" },
+        { href: "debate-guiado-builder.html", label: "Debate guiado" },
+        { href: "caca-palavras-builder.html", label: "Caça-palavras" },
+        { href: "palavras-cruzadas-builder.html", label: "Palavras cruzadas" },
+        { href: "forca-builder.html", label: "Força" }
+    ]
+};
+
+function escapeSidebarHtml(value) {
+    return String(value || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;");
+}
+
 function currentSidebarPath() {
     const path = window.location.pathname.replace(/\\/g, "/");
     return path.split("/").pop() || "index.html";
@@ -48,6 +75,39 @@ function ensureSidebarClassesPageLink() {
 function renderSidebarCurrentClass(current) {
     document.querySelectorAll("[data-sidebar-current-class]").forEach((element) => {
         element.textContent = current || "Nenhuma turma selecionada";
+    });
+}
+
+function renderSidebarFormats() {
+    const currentPath = currentSidebarPath();
+
+    document.querySelectorAll('[data-sidebar-panel="formats"]').forEach((panel) => {
+        if (panel.querySelector("[data-sidebar-format-list]")) return;
+
+        panel.innerHTML = `
+            <div class="sidebar-subgroup">
+                <span class="sidebar-subgroup-label">Formatos principais</span>
+                <div class="sidebar-subitems" data-sidebar-format-list="core"></div>
+            </div>
+            <div class="sidebar-subgroup">
+                <span class="sidebar-subgroup-label">Mais formatos</span>
+                <div class="sidebar-subitems" data-sidebar-format-list="extra"></div>
+            </div>
+        `;
+    });
+
+    document.querySelectorAll("[data-sidebar-format-list]").forEach((root) => {
+        const group = root.dataset.sidebarFormatList === "extra" ? "extra" : "core";
+        const items = SIDEBAR_FORMATS[group];
+
+        root.innerHTML = items.map((item) => {
+            const active = item.href === currentPath ? " is-active" : "";
+            return `
+                <a href="${item.href}" class="sidebar-subitem${active}">
+                    ${escapeSidebarHtml(item.label)}
+                </a>
+            `;
+        }).join("");
     });
 }
 
@@ -99,7 +159,7 @@ function createSidebarClass() {
     if (!subject) {
         if (feedback) {
             feedback.hidden = false;
-            feedback.textContent = "Escolha a materia da turma.";
+            feedback.textContent = "Escolha a matéria da turma.";
         }
         subjectField?.focus();
         return;
@@ -226,6 +286,7 @@ function hydrateSidebarTeacher() {
 document.addEventListener("DOMContentLoaded", () => {
     hydrateSidebarTeacher();
     ensureSidebarClassesPageLink();
+    renderSidebarFormats();
     renderSidebarClasses();
     setActiveSidebarLinks();
     closeSidebarPanels();

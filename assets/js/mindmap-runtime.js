@@ -22,9 +22,9 @@ function parseMindBranches(stackHtml) {
 
     return [...doc.querySelectorAll("[data-mind-branch]")].map((branch, index) => ({
         index,
-        title: branch.querySelector("[data-mind-title]")?.value?.trim() || `Topico ${index + 1}`,
-        subtitle: branch.querySelector("[data-mind-subtitle]")?.value?.trim() || "Ideia-chave deste topico",
-        detail: branch.querySelector("[data-mind-detail]")?.value?.trim() || "Explique aqui o ponto principal deste topico.",
+        title: branch.querySelector("[data-mind-title]")?.value?.trim() || `Tópico ${index + 1}`,
+        subtitle: branch.querySelector("[data-mind-subtitle]")?.value?.trim() || "Ideia-chave deste tópico",
+        detail: branch.querySelector("[data-mind-detail]")?.value?.trim() || "Explique aqui o ponto principal deste tópico.",
         color: branch.querySelector("[data-mind-color]")?.value || "#22c55e"
     }));
 }
@@ -105,7 +105,7 @@ function renderMindmapApplication() {
         { title: "Conceito central", subtitle: "Nucleo do tema", detail: "Explique a ideia principal que organiza o restante do mapa.", color: "#22c55e" },
         { title: "Exemplos", subtitle: "Casos concretos", detail: "Mostre exemplos concretos para aproximar o tema da turma.", color: "#0ea5e9" },
         { title: "Aplicacoes", subtitle: "Uso na pratica", detail: "Indique onde esse conhecimento aparece na pratica.", color: "#f59e0b" },
-        { title: "Revisao", subtitle: "Fechamento", detail: "Recupere perguntas-chave para fechar a explicacao.", color: "#ec4899" }
+        { title: "Revisão", subtitle: "Fechamento", detail: "Recupere perguntas-chave para fechar a explicação.", color: "#ec4899" }
     ];
 
     const center = controls["mapa-centro"] || "Tema da aula";
@@ -124,7 +124,7 @@ function renderMindmapApplication() {
 
     if (titleRoot) titleRoot.textContent = center;
     if (subtitleRoot) subtitleRoot.textContent = subtitle;
-    if (countRoot) countRoot.textContent = `${safeBranches.length} topicos`;
+    if (countRoot) countRoot.textContent = `${safeBranches.length} tópicos`;
 
     const renderDetail = () => {
         const branch = safeBranches[activeIndex];
@@ -138,7 +138,7 @@ function renderMindmapApplication() {
     const renderMap = () => {
         if (!mapRoot) return;
         const normalizedLayout = String(layout).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-        const isTopics = normalizedLayout.includes("topicos");
+        const isTopics = normalizedLayout.includes("tópicos");
         mapRoot.classList.toggle("is-topics", isTopics);
         mapRoot.classList.toggle("is-radial", !isTopics);
         mapRoot.innerHTML = `

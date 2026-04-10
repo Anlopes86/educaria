@@ -9,11 +9,11 @@ const LESSON_SEQUENCE_TYPES = [
     { value: "slides", label: "Slides" },
     { value: "flashcards", label: "Flashcards" },
     { value: "wheel", label: "Roleta" },
-    { value: "hangman", label: "Forca" },
+    { value: "hangman", label: "Força" },
     { value: "crossword", label: "Palavras cruzadas" },
-    { value: "wordsearch", label: "Caca-palavras" },
+    { value: "wordsearch", label: "Caça-palavras" },
     { value: "quiz", label: "Quiz" },
-    { value: "memory", label: "Jogo da memoria" },
+    { value: "memory", label: "Jogo da memória" },
     { value: "match", label: "Ligar pontos" },
     { value: "mindmap", label: "Mapa mental" },
     { value: "debate", label: "Debate guiado" }
@@ -177,7 +177,7 @@ function renderPreview() {
         previewCard.innerHTML = `
             <span class="route-tag">Sem bloco</span>
             <h3>Selecione uma atividade</h3>
-            <p>Ao clicar em um bloco da sequÃªncia, os detalhes aparecem aqui.</p>
+            <p>Ao clicar em um bloco da sequência, os detalhes aparecem aqui.</p>
         `;
         previewActions.hidden = true;
         return;
@@ -246,7 +246,7 @@ function renderLessonSequence() {
                     <input type="number" min="1" step="1" value="${block.duration || 0}" data-block-field="duration" data-block-id="${block.id}">
                 </div>
                 <div class="platform-field platform-field-wide">
-                    <label>ObservaÃ§Ã£o do professor</label>
+                    <label>Observação do professor</label>
                     <input type="text" value="${block.note || ""}" placeholder="Ex.: retomar a resposta da turma antes do quiz" data-block-field="note" data-block-id="${block.id}">
                 </div>
             </div>

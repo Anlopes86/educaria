@@ -55,7 +55,7 @@ function matchPairTemplate(index, left = "", right = "", color = "#22c55e") {
             <div class="activity-card-header">
                 <div>
                     <span class="platform-section-label" data-match-label>Par ${index + 1}</span>
-                    <h3>Conteudo da ligacao</h3>
+                    <h3>Conteúdo da ligação</h3>
                 </div>
                 <div class="activity-card-actions">
                     <button type="button" class="platform-link-button platform-link-secondary" data-match-remove>Remover</button>

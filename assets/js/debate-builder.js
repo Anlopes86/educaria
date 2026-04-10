@@ -19,7 +19,7 @@ function debateStepTemplate(index, title = "", time = "", question = "", guidanc
             <div class="activity-card-header">
                 <div>
                     <span class="platform-section-label" data-debate-label>Etapa ${index + 1}</span>
-                    <h3>Conteudo da etapa</h3>
+                    <h3>Conteúdo da etapa</h3>
                 </div>
                 <div class="activity-card-actions">
                     <button type="button" class="platform-link-button platform-link-secondary" data-debate-remove>Remover</button>
@@ -27,7 +27,7 @@ function debateStepTemplate(index, title = "", time = "", question = "", guidanc
             </div>
             <div class="platform-form-grid">
                 <div class="platform-field">
-                    <label>Titulo da etapa</label>
+                    <label>Título da etapa</label>
                     <input data-debate-title type="text" value="${escapeDebateAttr(title)}">
                 </div>
                 <div class="platform-field">
@@ -39,7 +39,7 @@ function debateStepTemplate(index, title = "", time = "", question = "", guidanc
                     <input data-debate-question type="text" value="${escapeDebateAttr(question)}">
                 </div>
                 <div class="platform-field platform-field-wide">
-                    <label>Orientacao de mediacao</label>
+                    <label>Orientação de mediação</label>
                     <textarea data-debate-guidance rows="4">${escapeDebateAttr(guidance)}</textarea>
                 </div>
             </div>
@@ -53,7 +53,7 @@ function collectDebateSteps() {
         title: step.querySelector("[data-debate-title]")?.value.trim() || `Etapa ${index + 1}`,
         time: step.querySelector("[data-debate-time]")?.value.trim() || "5 min",
         question: step.querySelector("[data-debate-question]")?.value.trim() || "Pergunta da etapa",
-        guidance: step.querySelector("[data-debate-guidance]")?.value.trim() || "Orientacao para conduzir essa etapa."
+        guidance: step.querySelector("[data-debate-guidance]")?.value.trim() || "Orientação para conduzir esta etapa."
     }));
 }
 
@@ -132,8 +132,8 @@ function renderDebatePreview() {
     const title = document.getElementById("debate-titulo")?.value.trim() || "Debate guiado";
     const question = document.getElementById("debate-pergunta")?.value.trim() || "Pergunta central do debate";
     const format = document.getElementById("debate-formato")?.value || "Dois lados";
-    const sideA = document.getElementById("debate-lado-a")?.value.trim() || "Posicao A";
-    const sideB = document.getElementById("debate-lado-b")?.value.trim() || "Posicao B";
+    const sideA = document.getElementById("debate-lado-a")?.value.trim() || "Posição A";
+    const sideB = document.getElementById("debate-lado-b")?.value.trim() || "Posição B";
     const steps = collectDebateSteps();
     const titleRoot = document.querySelector("[data-debate-preview-title]");
     const formatRoot = document.querySelector("[data-debate-preview-format]");

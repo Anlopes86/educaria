@@ -22,7 +22,7 @@ function parseWheelSegments(stackHtml) {
 
     return [...doc.querySelectorAll("[data-wheel-segment]")].map((segment, index) => ({
         index,
-        text: segment.querySelector("[data-wheel-text]")?.value?.trim() || `Espaco ${index + 1}`,
+        text: segment.querySelector("[data-wheel-text]")?.value?.trim() || `Espaço ${index + 1}`,
         color: segment.querySelector("[data-wheel-color]")?.value || "#22c55e"
     }));
 }
@@ -194,7 +194,7 @@ function renderWheelApplication() {
 
             if (!activeSegments.length) {
                 if (resultRoot) {
-                    resultRoot.textContent = "Todos os espacos foram sorteados";
+                    resultRoot.textContent = "Todos os espaços foram sorteados";
                 }
                 updateButtonsAvailability(true);
                 return;

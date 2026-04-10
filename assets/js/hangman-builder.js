@@ -166,11 +166,11 @@ async function loadHangmanModelFile(button) {
 
         const payload = parseHangmanTemplateText(fileText);
         if (!applyHangmanTemplateData(payload)) {
-            throw new Error("O arquivo modelo da forca nao trouxe dados suficientes.");
+            throw new Error("O arquivo modelo da força não trouxe dados suficientes.");
         }
     } catch (error) {
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
-        window.alert(`Nao foi possivel montar a forca com o arquivo modelo.\n\nDetalhe: ${detail}`);
+        window.alert(`Não foi possível montar a força com o arquivo modelo.\n\nDetalhe: ${detail}`);
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;
@@ -222,7 +222,7 @@ function renderHangmanPreview() {
 
     renumberHangmanEntries();
 
-    const title = document.getElementById("forca-titulo")?.value.trim() || "Jogo da Forca";
+    const title = document.getElementById("forca-titulo")?.value.trim() || "Jogo da Força";
     const subtitle = document.getElementById("forca-subtitulo")?.value.trim() || "Descubra as palavras usando as dicas.";
     const maxErrors = Number(document.getElementById("forca-tentativas")?.value || 6);
     const entries = api.sanitizeEntries(collectHangmanEntries());

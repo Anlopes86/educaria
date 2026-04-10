@@ -18,8 +18,8 @@ function wheelSegmentTemplate(index, text = "", color = "#22c55e") {
         <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
             <div class="activity-card-header">
                 <div>
-                    <span class="platform-section-label" data-wheel-label>Espaco ${index + 1}</span>
-                    <h3>Conteudo do espaco</h3>
+                    <span class="platform-section-label" data-wheel-label>Espaço ${index + 1}</span>
+                    <h3>Conteúdo do espaço</h3>
                 </div>
                 <div class="activity-card-actions">
                     <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
@@ -27,7 +27,7 @@ function wheelSegmentTemplate(index, text = "", color = "#22c55e") {
             </div>
             <div class="platform-form-grid">
                 <div class="platform-field platform-field-wide">
-                    <label>Texto do espaco</label>
+                    <label>Texto do espaço</label>
                     <input data-wheel-text type="text" value="${escapeAttr(text)}">
                 </div>
                 <div class="platform-field">
@@ -46,7 +46,7 @@ function wheelPalette() {
 function collectWheelSegments() {
     return [...document.querySelectorAll("[data-wheel-segment]")].map((segment, index) => ({
         index,
-        text: segment.querySelector("[data-wheel-text]")?.value.trim() || `Espaco ${index + 1}`,
+        text: segment.querySelector("[data-wheel-text]")?.value.trim() || `Espaço ${index + 1}`,
         color: segment.querySelector("[data-wheel-color]")?.value || wheelPalette()[index % wheelPalette().length]
     }));
 }
@@ -68,7 +68,7 @@ function setWheelCountSelect(count) {
 
     const highest = options[options.length - 1];
     if (highest) {
-        highest.textContent = `${count} espacos`;
+        highest.textContent = `${count} espaços`;
         highest.value = highest.textContent;
         quantity.value = highest.value;
     }
@@ -93,7 +93,7 @@ function syncWheelSegmentCount() {
     }
 
     [...stack.querySelectorAll("[data-wheel-label]")].forEach((label, index) => {
-        label.textContent = `Espaco ${index + 1}`;
+        label.textContent = `Espaço ${index + 1}`;
     });
 }
 
@@ -211,7 +211,7 @@ function renderWheelPreview() {
 
     const segments = collectWheelSegments();
     const title = document.getElementById("roleta-titulo")?.value.trim() || "Roleta";
-    const elimination = document.getElementById("roleta-eliminacao")?.value || "Nao";
+    const elimination = document.getElementById("roleta-eliminacao")?.value || "Não";
     const svgRoot = document.querySelector("[data-wheel-preview-svg]");
     const listRoot = document.querySelector("[data-wheel-preview-list]");
     const titleRoot = document.querySelector("[data-wheel-preview-title]");

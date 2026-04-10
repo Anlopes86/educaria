@@ -227,7 +227,7 @@ function bindSlideImageTools() {
                     const mimeType = result?.mimeType || "image/png";
                     const imageBase64 = result?.imageBase64 || "";
                     if (!imageBase64) {
-                        throw new Error("O backend nao retornou imagem.");
+                        throw new Error("O backend não retornou imagem.");
                     }
 
                     const url = `data:${mimeType};base64,${imageBase64}`;
@@ -237,7 +237,7 @@ function bindSlideImageTools() {
                     console.warn("EducarIA image generation fallback:", error);
                     const url = createSvgDataUrl(title, prompt, ["#99f6e4", "#dbeafe"]);
                     applySelectedImage(card, prompt, url);
-                    window.alert(`A imagem real nao foi gerada. Foi usado um placeholder local.\n\nDetalhe: ${error.message}`);
+                    window.alert(`A imagem real não foi gerada. Foi usado um placeholder local.\n\nDetalhe: ${error.message}`);
                 })
                 .finally(() => {
                     generate.disabled = false;
