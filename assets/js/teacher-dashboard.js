@@ -127,6 +127,26 @@ function bindQuickCreateRefresh() {
     });
 }
 
+function refreshTeacherDashboard() {
+    hydrateTeacherDashboard();
+    hydrateDashboardGreeting();
+    hydrateQuickCreateForm();
+}
+
+async function syncAndRefreshTeacherDashboard() {
+    refreshTeacherDashboard();
+
+    if (typeof syncClassesWithFirebase !== "function") return;
+
+    try {
+        await syncClassesWithFirebase();
+    } catch (error) {
+        console.warn("EducarIA dashboard class sync unavailable:", error);
+    }
+
+    refreshTeacherDashboard();
+}
+
 function dashboardTourStorageKeys() {
     const teacher = typeof readCurrentTeacher === "function" ? readCurrentTeacher() : null;
     const identifiers = [
@@ -486,21 +506,26 @@ function bindDashboardTourTrigger() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    hydrateTeacherDashboard();
-    hydrateDashboardGreeting();
-    hydrateQuickCreateForm();
+    refreshTeacherDashboard();
     bindTeacherDashboardClassLinks();
     bindQuickCreateForm();
     bindQuickCreateRefresh();
     bindDashboardTourTrigger();
+    syncAndRefreshTeacherDashboard();
 
     window.setTimeout(() => {
         startDashboardTour(false);
     }, 480);
 });
 
+document.addEventListener("educaria-auth-changed", () => {
+    syncAndRefreshTeacherDashboard();
+});
+
+document.addEventListener("educaria-classes-updated", () => {
+    refreshTeacherDashboard();
+});
+
 window.addEventListener("pageshow", () => {
-    hydrateTeacherDashboard();
-    hydrateDashboardGreeting();
-    hydrateQuickCreateForm();
+    syncAndRefreshTeacherDashboard();
 });

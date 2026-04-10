@@ -1,12 +1,12 @@
 function renderEducariaAiCredits(credits) {
     document.querySelectorAll("[data-ai-credits]").forEach((element) => {
         if (!credits) {
-            element.textContent = "Creditos de IA: indisponiveis";
+            element.textContent = "Créditos de IA: indisponíveis";
             element.dataset.state = "unavailable";
             return;
         }
 
-        element.textContent = `${credits.remaining} de ${credits.limit} creditos de IA hoje`;
+        element.textContent = `${credits.remaining} de ${credits.limit} créditos de IA hoje`;
         element.dataset.state = credits.remaining > 0 ? "available" : "empty";
     });
 }
