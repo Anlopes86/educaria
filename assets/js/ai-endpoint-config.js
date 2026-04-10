@@ -9,4 +9,42 @@
         hostname === "127.0.0.1";
 
     window.EDUCARIA_AI_ENDPOINT = isLocal ? LOCAL_ENDPOINT : REMOTE_ENDPOINT;
+
+    function resolveAiEndpoint(path) {
+        return window.EDUCARIA_AI_ENDPOINT.replace(/\/api\/ai\/generate$/, path);
+    }
+
+    async function waitForFirebaseUser(auth) {
+        if (auth.currentUser) return auth.currentUser;
+
+        return new Promise((resolve) => {
+            let unsubscribe = () => {};
+            const timeoutId = window.setTimeout(() => {
+                unsubscribe();
+                resolve(null);
+            }, 5000);
+
+            unsubscribe = auth.onAuthStateChanged((user) => {
+                window.clearTimeout(timeoutId);
+                unsubscribe();
+                resolve(user || null);
+            });
+        });
+    }
+
+    window.educariaAiAuthHeaders = async function educariaAiAuthHeaders() {
+        if (typeof firebaseServices !== "function") return {};
+
+        const services = firebaseServices();
+        const user = services?.auth ? await waitForFirebaseUser(services.auth) : null;
+        if (!user) return {};
+
+        return {
+            Authorization: `Bearer ${await user.getIdToken()}`
+        };
+    };
+
+    window.educariaAiCreditsEndpoint = function educariaAiCreditsEndpoint() {
+        return resolveAiEndpoint("/api/ai/credits");
+    };
 })();

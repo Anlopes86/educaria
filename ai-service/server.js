@@ -1,4 +1,5 @@
 import "dotenv/config";
+import crypto from "node:crypto";
 import express from "express";
 import cors from "cors";
 import multer from "multer";
@@ -7,9 +8,38 @@ import pdfParse from "pdf-parse";
 import { GoogleGenAI } from "@google/genai";
 
 const app = express();
-const upload = multer({ storage: multer.memoryStorage() });
 const port = Number(process.env.PORT || 8787);
+const maxUploadMb = Number(process.env.AI_MAX_UPLOAD_MB || 5);
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: Math.max(1, maxUploadMb) * 1024 * 1024,
+        files: 1
+    }
+});
 const gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+const aiAuthRequired = String(process.env.AI_AUTH_REQUIRED || "").trim().toLowerCase() === "true";
+const firebaseProjectId = String(
+    process.env.FIREBASE_PROJECT_ID ||
+    process.env.GCLOUD_PROJECT ||
+    process.env.GOOGLE_CLOUD_PROJECT ||
+    ""
+).trim();
+const aiRateLimitWindowMs = Number(process.env.AI_RATE_LIMIT_WINDOW_MS || 60_000);
+const aiRateLimitMax = Number(process.env.AI_RATE_LIMIT_MAX || 8);
+const aiDailyCreditLimit = Number(process.env.AI_DAILY_CREDIT_LIMIT || 5);
+const aiImageGenerationEnabled = String(process.env.AI_IMAGE_GENERATION_ENABLED || "").trim().toLowerCase() === "true";
+const firebaseCertUrl = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
+const firebaseCertCache = {
+    expiresAt: 0,
+    certs: {}
+};
+const aiRateLimitBuckets = new Map();
+const aiDailyCreditBuckets = new Map();
+
+if (String(process.env.TRUST_PROXY || "").trim().toLowerCase() === "true") {
+    app.set("trust proxy", 1);
+}
 
 function parseAllowedOrigins(value) {
     return String(value || "")
@@ -44,7 +74,214 @@ app.use(cors({
         callback(new Error(`Origin not allowed by CORS: ${origin}`));
     }
 }));
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: process.env.AI_JSON_LIMIT || "2mb" }));
+
+function base64UrlDecode(value) {
+    const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+    const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
+    return Buffer.from(`${normalized}${padding}`, "base64");
+}
+
+function parseJwtPart(value) {
+    return JSON.parse(base64UrlDecode(value).toString("utf8"));
+}
+
+function tokenFromAuthorizationHeader(request) {
+    const header = request.get("authorization") || "";
+    const match = header.match(/^Bearer\s+(.+)$/i);
+    return match ? match[1].trim() : "";
+}
+
+function parseMaxAge(cacheControl) {
+    const match = String(cacheControl || "").match(/max-age=(\d+)/i);
+    return match ? Number(match[1]) : 3600;
+}
+
+async function firebasePublicCerts() {
+    const now = Date.now();
+    if (firebaseCertCache.expiresAt > now && Object.keys(firebaseCertCache.certs).length) {
+        return firebaseCertCache.certs;
+    }
+
+    const response = await fetch(firebaseCertUrl);
+    if (!response.ok) {
+        throw new Error(`firebase_cert_fetch_failed_${response.status}`);
+    }
+
+    const certs = await response.json();
+    const maxAge = parseMaxAge(response.headers.get("cache-control"));
+    firebaseCertCache.certs = certs || {};
+    firebaseCertCache.expiresAt = now + Math.max(60, maxAge - 60) * 1000;
+    return firebaseCertCache.certs;
+}
+
+async function verifyFirebaseIdToken(idToken) {
+    if (!firebaseProjectId) {
+        throw new Error("firebase_project_id_missing");
+    }
+
+    const parts = String(idToken || "").split(".");
+    if (parts.length !== 3) {
+        throw new Error("invalid_token_format");
+    }
+
+    const [encodedHeader, encodedPayload, encodedSignature] = parts;
+    const header = parseJwtPart(encodedHeader);
+    const payload = parseJwtPart(encodedPayload);
+
+    if (header.alg !== "RS256" || !header.kid) {
+        throw new Error("invalid_token_header");
+    }
+
+    const issuer = `https://securetoken.google.com/${firebaseProjectId}`;
+    const now = Math.floor(Date.now() / 1000);
+    const leewaySeconds = 60;
+
+    if (payload.aud !== firebaseProjectId) {
+        throw new Error("invalid_token_audience");
+    }
+
+    if (payload.iss !== issuer) {
+        throw new Error("invalid_token_issuer");
+    }
+
+    if (!payload.sub || typeof payload.sub !== "string" || payload.sub.length > 128) {
+        throw new Error("invalid_token_subject");
+    }
+
+    if (typeof payload.exp !== "number" || payload.exp <= now - leewaySeconds) {
+        throw new Error("token_expired");
+    }
+
+    if (typeof payload.iat !== "number" || payload.iat > now + leewaySeconds) {
+        throw new Error("invalid_token_issued_at");
+    }
+
+    const certs = await firebasePublicCerts();
+    const cert = certs[header.kid];
+    if (!cert) {
+        throw new Error("token_certificate_not_found");
+    }
+
+    const verifier = crypto.createVerify("RSA-SHA256");
+    verifier.update(`${encodedHeader}.${encodedPayload}`);
+    verifier.end();
+
+    if (!verifier.verify(cert, base64UrlDecode(encodedSignature))) {
+        throw new Error("invalid_token_signature");
+    }
+
+    return payload;
+}
+
+function aiRateLimit(request, response, next) {
+    if (!aiRateLimitMax || aiRateLimitMax < 1) {
+        next();
+        return;
+    }
+
+    const now = Date.now();
+    const identifier = request.ip || request.socket?.remoteAddress || "unknown";
+    const bucketKey = `${identifier}:${request.path}`;
+    const current = aiRateLimitBuckets.get(bucketKey);
+    const bucket = current && current.resetAt > now
+        ? current
+        : { count: 0, resetAt: now + aiRateLimitWindowMs };
+
+    bucket.count += 1;
+    aiRateLimitBuckets.set(bucketKey, bucket);
+
+    response.setHeader("X-RateLimit-Limit", String(aiRateLimitMax));
+    response.setHeader("X-RateLimit-Remaining", String(Math.max(0, aiRateLimitMax - bucket.count)));
+    response.setHeader("X-RateLimit-Reset", String(Math.ceil(bucket.resetAt / 1000)));
+
+    if (bucket.count > aiRateLimitMax) {
+        return response.status(429).json({ error: "Muitas solicitacoes de IA. Tente novamente em alguns instantes." });
+    }
+
+    next();
+}
+
+function dailyCreditDateKey(date = new Date()) {
+    return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Los_Angeles",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+    }).format(date);
+}
+
+function nextDailyCreditResetAt(date = new Date()) {
+    const pacificDate = dailyCreditDateKey(date);
+    const reset = new Date(`${pacificDate}T08:00:00.000Z`);
+    reset.setUTCDate(reset.getUTCDate() + 1);
+    return reset.toISOString();
+}
+
+function aiCreditUserKey(request) {
+    return request.educariaUser?.uid || request.educariaUser?.sub || request.ip || "anonymous";
+}
+
+function aiDailyCreditsFor(request) {
+    const day = dailyCreditDateKey();
+    const key = `${aiCreditUserKey(request)}:${day}`;
+    const used = aiDailyCreditBuckets.get(key) || 0;
+    const limit = Math.max(0, aiDailyCreditLimit);
+    return {
+        day,
+        limit,
+        used,
+        remaining: Math.max(0, limit - used),
+        resetAt: nextDailyCreditResetAt()
+    };
+}
+
+function hasAiDailyCredit(request) {
+    return aiDailyCreditsFor(request).remaining > 0;
+}
+
+function consumeAiDailyCredit(request) {
+    const day = dailyCreditDateKey();
+    const key = `${aiCreditUserKey(request)}:${day}`;
+    aiDailyCreditBuckets.set(key, (aiDailyCreditBuckets.get(key) || 0) + 1);
+    return aiDailyCreditsFor(request);
+}
+
+async function requireAiAuth(request, response, next) {
+    if (!aiAuthRequired) {
+        next();
+        return;
+    }
+
+    const idToken = tokenFromAuthorizationHeader(request);
+    if (!idToken) {
+        return response.status(401).json({ error: "Login necessario para usar a IA." });
+    }
+
+    try {
+        request.educariaUser = await verifyFirebaseIdToken(idToken);
+        next();
+    } catch (error) {
+        console.warn("EducarIA AI auth rejected:", error instanceof Error ? error.message : error);
+        return response.status(401).json({ error: "Sessao invalida ou expirada. Entre novamente para usar a IA." });
+    }
+}
+
+setInterval(() => {
+    const now = Date.now();
+    aiRateLimitBuckets.forEach((bucket, key) => {
+        if (bucket.resetAt <= now) {
+            aiRateLimitBuckets.delete(key);
+        }
+    });
+
+    const currentDay = dailyCreditDateKey();
+    aiDailyCreditBuckets.forEach((_used, key) => {
+        if (!key.endsWith(`:${currentDay}`)) {
+            aiDailyCreditBuckets.delete(key);
+        }
+    });
+}, Math.max(60_000, aiRateLimitWindowMs)).unref?.();
 
 const quizSchema = {
     type: "object",
@@ -818,11 +1055,27 @@ async function extractTextFromFile(file) {
 app.get("/api/health", (_request, response) => {
     response.json({
         ok: true,
-        geminiConfigured: Boolean(process.env.GEMINI_API_KEY)
+        geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
+        authRequired: aiAuthRequired,
+        firebaseProjectConfigured: Boolean(firebaseProjectId),
+        rateLimit: {
+            windowMs: aiRateLimitWindowMs,
+            max: aiRateLimitMax
+        },
+        dailyCreditLimit: aiDailyCreditLimit,
+        maxUploadMb,
+        imageGenerationEnabled: aiImageGenerationEnabled
     });
 });
 
-app.post("/api/ai/generate", upload.single("file"), async (request, response) => {
+app.get("/api/ai/credits", aiRateLimit, requireAiAuth, (request, response) => {
+    response.json({
+        ok: true,
+        credits: aiDailyCreditsFor(request)
+    });
+});
+
+app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), async (request, response) => {
     try {
         const materialType = String(request.body.materialType || "").trim();
         const action = String(request.body.action || "").trim();
@@ -834,6 +1087,13 @@ app.post("/api/ai/generate", upload.single("file"), async (request, response) =>
 
         if (!gemini) {
             return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
+        }
+
+        if (!hasAiDailyCredit(request)) {
+            return response.status(429).json({
+                error: "Seus creditos diarios de IA acabaram. Eles voltam amanha.",
+                credits: aiDailyCreditsFor(request)
+            });
         }
 
         const fileText = await extractTextFromFile(request.file);
@@ -863,10 +1123,12 @@ app.post("/api/ai/generate", upload.single("file"), async (request, response) =>
         const material = materialType === "slides"
             ? normalizeSlidesMaterial(rawMaterial)
             : rawMaterial;
+        const credits = consumeAiDailyCredit(request);
         return response.json({
             ok: true,
             materialType,
-            material
+            material,
+            credits
         });
     } catch (error) {
         console.error("EducarIA AI service error:", error);
@@ -877,7 +1139,7 @@ app.post("/api/ai/generate", upload.single("file"), async (request, response) =>
     }
 });
 
-app.post("/api/model-template/generate", upload.single("file"), async (request, response) => {
+app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.single("file"), async (request, response) => {
     try {
         const materialType = String(request.body.materialType || "").trim();
 
@@ -904,8 +1166,12 @@ app.post("/api/model-template/generate", upload.single("file"), async (request, 
     }
 });
 
-app.post("/api/ai/generate-image", async (request, response) => {
+app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, response) => {
     try {
+        if (!aiImageGenerationEnabled) {
+            return response.status(403).json({ error: "Geracao de imagem por IA desativada no Free Tier." });
+        }
+
         if (!gemini) {
             return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
         }
@@ -945,6 +1211,19 @@ app.post("/api/ai/generate-image", async (request, response) => {
             detail: error instanceof Error ? error.message : "unknown_error"
         });
     }
+});
+
+app.use((error, _request, response, next) => {
+    if (!error) {
+        next();
+        return;
+    }
+
+    if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
+        return response.status(413).json({ error: `Arquivo grande demais. Envie arquivos de ate ${maxUploadMb} MB.` });
+    }
+
+    return next(error);
 });
 
 app.listen(port, () => {

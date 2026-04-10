@@ -18,6 +18,9 @@ function createSvgDataUrl(title, subtitle, palette) {
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 }
 
+const LOCAL_PLACEHOLDER_IMAGE_MODE = "Placeholder local";
+const LEGACY_AI_IMAGE_MODE = "Gerar com IA";
+
 function resolveAiGenerateEndpoint() {
     if (window.EDUCARIA_AI_ENDPOINT) {
         return window.EDUCARIA_AI_ENDPOINT;
@@ -34,11 +37,20 @@ function resolveAiImageEndpoint() {
     return resolveAiGenerateEndpoint().replace(/\/api\/ai\/generate$/, "/api/ai/generate-image");
 }
 
+function aiImageGenerationEnabled() {
+    return window.EDUCARIA_AI_IMAGE_GENERATION_ENABLED === true;
+}
+
+function isGeneratedImageMode(mode) {
+    return mode === LOCAL_PLACEHOLDER_IMAGE_MODE || mode === LEGACY_AI_IMAGE_MODE;
+}
+
 async function requestAiSlideImage(payload) {
     const response = await fetch(resolveAiImageEndpoint(), {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            ...(typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {})
         },
         body: JSON.stringify(payload)
     });
@@ -109,7 +121,10 @@ function syncPanelMode(card) {
     if (sourceCards[0]) sourceCards[0].hidden = mode !== "Upload";
     if (sourceCards[1]) sourceCards[1].hidden = mode !== "Biblioteca";
     if (sourceCards[2]) sourceCards[2].hidden = mode !== "Buscar gr&aacute;tis" && mode !== "Buscar grátis" && mode !== "Buscar gratis";
-    if (aiButton) aiButton.hidden = mode !== "Gerar com IA";
+    if (aiButton) aiButton.hidden = !isGeneratedImageMode(mode);
+    if (aiButton && isGeneratedImageMode(mode) && !aiImageGenerationEnabled()) {
+        aiButton.textContent = "Usar placeholder local";
+    }
 }
 
 function applySelectedImage(card, prompt, url) {
@@ -164,7 +179,7 @@ function bindSlideImageTools() {
 
             const modeField = card.querySelector('[data-field="slide-image-mode"]');
             if (modeField && modeField.value === "Sem imagem") {
-                modeField.value = "Gerar com IA";
+                modeField.value = LOCAL_PLACEHOLDER_IMAGE_MODE;
             }
 
             syncPanelMode(card);
@@ -197,6 +212,12 @@ function bindSlideImageTools() {
             const existingPrompt = card.querySelector('[data-field="slide-image-prompt"]')?.value.trim() || "";
             const prompt = existingPrompt || subtitle || body || "Ilustracao educacional";
             const originalText = generate.textContent;
+
+            if (!aiImageGenerationEnabled()) {
+                const url = createSvgDataUrl(title, prompt, ["#99f6e4", "#dbeafe"]);
+                applySelectedImage(card, prompt, url);
+                return;
+            }
 
             generate.disabled = true;
             generate.textContent = "Gerando imagem...";

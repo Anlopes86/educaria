@@ -42,9 +42,29 @@ Copie `.env.example` para `.env` e preencha:
 ```env
 GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-2.5-flash
+GEMINI_IMAGE_MODEL=gemini-3.1-flash-image-preview
+AI_AUTH_REQUIRED=true
+FIREBASE_PROJECT_ID=educaria-f46b2
+AI_RATE_LIMIT_WINDOW_MS=60000
+AI_RATE_LIMIT_MAX=8
+AI_DAILY_CREDIT_LIMIT=5
+AI_MAX_UPLOAD_MB=5
+AI_JSON_LIMIT=2mb
+AI_IMAGE_GENERATION_ENABLED=false
+TRUST_PROXY=true
 PORT=8787
 ALLOWED_ORIGIN=http://127.0.0.1:5500
 ```
+
+Com `AI_AUTH_REQUIRED=true`, o backend aceita chamadas de IA somente com um Firebase ID token valido no header `Authorization: Bearer ...`. O frontend dos builders ja envia esse token a partir do usuario logado.
+
+`AI_DAILY_CREDIT_LIMIT` define quantas geracoes de conteudo cada usuario pode fazer por dia. Cada chamada bem-sucedida para `POST /api/ai/generate` desconta 1 credito.
+
+O contador atual roda no processo do `ai-service` e reinicia se o servico reiniciar. Para varias instancias ou controle financeiro mais rigido, mova esse contador para Redis, Firestore via Admin SDK ou outro banco de servidor.
+
+No Free Tier, mantenha `AI_IMAGE_GENERATION_ENABLED=false`. Os slides usam placeholder local em vez de chamar modelo de imagem.
+
+Em deploys como Render, configure essas mesmas variaveis no painel do servico. O arquivo `.env` local nao vai para o GitHub.
 
 Depois:
 

@@ -3805,6 +3805,27 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     margin-top: 4px;
 }
 
+.ai-credits-pill {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    border-radius: 8px;
+    background: rgba(236, 253, 245, 0.92);
+    color: #0f5132;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.ai-credits-pill[data-state="empty"],
+.ai-credits-pill[data-state="unavailable"] {
+    background: rgba(254, 242, 242, 0.92);
+    border-color: rgba(185, 28, 28, 0.2);
+    color: #7f1d1d;
+}
+
 .dashboard-hero-panel .platform-link-button {
     min-height: 46px;
     border-radius: 999px;
@@ -7067,6 +7088,11 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .editor-disclosure summary small {
     display: none;
+}
+
+.editor-disclosure summary .ai-credits-pill {
+    display: inline-flex;
+    margin-left: auto;
 }
 
 .editor-disclosure summary::after {

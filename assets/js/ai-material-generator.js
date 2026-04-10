@@ -1238,15 +1238,25 @@ async function requestStructuredMaterial(materialType, sourceText, file, action)
 
     const response = await fetch(endpoint, {
         method: "POST",
+        headers: typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {},
         body: formData
     });
 
     if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
+        if (errorPayload?.credits) {
+            document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
+                detail: { credits: errorPayload.credits }
+            }));
+        }
         throw new Error(errorPayload?.error || "Nao foi possivel gerar o material com IA.");
     }
 
-    return response.json();
+    const payload = await response.json();
+    document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
+        detail: { credits: payload?.credits || null }
+    }));
+    return payload;
 }
 
 async function requestTemplateStructuredMaterial(materialType, file) {
@@ -1260,6 +1270,7 @@ async function requestTemplateStructuredMaterial(materialType, file) {
 
     const response = await fetch(endpoint, {
         method: "POST",
+        headers: typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {},
         body: formData
     });
 

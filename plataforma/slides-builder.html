@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slides | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/live-preview.js" defer></script>
     <script src="../assets/js/builder-actions.js" defer></script>
@@ -15,10 +20,11 @@
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/ai-material-generator.js" defer></script>
     <script src="../assets/js/slide-theme-controls.js" defer></script>
 </head>
-<body class="product-body theme-editor" data-material-type="slides">
+<body class="product-body theme-editor" data-material-type="slides" data-requires-auth="true">
     <main class="platform-shell platform-flow-shell activity-editor-shell">
         <header class="platform-topbar">
             <a href="turma.html" class="platform-brand">
@@ -53,6 +59,7 @@
                 <details class="editor-disclosure">
                     <summary>
                         <span>Montar com IA</span>
+                        <small class="ai-credits-pill" data-ai-credits>Creditos de IA: carregando...</small>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
@@ -203,7 +210,7 @@
                                 <div class="platform-field">
                                     <label>Origem da imagem</label>
                                     <select data-field="slide-image-mode">
-                                        <option>Gerar com IA</option>
+                                        <option>Placeholder local</option>
                                         <option>Upload</option>
                                         <option>Biblioteca</option>
                                         <option>Buscar gr&aacute;tis</option>
@@ -266,7 +273,7 @@
                                 </div>
                             </div>
                             <div class="resource-panel-actions">
-                                <button type="button" data-generate-ai-image class="platform-link-button platform-link-primary">Gerar imagem com IA</button>
+                                <button type="button" data-generate-ai-image class="platform-link-button platform-link-primary">Usar placeholder local</button>
                                 <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Fechar painel</button>
                             </div>
                         </div>
@@ -332,7 +339,7 @@
                                     <label>Origem da imagem</label>
                                     <select data-field="slide-image-mode">
                                         <option>Sem imagem</option>
-                                        <option>Gerar com IA</option>
+                                        <option>Placeholder local</option>
                                         <option>Upload</option>
                                         <option>Biblioteca</option>
                                         <option>Buscar gr&aacute;tis</option>
@@ -394,7 +401,7 @@
                                 </div>
                             </div>
                             <div class="resource-panel-actions">
-                                <button type="button" data-generate-ai-image class="platform-link-button platform-link-primary">Gerar imagem com IA</button>
+                                <button type="button" data-generate-ai-image class="platform-link-button platform-link-primary">Usar placeholder local</button>
                                 <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Fechar painel</button>
                             </div>
                         </div>

@@ -1,4 +1,5 @@
 const DASHBOARD_TOUR_STORAGE_PREFIX = "educaria:dashboard-tour:";
+const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
 
 let dashboardTourState = null;
 
@@ -126,15 +127,35 @@ function bindQuickCreateRefresh() {
     });
 }
 
-function dashboardTourStorageKey() {
+function dashboardTourStorageKeys() {
     const teacher = typeof readCurrentTeacher === "function" ? readCurrentTeacher() : null;
-    const rawIdentifier = teacher?.uid || teacher?.email || "default";
-    return `${DASHBOARD_TOUR_STORAGE_PREFIX}${String(rawIdentifier || "default").trim().toLowerCase()}`;
+    const identifiers = [
+        teacher?.uid,
+        teacher?.email,
+        readDashboardTourSessionIdentifier()
+    ].filter(Boolean);
+
+    if (!identifiers.length) {
+        identifiers.push("default");
+    }
+
+    return [...new Set(identifiers.map((identifier) => {
+        return `${DASHBOARD_TOUR_STORAGE_PREFIX}${String(identifier || "default").trim().toLowerCase()}`;
+    }))];
+}
+
+function readDashboardTourSessionIdentifier() {
+    try {
+        return localStorage.getItem(DASHBOARD_TOUR_SESSION_KEY) || "";
+    } catch (error) {
+        console.warn("EducarIA dashboard tour unavailable:", error);
+        return "";
+    }
 }
 
 function hasSeenDashboardTour() {
     try {
-        return localStorage.getItem(dashboardTourStorageKey()) === "done";
+        return dashboardTourStorageKeys().some((key) => localStorage.getItem(key) === "done");
     } catch (error) {
         console.warn("EducarIA dashboard tour unavailable:", error);
         return false;
@@ -143,7 +164,9 @@ function hasSeenDashboardTour() {
 
 function markDashboardTourSeen() {
     try {
-        localStorage.setItem(dashboardTourStorageKey(), "done");
+        dashboardTourStorageKeys().forEach((key) => {
+            localStorage.setItem(key, "done");
+        });
     } catch (error) {
         console.warn("EducarIA dashboard tour unavailable:", error);
     }
@@ -445,6 +468,9 @@ function startDashboardTour(force) {
     state.index = 0;
     state.previousPanel = currentDashboardSidebarPanel();
     state.root.hidden = false;
+    if (!force) {
+        markDashboardTourSeen();
+    }
     attachDashboardTourListeners();
     renderDashboardTourStep(true);
 }
