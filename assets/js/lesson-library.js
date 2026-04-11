@@ -1019,6 +1019,67 @@ function classActivitySummary(lessons) {
     return ordered.join(" • ");
 }
 
+function countClassMaterialsByTypes(lessons, types) {
+    const normalizedTypes = Array.isArray(types) ? types : [types];
+    return (Array.isArray(lessons) ? lessons : []).filter((lesson) => {
+        return normalizedTypes.includes(lesson.materialType || "slides");
+    }).length;
+}
+
+function hydrateClassFocusPanel(classes, turma, lessons) {
+    const summaryNode = document.querySelector("[data-class-focus-summary]");
+    const actionsNode = document.querySelector("[data-class-primary-actions]");
+    const materialCountNode = document.querySelector("[data-class-material-count]");
+    const slideCountNode = document.querySelector("[data-class-slide-count]");
+    const quizCountNode = document.querySelector("[data-class-quiz-count]");
+    const libraryCountNode = document.querySelector("[data-class-library-count]");
+    if (!summaryNode && !actionsNode && !materialCountNode && !slideCountNode && !quizCountNode && !libraryCountNode) {
+        return;
+    }
+
+    const classLessons = Array.isArray(lessons) ? lessons : [];
+    const slideLikeCount = countClassMaterialsByTypes(classLessons, ["slides", "lesson"]);
+    const quizCount = countClassMaterialsByTypes(classLessons, "quiz");
+    const libraryCount = typeof libraryMaterials === "function" ? libraryMaterials().length : 0;
+
+    if (materialCountNode) materialCountNode.textContent = `${classLessons.length}`;
+    if (slideCountNode) slideCountNode.textContent = `${slideLikeCount}`;
+    if (quizCountNode) quizCountNode.textContent = `${quizCount}`;
+    if (libraryCountNode) libraryCountNode.textContent = `${libraryCount}`;
+
+    if (!classes.length) {
+        if (summaryNode) {
+            summaryNode.textContent = "Crie a primeira turma para começar o fluxo principal da plataforma e organizar os materiais desde a origem.";
+        }
+
+        if (actionsNode) {
+            actionsNode.innerHTML = `
+                <a href="index.html" class="platform-link-button platform-link-primary">Voltar ao painel</a>
+                <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Abrir biblioteca</a>
+            `;
+        }
+        return;
+    }
+
+    if (summaryNode) {
+        if (!classLessons.length) {
+            summaryNode.textContent = `${turma} ainda não tem materiais salvos. Comece por slides ou uma aula completa e finalize com um quiz de revisão.`;
+        } else {
+            const latestLabel = classLessons[0]?.updatedAt ? formatLessonDate(classLessons[0].updatedAt) : "agora";
+            summaryNode.textContent = `${turma} tem ${classLessons.length} materiais salvos. Última atualização: ${latestLabel}. Fluxo recomendado: aula/slides -> quiz -> biblioteca.`;
+        }
+    }
+
+    if (actionsNode) {
+        actionsNode.innerHTML = `
+            <a href="slides-builder.html" class="platform-link-button platform-link-primary">Criar slides</a>
+            <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">Criar quiz</a>
+            <a href="criar-aula.html" class="platform-link-button platform-link-secondary">Montar aula completa</a>
+            <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Abrir biblioteca</a>
+        `;
+    }
+}
+
 function hydrateClassCards() {
     const root = document.querySelector("[data-class-cards]");
     if (!root) return;
@@ -1083,6 +1144,13 @@ function bindSaveLessonAction() {
                 } else {
                     saveCurrentLessonToClass(material);
                 }
+                if (typeof educariaTrack === "function") {
+                    educariaTrack("lesson_saved", {
+                        materialType: material || "slides",
+                        scope: saveMode,
+                        target: button.dataset.saveTarget || ""
+                    });
+                }
                 window.location.href = button.dataset.saveTarget || "turma.html";
             });
         });
@@ -1120,6 +1188,9 @@ function hydrateClassPage() {
         node.textContent = turma || "Nenhuma turma selecionada";
     });
 
+    const lessons = classMaterials(turma);
+    hydrateClassFocusPanel(classes, turma, lessons);
+
     if (!classes.length) {
         if (listRoot) {
             listRoot.innerHTML = `
@@ -1143,7 +1214,6 @@ function hydrateClassPage() {
         return;
     }
 
-    const lessons = classMaterials(turma);
     if (!lessons.length) {
         if (listRoot) {
             listRoot.innerHTML = `
@@ -1262,6 +1332,12 @@ function bindLessonActivationLinks() {
             event.preventDefault();
             const duplicated = addLessonToLibrary(libraryTrigger.dataset.libraryLesson || "");
             if (duplicated) {
+                if (typeof educariaTrack === "function") {
+                    educariaTrack("lesson_added_to_library", {
+                        lessonId: duplicated.id,
+                        materialType: duplicated.materialType || ""
+                    });
+                }
                 showLibraryToast("Atividade adicionada a biblioteca com sucesso.");
             }
             return;
@@ -1281,8 +1357,14 @@ function bindLessonActivationLinks() {
         if (!lessonId) return;
         if (trigger.dataset.editLesson) {
             markLessonOpened(lessonId);
+            if (typeof educariaTrack === "function") {
+                educariaTrack("lesson_editor_opened", { lessonId });
+            }
         } else if (trigger.dataset.presentLesson) {
             markLessonPresented(lessonId);
+            if (typeof educariaTrack === "function") {
+                educariaTrack("lesson_presented", { lessonId });
+            }
         }
         activateLessonById(lessonId);
     });
@@ -1292,6 +1374,11 @@ function bindLessonActivationLinks() {
         if (!trigger) return;
 
         event.preventDefault();
+        if (typeof educariaTrack === "function") {
+            educariaTrack("lesson_deleted", {
+                lessonId: trigger.dataset.deleteLesson || ""
+            });
+        }
         deleteLessonAndRefresh(trigger.dataset.deleteLesson || "");
     });
 

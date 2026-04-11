@@ -21,7 +21,7 @@
     <script src="../assets/js/app-sidebar.js" defer></script>
     <script src="../assets/js/teacher-dashboard.js" defer></script>
 </head>
-<body class="product-body theme-overview" data-requires-auth="true">
+<body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="../index.html" class="platform-brand app-sidebar-brand">
@@ -80,7 +80,7 @@
                         <a href="ligar-pontos-builder.html" class="sidebar-subitem">Ligar pontos</a>
                         <a href="mapa-mental-builder.html" class="sidebar-subitem">Mapa mental</a>
                         <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
-                        <a href="caca-palavras-builder.html" class="sidebar-subitem">Ca&ccedil;a-palavras</a>
+                        <a href="caca-palavras-builder.html" class="sidebar-subitem">Caça-palavras</a>
                         <a href="palavras-cruzadas-builder.html" class="sidebar-subitem">Palavras cruzadas</a>
                         <a href="forca-builder.html" class="sidebar-subitem">Forca</a>
                         <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
@@ -106,14 +106,14 @@
                 <div class="dashboard-hero-copy">
                     <span class="dashboard-eyebrow">Painel do professor</span>
                     <h1><span data-dashboard-greeting>Bom dia</span>, <span data-sidebar-teacher>Professor</span>!</h1>
-                    <p>Pronto para transformar sua aula hoje? Explore nossas ferramentas de curadoria e crie experiências memoráveis.</p>
+                    <p>Pronto para transformar sua aula hoje? Crie materiais com mais rapidez e organize tudo sem perder contexto.</p>
 
                     <div class="dashboard-hero-actions">
                         <a href="#activity-toolkit" class="platform-link-button platform-link-primary" data-dashboard-tour-anchor="hero-action">Criar atividade</a>
                         <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Biblioteca</a>
                         <span class="ai-credits-pill" data-ai-credits>Créditos de IA: carregando...</span>
                     </div>
-                    <button type="button" class="dashboard-guide-trigger" data-dashboard-tour-start>Ver guia r&aacute;pido</button>
+                    <button type="button" class="dashboard-guide-trigger" data-dashboard-tour-start>Ver guia rápido</button>
                 </div>
 
                 <aside class="dashboard-quick-create" data-dashboard-tour-anchor="quick-create">
@@ -132,18 +132,18 @@
                         <label class="dashboard-quick-field">
                             <span>Atividade</span>
                             <select data-dashboard-quick-format>
-                                <option value="quiz-builder.html">Quiz</option>
                                 <option value="slides-builder.html">Slides</option>
+                                <option value="quiz-builder.html">Quiz</option>
+                                <option value="criar-aula.html">Aula completa</option>
                                 <option value="flashcards-builder.html">Flashcards</option>
                                 <option value="jogo-memoria-builder.html">Jogo da memória</option>
                                 <option value="roleta-builder.html">Roleta</option>
                                 <option value="ligar-pontos-builder.html">Ligar pontos</option>
                                 <option value="mapa-mental-builder.html">Mapa mental</option>
                                 <option value="debate-guiado-builder.html">Debate guiado</option>
-                                <option value="caca-palavras-builder.html">Ca&ccedil;a-palavras</option>
+                                <option value="caca-palavras-builder.html">Caça-palavras</option>
                                 <option value="palavras-cruzadas-builder.html">Palavras cruzadas</option>
                                 <option value="forca-builder.html">Forca</option>
-                                <option value="criar-aula.html">Aula completa</option>
                             </select>
                         </label>
 
@@ -155,13 +155,27 @@
             <section class="dashboard-section" id="activity-toolkit">
                 <div class="dashboard-section-head">
                     <div>
-                        <span class="platform-section-label">Formatos para criar</span>
-                        <h2>Ferramentas de atividades</h2>
+                        <span class="platform-section-label">Fluxo principal</span>
+                        <h2>Comece por aqui</h2>
                     </div>
-                    <a href="#activity-toolkit" class="dashboard-inline-link">Ver todas as ferramentas</a>
+                    <a href="#extra-formats" class="dashboard-inline-link">Ver formatos extras</a>
                 </div>
 
                 <div class="dashboard-toolkit-grid" data-dashboard-tour-anchor="toolkit">
+                    <a href="slides-builder.html" class="dashboard-tool-card dashboard-tool-card--slides">
+                        <div class="dashboard-tool-visual" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" aria-hidden="true">
+                                <rect x="10" y="8.5" width="12" height="9" rx="1.6"></rect>
+                                <path d="M16 14.5v-4"></path>
+                                <path d="M13.6 12.4l2.4-2.4 2.4 2.4"></path>
+                            </svg>
+                        </div>
+                        <div class="dashboard-tool-content">
+                            <h3>Slides</h3>
+                            <p>Estruture a aula projetada e conduza a explicação com mais clareza.</p>
+                        </div>
+                    </a>
+
                     <a href="quiz-builder.html" class="dashboard-tool-card dashboard-tool-card--quiz">
                         <div class="dashboard-tool-visual" aria-hidden="true">
                             <svg viewBox="0 0 32 32" aria-hidden="true">
@@ -173,161 +187,7 @@
                         </div>
                         <div class="dashboard-tool-content">
                             <h3>Quiz</h3>
-                            <p>Verificações rápidas de aprendizagem com feedback gamificado.</p>
-                        </div>
-                    </a>
-
-                    <a href="slides-builder.html" class="dashboard-tool-card dashboard-tool-card--slides">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <rect x="10" y="8.5" width="12" height="9" rx="1.6"></rect>
-                                <path d="M16 14.5v-4"></path>
-                                <path d="M13.6 12.4l2.4-2.4 2.4 2.4"></path>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Slides</h3>
-                            <p>Apresentações interativas com atividades integradas.</p>
-                        </div>
-                    </a>
-
-                    <a href="flashcards-builder.html" class="dashboard-tool-card dashboard-tool-card--flashcards">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <path d="M9.2 18.7l-1.1 2.8"></path>
-                                <path d="M22.8 9.9l1 2.3"></path>
-                                <rect x="12.6" y="8.8" width="7.8" height="12" rx="1.4" transform="rotate(-18 16.5 14.8)"></rect>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Flashcards</h3>
-                            <p>Baralhos de repetição espaçada para vocabulário e conceitos.</p>
-                        </div>
-                    </a>
-
-                    <a href="jogo-memoria-builder.html" class="dashboard-tool-card dashboard-tool-card--memory">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <path d="M13.2 9.8h2.2a2.2 2.2 0 0 1 4.4 0H22a1.8 1.8 0 0 1 1.8 1.8v2.1a2.2 2.2 0 0 1 0 4.4v2.1a1.8 1.8 0 0 1-1.8 1.8h-2.1a2.2 2.2 0 0 1-4.4 0h-2.3a1.8 1.8 0 0 1-1.8-1.8v-2.1a2.2 2.2 0 0 1 0-4.4v-2.1a1.8 1.8 0 0 1 1.8-1.8z"></path>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Jogo da memória</h3>
-                            <p>Exercícios de associação visual para diferentes faixas etárias.</p>
-                        </div>
-                    </a>
-
-                    <a href="roleta-builder.html" class="dashboard-tool-card dashboard-tool-card--wheel">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <path d="M21.6 9.7A7.6 7.6 0 1 0 23.6 16"></path>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Roleta</h3>
-                            <p>Sorteio de alunos, temas ou desafios de forma dinâmica.</p>
-                        </div>
-                    </a>
-
-                    <a href="ligar-pontos-builder.html" class="dashboard-tool-card dashboard-tool-card--match">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <path d="M8 12h12"></path>
-                                <path d="M16.5 8.5l3.5 3.5-3.5 3.5"></path>
-                                <path d="M24 20H12"></path>
-                                <path d="M15.5 16.5L12 20l3.5 3.5"></path>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Ligar pontos</h3>
-                            <p>Conecte termos, imagens e definições em atividades visuais.</p>
-                        </div>
-                    </a>
-
-                    <a href="mapa-mental-builder.html" class="dashboard-tool-card dashboard-tool-card--mindmap">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <circle cx="16" cy="16" r="2"></circle>
-                                <circle cx="16" cy="8.5" r="1.8"></circle>
-                                <circle cx="9.5" cy="12" r="1.8"></circle>
-                                <circle cx="9.5" cy="20" r="1.8"></circle>
-                                <circle cx="22.5" cy="12" r="1.8"></circle>
-                                <circle cx="22.5" cy="20" r="1.8"></circle>
-                                <path d="M16 14v-3.7"></path>
-                                <path d="M14.2 14.8l-3-2"></path>
-                                <path d="M14.2 17.2l-3 2"></path>
-                                <path d="M17.8 14.8l3-2"></path>
-                                <path d="M17.8 17.2l3 2"></path>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Mapa mental</h3>
-                            <p>Organize ideias e conexões em sessões visuais colaborativas.</p>
-                        </div>
-                    </a>
-
-                    <a href="debate-guiado-builder.html" class="dashboard-tool-card dashboard-tool-card--debate">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <path d="M8.5 10.2h8.8a1.8 1.8 0 0 1 1.8 1.8v4.4a1.8 1.8 0 0 1-1.8 1.8h-3.2l-2.8 2.3v-2.3H8.5a1.8 1.8 0 0 1-1.8-1.8V12a1.8 1.8 0 0 1 1.8-1.8z"></path>
-                                <path d="M16.1 13.7h7.4a1.8 1.8 0 0 1 1.8 1.8v4a1.8 1.8 0 0 1-1.8 1.8h-2.7l-2.6 2.2v-2.2h-2.1"></path>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Debate guiado</h3>
-                            <p>Argumentação estruturada com acompanhamento em tempo real.</p>
-                        </div>
-                    </a>
-
-                    <a href="caca-palavras-builder.html" class="dashboard-tool-card dashboard-tool-card--wordsearch">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <rect x="7.5" y="7.5" width="17" height="17" rx="3"></rect>
-                                <path d="M11 12h10"></path>
-                                <path d="M11 16h7"></path>
-                                <path d="M11 20h10"></path>
-                                <circle cx="21.5" cy="20.5" r="4.2"></circle>
-                                <path d="M24.5 23.5l2.4 2.4"></path>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Ca&ccedil;a-palavras</h3>
-                            <p>Grades com termos-chave para revisar vocabul&aacute;rio, conceitos e temas da aula.</p>
-                        </div>
-                    </a>
-
-                    <a href="palavras-cruzadas-builder.html" class="dashboard-tool-card dashboard-tool-card--crossword">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <rect x="8" y="8" width="16" height="16" rx="2.4"></rect>
-                                <path d="M13.3 8v16"></path>
-                                <path d="M18.7 8v16"></path>
-                                <path d="M8 13.3h16"></path>
-                                <path d="M8 18.7h16"></path>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Palavras cruzadas</h3>
-                            <p>Pistas e defini&ccedil;&otilde;es organizadas em grade para consolidar conte&uacute;dos.</p>
-                        </div>
-                    </a>
-
-                    <a href="forca-builder.html" class="dashboard-tool-card dashboard-tool-card--reserved">
-                        <div class="dashboard-tool-visual" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" aria-hidden="true">
-                                <path d="M8 25h16"></path>
-                                <path d="M11 25V8"></path>
-                                <path d="M11 8h11"></path>
-                                <path d="M22 8v4"></path>
-                                <circle cx="22" cy="15" r="2.8"></circle>
-                                <path d="M22 17.8v5.2"></path>
-                                <path d="M22 19.6l-3.1 2.5"></path>
-                                <path d="M22 19.6l3.1 2.5"></path>
-                            </svg>
-                        </div>
-                        <div class="dashboard-tool-content">
-                            <h3>Forca</h3>
-                            <p>Descubra palavras com dicas e avance rodada a rodada com a turma.</p>
+                            <p>Feche a aula com revisão rápida, participação e feedback imediato.</p>
                         </div>
                     </a>
 
@@ -341,9 +201,27 @@
                         </div>
                         <div class="dashboard-tool-content">
                             <h3>Aula completa</h3>
-                            <p>Monte trilhas completas com recursos e acompanhamento.</p>
+                            <p>Monte uma sequência completa para conduzir a aula do início ao fim.</p>
                         </div>
                     </a>
+                </div>
+
+                <div class="dashboard-toolkit-secondary" id="extra-formats">
+                    <div>
+                        <strong>Mais formatos</strong>
+                        <p>Explore outros formatos disponíveis para variar a dinâmica da aula e enriquecer o repertório com a turma.</p>
+                    </div>
+                    <div class="dashboard-toolkit-links">
+                        <a href="flashcards-builder.html" class="dashboard-toolkit-link">Flashcards</a>
+                        <a href="jogo-memoria-builder.html" class="dashboard-toolkit-link">Jogo da memória</a>
+                        <a href="roleta-builder.html" class="dashboard-toolkit-link">Roleta</a>
+                        <a href="ligar-pontos-builder.html" class="dashboard-toolkit-link">Ligar pontos</a>
+                        <a href="mapa-mental-builder.html" class="dashboard-toolkit-link">Mapa mental</a>
+                        <a href="debate-guiado-builder.html" class="dashboard-toolkit-link">Debate guiado</a>
+                        <a href="caca-palavras-builder.html" class="dashboard-toolkit-link">Caça-palavras</a>
+                        <a href="palavras-cruzadas-builder.html" class="dashboard-toolkit-link">Palavras cruzadas</a>
+                        <a href="forca-builder.html" class="dashboard-toolkit-link">Forca</a>
+                    </div>
                 </div>
             </section>
 

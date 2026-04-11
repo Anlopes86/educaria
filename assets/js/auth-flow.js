@@ -1,5 +1,10 @@
 const EDUCARIA_SESSION_KEY = "educaria:auth:session";
 const EDUCARIA_TEACHER_CACHE_KEY = "educaria:auth:teacher-cache";
+const EDUCARIA_ANALYTICS_EVENTS_KEY = "educaria:analytics:events";
+const EDUCARIA_ANALYTICS_LIMIT = 400;
+
+let educariaAnalyticsFlushTimer = 0;
+let educariaAnalyticsFlushPromise = null;
 
 function authLoginPath() {
     return window.location.pathname.includes("/plataforma/") ? "../login.html" : "login.html";
@@ -11,6 +16,27 @@ function authDashboardPath() {
 
 function normalizeEmail(value) {
     return String(value || "").trim().toLowerCase();
+}
+
+function normalizeInstitutionName(value) {
+    return String(value || "").trim();
+}
+
+function slugifyInstitutionId(value) {
+    return normalizeInstitutionName(value)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "")
+        .slice(0, 80);
+}
+
+function normalizeTeacherRole(value) {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (normalized === "institution_admin") return "institution_admin";
+    if (normalized === "coordinator") return "coordinator";
+    return "teacher";
 }
 
 function firebaseConfig() {
@@ -83,6 +109,192 @@ function readCurrentTeacher() {
 
 window.readCurrentTeacher = readCurrentTeacher;
 
+function analyticsPageName() {
+    const body = document.body;
+    if (body?.dataset.page) return body.dataset.page;
+    if (body?.dataset.authScreen) return `auth-${body.dataset.authScreen}`;
+
+    const path = window.location.pathname.replace(/\\/g, "/").split("/").pop() || "";
+    return path || "unknown";
+}
+
+function analyticsNormalizeMetadata(metadata = {}) {
+    if (!metadata || typeof metadata !== "object") return {};
+
+    return Object.fromEntries(Object.entries(metadata).filter(([_, value]) => {
+        return value !== undefined && value !== null && value !== "";
+    }).map(([key, value]) => {
+        if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+            return [key, value];
+        }
+
+        return [key, JSON.stringify(value)];
+    }));
+}
+
+function readEducariaAnalyticsEvents() {
+    try {
+        const raw = localStorage.getItem(EDUCARIA_ANALYTICS_EVENTS_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        console.warn("EducarIA analytics unavailable:", error);
+        return [];
+    }
+}
+
+function writeEducariaAnalyticsEvents(events) {
+    const normalized = (Array.isArray(events) ? events : []).slice(-EDUCARIA_ANALYTICS_LIMIT);
+    try {
+        localStorage.setItem(EDUCARIA_ANALYTICS_EVENTS_KEY, JSON.stringify(normalized));
+    } catch (error) {
+        console.warn("EducarIA analytics unavailable:", error);
+    }
+
+    return normalized;
+}
+
+function analyticsTeacherIdentity() {
+    const teacher = readCurrentTeacher();
+    return {
+        uid: teacher?.uid || "",
+        email: teacher?.email || "",
+        name: teacher?.name || ""
+    };
+}
+
+function analyticsCollection() {
+    const services = firebaseServices();
+    const teacher = readCurrentTeacher();
+    if (!services?.db || !teacher?.uid) return null;
+
+    return services.db
+        .collection("teachers")
+        .doc(teacher.uid)
+        .collection("productAnalyticsEvents");
+}
+
+function analyticsEventPayload(name, metadata = {}) {
+    const teacher = analyticsTeacherIdentity();
+    const selectedClass = typeof readSelectedClass === "function" ? readSelectedClass() : "";
+
+    return {
+        id: `evt-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+        name: String(name || "").trim() || "unknown_event",
+        at: new Date().toISOString(),
+        page: analyticsPageName(),
+        path: window.location.pathname,
+        teacherUid: teacher.uid,
+        teacherEmail: teacher.email,
+        teacherName: teacher.name,
+        selectedClass,
+        metadata: analyticsNormalizeMetadata(metadata),
+        syncedAt: ""
+    };
+}
+
+function readEducariaAnalyticsSummary() {
+    const teacher = analyticsTeacherIdentity();
+    const events = readEducariaAnalyticsEvents().filter((event) => {
+        if (!teacher.uid) return true;
+        return event.teacherUid === teacher.uid;
+    });
+
+    const activeDays = [...new Set(events.map((event) => String(event.at || "").slice(0, 10)).filter(Boolean))];
+    const lastEvent = events[events.length - 1] || null;
+
+    return {
+        pilotId: teacher.uid || normalizeEmail(teacher.email || "") || "anonimo",
+        eventCount: events.length,
+        activeDays: activeDays.length,
+        lastEventAt: lastEvent?.at || "",
+        lastEventName: lastEvent?.name || "",
+        pendingSync: events.filter((event) => teacher.uid && event.teacherUid === teacher.uid && !event.syncedAt).length
+    };
+}
+
+window.readEducariaAnalyticsSummary = readEducariaAnalyticsSummary;
+
+function exportEducariaAnalytics() {
+    const teacher = analyticsTeacherIdentity();
+    const events = readEducariaAnalyticsEvents().filter((event) => {
+        if (!teacher.uid) return true;
+        return event.teacherUid === teacher.uid;
+    });
+
+    return JSON.stringify({
+        exportedAt: new Date().toISOString(),
+        teacher,
+        summary: readEducariaAnalyticsSummary(),
+        events
+    }, null, 2);
+}
+
+window.exportEducariaAnalytics = exportEducariaAnalytics;
+
+async function flushEducariaAnalytics() {
+    const collection = analyticsCollection();
+    const teacher = readCurrentTeacher();
+    if (!collection || !teacher?.uid) return [];
+
+    const events = readEducariaAnalyticsEvents();
+    const pending = events.filter((event) => event.teacherUid === teacher.uid && !event.syncedAt).slice(0, 25);
+    if (!pending.length) return [];
+
+    if (educariaAnalyticsFlushPromise) return educariaAnalyticsFlushPromise;
+
+    educariaAnalyticsFlushPromise = (async () => {
+        try {
+            await Promise.all(pending.map((event) => {
+                const payload = { ...event };
+                delete payload.syncedAt;
+                return collection.doc(event.id).set(payload, { merge: true });
+            }));
+
+            const syncedAt = new Date().toISOString();
+            const nextEvents = events.map((event) => {
+                const isPending = pending.some((pendingEvent) => pendingEvent.id === event.id);
+                return isPending ? { ...event, syncedAt } : event;
+            });
+            writeEducariaAnalyticsEvents(nextEvents);
+            return pending;
+        } catch (error) {
+            console.warn("EducarIA analytics sync unavailable:", error);
+            return [];
+        } finally {
+            educariaAnalyticsFlushPromise = null;
+        }
+    })();
+
+    return educariaAnalyticsFlushPromise;
+}
+
+window.flushEducariaAnalytics = flushEducariaAnalytics;
+
+function scheduleEducariaAnalyticsFlush() {
+    window.clearTimeout(educariaAnalyticsFlushTimer);
+    educariaAnalyticsFlushTimer = window.setTimeout(() => {
+        educariaAnalyticsFlushTimer = 0;
+        flushEducariaAnalytics();
+    }, 1200);
+}
+
+function educariaTrack(name, metadata = {}) {
+    const event = analyticsEventPayload(name, metadata);
+    writeEducariaAnalyticsEvents([...readEducariaAnalyticsEvents(), event]);
+    document.dispatchEvent(new CustomEvent("educaria-analytics-tracked", {
+        detail: event
+    }));
+
+    if (event.teacherUid) {
+        scheduleEducariaAnalyticsFlush();
+    }
+
+    return event;
+}
+
+window.educariaTrack = educariaTrack;
+
 function authNextPath() {
     const params = new URLSearchParams(window.location.search);
     return params.get("next") || authDashboardPath();
@@ -154,11 +366,16 @@ function readTeacherProfileFromFirebase(user) {
 
     return services.db.collection("teachers").doc(user.uid).get().then((snapshot) => {
         const profile = snapshot.exists ? snapshot.data() : {};
+        const institutionName = normalizeInstitutionName(profile.institutionName || profile.institution || "");
         return {
             uid: user.uid,
             name: profile.name || user.displayName || "Professor",
             email: user.email || profile.email || "",
-            institution: profile.institution || "Conta educacional"
+            institution: institutionName || "Conta educacional",
+            institutionId: String(profile.institutionId || slugifyInstitutionId(institutionName) || "").trim(),
+            role: normalizeTeacherRole(profile.role),
+            plan: profile.plan || "free",
+            billingIntent: profile.billingIntent || null
         };
     });
 }
@@ -196,6 +413,7 @@ function bindLoginForm() {
             const teacher = await readTeacherProfileFromFirebase(credential.user);
             writeCachedTeacher(teacher);
             saveSessionEmail(credential.user.email || email);
+            educariaTrack("login_success", { screen: "login" });
             notifyAuthChanged();
             window.location.href = authNextPath();
         } catch (error) {
@@ -243,16 +461,22 @@ function bindRegisterForm() {
             updateAuthFeedback("Criando sua conta...", "success");
             const credential = await services.auth.createUserWithEmailAndPassword(email, password);
             await credential.user.updateProfile({ displayName: name });
+            const normalizedInstitution = normalizeInstitutionName(institution);
             await services.db.collection("teachers").doc(credential.user.uid).set({
                 name,
                 email,
-                institution: institution || "",
+                institution: normalizedInstitution,
+                institutionName: normalizedInstitution,
+                institutionId: slugifyInstitutionId(normalizedInstitution),
+                role: "teacher",
+                plan: "free",
                 createdAt: new Date().toISOString()
             }, { merge: true });
 
             const teacher = await readTeacherProfileFromFirebase(credential.user);
             writeCachedTeacher(teacher);
             saveSessionEmail(credential.user.email || email);
+            educariaTrack("signup_success", { screen: "register" });
             notifyAuthChanged();
             window.location.href = authNextPath();
         } catch (error) {
@@ -265,6 +489,7 @@ function bindLogout() {
     document.querySelectorAll("[data-logout]").forEach((button) => {
         button.addEventListener("click", async (event) => {
             event.preventDefault();
+            educariaTrack("logout_clicked", { screen: analyticsPageName() });
             writeCachedTeacher(null);
             clearSessionEmail();
             notifyAuthChanged();
@@ -308,6 +533,7 @@ function syncAuthStateWithFirebase() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    educariaTrack("page_view", { screen: analyticsPageName() });
     showFirebaseConfigMessageIfNeeded();
     redirectAuthenticatedFromAuthPages();
     enforceAuth();
@@ -315,4 +541,12 @@ document.addEventListener("DOMContentLoaded", () => {
     bindRegisterForm();
     bindLogout();
     syncAuthStateWithFirebase();
+});
+
+document.addEventListener("educaria-auth-changed", () => {
+    flushEducariaAnalytics();
+});
+
+window.addEventListener("pagehide", () => {
+    flushEducariaAnalytics();
 });

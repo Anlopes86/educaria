@@ -26,6 +26,34 @@ O fluxo atual usa:
 - Firebase Auth para cadastro, login e logout
 - Firestore para salvar o perfil do professor em `teachers/{uid}`
 
+## Campos já preparados para futura estrutura escolar
+
+O perfil do professor em `teachers/{uid}` já pode carregar estes campos sem mudar a experiência atual:
+
+- `institution`: nome exibido da escola ou instituição
+- `institutionName`: nome normalizado para evoluções futuras
+- `institutionId`: identificador simples da instituição para escopo compartilhado
+- `role`: papel do usuário, começando por `teacher`
+- `plan`: plano atual do usuário
+- `billingIntent`: intenção de upgrade para o plano Pro
+
+Estrutura esperada:
+
+```txt
+teachers/{uid} {
+  name: string
+  email: string
+  institution: string
+  institutionName: string
+  institutionId: string
+  role: "teacher" | "coordinator" | "institution_admin"
+  plan: "free" | "pro"
+  billingIntent: object | null
+}
+```
+
+Isso ainda não ativa modo escola. Serve apenas para evitar retrabalho quando o produto evoluir para biblioteca institucional, coordenação e gestão multiusuário.
+
 Referências oficiais:
 
 - https://firebase.google.com/docs/web/setup

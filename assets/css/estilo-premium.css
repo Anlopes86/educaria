@@ -3766,6 +3766,12 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     gap: 22px;
 }
 
+body.product-body.theme-overview[data-dashboard-ready="false"] .dashboard-quick-create,
+body.product-body.theme-overview[data-dashboard-ready="false"] #activity-toolkit,
+body.product-body.theme-overview[data-dashboard-ready="false"] .dashboard-guide-trigger {
+    visibility: hidden;
+}
+
 .dashboard-hero-panel {
     display: grid;
     grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);

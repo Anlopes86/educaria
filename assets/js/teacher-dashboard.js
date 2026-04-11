@@ -1,13 +1,13 @@
 const DASHBOARD_TOUR_STORAGE_PREFIX = "educaria:dashboard-tour:";
 const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
 const DASHBOARD_CORE_FORMATS = [
-    { href: "quiz-builder.html", label: "Quiz" },
     { href: "slides-builder.html", label: "Slides" },
-    { href: "flashcards-builder.html", label: "Flashcards" },
-    { href: "jogo-memoria-builder.html", label: "Jogo da memória" }
+    { href: "quiz-builder.html", label: "Quiz" },
+    { href: "criar-aula.html", label: "Aula completa" }
 ];
 const DASHBOARD_EXTRA_FORMATS = [
-    { href: "criar-aula.html", label: "Aula completa" },
+    { href: "flashcards-builder.html", label: "Flashcards" },
+    { href: "jogo-memoria-builder.html", label: "Jogo da memória" },
     { href: "roleta-builder.html", label: "Roleta" },
     { href: "ligar-pontos-builder.html", label: "Ligar pontos" },
     { href: "mapa-mental-builder.html", label: "Mapa mental" },
@@ -16,9 +16,15 @@ const DASHBOARD_EXTRA_FORMATS = [
     { href: "palavras-cruzadas-builder.html", label: "Palavras cruzadas" },
     { href: "forca-builder.html", label: "Forca" }
 ];
+const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_EXTRA_FORMATS];
 const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
 
 let dashboardTourState = null;
+
+function setDashboardReadyState(isReady) {
+    if (!document.body) return;
+    document.body.dataset.dashboardReady = isReady ? "true" : "false";
+}
 
 function hydrateTeacherDashboard() {
     const classesRoot = document.querySelector("[data-dashboard-classes]");
@@ -72,10 +78,17 @@ function hydrateDashboardGreeting() {
     });
 }
 
+function quickCreateActionLabel(target) {
+    if (target === "slides-builder.html") return "Abrir slides";
+    if (target === "quiz-builder.html") return "Abrir quiz";
+    if (target === "criar-aula.html") return "Montar aula";
+    return "Abrir ferramenta";
+}
+
 function syncDashboardFormatHierarchy() {
     const quickCopy = document.querySelector(".dashboard-quick-create p");
     if (quickCopy) {
-        quickCopy.textContent = "Escolha a turma, selecione um formato principal e entre direto no editor para comecar a criar.";
+        quickCopy.textContent = "Escolha a turma, selecione um formato principal e entre direto no editor para começar a criar.";
     }
 
     const toolkitSection = document.getElementById("activity-toolkit");
@@ -84,8 +97,8 @@ function syncDashboardFormatHierarchy() {
     const sectionLabel = toolkitSection.querySelector(".platform-section-label");
     const sectionTitle = toolkitSection.querySelector("h2");
     const sectionLink = toolkitSection.querySelector(".dashboard-inline-link");
-    if (sectionLabel) sectionLabel.textContent = "Formatos principais";
-    if (sectionTitle) sectionTitle.textContent = "Escolha um formato:";
+    if (sectionLabel) sectionLabel.textContent = "Fluxo principal";
+    if (sectionTitle) sectionTitle.textContent = "Comece por aqui";
     if (sectionLink) {
         sectionLink.textContent = "Ver formatos extras";
         sectionLink.setAttribute("href", "#extra-formats");
@@ -101,8 +114,16 @@ function syncDashboardFormatHierarchy() {
     });
 
     const quizCard = grid.querySelector('.dashboard-tool-card--quiz .dashboard-tool-content p');
+    const slidesCard = grid.querySelector('.dashboard-tool-card--slides .dashboard-tool-content p');
+    const lessonCard = grid.querySelector('.dashboard-tool-card--lesson .dashboard-tool-content p');
+    if (slidesCard) {
+        slidesCard.textContent = "Estruture a aula projetada e conduza a explicação com mais clareza.";
+    }
     if (quizCard) {
-        quizCard.textContent = "Crie rapidamente um quiz para suas aulas";
+        quizCard.textContent = "Feche a aula com revisão rápida, participação e feedback imediato.";
+    }
+    if (lessonCard) {
+        lessonCard.textContent = "Monte uma sequência completa para conduzir a aula do início ao fim.";
     }
 
     let secondary = toolkitSection.querySelector(".dashboard-toolkit-secondary");
@@ -140,6 +161,7 @@ function hydrateQuickCreateForm() {
         classSelect.disabled = true;
         formatSelect.disabled = true;
         openButton.disabled = true;
+        openButton.textContent = "Criar";
         return;
     }
 
@@ -147,7 +169,7 @@ function hydrateQuickCreateForm() {
     formatSelect.disabled = false;
     openButton.disabled = false;
 
-    formatSelect.innerHTML = DASHBOARD_CORE_FORMATS.map((format) => {
+    formatSelect.innerHTML = DASHBOARD_QUICK_CREATE_FORMATS.map((format) => {
         return `<option value="${format.href}">${format.label}</option>`;
     }).join("");
 
@@ -159,9 +181,31 @@ function hydrateQuickCreateForm() {
     if (!classSelect.value && classes[0]) {
         classSelect.value = classes[0];
     }
+
+    openButton.textContent = quickCreateActionLabel(formatSelect.value);
 }
 
 function bindQuickCreateForm() {
+    const syncQuickCreateButton = () => {
+        const formatSelect = document.querySelector("[data-dashboard-quick-format]");
+        const openButton = document.querySelector("[data-dashboard-quick-open]");
+        if (!formatSelect || !openButton) return;
+        openButton.textContent = quickCreateActionLabel(formatSelect.value);
+    };
+
+    document.addEventListener("change", (event) => {
+        const formatSelect = event.target.closest("[data-dashboard-quick-format]");
+        const classSelect = event.target.closest("[data-dashboard-quick-class]");
+        if (formatSelect) {
+            syncQuickCreateButton();
+            return;
+        }
+
+        if (classSelect && typeof saveSelectedClass === "function") {
+            saveSelectedClass(classSelect.value || "");
+        }
+    });
+
     document.addEventListener("click", (event) => {
         const button = event.target.closest("[data-dashboard-quick-open]");
         if (!button) return;
@@ -174,6 +218,14 @@ function bindQuickCreateForm() {
 
         if (typeof saveSelectedClass === "function") {
             saveSelectedClass(className);
+        }
+
+        if (typeof educariaTrack === "function") {
+            educariaTrack("quick_create_opened", {
+                className,
+                target,
+                label: quickCreateActionLabel(target)
+            });
         }
 
         window.location.href = target;
@@ -207,6 +259,7 @@ function refreshTeacherDashboard() {
     hydrateTeacherDashboard();
     hydrateDashboardGreeting();
     hydrateQuickCreateForm();
+    setDashboardReadyState(true);
 }
 
 async function syncAndRefreshTeacherDashboard() {

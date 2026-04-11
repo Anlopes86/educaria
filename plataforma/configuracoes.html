@@ -77,7 +77,7 @@
                         <a href="ligar-pontos-builder.html" class="sidebar-subitem">Ligar pontos</a>
                         <a href="mapa-mental-builder.html" class="sidebar-subitem">Mapa mental</a>
                         <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
-                        <a href="caca-palavras-builder.html" class="sidebar-subitem">Ca&ccedil;a-palavras</a>
+                        <a href="caca-palavras-builder.html" class="sidebar-subitem">Caça-palavras</a>
                         <a href="palavras-cruzadas-builder.html" class="sidebar-subitem">Palavras cruzadas</a>
                         <a href="forca-builder.html" class="sidebar-subitem">Forca</a>
                         <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
@@ -108,6 +108,8 @@
                     <p data-settings-teacher-email>email@exemplo.com</p>
                     <div class="settings-summary-meta">
                         <span data-settings-teacher-school>Conta educacional</span>
+                        <span data-settings-teacher-role>Professor</span>
+                        <span data-settings-teacher-institution-id>Sem vínculo institucional</span>
                         <span data-ai-credits>Créditos de IA: carregando...</span>
                     </div>
                 </article>
@@ -180,6 +182,57 @@
                         </div>
                         <p class="settings-feedback" data-settings-password-feedback hidden></p>
                     </form>
+                </article>
+
+                <article class="focus-card">
+                    <div class="page-section-title">
+                        <div>
+                            <span class="platform-section-label">Plano</span>
+                            <h2>Cobrança inicial</h2>
+                        </div>
+                        <p>Enquanto validamos o plano pago, você já pode registrar interesse no upgrade Pro e priorizar sua conta para a próxima etapa.</p>
+                    </div>
+
+                    <div class="settings-summary-meta">
+                        <span>Plano atual: <strong data-settings-plan-name>Gratuito</strong></span>
+                        <span>Status do upgrade: <strong data-settings-plan-status>Sem solicitação</strong></span>
+                    </div>
+
+                    <form class="settings-form" data-settings-upgrade-form>
+                        <div class="platform-field">
+                            <label for="settings-upgrade-note">O que você espera do plano Pro?</label>
+                            <textarea id="settings-upgrade-note" name="upgrade_note" rows="4" placeholder="Ex.: mais gerações com IA, biblioteca ampliada, relatórios ou recursos para minha rotina."></textarea>
+                        </div>
+
+                        <div class="platform-form-actions">
+                            <button type="submit" class="platform-link-button platform-link-primary">Solicitar upgrade Pro</button>
+                        </div>
+                        <p class="settings-feedback" data-settings-upgrade-feedback hidden></p>
+                    </form>
+                </article>
+
+                <article class="focus-card">
+                    <div class="page-section-title">
+                        <div>
+                            <span class="platform-section-label">Programa piloto</span>
+                            <h2>Acompanhar uso</h2>
+                        </div>
+                        <p>Use este bloco para identificar a conta no piloto e exportar os eventos básicos de uso enquanto validamos retenção.</p>
+                    </div>
+
+                    <div class="settings-summary-meta">
+                        <span>ID do piloto: <strong data-settings-pilot-id>carregando...</strong></span>
+                        <span>Eventos: <strong data-settings-pilot-events>0</strong></span>
+                        <span>Dias ativos: <strong data-settings-pilot-days>0</strong></span>
+                        <span>Última atividade: <strong data-settings-pilot-last-event>Sem eventos</strong></span>
+                    </div>
+
+                    <div class="platform-form-actions">
+                        <button type="button" class="platform-link-button platform-link-primary" data-settings-copy-pilot-id>Copiar ID</button>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-settings-export-analytics>Exportar eventos</button>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-settings-sync-analytics>Sincronizar agora</button>
+                    </div>
+                    <p class="settings-feedback" data-settings-pilot-feedback hidden></p>
                 </article>
             </section>
         </main>

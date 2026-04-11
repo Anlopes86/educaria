@@ -16,13 +16,13 @@ function sidebarTeacherInstitution() {
 
 const SIDEBAR_FORMATS = {
     core: [
-        { href: "quiz-builder.html", label: "Quiz" },
         { href: "slides-builder.html", label: "Slides" },
-        { href: "flashcards-builder.html", label: "Flashcards" },
-        { href: "jogo-memoria-builder.html", label: "Jogo da memória" }
+        { href: "quiz-builder.html", label: "Quiz" },
+        { href: "criar-aula.html", label: "Aula completa" }
     ],
     extra: [
-        { href: "criar-aula.html", label: "Aula completa" },
+        { href: "flashcards-builder.html", label: "Flashcards" },
+        { href: "jogo-memoria-builder.html", label: "Jogo da memória" },
         { href: "roleta-builder.html", label: "Roleta" },
         { href: "ligar-pontos-builder.html", label: "Ligar pontos" },
         { href: "mapa-mental-builder.html", label: "Mapa mental" },
@@ -174,6 +174,13 @@ function createSidebarClass() {
     }
 
     saveSelectedClass(composedName);
+    if (typeof educariaTrack === "function") {
+        educariaTrack("class_created", {
+            source: "sidebar",
+            className: composedName,
+            subject
+        });
+    }
     renderSidebarClasses();
 
     if (feedback) {

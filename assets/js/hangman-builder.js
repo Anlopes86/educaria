@@ -166,11 +166,11 @@ async function loadHangmanModelFile(button) {
 
         const payload = parseHangmanTemplateText(fileText);
         if (!applyHangmanTemplateData(payload)) {
-            throw new Error("O arquivo modelo da força não trouxe dados suficientes.");
+            throw new Error("O arquivo modelo da forca não trouxe dados suficientes.");
         }
     } catch (error) {
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
-        window.alert(`Não foi possível montar a força com o arquivo modelo.\n\nDetalhe: ${detail}`);
+        window.alert(`Não foi possível montar a forca com o arquivo modelo.\n\nDetalhe: ${detail}`);
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;
