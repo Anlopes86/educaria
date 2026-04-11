@@ -1566,15 +1566,16 @@ async function generateMaterial(materialType, button) {
 
         openAiReadyModal();
     } catch (error) {
-        console.warn("EducarIA AI generation fallback:", error);
         const endpoint = resolveAiEndpoint();
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
         const normalizedDetail = String(detail).toLowerCase();
         const isQuotaError = normalizedDetail.includes("quota") || normalizedDetail.includes("429") || normalizedDetail.includes("resource_exhausted");
-        const quotaMessage = isQuotaError
-            ? "A cota da API Gemini foi excedida. Nenhum material foi gerado."
-            : "A IA nao conseguiu concluir a geracao. Nenhum material foi gerado.";
-        window.alert(`${quotaMessage}\n\nDetalhe: ${detail}\nEndpoint: ${endpoint}`);
+        const userMessage = isQuotaError
+            ? "Voce ficou sem creditos de IA para gerar este material."
+            : "Nao foi possivel gerar este material agora. Tente novamente em instantes.";
+
+        console.warn("EducarIA AI generation error:", { endpoint, detail, error });
+        window.alert(userMessage);
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;
