@@ -9,7 +9,7 @@ const LESSON_SEQUENCE_TYPES = [
     { value: "slides", label: "Slides" },
     { value: "flashcards", label: "Flashcards" },
     { value: "wheel", label: "Roleta" },
-    { value: "hangman", label: "Força" },
+    { value: "hangman", label: "Forca" },
     { value: "crossword", label: "Palavras cruzadas" },
     { value: "wordsearch", label: "Caça-palavras" },
     { value: "quiz", label: "Quiz" },

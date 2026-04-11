@@ -81,7 +81,7 @@ function normalizeLessonRecord(lesson) {
     const updatedAt = isoTimestampOrEmpty(lesson.updatedAt) || new Date().toISOString();
     const createdAt = isoTimestampOrEmpty(lesson.createdAt) || updatedAt;
     const normalizedType = materialType === "hangman"
-        ? "Força"
+        ? "Forca"
         : (String(lesson.type || materialGroupLabel(materialType)).trim() || materialGroupLabel(materialType));
 
     return {
@@ -567,18 +567,18 @@ function summarizeWheelDraft(rawDraft) {
 
 function summarizeHangmanDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Força sem título", summary: "Material salvo sem resumo definido.", type: "Força", materialType: "hangman" };
+        return { title: "Forca sem título", summary: "Material salvo sem resumo definido.", type: "Forca", materialType: "hangman" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
-    const title = parsed.controls?.["forca-titulo"] || "Força";
+    const title = parsed.controls?.["forca-titulo"] || "Forca";
     const words = [...doc.querySelectorAll("[data-hangman-entry]")].map((card) => {
         return card.querySelector("[data-hangman-answer]")?.value?.trim()
             || card.querySelector('[data-field="answer"]')?.value?.trim()
             || "";
     }).filter(Boolean);
     const firstWord = words[0] || "Sem palavra inicial";
-    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Força", materialType: "hangman" };
+    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Forca", materialType: "hangman" };
 }
 
 function summarizeCrosswordDraft(rawDraft) {
@@ -968,7 +968,7 @@ function materialGroupLabel(type) {
     if (type === "quiz") return "Quiz";
     if (type === "flashcards") return "Flashcards";
     if (type === "wheel") return "Roleta";
-    if (type === "hangman") return "Força";
+    if (type === "hangman") return "Forca";
     if (type === "crossword") return "Palavras cruzadas";
     if (type === "wordsearch") return "Caça-palavras";
     if (type === "memory") return "Jogo da memória";

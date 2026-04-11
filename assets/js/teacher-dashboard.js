@@ -14,7 +14,7 @@ const DASHBOARD_EXTRA_FORMATS = [
     { href: "debate-guiado-builder.html", label: "Debate guiado" },
     { href: "caca-palavras-builder.html", label: "Caça-palavras" },
     { href: "palavras-cruzadas-builder.html", label: "Palavras cruzadas" },
-    { href: "forca-builder.html", label: "Força" }
+    { href: "forca-builder.html", label: "Forca" }
 ];
 const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
 
