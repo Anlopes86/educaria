@@ -6325,11 +6325,11 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     grid-column: 2;
     grid-row: 1;
     align-self: end;
-    margin-top: clamp(-48px, -2.4vh, -10px);
+    margin-top: clamp(-92px, -4.8vh, -34px);
 }
 
 .presentation-slide--split .presentation-media img {
-    max-height: var(--split-media-max-height, min(88vh, 1020px));
+    max-height: var(--split-media-max-height, min(92vh, 1120px));
 }
 
 .presentation-slide--split h1,
@@ -6355,7 +6355,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     min-height: 0;
     align-self: stretch;
     padding: 0;
-    margin-top: -96px;
+    margin-top: -150px;
 }
 
 .presentation-slide--stack .presentation-media img,
@@ -6363,7 +6363,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     width: 100%;
     max-width: 100%;
     max-height: none;
-    min-height: clamp(560px, 82vh, 1080px);
+    min-height: clamp(620px, 90vh, 1180px);
 }
 
 .presentation-slide--stack .presentation-media img {
@@ -6381,8 +6381,8 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .presentation-slide--stack .presentation-media[data-media-aspect="portrait"] img {
     width: auto;
-    max-width: min(70%, 820px);
-    max-height: min(90vh, 1100px);
+    max-width: min(72%, 860px);
+    max-height: min(96vh, 1220px);
 }
 
 .presentation-slide--stack[data-media-aspect="landscape"] {
@@ -6392,12 +6392,12 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 .presentation-slide--stack .presentation-media[data-media-aspect="landscape"] img {
     width: 100%;
     height: 100%;
-    max-height: min(84vh, 980px);
+    max-height: min(92vh, 1100px);
 }
 
 .presentation-slide--stack .presentation-media[data-media-aspect="square"] img {
-    max-width: min(92%, 980px);
-    max-height: min(80vh, 920px);
+    max-width: min(96%, 1080px);
+    max-height: min(88vh, 1040px);
 }
 
 .presentation-slide--feature .presentation-slide-copy {
