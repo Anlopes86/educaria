@@ -283,6 +283,12 @@ function updateBlockDraftSnapshot(block, rawDraft) {
     block.lessonDraft = rawDraft;
     block.lessonTitle = summary.title || block.lessonTitle || materialGroupLabel(block.materialType || "slides");
     block.lessonSummary = summary.summary || block.lessonSummary || "Conteudo ainda em edicao.";
+    if ((block.materialType || "slides") === "slides"
+        && block.id
+        && block.id === selectedBlockId
+        && typeof writeCurrentDraftByType === "function") {
+        writeCurrentDraftByType("slides", rawDraft);
+    }
     if (isAutoNamedBlock(block, previousTitle)) {
         block.label = block.lessonTitle;
     }
@@ -408,6 +414,15 @@ function renderInlineEditor(block) {
                     )).join("");
                 }).join("")}
             </div>
+            ${(block.materialType || "slides") === "slides"
+                ? `
+                <div class="lesson-sequence-inline-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-apply-slide-image="${block.id}" data-apply-slide-index="${index}">
+                        Aplicar imagem
+                    </button>
+                </div>
+                `
+                : ""}
         </article>
     `).join("");
 
@@ -2373,6 +2388,41 @@ function bindLessonSequenceEvents() {
             return;
         }
 
+        const applyImageTrigger = event.target.closest("[data-apply-slide-image]");
+        if (applyImageTrigger) {
+            const blockId = applyImageTrigger.dataset.applySlideImage || "";
+            const slideIndex = Number(applyImageTrigger.dataset.applySlideIndex || 0);
+            const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
+            if (!block) return;
+
+            const root = applyImageTrigger.closest(".lesson-sequence-inline-editor-item");
+            const urlField = root?.querySelector('[data-block-draft-field][data-draft-field-selector="[data-field=\\"slide-image-url\\"]"]');
+            const promptField = root?.querySelector('[data-block-draft-field][data-draft-field-selector="[data-field=\\"slide-image-prompt\\"]"]');
+
+            if (urlField) {
+                updateBlockDraftStackField(
+                    blockId,
+                    "[data-slide-card]",
+                    slideIndex,
+                    '[data-field="slide-image-url"]',
+                    0,
+                    urlField.value
+                );
+            }
+
+            if (promptField) {
+                updateBlockDraftStackField(
+                    blockId,
+                    "[data-slide-card]",
+                    slideIndex,
+                    '[data-field="slide-image-prompt"]',
+                    0,
+                    promptField.value
+                );
+            }
+            return;
+        }
+
         const generateAllTrigger = event.target.closest("[data-generate-lesson-sequence]");
         if (generateAllTrigger) {
             event.preventDefault();
@@ -2426,6 +2476,14 @@ function bindLessonSequenceEvents() {
                         0,
                         "Upload"
                     );
+                }
+
+                const blockId = fileField.dataset.blockDraftFile || "";
+                if (blockId) {
+                    const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
+                    if (block?.lessonDraft && typeof writeCurrentDraftByType === "function") {
+                        writeCurrentDraftByType("slides", block.lessonDraft);
+                    }
                 }
             };
             reader.readAsDataURL(file);
