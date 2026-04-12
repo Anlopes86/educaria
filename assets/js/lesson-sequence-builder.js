@@ -29,7 +29,10 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
         fields: [
             { selector: '[data-field="slide-title"]', label: "Titulo" },
             { selector: '[data-field="slide-subtitle"]', label: "Subtitulo" },
-            { selector: '[data-field="slide-body"]', label: "Conteudo", kind: "textarea", wide: true }
+            { selector: '[data-field="slide-body"]', label: "Conteudo", kind: "textarea", wide: true },
+            { selector: '[data-field="slide-image-mode"]', label: "Origem da imagem" },
+            { selector: '[data-field="slide-image-prompt"]', label: "Descricao da imagem", kind: "textarea", wide: true },
+            { selector: '[data-field="slide-image-url"]', label: "URL da imagem", wide: true }
         ]
     },
     flashcards: {
