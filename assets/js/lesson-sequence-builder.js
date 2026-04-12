@@ -32,7 +32,15 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
             { selector: '[data-field="slide-body"]', label: "Conteudo", kind: "textarea", wide: true },
             { selector: '[data-field="slide-image-mode"]', label: "Origem da imagem" },
             { selector: '[data-field="slide-image-prompt"]', label: "Descricao da imagem", kind: "textarea", wide: true },
-            { selector: '[data-field="slide-image-url"]', label: "URL da imagem", wide: true }
+            { selector: '[data-field="slide-image-url"]', label: "URL da imagem", wide: true },
+            {
+                selector: '[data-field="slide-image-url"]',
+                label: "Upload da imagem",
+                kind: "file",
+                accept: "image/*",
+                wide: true,
+                modeSelector: '[data-field="slide-image-mode"]'
+            }
         ]
     },
     flashcards: {
@@ -352,7 +360,9 @@ function renderInlineEditorControl(block, descriptor, value) {
 function renderInlineEditorField(block, config, itemIndex, descriptor, occurrenceIndex, value, label) {
     const inputMarkup = descriptor.kind === "textarea"
         ? `<textarea data-block-draft-field="${block.id}" data-draft-item-selector="${escapeAttr(config.itemSelector)}" data-draft-item-index="${itemIndex}" data-draft-field-selector="${escapeAttr(descriptor.selector)}" data-draft-field-occurrence="${occurrenceIndex}">${escapeHtml(value || "")}</textarea>`
-        : `<input type="text" value="${escapeAttr(value || "")}" data-block-draft-field="${block.id}" data-draft-item-selector="${escapeAttr(config.itemSelector)}" data-draft-item-index="${itemIndex}" data-draft-field-selector="${escapeAttr(descriptor.selector)}" data-draft-field-occurrence="${occurrenceIndex}">`;
+        : descriptor.kind === "file"
+            ? `<input type="file" ${descriptor.accept ? `accept="${escapeAttr(descriptor.accept)}"` : ""} data-block-draft-file="${block.id}" data-draft-item-selector="${escapeAttr(config.itemSelector)}" data-draft-item-index="${itemIndex}" data-draft-file-selector="${escapeAttr(descriptor.selector)}" data-draft-file-occurrence="${occurrenceIndex}" ${descriptor.modeSelector ? `data-draft-file-mode-selector="${escapeAttr(descriptor.modeSelector)}"` : ""}>`
+            : `<input type="text" value="${escapeAttr(value || "")}" data-block-draft-field="${block.id}" data-draft-item-selector="${escapeAttr(config.itemSelector)}" data-draft-item-index="${itemIndex}" data-draft-field-selector="${escapeAttr(descriptor.selector)}" data-draft-field-occurrence="${occurrenceIndex}">`;
 
     return `
         <div class="platform-field ${descriptor.wide ? "platform-field-wide" : ""}">
@@ -446,7 +456,26 @@ function updateBlockDraftStackField(blockId, itemSelector, itemIndex, fieldSelec
     if (!section) return;
 
     const nodes = [...section.querySelectorAll(fieldSelector)];
-    const target = nodes[occurrenceIndex] || section.querySelector(fieldSelector);
+    let target = nodes[occurrenceIndex] || section.querySelector(fieldSelector);
+
+    if (!target && (block.materialType || "slides") === "slides") {
+        const selectorKey = String(fieldSelector || "");
+        if (selectorKey.includes("slide-image-url")) {
+            target = document.createElement("input");
+            target.type = "text";
+            target.setAttribute("data-field", "slide-image-url");
+            section.appendChild(target);
+        } else if (selectorKey.includes("slide-image-mode")) {
+            target = document.createElement("input");
+            target.type = "text";
+            target.setAttribute("data-field", "slide-image-mode");
+            section.appendChild(target);
+        } else if (selectorKey.includes("slide-image-prompt")) {
+            target = document.createElement("textarea");
+            target.setAttribute("data-field", "slide-image-prompt");
+            section.appendChild(target);
+        }
+    }
     if (!target) return;
 
     target.value = value;
@@ -1099,9 +1128,9 @@ function buildDraftStackHtml(materialType, payload) {
                 <input data-field="slide-subtitle" type="text" value="${escapeAttr(slide.subtitle || "")}">
                 <textarea data-field="slide-body">${escapeHtml(slide.body || "")}</textarea>
                 <input data-field="slide-layout" type="text" value="Lado a lado">
-                <input data-field="slide-image-mode" type="text" value="${escapeAttr(slide.image_prompt ? "Gerar com IA" : "Sem imagem")}">
-                <textarea data-field="slide-image-prompt">${escapeHtml(slide.image_prompt || "")}</textarea>
-                <input data-field="slide-image-url" type="text" value="">
+                <input data-field="slide-image-mode" type="text" value="${escapeAttr(slide.image_prompt || slide.imagePrompt ? "Gerar com IA" : (slide.image_url || slide.imageUrl ? "Upload" : "Sem imagem"))}">
+                <textarea data-field="slide-image-prompt">${escapeHtml(slide.image_prompt || slide.imagePrompt || "")}</textarea>
+                <input data-field="slide-image-url" type="text" value="${escapeAttr(slide.image_url || slide.imageUrl || "")}">
                 <input data-field="slide-accent-color" type="color" value="#0ea5e9">
                 <input data-field="slide-color" type="color" value="#d7f5f6">
                 <input data-field="slide-text-color" type="color" value="#0f172a">
@@ -2352,6 +2381,39 @@ function bindLessonSequenceEvents() {
         const select = event.target.closest("[data-block-select-material]");
         if (select) {
             setBlockMaterial(select.dataset.blockSelectMaterial || "", select.value);
+            return;
+        }
+
+        const fileField = event.target.closest("[data-block-draft-file]");
+        if (fileField) {
+            const file = fileField.files?.[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = () => {
+                const dataUrl = typeof reader.result === "string" ? reader.result : "";
+                updateBlockDraftStackField(
+                    fileField.dataset.blockDraftFile || "",
+                    fileField.dataset.draftItemSelector || "",
+                    Number(fileField.dataset.draftItemIndex || 0),
+                    fileField.dataset.draftFileSelector || "",
+                    Number(fileField.dataset.draftFileOccurrence || 0),
+                    dataUrl
+                );
+
+                const modeSelector = fileField.dataset.draftFileModeSelector || "";
+                if (modeSelector) {
+                    updateBlockDraftStackField(
+                        fileField.dataset.blockDraftFile || "",
+                        fileField.dataset.draftItemSelector || "",
+                        Number(fileField.dataset.draftItemIndex || 0),
+                        modeSelector,
+                        0,
+                        "Upload"
+                    );
+                }
+            };
+            reader.readAsDataURL(file);
             return;
         }
 
