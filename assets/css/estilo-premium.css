@@ -7374,7 +7374,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     margin-left: auto;
 }
 
-.editor-disclosure summary::after {
+.editor-disclosure > summary::after {
     content: "+";
     display: grid;
     place-items: center;
@@ -7389,7 +7389,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-.editor-disclosure[open] summary::after {
+.editor-disclosure[open] > summary::after {
     content: "-";
     background: rgba(14, 165, 233, 0.16);
     color: #075985;
