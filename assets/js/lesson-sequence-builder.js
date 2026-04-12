@@ -479,6 +479,15 @@ function updateBlockDraftStackField(blockId, itemSelector, itemIndex, fieldSelec
     if (!target) return;
 
     target.value = value;
+
+    if ((block.materialType || "slides") === "slides") {
+        const selectorKey = String(fieldSelector || "");
+        if (selectorKey.includes("slide-image-url") && String(value || "").trim()) {
+            const modeField = section.querySelector('[data-field="slide-image-mode"]');
+            if (modeField) modeField.value = "Upload";
+        }
+    }
+
     draftState.stackHtml = doc.body.firstElementChild?.innerHTML || "";
     updateBlockDraftSnapshot(block, JSON.stringify(draftState));
     persistLessonSequence();
@@ -2392,6 +2401,12 @@ function bindLessonSequenceEvents() {
             const reader = new FileReader();
             reader.onload = () => {
                 const dataUrl = typeof reader.result === "string" ? reader.result : "";
+                const inlineRoot = fileField.closest(".lesson-sequence-inline-editor-item");
+                const urlField = inlineRoot?.querySelector('[data-block-draft-field][data-draft-field-selector="[data-field=\\"slide-image-url\\"]"]');
+                if (urlField) {
+                    urlField.value = dataUrl;
+                }
+
                 updateBlockDraftStackField(
                     fileField.dataset.blockDraftFile || "",
                     fileField.dataset.draftItemSelector || "",
@@ -2450,6 +2465,19 @@ function bindLessonSequenceEvents() {
         const blockField = event.target.closest("[data-block-field]");
         if (blockField) {
             updateBlockField(blockField.dataset.blockId || "", blockField.dataset.blockField || "", blockField.value);
+            return;
+        }
+
+        const draftField = event.target.closest("[data-block-draft-field]");
+        if (draftField) {
+            updateBlockDraftStackField(
+                draftField.dataset.blockDraftField || "",
+                draftField.dataset.draftItemSelector || "",
+                Number(draftField.dataset.draftItemIndex || 0),
+                draftField.dataset.draftFieldSelector || "",
+                Number(draftField.dataset.draftFieldOccurrence || 0),
+                draftField.value
+            );
             return;
         }
 
