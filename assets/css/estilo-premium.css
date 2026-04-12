@@ -6274,7 +6274,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     width: auto;
     height: auto;
     max-width: 100%;
-    max-height: min(55vh, 620px);
+    max-height: min(62vh, 700px);
     object-fit: contain;
     border-radius: 22px;
     box-shadow: 0 24px 38px -28px rgba(15, 23, 42, 0.34);
@@ -6282,7 +6282,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .presentation-media-placeholder {
     width: 100%;
-    min-height: min(55vh, 620px);
+    min-height: min(62vh, 700px);
     display: grid;
     align-content: center;
     gap: 12px;
@@ -6307,7 +6307,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 }
 
 .presentation-slide--split {
-    grid-template-columns: minmax(0, 1fr) minmax(300px, 0.9fr);
+    grid-template-columns: var(--split-columns, minmax(0, 1fr) minmax(300px, 0.9fr));
     grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
 }
@@ -6329,7 +6329,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 }
 
 .presentation-slide--split .presentation-media img {
-    max-height: min(62vh, 680px);
+    max-height: var(--split-media-max-height, min(66vh, 700px));
 }
 
 .presentation-slide--split h1,
@@ -6339,7 +6339,8 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .presentation-slide--stack {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 0.36fr) minmax(280px, 0.64fr);
+    grid-template-rows: minmax(0, 0.3fr) minmax(320px, 0.7fr);
+    gap: clamp(10px, 1.6vw, 16px);
     align-items: stretch;
 }
 
@@ -6353,8 +6354,8 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     width: 100%;
     min-height: 0;
     align-self: stretch;
-    padding: 8px 10px;
-    margin-top: -6px;
+    padding: 6px 8px;
+    margin-top: -42px;
 }
 
 .presentation-slide--stack .presentation-media img,
@@ -6362,7 +6363,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     width: 100%;
     max-width: 100%;
     max-height: none;
-    min-height: clamp(280px, 44vh, 520px);
+    min-height: clamp(360px, 58vh, 700px);
 }
 
 .presentation-slide--stack .presentation-media img {
@@ -6380,8 +6381,8 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .presentation-slide--stack .presentation-media[data-media-aspect="portrait"] img {
     width: auto;
-    max-width: min(52%, 480px);
-    max-height: min(60vh, 680px);
+    max-width: min(54%, 520px);
+    max-height: min(66vh, 740px);
 }
 
 .presentation-slide--stack[data-media-aspect="landscape"] {
@@ -6391,12 +6392,12 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 .presentation-slide--stack .presentation-media[data-media-aspect="landscape"] img {
     width: 100%;
     height: 100%;
-    max-height: min(52vh, 560px);
+    max-height: min(58vh, 640px);
 }
 
 .presentation-slide--stack .presentation-media[data-media-aspect="square"] img {
-    max-width: min(68%, 600px);
-    max-height: min(48vh, 520px);
+    max-width: min(70%, 640px);
+    max-height: min(54vh, 600px);
 }
 
 .presentation-slide--feature .presentation-slide-copy {

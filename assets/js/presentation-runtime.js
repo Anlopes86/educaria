@@ -313,18 +313,43 @@ function resolveSplitMediaOffset(slideRoot, media) {
     const mediaAspect = slideRoot.dataset.mediaAspect || media.dataset.mediaAspect || "";
 
     if (mediaAspect === "portrait") {
-        return "clamp(-52px, -1.8vh, -18px)";
+        return "clamp(-72px, -3vh, -28px)";
     }
 
     if (mediaAspect === "square") {
-        return "clamp(-84px, -3.4vh, -30px)";
+        return "clamp(-98px, -4.2vh, -36px)";
     }
 
     if (mediaAspect === "landscape") {
-        return "clamp(-128px, -6vh, -52px)";
+        return "clamp(-140px, -6.5vh, -60px)";
     }
 
-    return "clamp(-76px, -3.2vh, -28px)";
+    return "clamp(-92px, -4vh, -34px)";
+}
+
+function applySplitAspect(slideRoot, media) {
+    const aspect = slideRoot.dataset.mediaAspect || media?.dataset?.mediaAspect || "";
+
+    if (aspect === "portrait") {
+        slideRoot.style.setProperty("--split-columns", "minmax(0, 0.92fr) minmax(320px, 1.08fr)");
+        slideRoot.style.setProperty("--split-media-max-height", "min(72vh, 760px)");
+        return;
+    }
+
+    if (aspect === "landscape") {
+        slideRoot.style.setProperty("--split-columns", "minmax(0, 1.18fr) minmax(280px, 0.82fr)");
+        slideRoot.style.setProperty("--split-media-max-height", "min(60vh, 640px)");
+        return;
+    }
+
+    if (aspect === "square") {
+        slideRoot.style.setProperty("--split-columns", "minmax(0, 1fr) minmax(300px, 0.96fr)");
+        slideRoot.style.setProperty("--split-media-max-height", "min(66vh, 700px)");
+        return;
+    }
+
+    slideRoot.style.setProperty("--split-columns", "minmax(0, 1fr) minmax(300px, 0.9fr)");
+    slideRoot.style.setProperty("--split-media-max-height", "min(66vh, 700px)");
 }
 
 function renderPresentation(slides) {
@@ -377,6 +402,8 @@ function renderPresentation(slides) {
 
     const resetMediaStyles = () => {
         clearMediaAspect(slideRoot, media);
+        slideRoot.style.removeProperty("--split-columns");
+        slideRoot.style.removeProperty("--split-media-max-height");
         copyRoot.style.order = "";
         media.style.order = "";
         media.style.alignSelf = "";
@@ -423,6 +450,7 @@ function renderPresentation(slides) {
                 : renderMediaPlaceholder(slide);
             applyMediaAspect(slideRoot, media, () => {
                 if (slide.layoutMode === "split") {
+                    applySplitAspect(slideRoot, media);
                     media.style.marginTop = resolveSplitMediaOffset(slideRoot, media);
                 }
 
@@ -431,7 +459,7 @@ function renderPresentation(slides) {
 
             if (slide.layoutMode === "split") {
                 slideRoot.style.display = "grid";
-                slideRoot.style.gridTemplateColumns = "minmax(0, 1fr) minmax(320px, 0.9fr)";
+                slideRoot.style.gridTemplateColumns = "var(--split-columns, minmax(0, 1fr) minmax(300px, 0.9fr))";
                 slideRoot.style.gridTemplateRows = "minmax(0, 1fr)";
                 slideRoot.style.gap = "20px";
                 slideRoot.style.alignItems = "start";
@@ -440,6 +468,7 @@ function renderPresentation(slides) {
                 media.style.gridColumn = "2";
                 media.style.gridRow = "1";
                 media.style.alignSelf = "end";
+                applySplitAspect(slideRoot, media);
                 media.style.marginTop = resolveSplitMediaOffset(slideRoot, media);
                 media.style.minHeight = "0";
                 media.style.height = "auto";
