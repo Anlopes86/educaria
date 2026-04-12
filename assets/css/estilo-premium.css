@@ -7881,31 +7881,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 }
 
 .lesson-sequence-item-toggle {
-    position: absolute;
-    top: 10px;
-    right: 12px;
-    width: 30px;
-    height: 30px;
-    display: grid;
-    place-items: center;
-    border-radius: 999px;
-    background: rgba(14, 165, 233, 0.1);
-    color: #075985;
-    font-size: 1.1rem;
-    font-weight: 800;
-    transition: transform 160ms ease, background 160ms ease;
-}
-
-.lesson-sequence-item-toggle::before {
-    content: "+";
-}
-
-.lesson-sequence-item-disclosure[open] .lesson-sequence-item-toggle {
-    background: rgba(14, 165, 233, 0.16);
-}
-
-.lesson-sequence-item-disclosure[open] .lesson-sequence-item-toggle::before {
-    content: "-";
+    display: none;
 }
 
 .lesson-sequence-item-disclosure:not([open]) > summary {
