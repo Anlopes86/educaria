@@ -133,6 +133,44 @@ function materialTypeFromUrl() {
     return "";
 }
 
+function editorReturnPathFromUrl() {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const editor = params.get("editor");
+        if (editor === "lesson") {
+            return "criar-aula.html";
+        }
+    } catch (error) {
+        console.warn("EducarIA editor url unavailable:", error);
+    }
+
+    return "";
+}
+
+function hydrateEditorReturnLinks() {
+    const editorPath = editorReturnPathFromUrl();
+    if (!editorPath) return;
+
+    document.querySelectorAll("[data-return-to-editor]").forEach((link) => {
+        link.setAttribute("href", editorPath);
+    });
+}
+
+function bindEditorReturnTargets() {
+    document.addEventListener("click", (event) => {
+        const trigger = event.target.closest("[data-return-to-editor]");
+        if (!trigger || !trigger.getAttribute) return;
+
+        const href = trigger.getAttribute("href");
+        if (!href) return;
+
+        if (window.top && window.top !== window) {
+            event.preventDefault();
+            window.top.location.href = href;
+        }
+    });
+}
+
 function hydratePresentationLinks() {
     const type = readCurrentMaterialType();
     const path = presentationPathForMaterial(type);
@@ -156,5 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setCurrentMaterialType(pageType);
     }
 
+    hydrateEditorReturnLinks();
     hydratePresentationLinks();
+    bindEditorReturnTargets();
 });

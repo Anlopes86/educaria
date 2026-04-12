@@ -1,11 +1,22 @@
 document.addEventListener("DOMContentLoaded", () => {
     const panes = document.querySelectorAll(".activity-builder-pane");
+    const params = new URLSearchParams(window.location.search);
+    const focus = params.get("focus") || "";
+    const shouldFocusEdit = focus === "edit";
 
     panes.forEach((pane) => {
         const disclosures = [...pane.querySelectorAll(".editor-disclosure")];
         disclosures.forEach((item) => {
             item.open = false;
         });
+
+        if (shouldFocusEdit && disclosures.length) {
+            const target = disclosures[disclosures.length - 1];
+            target.open = true;
+            requestAnimationFrame(() => {
+                target.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+        }
 
         pane.addEventListener(
             "toggle",

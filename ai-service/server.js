@@ -521,6 +521,29 @@ const debateSchema = {
     }
 };
 
+const crosswordSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "subtitle", "entries"],
+    properties: {
+        title: { type: "string" },
+        subtitle: { type: "string" },
+        entries: {
+            type: "array",
+            minItems: 4,
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["answer", "clue"],
+                properties: {
+                    answer: { type: "string" },
+                    clue: { type: "string" }
+                }
+            }
+        }
+    }
+};
+
 function schemaFor(materialType) {
     if (materialType === "quiz") {
         return {
@@ -591,6 +614,14 @@ function schemaFor(materialType) {
             name: "educaria_debate",
             description: "Debate guiado estruturado para o builder da EducarIA",
             schema: debateSchema
+        };
+    }
+
+    if (materialType === "crossword") {
+        return {
+            name: "educaria_crossword",
+            description: "Palavras cruzadas estruturadas para o builder da EducarIA",
+            schema: crosswordSchema
         };
     }
 
@@ -902,6 +933,25 @@ function promptFor(materialType, action, sourceText) {
             "- Respeite o numero de etapas e o formato pedidos pelo professor quando forem informados.",
             "- Os lados devem ser formulados de modo claro e compreensivel.",
             "- Cada etapa deve ter progressao logica: aquecimento, confronto de ideias, fechamento.",
+            "Material de origem:",
+            sourceText
+        ].join("\n\n");
+    }
+
+    if (materialType === "crossword") {
+        return [
+            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Monte uma atividade de palavras cruzadas pronta para uso em sala.",
+            "Cada answer deve ser uma palavra ou termo curto, sem espacos.",
+            "Cada clue deve ser uma pista direta, clara e fiel ao texto-base.",
+            "Evite respostas longas, frases completas ou termos ambiguos.",
+            "Prefira conceitos centrais, vocabulario-chave e exemplos do conteudo.",
+            `Objetivo do professor: ${action || "Estruturar palavras cruzadas a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Respeite a quantidade de entradas pedida quando ela for informada.",
+            "- Nao invente fatos fora do tema.",
+            "- Varie o tamanho das respostas para equilibrar a cruzadinha.",
             "Material de origem:",
             sourceText
         ].join("\n\n");

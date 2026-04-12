@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aula Completa | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/lesson-sequence-builder.js" defer></script>
 </head>
@@ -23,78 +30,156 @@
             </a>
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para a turma</a>
-                <a href="aula-completa-apresentacao.html" class="platform-link-button platform-link-secondary">Abrir apresentação</a>
+                <a href="aula-completa-apresentacao.html" class="platform-link-button platform-link-secondary" data-open-lesson-sequence-presentation>Abrir apresentação</a>
                 <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="lesson" data-save-target="turma.html">Salvar na turma</button>
             </div>
         </header>
 
         <section class="lesson-sequence-layout">
             <section class="focus-card lesson-sequence-main">
-                <section class="lesson-sequence-add">
-                    <div class="page-section-title page-section-title--compact">
-                        <div>
-                            <span class="platform-section-label">Montar sequência</span>
-                            <h2>Escolha atividades salvas</h2>
+                <details class="editor-disclosure lesson-sequence-step-disclosure lesson-sequence-meta-panel">
+                    <summary>
+                        <span>Informações da aula</span>
+                    </summary>
+                    <div class="editor-disclosure-body lesson-sequence-step-body">
+                        <div class="platform-form-grid lesson-sequence-meta-grid">
+                            <div class="platform-field">
+                                <label for="lesson-title">Nome da aula</label>
+                                <input id="lesson-title" type="text" placeholder="Ex.: Revisão de frações com fechamento em quiz">
+                            </div>
+                            <div class="platform-field">
+                                <label for="lesson-duration">Tempo total previsto</label>
+                                <input id="lesson-duration" type="number" min="1" step="1" value="50">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label for="lesson-objective">Objetivo da aula</label>
+                                <textarea id="lesson-objective" placeholder="Ex.: apresentar o conceito com slides, retomar termos-chave com flashcards e fechar com um quiz rápido."></textarea>
+                            </div>
                         </div>
-                        <p>Selecione um material e adicione na ordem em que ele deve aparecer no preview da aula.</p>
-                    </div>
 
-                    <div class="platform-form-grid">
-                        <div class="platform-field">
-                            <label for="lesson-block-type">Tipo de atividade</label>
-                            <select id="lesson-block-type" data-lesson-block-type></select>
-                        </div>
-                        <div class="platform-field">
-                            <label for="lesson-block-material">Material salvo</label>
-                            <select id="lesson-block-material" data-lesson-block-material></select>
-                        </div>
-                        <div class="platform-field">
-                            <label for="lesson-block-duration">Tempo do bloco</label>
-                            <input id="lesson-block-duration" type="number" min="1" step="1" value="8">
+                        <div class="lesson-sequence-inline-status">
+                            <span class="auth-inline-chip">
+                                <strong data-lesson-sequence-count>0 blocos</strong>
+                                <small>Na ordem de apresentação</small>
+                            </span>
+                            <span class="auth-inline-chip">
+                                <strong data-lesson-sequence-duration>50 min</strong>
+                                <small>Tempo total estimado</small>
+                            </span>
+                            <span class="auth-inline-chip">
+                                <strong data-lesson-sequence-class>Turma</strong>
+                                <small>Turma ativa</small>
+                            </span>
+                            <span class="auth-inline-chip">
+                                <strong data-lesson-sequence-status>Escolha as atividades</strong>
+                                <small>Status da sequência</small>
+                            </span>
                         </div>
                     </div>
-                    <div class="utility-actions">
-                        <button type="button" class="platform-link-button platform-link-primary" data-add-lesson-block>Adicionar à sequência</button>
-                    </div>
-                </section>
+                </details>
 
-                <section class="lesson-sequence-blocks">
-                    <div class="page-section-title page-section-title--compact">
-                        <div>
-                            <span class="platform-section-label">Sequência</span>
-                            <h2>Atividades adicionadas</h2>
+                <details class="editor-disclosure lesson-sequence-step-disclosure" data-lesson-step="1">
+                    <summary>
+                        <span>Etapa 1 · Escolha as atividades na ordem da aula</span>
+                    </summary>
+                    <div class="editor-disclosure-body lesson-sequence-step-body">
+                        <div class="page-section-title page-section-title--compact">
+                            <div>
+                                <span class="platform-section-label">Etapa 1</span>
+                                <h2>Escolha as atividades na ordem da aula</h2>
+                            </div>
+                            <p>Adicione as ferramentas que vão compor a aula. Você pode reorganizar depois, mas a ideia já é montar a linha do tempo principal aqui.</p>
                         </div>
-                        <p>Reordene, ajuste o tempo e abra o material quando quiser editar mais a fundo.</p>
-                    </div>
 
-                    <div class="lesson-sequence-empty" data-lesson-sequence-empty>
-                        <h3>Nenhum bloco na sequência ainda</h3>
-                        <p>Adicione uma atividade salva para começar a montar a aula completa.</p>
+                        <div class="lesson-sequence-tool-grid" data-lesson-tool-grid></div>
                     </div>
+                </details>
 
-                    <div class="lesson-sequence-list" data-lesson-sequence-list></div>
-                </section>
+                <details class="editor-disclosure lesson-sequence-step-disclosure" data-lesson-step="2">
+                    <summary>
+                        <span>Etapa 2 · Defina o conteúdo de cada atividade</span>
+                    </summary>
+                    <div class="editor-disclosure-body lesson-sequence-step-body">
+                        <div class="page-section-title page-section-title--compact">
+                            <div>
+                                <span class="platform-section-label">Etapa 2</span>
+                                <h2>Defina o conteúdo de cada atividade</h2>
+                            </div>
+                            <p>Em cada bloco, escolha se o conteúdo vem da turma, da biblioteca ou se será criado agora. No fim, a apresentação seguirá essa mesma ordem.</p>
+                        </div>
+
+                        <div class="lesson-sequence-empty" data-lesson-sequence-empty>
+                            <h3>Nenhum bloco na sequência ainda</h3>
+                            <p>Comece escolhendo as ferramentas da aula. Um exemplo simples seria: slides, flashcards e quiz.</p>
+                        </div>
+
+                        <div class="lesson-sequence-inline-ai">
+                            <div class="page-section-title page-section-title--compact">
+                                <div>
+                                    <span class="platform-section-label">Gerar com IA</span>
+                                    <h2>Preencher todos os blocos da aula</h2>
+                                </div>
+                                <p>Use o texto-base para gerar todos os blocos de uma só vez, antes de editar cada conteúdo.</p>
+                                <small class="ai-credits-pill" data-ai-credits>Cr&eacute;ditos de IA: carregando...</small>
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label for="lesson-ai-source-inline">Texto-base para gerar toda a aula</label>
+                                <textarea id="lesson-ai-source-inline" placeholder="Ex.: conteúdo, resumo da aula, texto do livro, objetivos e pontos que devem aparecer em slides, flashcards e quiz."></textarea>
+                            </div>
+                            <div class="lesson-sequence-summary-actions">
+                                <button type="button" class="platform-link-button platform-link-primary" data-generate-lesson-sequence data-lesson-ai-source="lesson-ai-source-inline">Gerar todo conteúdo com IA</button>
+                            </div>
+                        </div>
+
+                        <div class="lesson-sequence-list" data-lesson-sequence-list></div>
+                    </div>
+                </details>
             </section>
 
-            <aside class="focus-card lesson-sequence-preview">
-                <div class="page-section-title page-section-title--compact">
-                    <div>
-                        <span class="platform-section-label">Preview</span>
-                        <h2>Bloco selecionado</h2>
+            <aside class="lesson-sequence-preview">
+                <details class="editor-disclosure lesson-sequence-step-disclosure lesson-sequence-summary-card" data-lesson-step="3" open>
+                    <summary>
+                        <span>Etapa 3 · Conferir sequência final</span>
+                    </summary>
+                    <div class="editor-disclosure-body lesson-sequence-step-body">
+                        <div class="page-section-title page-section-title--compact">
+                            <div>
+                                <span class="platform-section-label">Etapa 3</span>
+                                <h2>Conferir sequência final</h2>
+                            </div>
+                            <p>Acompanhe o que já está definido e o que ainda falta antes de abrir a apresentação completa.</p>
+                        </div>
+
+                        <div class="lesson-sequence-readiness" data-lesson-sequence-readiness>
+                            <strong>0 de 0 blocos prontos</strong>
+                            <p>Escolha as atividades para começar.</p>
+                        </div>
+
+                        <div class="lesson-sequence-progress-list" data-lesson-sequence-progress-list></div>
+
+                        <div class="lesson-sequence-ai-panel">
+                            <div class="page-section-title page-section-title--compact">
+                                <div>
+                                    <span class="platform-section-label">Ações rápidas</span>
+                                    <h2>Gerar e visualizar a aula inteira</h2>
+                                </div>
+                                <p>Cole um texto-base para a IA estruturar todos os blocos de uma só vez. Se o campo ficar vazio, usamos o objetivo da aula como referência.</p>
+                                <small class="ai-credits-pill" data-ai-credits>Cr&eacute;ditos de IA: carregando...</small>
+                            </div>
+
+                            <div class="platform-field platform-field-wide">
+                                <label for="lesson-ai-source">Texto-base para gerar toda a aula</label>
+                                <textarea id="lesson-ai-source" placeholder="Ex.: conteúdo, resumo da aula, texto do livro, objetivos e pontos que devem aparecer em slides, flashcards e quiz."></textarea>
+                            </div>
+
+                            <div class="lesson-sequence-summary-actions">
+                                <button type="button" class="platform-link-button platform-link-primary" data-generate-lesson-sequence>Gerar todo conteúdo com IA</button>
+                                <a href="aula-completa-apresentacao.html" class="platform-link-button platform-link-secondary" data-open-lesson-sequence-presentation>Ver a apresentação</a>
+                            </div>
+                        </div>
                     </div>
-                    <p>Veja o que entra na aula e abra a edição completa se precisar.</p>
-                </div>
+                </details>
 
-                <div class="lesson-sequence-preview-card" data-lesson-preview-card>
-                    <span class="route-tag">Sem bloco</span>
-                    <h3>Selecione uma atividade</h3>
-                    <p>Ao clicar em um bloco da sequência, os detalhes aparecem aqui.</p>
-                </div>
-
-                <div class="lesson-sequence-preview-actions utility-actions" data-lesson-preview-actions hidden>
-                    <a href="slides-builder.html" class="platform-link-button platform-link-secondary" data-lesson-preview-edit>Editar material</a>
-                    <a href="apresentacao.html" class="platform-link-button platform-link-primary" data-lesson-preview-present>Testar bloco</a>
-                </div>
             </aside>
         </section>
     </main>

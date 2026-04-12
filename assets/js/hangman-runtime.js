@@ -145,6 +145,20 @@ function renderHangmanApplication() {
         }).join("");
     }
 
+    function wordLayoutForEntry(entry) {
+        const rawGroups = String(entry?.cleanAnswer || "")
+            .split(" ")
+            .map((group) => group.trim())
+            .filter(Boolean);
+        const groups = rawGroups.length ? rawGroups : [String(entry?.cleanAnswer || "").trim()];
+        const longestGroup = groups.reduce((max, group) => Math.max(max, group.length), 0);
+        const totalChars = String(entry?.cleanAnswer || "").replace(/\s+/g, "").length;
+
+        if (longestGroup >= 14 || totalChars >= 22) return "dense";
+        if (longestGroup >= 10 || totalChars >= 16) return "compact";
+        return "regular";
+    }
+
     function renderWordMask(mask) {
         const groups = [];
         let currentGroup = [];
@@ -165,7 +179,7 @@ function renderHangmanApplication() {
             groups.push(currentGroup);
         }
 
-        return groups.map((group) => `
+        return groups.map((group, index) => `
             <span class="hangman-word-group">
                 ${group.map((token) => `
                     <span class="hangman-letter-slot ${token.guessable ? "" : "is-static"} ${token.visible && token.guessable ? "is-revealed" : ""}">
@@ -173,6 +187,7 @@ function renderHangmanApplication() {
                     </span>
                 `).join("")}
             </span>
+            ${index < groups.length - 1 ? '<span class="hangman-word-break" aria-hidden="true"></span>' : ""}
         `).join("");
     }
 
@@ -190,6 +205,7 @@ function renderHangmanApplication() {
         if (wrongRoot) wrongRoot.textContent = wrongLetters.size ? [...wrongLetters].join(", ") : "Nenhuma letra errada ainda.";
 
         if (wordRoot) {
+            wordRoot.dataset.density = wordLayoutForEntry(entry);
             wordRoot.innerHTML = renderWordMask(mask);
         }
 

@@ -651,13 +651,19 @@ function suggestedCrosswordSize(entries) {
 }
 
 function applyCrosswordFromStructuredData(payload) {
-    const entries = Array.isArray(payload?.entries) ? payload.entries : [];
+    const entries = Array.isArray(payload?.entries)
+        ? payload.entries
+        : Array.isArray(payload?.words)
+            ? payload.words
+            : Array.isArray(payload?.items)
+                ? payload.items
+                : [];
     if (!entries.length) return false;
 
     const normalizedEntries = entries
         .map((entry, index) => ({
-            answer: String(entry?.answer || "").trim(),
-            clue: String(entry?.clue || "").trim() || `Pista ${index + 1}`
+            answer: String(entry?.answer || entry?.term || entry?.word || "").trim(),
+            clue: String(entry?.clue || entry?.hint || "").trim() || `Pista ${index + 1}`
         }))
         .filter((entry) => normalizeCrosswordWord(entry.answer).length >= 2);
     if (!normalizedEntries.length) return false;

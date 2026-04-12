@@ -11,6 +11,12 @@ function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
 }
 
+function withLessonEditorContext(path) {
+    const base = String(path || "").trim();
+    if (!base) return "criar-aula.html?editor=lesson";
+    return `${base}${base.includes("?") ? "&" : "?"}editor=lesson`;
+}
+
 function readActiveLessonSequenceRecord() {
     let lesson = typeof readActiveLesson === "function" ? readActiveLesson() : null;
     if ((!lesson || lesson.materialType !== "lesson") && typeof readLessonsLibrary === "function") {
@@ -70,7 +76,7 @@ function hydrateBlockDraft(block, fallbackLesson = null) {
 }
 
 function blockPresentationPath(block, lesson) {
-    return presentationPathForLesson(lesson || { materialType: block?.materialType || "slides" });
+    return withLessonEditorContext(presentationPathForLesson(lesson || { materialType: block?.materialType || "slides" }));
 }
 
 function renderLessonPlayerList() {
@@ -98,7 +104,7 @@ function renderLessonPlayerCurrent() {
     const nextButton = document.querySelector("[data-lesson-player-next]");
     const openLink = document.querySelector("[data-lesson-player-open]");
     const titleNode = document.querySelector("[data-lesson-player-current-title]");
-    if (!embed || !iframe || !counter || !prevButton || !nextButton || !openLink) return;
+    if (!embed || !iframe || !prevButton || !nextButton) return;
 
     const blocks = lessonPlayerBlocks();
     const currentBlock = blocks[lessonPlayerIndex];
@@ -109,10 +115,10 @@ function renderLessonPlayerCurrent() {
         embed.hidden = true;
         if (empty) empty.hidden = false;
         if (titleNode) titleNode.textContent = "Sem atividade";
-        counter.textContent = "0 de 0";
+        if (counter) counter.textContent = "0 de 0";
         prevButton.disabled = true;
         nextButton.disabled = true;
-        openLink.setAttribute("href", "criar-aula.html");
+        if (openLink) openLink.setAttribute("href", "criar-aula.html");
         return;
     }
 
@@ -125,8 +131,8 @@ function renderLessonPlayerCurrent() {
     if (empty) empty.hidden = true;
     if (titleNode) titleNode.textContent = currentBlock.label || currentTitle;
     iframe.src = blockPresentationPath(currentBlock, currentLesson);
-    openLink.setAttribute("href", blockPresentationPath(currentBlock, currentLesson));
-    counter.textContent = `${lessonPlayerIndex + 1} de ${blocks.length}`;
+    if (openLink) openLink.setAttribute("href", blockPresentationPath(currentBlock, currentLesson));
+    if (counter) counter.textContent = `${lessonPlayerIndex + 1} de ${blocks.length}`;
     prevButton.disabled = lessonPlayerIndex === 0;
     nextButton.disabled = lessonPlayerIndex === blocks.length - 1;
 }

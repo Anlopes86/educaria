@@ -245,8 +245,30 @@ function renderHangmanPreview() {
     if (entry) {
         const mask = api.buildMask(entry, new Set(), false);
         if (wordRoot) {
-            wordRoot.innerHTML = mask.map((token) => `
-                <span class="hangman-letter-slot ${token.guessable ? "" : "is-static"}">${api.escapeHtml(token.display)}</span>
+            const groups = [];
+            let currentGroup = [];
+
+            mask.forEach((token) => {
+                if (token.char === " ") {
+                    if (currentGroup.length) {
+                        groups.push(currentGroup);
+                        currentGroup = [];
+                    }
+                    return;
+                }
+
+                currentGroup.push(token);
+            });
+
+            if (currentGroup.length) groups.push(currentGroup);
+
+            wordRoot.innerHTML = groups.map((group, index) => `
+                <span class="hangman-word-group">
+                    ${group.map((token) => `
+                        <span class="hangman-letter-slot ${token.guessable ? "" : "is-static"}">${api.escapeHtml(token.display)}</span>
+                    `).join("")}
+                </span>
+                ${index < groups.length - 1 ? '<span class="hangman-word-break" aria-hidden="true"></span>' : ""}
             `).join("");
         }
         if (clueRoot) clueRoot.textContent = entry.clue || "Adicione uma dica para orientar a turma.";

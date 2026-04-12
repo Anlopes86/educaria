@@ -1,5 +1,7 @@
 ﻿const DEBATE_DRAFT_KEY = "educaria:builder:debate";
 
+const DEBATE_RENDER_INDEX_KEY = "educaria:debate:renderIndex";
+
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
 }
@@ -87,6 +89,11 @@ function formatDebateGuidanceHtml(text) {
 }
 
 function renderDebateApplication() {
+    const runtime = window.__educariaDebateRuntime || {
+        activeIndex: 0,
+        steps: []
+    };
+
     const draft = readDebateDraft();
     const controls = draft?.controls || {};
     const steps = parseDebateSteps(draft?.stackHtml || "");
@@ -104,24 +111,26 @@ function renderDebateApplication() {
     const sideB = controls["debate-lado-b"] || "Posição B";
 
     const cardRoot = document.querySelector(".debate-stage-card");
-    const sidesRoot = document.querySelector(".debate-stage-sides");
-    const sideALabelRoot = document.querySelector("[data-debate-stage-side-a-label]");
-    const sideBLabelRoot = document.querySelector("[data-debate-stage-side-b-label]");
-    const guidanceLabelRoot = document.querySelector("[data-debate-stage-guidance-label]");
-    const titleRoot = document.querySelector("[data-debate-stage-title]");
-    const formatRoot = document.querySelector("[data-debate-stage-format]");
-    const counterRoot = document.querySelector("[data-debate-stage-counter]");
-    const mainQuestionRoot = document.querySelector("[data-debate-stage-main-question]");
-    const sideARoot = document.querySelector("[data-debate-stage-side-a]");
-    const sideBRoot = document.querySelector("[data-debate-stage-side-b]");
-    const timeRoot = document.querySelector("[data-debate-stage-time]");
-    const stepTitleRoot = document.querySelector("[data-debate-stage-step-title]");
-    const stepQuestionRoot = document.querySelector("[data-debate-stage-step-question]");
-    const guidanceRoot = document.querySelector("[data-debate-stage-guidance]");
     const prevButton = document.querySelector("[data-debate-stage-prev]");
     const nextButton = document.querySelector("[data-debate-stage-next]");
 
-    let activeIndex = 0;
+    const setTextAll = (selector, value) => {
+        document.querySelectorAll(selector).forEach((node) => {
+            node.textContent = value;
+        });
+    };
+
+    const setHtmlAll = (selector, value) => {
+        document.querySelectorAll(selector).forEach((node) => {
+            node.innerHTML = value;
+        });
+    };
+
+    runtime.steps = safeSteps;
+    if (runtime.activeIndex >= safeSteps.length) {
+        runtime.activeIndex = Math.max(0, safeSteps.length - 1);
+    }
+    window.__educariaDebateRuntime = runtime;
     const normalizedFormat = normalizeDebateToken(format);
     const normalizedAiMode = normalizeDebateToken(aiMode);
 
@@ -143,76 +152,134 @@ function renderDebateApplication() {
         cardRoot.classList.add(variantClass, modeClass);
     }
 
-    if (titleRoot) titleRoot.textContent = title;
-    if (formatRoot) formatRoot.textContent = format;
-    if (mainQuestionRoot) mainQuestionRoot.textContent = mainQuestion;
-    if (sideARoot) sideARoot.textContent = sideA;
-    if (sideBRoot) sideBRoot.textContent = sideB;
+    setTextAll("[data-debate-stage-title]", title);
+    setTextAll("[data-debate-stage-format]", format);
+    setTextAll("[data-debate-stage-main-question]", mainQuestion);
+    setTextAll("[data-debate-stage-side-a]", sideA);
+    setTextAll("[data-debate-stage-side-b]", sideB);
 
-    if (sidesRoot) {
-        sidesRoot.hidden = variantClass === "debate-variant--circle";
-    }
-
-    if (sideALabelRoot) {
-        sideALabelRoot.textContent = variantClass === "debate-variant--groups" ? "Grupo 1" : "Lado A";
-    }
-
-    if (sideBLabelRoot) {
-        sideBLabelRoot.textContent = variantClass === "debate-variant--groups" ? "Grupo 2" : "Lado B";
-    }
-
-    if (guidanceLabelRoot) {
-        guidanceLabelRoot.textContent = modeClass === "debate-mode--guided"
-            ? "Condução"
-                        : "Mediação";
-    }
+    setTextAll("[data-debate-stage-side-a-label]", variantClass === "debate-variant--groups" ? "Grupo 1" : "Lado A");
+    setTextAll("[data-debate-stage-side-b-label]", variantClass === "debate-variant--groups" ? "Grupo 2" : "Lado B");
+    const guidanceLabel = modeClass === "debate-mode--guided" ? "Condução" : "Mediação";
+    setTextAll("[data-debate-stage-guidance-label]", guidanceLabel);
 
     const renderStep = () => {
-        const step = safeSteps[activeIndex];
+        const step = runtime.steps[runtime.activeIndex];
         if (!step) return;
 
-        if (counterRoot) counterRoot.textContent = `${activeIndex + 1} de ${safeSteps.length}`;
-        if (timeRoot) timeRoot.textContent = step.time;
-        if (stepTitleRoot) stepTitleRoot.textContent = step.title;
-        if (stepQuestionRoot) stepQuestionRoot.textContent = step.question;
-        if (guidanceRoot) guidanceRoot.innerHTML = formatDebateGuidanceHtml(step.guidance);
-        if (prevButton) prevButton.disabled = activeIndex === 0;
-        if (nextButton) {
-            nextButton.disabled = activeIndex === safeSteps.length - 1;
-            nextButton.textContent = activeIndex === safeSteps.length - 1 ? "Última etapa" : "Próxima etapa";
+        const guidanceHtml = formatDebateGuidanceHtml(step.guidance);
+        const stepCounter = `${runtime.activeIndex + 1} de ${runtime.steps.length}`;
+        const sidesHidden = variantClass === "debate-variant--circle" ? "hidden" : "";
+        const sideALabel = variantClass === "debate-variant--groups" ? "Grupo 1" : "Lado A";
+        const sideBLabel = variantClass === "debate-variant--groups" ? "Grupo 2" : "Lado B";
+
+        const layoutRoot = document.querySelector(".debate-stage-layout");
+        const cardMarkup = `
+            <article class="debate-stage-card debate-stage-card--full">
+                <div class="debate-stage-head">
+                    <div>
+                        <span class="platform-section-label" data-debate-stage-format>${escapeDebateText(format)}</span>
+                        <h1 data-debate-stage-title>${escapeDebateText(title)}</h1>
+                    </div>
+                    <div class="debate-stage-counter" data-debate-stage-counter>${escapeDebateText(stepCounter)}</div>
+                </div>
+                <div class="debate-stage-question" data-debate-stage-main-question>${escapeDebateText(mainQuestion)}</div>
+                <div class="debate-stage-sides" ${sidesHidden}>
+                    <article class="debate-stage-side">
+                        <span class="platform-section-label" data-debate-stage-side-a-label>${escapeDebateText(sideALabel)}</span>
+                        <strong data-debate-stage-side-a>${escapeDebateText(sideA)}</strong>
+                    </article>
+                    <article class="debate-stage-side">
+                        <span class="platform-section-label" data-debate-stage-side-b-label>${escapeDebateText(sideBLabel)}</span>
+                        <strong data-debate-stage-side-b>${escapeDebateText(sideB)}</strong>
+                    </article>
+                </div>
+                <div class="debate-stage-content">
+                    <section class="debate-stage-step">
+                        <span class="platform-section-label" data-debate-stage-time>${escapeDebateText(step.time)}</span>
+                        <h2 data-debate-stage-step-title>${escapeDebateText(step.title)}</h2>
+                        <h3 data-debate-stage-step-question>${escapeDebateText(step.question)}</h3>
+                    </section>
+                    <aside class="debate-stage-guidance">
+                        <span class="platform-section-label" data-debate-stage-guidance-label>${escapeDebateText(guidanceLabel)}</span>
+                        <div class="debate-stage-guidance-text" data-debate-stage-guidance>${guidanceHtml}</div>
+                    </aside>
+                </div>
+                <div class="debate-stage-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-debate-stage-prev>Anterior</button>
+                    <button type="button" class="platform-link-button platform-link-primary" data-debate-stage-next>Próxima etapa</button>
+                </div>
+            </article>
+        `;
+
+        if (layoutRoot) {
+            layoutRoot.innerHTML = cardMarkup;
+        } else if (cardRoot) {
+            cardRoot.innerHTML = cardMarkup;
+        } else {
+            setTextAll("[data-debate-stage-counter]", stepCounter);
+            setTextAll("[data-debate-stage-time]", step.time);
+            setTextAll("[data-debate-stage-step-title]", step.title);
+            setTextAll("[data-debate-stage-step-question]", step.question);
+            setHtmlAll("[data-debate-stage-guidance]", guidanceHtml);
+        }
+
+        const prevNow = document.querySelector("[data-debate-stage-prev]");
+        const nextNow = document.querySelector("[data-debate-stage-next]");
+        if (prevNow) prevNow.disabled = runtime.activeIndex === 0;
+        if (nextNow) {
+            nextNow.disabled = runtime.activeIndex === runtime.steps.length - 1;
+            nextNow.textContent = runtime.activeIndex === runtime.steps.length - 1 ? "Última etapa" : "Próxima etapa";
         }
     };
 
     renderStep();
 
-    if (prevButton) {
-        prevButton.addEventListener("click", () => {
-            if (activeIndex <= 0) return;
-            activeIndex -= 1;
-            renderStep();
-        });
-    }
+    if (!document.body?.dataset?.debateRuntimeBound) {
+        document.body.dataset.debateRuntimeBound = "true";
+        window.__educariaDebateRuntime = runtime;
+        document.addEventListener("click", (event) => {
+            const prevTrigger = event.target.closest("[data-debate-stage-prev]");
+            if (prevTrigger) {
+                event.preventDefault();
+                const now = Date.now();
+                if (runtime.lastAdvanceAt && now - runtime.lastAdvanceAt < 150) return;
+                runtime.lastAdvanceAt = now;
+                if (runtime.activeIndex <= 0) return;
+                runtime.activeIndex -= 1;
+                renderStep();
+                return;
+            }
 
-    if (nextButton) {
-        nextButton.addEventListener("click", () => {
-            if (activeIndex >= safeSteps.length - 1) return;
-            activeIndex += 1;
-            renderStep();
+            const nextTrigger = event.target.closest("[data-debate-stage-next]");
+            if (nextTrigger) {
+                event.preventDefault();
+                const now = Date.now();
+                if (runtime.lastAdvanceAt && now - runtime.lastAdvanceAt < 150) return;
+                runtime.lastAdvanceAt = now;
+                if (runtime.activeIndex >= runtime.steps.length - 1) return;
+                runtime.activeIndex += 1;
+                renderStep();
+            }
         });
     }
 
     document.addEventListener("keydown", (event) => {
-        if (event.key === "ArrowLeft" && activeIndex > 0) {
-            activeIndex -= 1;
+        if (event.key === "ArrowLeft" && runtime.activeIndex > 0) {
+            runtime.activeIndex -= 1;
             renderStep();
         }
 
-        if (event.key === "ArrowRight" && activeIndex < safeSteps.length - 1) {
-            activeIndex += 1;
+        if (event.key === "ArrowRight" && runtime.activeIndex < runtime.steps.length - 1) {
+            runtime.activeIndex += 1;
             renderStep();
         }
     });
 }
 
-document.addEventListener("DOMContentLoaded", renderDebateApplication);
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", renderDebateApplication);
+} else {
+    renderDebateApplication();
+}
 

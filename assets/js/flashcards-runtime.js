@@ -79,31 +79,48 @@ function fitFlashcardFaceContent(face) {
     const title = face.querySelector("strong");
     if (!title) return;
 
+    if (face.clientWidth < 220 || face.clientHeight < 220) {
+        return false;
+    }
+
     const exampleBlock = face.querySelector("[data-flashcard-example-block]");
     const exampleText = exampleBlock?.querySelector("p");
+    const exampleVisible = Boolean(exampleText && !exampleBlock?.hidden);
     const availableWidth = Math.max(face.clientWidth - 56, 220);
+    const density = face.dataset.density || "comfort";
+    const maxTitleSize = density === "dense"
+        ? Math.min(face.clientWidth * 0.12, face.clientHeight * 0.16, 72)
+        : density === "compact"
+            ? Math.min(face.clientWidth * 0.15, face.clientHeight * 0.19, 90)
+            : Math.min(face.clientWidth * 0.19, face.clientHeight * 0.24, 116);
+    const minTitleSize = density === "dense" ? 28 : density === "compact" ? 34 : 44;
+    const initialTitleSize = Math.max(minTitleSize, Math.round(maxTitleSize));
+    const maxExampleSize = exampleVisible ? Math.min(face.clientWidth * 0.03, 22) : 0;
+    const minExampleSize = 15;
 
     title.style.maxWidth = `${availableWidth}px`;
-    title.style.fontSize = "";
+    title.style.fontSize = `${initialTitleSize}px`;
+    title.style.lineHeight = initialTitleSize >= 84 ? "0.94" : initialTitleSize >= 64 ? "0.98" : "1.02";
 
     if (exampleBlock) {
         exampleBlock.style.maxWidth = `${availableWidth}px`;
     }
 
     if (exampleText) {
-        exampleText.style.fontSize = "";
-        exampleText.style.lineHeight = "";
+        exampleText.style.fontSize = `${Math.max(minExampleSize, Math.round(maxExampleSize || 18))}px`;
+        exampleText.style.lineHeight = "1.45";
     }
 
-    let titleSize = parseFloat(window.getComputedStyle(title).fontSize) || 40;
+    let titleSize = parseFloat(window.getComputedStyle(title).fontSize) || initialTitleSize;
     let exampleSize = exampleText ? parseFloat(window.getComputedStyle(exampleText).fontSize) || 16 : 0;
     let attempts = 0;
 
-    while (face.scrollHeight > face.clientHeight - 4 && attempts < 80) {
-        if (titleSize > 18) {
-            titleSize -= 1;
+    while (face.scrollHeight > face.clientHeight - 8 && attempts < 100) {
+        if (titleSize > minTitleSize) {
+            titleSize -= titleSize > 72 ? 2 : 1;
             title.style.fontSize = `${titleSize}px`;
-        } else if (exampleText && !exampleBlock?.hidden && exampleSize > 12) {
+            title.style.lineHeight = titleSize >= 84 ? "0.94" : titleSize >= 64 ? "0.98" : "1.02";
+        } else if (exampleText && !exampleBlock?.hidden && exampleSize > minExampleSize) {
             exampleSize -= 0.5;
             exampleText.style.fontSize = `${exampleSize}px`;
             exampleText.style.lineHeight = exampleSize > 14 ? "1.45" : "1.35";
@@ -113,6 +130,8 @@ function fitFlashcardFaceContent(face) {
 
         attempts += 1;
     }
+
+    return true;
 }
 
 function renderFlashcardsPresentation(cards, controls = {}) {
@@ -137,8 +156,14 @@ function renderFlashcardsPresentation(cards, controls = {}) {
     const materialTheme = controls["cards-tema"] || "Flashcards";
 
     const fitVisibleText = () => {
-        fitFlashcardFaceContent(frontFace);
-        fitFlashcardFaceContent(backFace);
+        const frontReady = fitFlashcardFaceContent(frontFace);
+        const backReady = fitFlashcardFaceContent(backFace);
+        if (!frontReady || !backReady) {
+            window.requestAnimationFrame(() => {
+                fitFlashcardFaceContent(frontFace);
+                fitFlashcardFaceContent(backFace);
+            });
+        }
     };
 
     const paint = () => {
@@ -166,8 +191,12 @@ function renderFlashcardsPresentation(cards, controls = {}) {
         flipButton.textContent = isFlipped ? "Ver frente" : "Ver verso";
         prevButton.disabled = currentIndex === 0;
         nextButton.disabled = currentIndex === cards.length - 1;
+        cardRoot.style.visibility = "visible";
 
-        window.requestAnimationFrame(fitVisibleText);
+        window.requestAnimationFrame(() => {
+            fitVisibleText();
+            window.setTimeout(fitVisibleText, 80);
+        });
     };
 
     flipButton.addEventListener("click", () => {

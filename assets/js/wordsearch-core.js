@@ -119,6 +119,7 @@
 
     function scorePlacement(grid, word, row, col, direction) {
         let overlapScore = 0;
+        let neighborPenalty = 0;
 
         for (let index = 0; index < word.length; index += 1) {
             const targetRow = row + direction.row * index;
@@ -128,9 +129,19 @@
             if (current === undefined) return -1;
             if (current && current !== word[index]) return -1;
             if (current === word[index]) overlapScore += 1;
+
+            if (!current) {
+                for (let dr = -1; dr <= 1; dr += 1) {
+                    for (let dc = -1; dc <= 1; dc += 1) {
+                        if (dr === 0 && dc === 0) continue;
+                        const neighbor = grid[targetRow + dr]?.[targetCol + dc];
+                        if (neighbor) neighborPenalty += 1;
+                    }
+                }
+            }
         }
 
-        return overlapScore;
+        return overlapScore - neighborPenalty * 0.4;
     }
 
     function placeWord(grid, entry, row, col, direction) {
