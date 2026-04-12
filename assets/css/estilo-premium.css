@@ -7829,6 +7829,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     border: 1px solid rgba(148, 163, 184, 0.14);
     background: rgba(255, 255, 255, 0.82);
     box-shadow: 0 18px 34px -30px rgba(15, 23, 42, 0.22);
+    width: 100%;
 }
 
 .lesson-sequence-item.is-selected {
@@ -7841,6 +7842,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     overflow: hidden;
     list-style: none;
     border-left: 6px solid var(--sequence-accent-border, rgba(14, 165, 233, 0.5));
+    max-width: 760px;
 }
 
 .lesson-sequence-item-disclosure > summary {
