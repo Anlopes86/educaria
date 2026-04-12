@@ -7936,9 +7936,9 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 }
 
 .lesson-sequence-item-disclosure .platform-badge-soft {
-    background: var(--sequence-accent-soft, rgba(14, 165, 233, 0.16));
+    background: transparent;
     color: var(--navy-dark);
-    border: 1px solid var(--sequence-accent-border, rgba(14, 165, 233, 0.5));
+    border: 0;
 }
 
 .lesson-sequence-item-body {
