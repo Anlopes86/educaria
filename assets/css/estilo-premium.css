@@ -6458,8 +6458,8 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .presentation-slide--compact .presentation-media img,
 .presentation-slide--compact .presentation-media-placeholder {
-    max-height: min(38vh, 420px);
-    min-height: min(32vh, 340px);
+    max-height: min(70vh, 820px);
+    min-height: min(48vh, 560px);
 }
 
 .presentation-slide--compact.presentation-slide--feature .presentation-media img,
@@ -6499,8 +6499,8 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .presentation-slide--dense .presentation-media img,
 .presentation-slide--dense .presentation-media-placeholder {
-    max-height: min(31vh, 320px);
-    min-height: min(26vh, 240px);
+    max-height: min(66vh, 760px);
+    min-height: min(42vh, 480px);
 }
 
 .presentation-slide--dense.presentation-slide--stack .presentation-slide-copy,
