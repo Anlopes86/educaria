@@ -493,13 +493,24 @@ function updateBlockDraftStackField(blockId, itemSelector, itemIndex, fieldSelec
     }
     if (!target) return;
 
-    target.value = value;
+    const safeValue = value ?? "";
+    if (target.tagName === "TEXTAREA") {
+        target.textContent = String(safeValue);
+    } else if (target.tagName === "INPUT") {
+        target.value = String(safeValue);
+        target.setAttribute("value", String(safeValue));
+    } else if ("value" in target) {
+        target.value = String(safeValue);
+    }
 
     if ((block.materialType || "slides") === "slides") {
         const selectorKey = String(fieldSelector || "");
-        if (selectorKey.includes("slide-image-url") && String(value || "").trim()) {
+        if (selectorKey.includes("slide-image-url") && String(safeValue || "").trim()) {
             const modeField = section.querySelector('[data-field="slide-image-mode"]');
-            if (modeField) modeField.value = "Upload";
+            if (modeField) {
+                modeField.value = "Upload";
+                modeField.setAttribute("value", "Upload");
+            }
         }
     }
 
