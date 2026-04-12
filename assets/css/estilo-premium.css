@@ -6190,7 +6190,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     display: grid;
     gap: 14px;
     align-content: start;
-    max-width: 980px;
+    max-width: 920px;
     min-width: 0;
     min-height: 0;
     overflow: hidden;
@@ -6307,7 +6307,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 }
 
 .presentation-slide--split {
-    grid-template-columns: var(--split-columns, minmax(0, 0.95fr) minmax(360px, 1.05fr));
+    grid-template-columns: var(--split-columns, minmax(0, 0.9fr) minmax(420px, 1.1fr));
     grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
 }
@@ -6325,11 +6325,11 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     grid-column: 2;
     grid-row: 1;
     align-self: end;
-    margin-top: clamp(-20px, -1vh, 12px);
+    margin-top: clamp(-48px, -2.4vh, -10px);
 }
 
 .presentation-slide--split .presentation-media img {
-    max-height: var(--split-media-max-height, min(74vh, 820px));
+    max-height: var(--split-media-max-height, min(80vh, 900px));
 }
 
 .presentation-slide--split h1,
@@ -6355,7 +6355,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     min-height: 0;
     align-self: stretch;
     padding: 6px 8px;
-    margin-top: -70px;
+    margin-top: -96px;
 }
 
 .presentation-slide--stack .presentation-media img,
@@ -6363,7 +6363,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     width: 100%;
     max-width: 100%;
     max-height: none;
-    min-height: clamp(420px, 66vh, 820px);
+    min-height: clamp(480px, 74vh, 940px);
 }
 
 .presentation-slide--stack .presentation-media img {
@@ -6381,8 +6381,8 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .presentation-slide--stack .presentation-media[data-media-aspect="portrait"] img {
     width: auto;
-    max-width: min(60%, 620px);
-    max-height: min(76vh, 860px);
+    max-width: min(66%, 720px);
+    max-height: min(84vh, 980px);
 }
 
 .presentation-slide--stack[data-media-aspect="landscape"] {
@@ -6392,12 +6392,12 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 .presentation-slide--stack .presentation-media[data-media-aspect="landscape"] img {
     width: 100%;
     height: 100%;
-    max-height: min(68vh, 760px);
+    max-height: min(76vh, 880px);
 }
 
 .presentation-slide--stack .presentation-media[data-media-aspect="square"] img {
-    max-width: min(78%, 760px);
-    max-height: min(64vh, 720px);
+    max-width: min(86%, 860px);
+    max-height: min(72vh, 820px);
 }
 
 .presentation-slide--feature .presentation-slide-copy {
