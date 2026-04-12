@@ -6215,14 +6215,14 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 }
 
 .presentation-slide p {
-    font-size: clamp(1.24rem, 1.62vw, 1.62rem);
+    font-size: clamp(1.36rem, 1.85vw, 1.85rem);
     max-width: 78ch;
 }
 
 .presentation-slide-body {
     display: grid;
     gap: 14px;
-    font-size: clamp(1.24rem, 1.62vw, 1.62rem);
+    font-size: clamp(1.36rem, 1.85vw, 1.85rem);
     line-height: 1.6;
     max-width: 78ch;
     width: 100%;
@@ -6452,7 +6452,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .presentation-slide--compact .presentation-slide-body {
     gap: 10px;
-    font-size: clamp(1.08rem, 1.3vw, 1.28rem);
+    font-size: clamp(1.16rem, 1.42vw, 1.38rem);
     line-height: 1.48;
 }
 
@@ -6488,7 +6488,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .presentation-slide--dense .presentation-slide-body {
     gap: 8px;
-    font-size: clamp(1rem, 1.12vw, 1.14rem);
+    font-size: clamp(1.06rem, 1.22vw, 1.24rem);
     line-height: 1.38;
 }
 
