@@ -7816,6 +7816,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 .lesson-sequence-player-list {
     display: grid;
     gap: 12px;
+    max-width: 780px;
 }
 
 .lesson-sequence-item,
