@@ -8053,6 +8053,39 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     align-items: center;
 }
 
+.lesson-sequence-inline-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-start;
+}
+
+.lesson-sequence-inline-actions .platform-link-button {
+    min-height: 40px;
+    padding: 0 16px;
+    border-radius: 999px;
+}
+
+.lesson-sequence-inline-actions .platform-link-primary {
+    background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+    border-color: rgba(37, 99, 235, 0.32);
+    color: #ffffff;
+    box-shadow: 0 16px 30px -24px rgba(37, 99, 235, 0.52);
+}
+
+.lesson-sequence-inline-confirm {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.14);
+    color: #166534;
+    font-weight: 700;
+    font-size: 0.88rem;
+}
+
 .lesson-sequence-status-chip.is-ready,
 .lesson-sequence-progress-state.is-ready {
     background: rgba(34, 197, 94, 0.14);

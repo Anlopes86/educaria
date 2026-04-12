@@ -30,7 +30,6 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
             { selector: '[data-field="slide-title"]', label: "Titulo" },
             { selector: '[data-field="slide-subtitle"]', label: "Subtitulo" },
             { selector: '[data-field="slide-body"]', label: "Conteudo", kind: "textarea", wide: true },
-            { selector: '[data-field="slide-image-mode"]', label: "Origem da imagem" },
             { selector: '[data-field="slide-image-prompt"]', label: "Descricao da imagem", kind: "textarea", wide: true },
             { selector: '[data-field="slide-image-url"]', label: "URL da imagem", wide: true },
             {
@@ -417,9 +416,12 @@ function renderInlineEditor(block) {
             ${(block.materialType || "slides") === "slides"
                 ? `
                 <div class="lesson-sequence-inline-actions">
-                    <button type="button" class="platform-link-button platform-link-secondary" data-apply-slide-image="${block.id}" data-apply-slide-index="${index}">
+                    <button type="button" class="platform-link-button platform-link-primary" data-apply-slide-image="${block.id}" data-apply-slide-index="${index}">
                         Aplicar imagem
                     </button>
+                    <span class="lesson-sequence-inline-confirm" data-slide-image-confirm="${block.id}" data-slide-image-confirm-index="${index}" hidden>
+                        Imagem aplicada
+                    </span>
                 </div>
                 `
                 : ""}
@@ -2430,6 +2432,15 @@ function bindLessonSequenceEvents() {
                     0,
                     promptField.value
                 );
+            }
+
+            const confirm = root?.querySelector('[data-slide-image-confirm]');
+            if (confirm) {
+                confirm.hidden = false;
+                clearTimeout(confirm._hideTimer);
+                confirm._hideTimer = setTimeout(() => {
+                    confirm.hidden = true;
+                }, 1800);
             }
             return;
         }
