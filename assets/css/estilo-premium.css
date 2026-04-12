@@ -7900,6 +7900,18 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     content: "+";
 }
 
+.lesson-sequence-item-toggle::after {
+    content: "";
+}
+
+.lesson-sequence-item-disclosure[open] .lesson-sequence-item-toggle::before {
+    content: "+";
+}
+
+.lesson-sequence-item-disclosure > summary::after {
+    content: none;
+}
+
 .lesson-sequence-item-disclosure:not([open]) > summary {
     gap: 4px;
     padding: 10px 14px;
