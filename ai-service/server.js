@@ -4,7 +4,7 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import mammoth from "mammoth";
-import pdfParse from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import { GoogleGenAI } from "@google/genai";
 
 const app = express();
@@ -1292,7 +1292,7 @@ function imagePromptForSlide({ title, subtitle, body, prompt }) {
 
 /**
  * Extracts plain text from a multer-uploaded file.
- * Supported formats: .txt (UTF-8), .docx (mammoth), .rtf (custom stripper), .pdf (pdf-parse).
+ * Supported formats: .txt (UTF-8), .docx (mammoth), .rtf (custom stripper), .pdf (PDFParse.getText).
  * Returns an empty string for unsupported or missing files.
  * @param {import('multer').File | undefined} file - Multer file object with buffer in memory
  * @returns {Promise<string>} Extracted plain text
@@ -1316,7 +1316,7 @@ async function extractTextFromFile(file) {
     }
 
     if (fileName.endsWith(".pdf")) {
-        const result = await pdfParse(file.buffer);
+        const result = await new PDFParse({ data: file.buffer }).getText();
         return result.text || "";
     }
 
