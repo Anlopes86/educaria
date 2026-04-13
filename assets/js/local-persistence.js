@@ -51,6 +51,16 @@ function captureControls() {
     return controls;
 }
 
+function captureDebateStepsFromDocument() {
+    return [...document.querySelectorAll("[data-debate-step]")].map((step, index) => ({
+        index,
+        title: step.querySelector("[data-debate-title]")?.value?.trim() || `Etapa ${index + 1}`,
+        time: step.querySelector("[data-debate-time]")?.value?.trim() || "5 min",
+        question: step.querySelector("[data-debate-question]")?.value?.trim() || `Pergunta da etapa ${index + 1}`,
+        guidance: step.querySelector("[data-debate-guidance]")?.value?.trim() || `Orientação para conduzir a etapa ${index + 1}.`
+    }));
+}
+
 function builderConfig() {
     if (document.querySelector("[data-quiz-stack]")) {
         return {
@@ -273,6 +283,10 @@ function saveBuilderState(config) {
         controls: captureControls(),
         stackHtml: stack.innerHTML
     };
+
+    if (config.stackSelector === "[data-debate-steps]") {
+        state.steps = captureDebateStepsFromDocument();
+    }
 
     try {
         localStorage.setItem(config.key, JSON.stringify(state));

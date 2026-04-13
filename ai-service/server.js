@@ -1061,6 +1061,114 @@ function normalizeSlidesMaterial(material) {
     };
 }
 
+function aiErrorMessage(error) {
+    if (!error) return "unknown_error";
+
+    const message = error instanceof Error ? error.message : String(error);
+    const status = typeof error === "object" && error && "status" in error ? error.status : null;
+    return status ? `${message} (status ${status})` : message;
+}
+
+function extractJsonCandidate(text) {
+    const raw = String(text || "").replace(/^\uFEFF/, "").trim();
+    if (!raw) return "";
+
+    const fencedMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fencedMatch?.[1]) {
+        return fencedMatch[1].trim();
+    }
+
+    const firstBrace = raw.indexOf("{");
+    const lastBrace = raw.lastIndexOf("}");
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+        return raw.slice(firstBrace, lastBrace + 1).trim();
+    }
+
+    return raw;
+}
+
+function normalizeLooseJson(text) {
+    return String(text || "")
+        .replace(/\u00A0/g, " ")
+        .replace(/[“”]/g, "\"")
+        .replace(/[‘’]/g, "'")
+        .replace(/,\s*([}\]])/g, "$1")
+        .trim();
+}
+
+function parseGeneratedJson(text) {
+    const candidate = extractJsonCandidate(text);
+    if (!candidate) {
+        throw new Error("empty_model_response");
+    }
+
+    try {
+        return JSON.parse(candidate);
+    } catch (firstError) {
+        const normalized = normalizeLooseJson(candidate);
+        if (normalized && normalized !== candidate) {
+            try {
+                return JSON.parse(normalized);
+            } catch (_secondError) {
+                // Fall through to the original parsing error below.
+            }
+        }
+
+        throw new Error(`invalid_json_response: ${firstError instanceof Error ? firstError.message : "parse_failed"}`);
+    }
+}
+
+function fallbackJsonPrompt(schemaConfig) {
+    return [
+        "Responda somente com JSON valido.",
+        `Formato esperado: ${schemaConfig.description}.`,
+        "Nao use markdown, crases ou texto antes/depois do JSON."
+    ].join(" ");
+}
+
+async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig) {
+    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const basePrompt = promptFor(materialType, action, sourceText);
+    const attempts = [
+        {
+            label: "schema",
+            contents: basePrompt,
+            config: {
+                responseMimeType: "application/json",
+                responseJsonSchema: {
+                    ...schemaConfig.schema,
+                    description: schemaConfig.description
+                }
+            }
+        },
+        {
+            label: "json",
+            contents: `${basePrompt}\n\n${fallbackJsonPrompt(schemaConfig)}`,
+            config: {
+                responseMimeType: "application/json"
+            }
+        }
+    ];
+
+    let lastError = null;
+
+    for (const attempt of attempts) {
+        try {
+            const result = await gemini.models.generateContent({
+                model,
+                contents: attempt.contents,
+                config: attempt.config
+            });
+
+            return parseGeneratedJson(result?.text || "");
+        } catch (error) {
+            lastError = new Error(`${attempt.label}_attempt_failed: ${aiErrorMessage(error)}`);
+        }
+    }
+
+    throw lastError || new Error("ai_generation_failed");
+}
+
 function imagePromptForSlide({ title, subtitle, body, prompt }) {
     return [
         "Voce cria ilustracoes educativas para slides de professores no Brasil.",
@@ -1157,19 +1265,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(400).json({ error: "Envie um texto-base ou arquivo suportado." });
         }
 
-        const result = await gemini.models.generateContent({
-            model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-            contents: promptFor(materialType, action, sourceText),
-            config: {
-                responseMimeType: "application/json",
-                responseJsonSchema: {
-                    ...schemaConfig.schema,
-                    description: schemaConfig.description
-                }
-            }
-        });
-
-        const rawMaterial = JSON.parse(result.text || "{}");
+        const rawMaterial = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
         const material = materialType === "slides"
             ? normalizeSlidesMaterial(rawMaterial)
             : rawMaterial;

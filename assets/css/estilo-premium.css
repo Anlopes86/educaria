@@ -9351,7 +9351,6 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
 
 .debate-stage-shell,
 .debate-stage-layout {
-    height: calc(100vh - 72px);
     display: grid;
     gap: 12px;
     align-items: stretch;
@@ -9397,7 +9396,12 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
 }
 
 .debate-stage-layout--full {
+    position: relative;
     grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-content: start;
+    row-gap: 8px;
+    height: 100%;
     min-height: 0;
 }
 
@@ -9405,7 +9409,7 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
     position: relative;
     z-index: 1;
     display: grid;
-    grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+    grid-template-rows: auto auto auto minmax(0, 1fr);
     gap: 18px;
     padding: 24px 28px 28px;
     border-radius: 32px;
@@ -9497,8 +9501,8 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
 
 .debate-stage-side {
     display: grid;
-    gap: 8px;
-    padding: 16px 18px;
+    gap: 10px;
+    padding: 18px 20px;
 }
 
 .debate-stage-side:first-child {
@@ -9521,7 +9525,8 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
 
 .debate-stage-side strong {
     color: var(--navy-dark);
-    font-size: clamp(1.1rem, 1.4vw, 1.28rem);
+    font-size: clamp(1.28rem, 1.7vw, 1.56rem);
+    line-height: 1.45;
 }
 
 .debate-stage-card.debate-variant--circle .debate-stage-sides {
@@ -9549,11 +9554,11 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
 }
 
 .debate-stage-card.debate-mode--question .debate-stage-content {
-    grid-template-columns: minmax(0, 1.08fr) minmax(360px, 0.92fr);
+    grid-template-columns: minmax(320px, 1fr) minmax(0, 1fr);
 }
 
 .debate-stage-card.debate-mode--guided .debate-stage-content {
-    grid-template-columns: minmax(360px, 0.92fr) minmax(0, 1.08fr);
+    grid-template-columns: minmax(320px, 1fr) minmax(0, 1fr);
 }
 
 .debate-stage-card.debate-mode--guided .debate-stage-guidance {
@@ -9561,11 +9566,105 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.99), rgba(240, 253, 244, 0.95));
 }
 
+.debate-stage-card.debate-stage-card--compact {
+    gap: 14px;
+    padding: 18px 20px 20px;
+}
+
+.debate-stage-card.debate-stage-card--compact .debate-stage-head h1 {
+    font-size: clamp(1.65rem, 2.1vw, 2.1rem);
+}
+
+.debate-stage-card.debate-stage-card--compact .debate-stage-question {
+    padding: 14px 16px 14px 22px;
+    font-size: clamp(1.08rem, 1.45vw, 1.38rem);
+}
+
+.debate-stage-card.debate-stage-card--compact .debate-stage-side {
+    padding: 15px 16px;
+}
+
+.debate-stage-card.debate-stage-card--compact .debate-stage-side strong {
+    font-size: clamp(1.08rem, 1.3vw, 1.22rem);
+}
+
+.debate-stage-card.debate-stage-card--compact .debate-stage-step,
+.debate-stage-card.debate-stage-card--compact .debate-stage-guidance {
+    padding: 16px;
+}
+
+.debate-stage-card.debate-stage-card--compact .debate-stage-step h2 {
+    font-size: clamp(1.22rem, 1.55vw, 1.42rem);
+}
+
+.debate-stage-card.debate-stage-card--compact .debate-stage-step h3,
+.debate-stage-card.debate-stage-card--compact .debate-stage-guidance-text {
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.debate-stage-card.debate-stage-card--dense {
+    gap: 10px;
+    padding: 14px 16px 16px;
+    border-radius: 24px;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-head,
+.debate-stage-card.debate-stage-card--dense .debate-stage-sides,
+.debate-stage-card.debate-stage-card--dense .debate-stage-content {
+    gap: 12px;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-head h1 {
+    font-size: clamp(1.4rem, 1.8vw, 1.72rem);
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-counter {
+    min-height: 46px;
+    padding: 8px 12px;
+    font-size: 0.96rem;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-question {
+    padding: 12px 14px 12px 18px;
+    font-size: clamp(0.98rem, 1.22vw, 1.16rem);
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-question::before {
+    inset: 10px auto 10px 0;
+    width: 6px;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-side {
+    padding: 12px 13px;
+    gap: 6px;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-side strong {
+    font-size: 1.02rem;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-step,
+.debate-stage-card.debate-stage-card--dense .debate-stage-guidance {
+    padding: 12px;
+    gap: 8px;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-step h2 {
+    font-size: 1.08rem;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-step h3,
+.debate-stage-card.debate-stage-card--dense .debate-stage-guidance-text {
+    font-size: 0.94rem;
+    line-height: 1.42;
+}
+
 .debate-stage-content {
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
-    gap: 20px;
+    grid-template-columns: minmax(320px, 1fr) minmax(0, 1fr);
+    gap: 18px;
     align-items: stretch;
     overflow: hidden;
 }
@@ -9599,11 +9698,11 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
 }
 
 .debate-stage-step h2 {
-    font-size: clamp(1.45rem, 1.9vw, 1.8rem);
+    font-size: clamp(1.56rem, 2vw, 1.92rem);
 }
 
 .debate-stage-step h3 {
-    font-size: clamp(1.08rem, 1.35vw, 1.24rem);
+    font-size: clamp(1.16rem, 1.48vw, 1.34rem);
     line-height: 1.5;
     overflow-wrap: anywhere;
 }
@@ -9650,6 +9749,181 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
     position: relative;
     z-index: 3;
     padding-top: 4px;
+}
+
+.debate-floating-controls {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    width: fit-content;
+    max-width: 100%;
+    display: grid;
+    grid-template-columns: auto auto auto;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 6px auto 0;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.84);
+    box-shadow: 0 18px 34px -26px rgba(15, 23, 42, 0.34);
+    backdrop-filter: blur(16px);
+    pointer-events: auto;
+}
+
+.debate-floating-controls .presentation-counter {
+    position: static;
+    top: auto;
+    right: auto;
+    min-width: 88px;
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 0.94rem;
+    box-shadow: none;
+    backdrop-filter: none;
+    background: rgba(15, 23, 42, 0.06);
+}
+
+.debate-floating-controls .presentation-nav-button {
+    position: static;
+    top: auto;
+    left: auto;
+    right: auto;
+    transform: none;
+    width: 48px;
+    height: 48px;
+}
+
+.debate-floating-controls .presentation-nav-button:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.02);
+}
+
+.debate-stage-rail {
+    min-height: 0;
+    display: grid;
+    align-content: start;
+}
+
+.debate-stage-content {
+    grid-template-columns: minmax(320px, 1fr) minmax(0, 1fr);
+    gap: 18px;
+}
+
+.debate-stage-content .debate-stage-sides {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+}
+
+.debate-stage-main {
+    min-height: 0;
+    display: grid;
+}
+
+.debate-stage-step {
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 16px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(255, 247, 237, 0.92));
+}
+
+.debate-stage-step-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.debate-stage-step-copy {
+    display: grid;
+    align-content: start;
+    gap: 16px;
+    font-size: 1.05rem;
+}
+
+.debate-stage-step-question-card {
+    display: grid;
+    align-content: start;
+    min-height: 0;
+    padding: 18px 20px;
+    border-radius: 24px;
+    border: 1px solid rgba(249, 115, 22, 0.18);
+    background: linear-gradient(135deg, rgba(255, 247, 237, 0.98), rgba(255, 255, 255, 0.96));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+}
+
+.debate-stage-step h3 {
+    line-height: 1.65;
+}
+
+.debate-guidance-toggle {
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 16px;
+    background: rgba(239, 246, 255, 0.9);
+    border: 1px solid rgba(14, 165, 233, 0.18);
+}
+
+.debate-guidance-panel {
+    position: absolute;
+    right: 22px;
+    bottom: 22px;
+    z-index: 5;
+    width: min(420px, calc(100% - 44px));
+    max-height: min(52vh, 420px);
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px;
+    border-radius: 24px;
+    border: 1px solid rgba(14, 165, 233, 0.18);
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 28px 60px -34px rgba(15, 23, 42, 0.44);
+    backdrop-filter: blur(18px);
+}
+
+.debate-guidance-panel[hidden] {
+    display: none;
+}
+
+.debate-guidance-panel-head {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.debate-guidance-panel-head strong {
+    display: block;
+    margin-top: 4px;
+    color: var(--navy-dark);
+    font-size: 1.02rem;
+}
+
+.debate-guidance-close {
+    min-width: 0;
+    padding-inline: 14px;
+}
+
+.debate-guidance-panel .debate-stage-guidance-text {
+    overflow: auto;
+}
+
+.debate-stage-card.debate-stage-card--compact .debate-stage-step-question-card {
+    padding: 15px 16px;
+}
+
+.debate-stage-card.debate-stage-card--compact .debate-guidance-panel {
+    padding: 16px;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-stage-step-question-card {
+    padding: 12px 13px;
+    border-radius: 18px;
+}
+
+.debate-stage-card.debate-stage-card--dense .debate-guidance-panel {
+    padding: 12px;
+    gap: 8px;
 }
 
 @media (max-width: 1024px) {
@@ -9718,6 +9992,18 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
 
     .presentation-nav-button:hover:not(:disabled) {
         transform: translateY(-1px);
+    }
+
+    .debate-stage-content {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .debate-guidance-panel {
+        right: 14px;
+        left: 14px;
+        bottom: 14px;
+        width: auto;
+        max-height: min(44vh, 360px);
     }
 
     .memory-stage-grid {

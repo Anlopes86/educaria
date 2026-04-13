@@ -800,7 +800,8 @@ async function requestLessonAiMaterial(materialType, sourceText, action) {
                 detail: { credits: errorPayload.credits }
             }));
         }
-        throw new Error(errorPayload?.error || "Não foi possível gerar o material.");
+        const detailParts = [errorPayload?.error, errorPayload?.detail].filter(Boolean);
+        throw new Error(detailParts.join(" | ") || `Nao foi possivel gerar o material (status ${response.status}).`);
     }
 
     const payload = await response.json().catch(() => ({}));
@@ -1318,7 +1319,8 @@ async function generatePayloadForBlock(block, index, sourceText) {
     if (!lessonAiSupported(materialType)) {
         return {
             payload: fallbackPayloadForType(materialType, sourceText, blockLabel),
-            usedFallback: true
+            usedFallback: true,
+            fallbackReason: "Tipo de bloco sem suporte de IA nesta tela."
         };
     }
 
@@ -1327,11 +1329,20 @@ async function generatePayloadForBlock(block, index, sourceText) {
         if (!payloadHasContent(materialType, payload)) {
             throw new Error("IA sem payload");
         }
-        return { payload, usedFallback: false };
+        return { payload, usedFallback: false, fallbackReason: "" };
     } catch (error) {
+        const fallbackReason = error instanceof Error ? error.message : "Erro desconhecido ao gerar com IA.";
+        console.warn("EducarIA lesson block AI fallback:", {
+            endpoint: resolveLessonAiEndpoint(),
+            materialType,
+            blockLabel,
+            index,
+            fallbackReason
+        });
         return {
             payload: fallbackPayloadForType(materialType, sourceText, blockLabel),
-            usedFallback: true
+            usedFallback: true,
+            fallbackReason
         };
     }
 }
@@ -1782,6 +1793,7 @@ async function generateWholeLessonSequence(button) {
     lessonSequenceGenerating = true;
     const originalLabel = button.textContent;
     let fallbackCount = 0;
+    const fallbackReasons = [];
 
     button.disabled = true;
     button.textContent = "Gerando aula...";
@@ -1789,7 +1801,7 @@ async function generateWholeLessonSequence(button) {
     try {
         for (let index = 0; index < lessonSequenceState.blocks.length; index += 1) {
             const block = lessonSequenceState.blocks[index];
-            const { payload, usedFallback } = await generatePayloadForBlock(block, index, sourceText);
+            const { payload, usedFallback, fallbackReason } = await generatePayloadForBlock(block, index, sourceText);
             const rawDraft = buildLessonDraftFromPayload(block.materialType || "slides", payload || {});
             const previousTitle = block.lessonTitle || block.label || "";
             const summary = buildDraftSummary(block.materialType || "slides", rawDraft);
@@ -1806,6 +1818,9 @@ async function generateWholeLessonSequence(button) {
 
             if (usedFallback) {
                 fallbackCount += 1;
+                if (fallbackReason) {
+                    fallbackReasons.push(fallbackReason);
+                }
             }
         }
 
@@ -1813,7 +1828,11 @@ async function generateWholeLessonSequence(button) {
         renderLessonSequence();
 
         if (fallbackCount) {
-            window.alert(`A sequência foi gerada. ${fallbackCount} bloco(s) usaram fallback local para não interromper o fluxo.`);
+            const detail = [...new Set(fallbackReasons)]
+                .slice(0, 2)
+                .join("\n- ");
+            const detailSuffix = detail ? `\n\nDetalhes:\n- ${detail}` : "";
+            window.alert(`A sequência foi gerada. ${fallbackCount} bloco(s) usaram fallback local para nao interromper o fluxo.${detailSuffix}`);
         }
     } finally {
         lessonSequenceGenerating = false;

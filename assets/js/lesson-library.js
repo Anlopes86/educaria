@@ -495,11 +495,23 @@ function forceSyncDraftFromPage(type) {
         controls[field.id] = field.value;
     });
 
-    try {
-        localStorage.setItem(draftKeyForType(type), JSON.stringify({
-            controls,
-            stackHtml: stack.innerHTML
+    const draftPayload = {
+        controls,
+        stackHtml: stack.innerHTML
+    };
+
+    if (type === "debate") {
+        draftPayload.steps = [...document.querySelectorAll("[data-debate-step]")].map((step, index) => ({
+            index,
+            title: step.querySelector("[data-debate-title]")?.value?.trim() || `Etapa ${index + 1}`,
+            time: step.querySelector("[data-debate-time]")?.value?.trim() || "5 min",
+            question: step.querySelector("[data-debate-question]")?.value?.trim() || `Pergunta da etapa ${index + 1}`,
+            guidance: step.querySelector("[data-debate-guidance]")?.value?.trim() || `Orientação para conduzir a etapa ${index + 1}.`
         }));
+    }
+
+    try {
+        localStorage.setItem(draftKeyForType(type), JSON.stringify(draftPayload));
     } catch (error) {
         console.warn("EducarIA draft unavailable:", error);
     }
