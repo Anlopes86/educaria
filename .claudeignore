@@ -1,0 +1,13 @@
+# Dependencies
+ai-service/node_modules/
+
+# Secrets
+ai-service/.env
+
+# Lock files (auto-managed by npm)
+ai-service/package-lock.json
+
+# Binary assets — not useful for code understanding
+assets/images/
+assets/templates/
+img/
