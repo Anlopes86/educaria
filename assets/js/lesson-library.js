@@ -1,3 +1,7 @@
+function escapeHtml(value) {
+    return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+}
+
 const LESSONS_LIBRARY_KEY = "educaria:lessons";
 const ACTIVE_LESSON_KEY = "educaria:activeLessonId";
 const CLASS_CONTEXT_KEY = "educaria:selectedClass";
@@ -1180,7 +1184,7 @@ function hydrateCompletionSummary() {
 
     const summary = document.querySelector("[data-lesson-summary]");
     if (summary) {
-        summary.innerHTML = `<strong>Turma:</strong> ${lesson.className}<br><strong>Conteúdo:</strong> ${lesson.title}<br><strong>Tipo:</strong> ${lesson.type}.`;
+        summary.innerHTML = `<strong>Turma:</strong> ${escapeHtml(lesson.className)}<br><strong>Conteúdo:</strong> ${escapeHtml(lesson.title)}<br><strong>Tipo:</strong> ${escapeHtml(lesson.type)}.`;
     }
 }
 
@@ -1307,18 +1311,18 @@ function hydrateClassPage() {
     if (selectRoot) {
         selectRoot.disabled = false;
         selectRoot.innerHTML = lessons.map((lesson, index) => `
-            <option value="${lesson.id}" ${index === 0 ? "selected" : ""}>${lesson.title} - ${lesson.type} - ${formatLessonDate(lesson.updatedAt)}</option>
+            <option value="${escapeHtml(lesson.id)}" ${index === 0 ? "selected" : ""}>${escapeHtml(lesson.title)} - ${escapeHtml(lesson.type)} - ${escapeHtml(formatLessonDate(lesson.updatedAt))}</option>
         `).join("");
     }
 
     if (actionsRoot) {
         const activeLesson = lessons[0];
         actionsRoot.innerHTML = `
-            <a href="${presentationPathForLesson(activeLesson)}" class="platform-link-button platform-link-primary" data-present-lesson="${activeLesson.id}" data-lesson-action="present">Apresentar</a>
-            <a href="${editorPathForLesson(activeLesson)}" class="platform-link-button platform-link-secondary" data-edit-lesson="${activeLesson.id}" data-lesson-action="edit">Editar</a>
-            <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${activeLesson.id}" data-lesson-action="library">Adicionar a biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${activeLesson.id}" data-lesson-action="duplicate">Duplicar para outra turma</button>
-            <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${activeLesson.id}" data-lesson-action="delete">Remover</button>
+            <a href="${escapeHtml(presentationPathForLesson(activeLesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="present">Apresentar</a>
+            <a href="${escapeHtml(editorPathForLesson(activeLesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="edit">Editar</a>
+            <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="library">Adicionar a biblioteca</button>
+            <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="duplicate">Duplicar para outra turma</button>
+            <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="delete">Remover</button>
         `;
     }
 

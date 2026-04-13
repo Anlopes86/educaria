@@ -1356,8 +1356,8 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(400).json({ error: "Tipo de material nao suportado." });
         }
 
-        if (!gemini) {
-            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
+        if (action.length > 500) {
+            return response.status(400).json({ error: "Objetivo do professor muito longo (max 500 caracteres)." });
         }
 
         if (!hasAiDailyCredit(request)) {
@@ -1378,6 +1378,17 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(400).json({ error: "Envie um texto-base ou arquivo suportado." });
         }
 
+        if (sourceText.length > 50_000) {
+            return response.status(400).json({ error: "Texto-base muito longo (max 50 000 caracteres)." });
+        }
+
+        if (!gemini) {
+            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
+        }
+
+        // Credit is consumed only after a successful generation to avoid charging on errors.
+        // The check and consume happen in the same request without await between them,
+        // which is safe for a single-process server.
         const rawMaterial = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
         const material = materialType === "slides"
             ? normalizeSlidesMaterial(rawMaterial)
@@ -1393,7 +1404,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
         console.error("EducarIA AI service error:", error);
         return response.status(500).json({
             error: "Falha ao gerar material com IA.",
-            detail: error instanceof Error ? error.message : "unknown_error"
+            ...(process.env.NODE_ENV === "development" && { detail: error instanceof Error ? error.message : "unknown_error" })
         });
     }
 });
@@ -1427,14 +1438,6 @@ app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.sing
 
 app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, response) => {
     try {
-        if (!aiImageGenerationEnabled) {
-            return response.status(403).json({ error: "Geracao de imagem por IA desativada no Free Tier." });
-        }
-
-        if (!gemini) {
-            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
-        }
-
         const title = String(request.body.title || "").trim();
         const subtitle = String(request.body.subtitle || "").trim();
         const body = String(request.body.body || "").trim();
@@ -1442,6 +1445,18 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
 
         if (!title && !subtitle && !body && !prompt) {
             return response.status(400).json({ error: "Envie contexto suficiente para gerar a imagem." });
+        }
+
+        if ((title + subtitle + body + prompt).length > 2_000) {
+            return response.status(400).json({ error: "Contexto da imagem muito longo (max 2 000 caracteres no total)." });
+        }
+
+        if (!aiImageGenerationEnabled) {
+            return response.status(403).json({ error: "Geracao de imagem por IA desativada no Free Tier." });
+        }
+
+        if (!gemini) {
+            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
         }
 
         const result = await gemini.models.generateContent({
@@ -1467,7 +1482,7 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
         console.error("EducarIA image generation error:", error);
         return response.status(500).json({
             error: "Falha ao gerar imagem com IA.",
-            detail: error instanceof Error ? error.message : "unknown_error"
+            ...(process.env.NODE_ENV === "development" && { detail: error instanceof Error ? error.message : "unknown_error" })
         });
     }
 });
