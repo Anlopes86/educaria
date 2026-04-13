@@ -14,6 +14,14 @@ function readFlashcardsDraft() {
     }
 }
 
+function writeFlashcardsDraft(state) {
+    try {
+        localStorage.setItem(scopedStorageKey(FLASHCARDS_DRAFT_KEY), JSON.stringify(state));
+    } catch (error) {
+        console.warn("EducarIA flashcards save unavailable:", error);
+    }
+}
+
 function parseFlashcards(stackHtml) {
     if (!stackHtml) return [];
 
@@ -48,6 +56,50 @@ function buildFallbackFlashcards() {
             textColor: "#0f172a"
         }
     ];
+}
+
+function escapeFlashcardText(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+}
+
+function escapeFlashcardAttr(value) {
+    return escapeFlashcardText(value).replaceAll('"', "&quot;");
+}
+
+function serializeFlashcards(cards) {
+    return cards.map((card, index) => `
+        <section class="platform-question-card activity-content-card flashcards-card" data-flashcard>
+            <div class="platform-form-grid">
+                <div class="platform-field platform-field-wide">
+                    <label>Frente</label>
+                    <textarea data-field="front" rows="4">${escapeFlashcardText(card.front)}</textarea>
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>Verso</label>
+                    <textarea data-field="back" rows="4">${escapeFlashcardText(card.back)}</textarea>
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>Exemplo</label>
+                    <textarea data-field="example" rows="3">${escapeFlashcardText(card.example)}</textarea>
+                </div>
+                <div class="platform-field">
+                    <label>Cor da frente</label>
+                    <input data-field="front-color" type="color" value="${escapeFlashcardAttr(card.frontColor || "#ffffff")}">
+                </div>
+                <div class="platform-field">
+                    <label>Cor do verso</label>
+                    <input data-field="back-color" type="color" value="${escapeFlashcardAttr(card.backColor || "#dbeafe")}">
+                </div>
+                <div class="platform-field">
+                    <label>Cor do texto</label>
+                    <input data-field="text-color" type="color" value="${escapeFlashcardAttr(card.textColor || "#0f172a")}">
+                </div>
+            </div>
+        </section>
+    `).join("");
 }
 
 function normalizeFlashcardText(value) {
@@ -150,10 +202,37 @@ function renderFlashcardsPresentation(cards, controls = {}) {
     const nextButton = document.querySelector("[data-flashcard-next]");
     let currentIndex = 0;
     let isFlipped = false;
+    let saveTimer = 0;
+    let inlineEdit = null;
+
+    const draftState = {
+        controls: {
+            ...controls,
+            "cards-tema": controls["cards-tema"] || "Flashcards",
+            "cards-exemplo": controls["cards-exemplo"] || "Sim"
+        },
+        cards: cards.map((card, index) => ({ ...card, index })),
+        stackHtml: serializeFlashcards(cards)
+    };
+
+    theme.dataset.inlineEditable = "control:cards-tema";
+    front.dataset.inlineEditable = "card:front";
+    back.dataset.inlineEditable = "card:back";
+    example.dataset.inlineEditable = "card:example";
+    classLabel.dataset.inlineEditable = "";
 
     const turma = typeof readSelectedClass === "function" ? readSelectedClass() : "";
-    const includeExample = (controls["cards-exemplo"] || "Sim") === "Sim";
-    const materialTheme = controls["cards-tema"] || "Flashcards";
+
+    const persistState = () => {
+        draftState.cards = draftState.cards.map((card, index) => ({ ...card, index }));
+        draftState.stackHtml = serializeFlashcards(draftState.cards);
+        writeFlashcardsDraft(draftState);
+    };
+
+    const scheduleSave = () => {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(persistState, 140);
+    };
 
     const fitVisibleText = () => {
         const frontReady = fitFlashcardFaceContent(frontFace);
@@ -167,17 +246,19 @@ function renderFlashcardsPresentation(cards, controls = {}) {
     };
 
     const paint = () => {
-        const card = normalizeFlashcardForStage(cards[currentIndex]);
+        const card = normalizeFlashcardForStage(draftState.cards[currentIndex]);
+        const includeExample = (draftState.controls["cards-exemplo"] || "Sim") === "Sim";
+        const exampleVisible = inlineEdit?.enabled || (includeExample && Boolean(card.example));
         const frontDensity = flashcardDensityForText(card.front, false);
-        const backDensity = flashcardDensityForText(card.back, includeExample && Boolean(card.example));
+        const backDensity = flashcardDensityForText(card.back, exampleVisible && Boolean(card.example));
 
         front.textContent = card.front;
         back.textContent = card.back;
-        example.textContent = card.example || "Sem anotacoes.";
-        exampleBlock.hidden = !includeExample || !card.example;
-        counter.textContent = `${currentIndex + 1} de ${cards.length}`;
-        theme.textContent = materialTheme;
-        classLabel.textContent = turma ? `${turma} • ${materialTheme}` : materialTheme;
+        example.textContent = card.example || "Sem anotações.";
+        exampleBlock.hidden = !exampleVisible;
+        counter.textContent = `${currentIndex + 1} de ${draftState.cards.length}`;
+        theme.textContent = draftState.controls["cards-tema"] || "Flashcards";
+        classLabel.textContent = turma ? `${turma} • ${draftState.controls["cards-tema"]}` : (draftState.controls["cards-tema"] || "Flashcards");
 
         frontFace.style.background = card.frontColor;
         backFace.style.background = card.backColor;
@@ -187,11 +268,15 @@ function renderFlashcardsPresentation(cards, controls = {}) {
         frontFace.dataset.density = frontDensity;
         backFace.dataset.density = backDensity;
 
-        cardRoot.classList.toggle("is-flipped", isFlipped);
-        flipButton.textContent = isFlipped ? "Ver frente" : "Ver verso";
+        cardRoot.classList.toggle("is-flipped", inlineEdit?.enabled ? false : isFlipped);
+        cardRoot.classList.toggle("is-editing", Boolean(inlineEdit?.enabled));
+        flipButton.textContent = inlineEdit?.enabled ? "Editando" : (isFlipped ? "Ver frente" : "Ver verso");
+        flipButton.disabled = Boolean(inlineEdit?.enabled);
         prevButton.disabled = currentIndex === 0;
-        nextButton.disabled = currentIndex === cards.length - 1;
+        nextButton.disabled = currentIndex === draftState.cards.length - 1;
         cardRoot.style.visibility = "visible";
+
+        inlineEdit?.syncUi();
 
         window.requestAnimationFrame(() => {
             fitVisibleText();
@@ -199,13 +284,47 @@ function renderFlashcardsPresentation(cards, controls = {}) {
         });
     };
 
+    if (typeof createPresentationInlineEditController === "function") {
+        inlineEdit = createPresentationInlineEditController({
+            onModeChange(enabled) {
+                if (enabled) {
+                    isFlipped = false;
+                }
+                paint();
+            },
+            onInput(node) {
+                const binding = String(node.dataset.inlineEditable || "");
+                const nextValue = readInlineEditableValue(node, false);
+
+                if (binding.startsWith("control:")) {
+                    const key = binding.slice("control:".length);
+                    if (draftState.controls[key] === nextValue) return;
+                    draftState.controls[key] = nextValue;
+                    scheduleSave();
+                    return;
+                }
+
+                const field = binding.replace("card:", "");
+                if (!["front", "back", "example"].includes(field)) return;
+                const card = draftState.cards[currentIndex];
+                if (!card || card[field] === nextValue) return;
+                card[field] = nextValue;
+                scheduleSave();
+            },
+            onCommit() {
+                paint();
+            }
+        });
+    }
+
     flipButton.addEventListener("click", () => {
+        if (inlineEdit?.enabled) return;
         isFlipped = !isFlipped;
         paint();
     });
 
     cardRoot.addEventListener("click", (event) => {
-        if (event.target.closest("button, a")) return;
+        if (inlineEdit?.enabled || event.target.closest("button, a, [data-inline-editable]")) return;
         isFlipped = !isFlipped;
         paint();
     });
@@ -218,7 +337,7 @@ function renderFlashcardsPresentation(cards, controls = {}) {
     });
 
     nextButton.addEventListener("click", () => {
-        if (currentIndex >= cards.length - 1) return;
+        if (currentIndex >= draftState.cards.length - 1) return;
         currentIndex += 1;
         isFlipped = false;
         paint();
@@ -235,19 +354,20 @@ function renderFlashcardsPresentation(cards, controls = {}) {
 
         if (event.key === "ArrowRight") {
             event.preventDefault();
-            if (currentIndex >= cards.length - 1) return;
+            if (currentIndex >= draftState.cards.length - 1) return;
             currentIndex += 1;
             isFlipped = false;
             paint();
         }
 
-        if (event.key === " " || event.code === "Space") {
+        if ((event.key === " " || event.code === "Space") && !inlineEdit?.enabled) {
             event.preventDefault();
             isFlipped = !isFlipped;
             paint();
         }
     });
 
+    persistState();
     paint();
     window.addEventListener("resize", fitVisibleText);
 }

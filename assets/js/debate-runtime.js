@@ -1,7 +1,5 @@
 const DEBATE_DRAFT_KEY = "educaria:builder:debate";
 
-const DEBATE_RENDER_INDEX_KEY = "educaria:debate:renderIndex";
-
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
 }
@@ -13,6 +11,14 @@ function readDebateDraft() {
     } catch (error) {
         console.warn("EducarIA debate unavailable:", error);
         return null;
+    }
+}
+
+function writeDebateDraft(state) {
+    try {
+        localStorage.setItem(scopedStorageKey(DEBATE_DRAFT_KEY), JSON.stringify(state));
+    } catch (error) {
+        console.warn("EducarIA debate save unavailable:", error);
     }
 }
 
@@ -53,12 +59,34 @@ function escapeDebateText(value) {
         .replaceAll(">", "&gt;");
 }
 
+function escapeDebateAttr(value) {
+    return escapeDebateText(value).replaceAll('"', "&quot;");
+}
+
 function normalizeDebateToken(value) {
     return String(value || "")
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .toLowerCase()
         .trim();
+}
+
+function normalizeDebateEditableValue(value, multiline = false) {
+    const text = String(value ?? "").replace(/\r/g, "").replace(/\u00a0/g, " ");
+    if (multiline) {
+        return text
+            .split("\n")
+            .map((line) => line.replace(/[ \t]+/g, " ").trimEnd())
+            .join("\n")
+            .trim();
+    }
+
+    return text.replace(/\s+/g, " ").trim();
+}
+
+function readDebateEditableValue(node, multiline = false) {
+    const rawValue = multiline ? node.innerText : node.textContent;
+    return normalizeDebateEditableValue(rawValue, multiline);
 }
 
 function formatDebateGuidanceHtml(text) {
@@ -101,6 +129,49 @@ function formatDebateGuidanceHtml(text) {
     flushBullets();
 
     return blocks.join("") || `<p>${escapeDebateText(text)}</p>`;
+}
+
+function debateStepTemplate(index, step = {}) {
+    const title = escapeDebateAttr(step.title || "");
+    const time = escapeDebateAttr(step.time || "");
+    const question = escapeDebateAttr(step.question || "");
+    const guidance = escapeDebateText(step.guidance || "");
+
+    return `
+        <section class="platform-question-card activity-content-card debate-step-card" data-debate-step>
+            <div class="activity-card-header">
+                <div>
+                    <span class="platform-section-label" data-debate-label>Etapa ${index + 1}</span>
+                    <h3>Conteúdo da etapa</h3>
+                </div>
+                <div class="activity-card-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-debate-remove>Remover</button>
+                </div>
+            </div>
+            <div class="platform-form-grid">
+                <div class="platform-field">
+                    <label>Título da etapa</label>
+                    <input data-debate-title type="text" value="${title}">
+                </div>
+                <div class="platform-field">
+                    <label>Tempo sugerido</label>
+                    <input data-debate-time type="text" value="${time}">
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>Pergunta da etapa</label>
+                    <input data-debate-question type="text" value="${question}">
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>Orientação de mediação</label>
+                    <textarea data-debate-guidance rows="4">${guidance}</textarea>
+                </div>
+            </div>
+        </section>
+    `;
+}
+
+function serializeDebateSteps(steps) {
+    return steps.map((step, index) => debateStepTemplate(index, step)).join("");
 }
 
 function setDebateDensityClass(cardRoot, densityClass) {
@@ -165,32 +236,48 @@ function renderDebateApplication() {
     const runtime = window.__educariaDebateRuntime || {
         activeIndex: 0,
         steps: [],
-        guidanceOpen: false
+        guidanceOpen: false,
+        inlineEditEnabled: false,
+        draftState: null,
+        saveTimer: 0
     };
 
-    const draft = readDebateDraft();
-    const controls = draft?.controls || {};
-    const steps = Array.isArray(draft?.steps) && draft.steps.length
-        ? draft.steps.map((step, index) => ({
+    const initialDraft = readDebateDraft() || {};
+    const controls = { ...(initialDraft.controls || {}) };
+    const parsedSteps = Array.isArray(initialDraft.steps) && initialDraft.steps.length
+        ? initialDraft.steps.map((step, index) => ({
             index,
             title: String(step?.title || "").trim() || `Etapa ${index + 1}`,
             time: String(step?.time || "").trim() || "5 min",
             question: String(step?.question || "").trim() || `Pergunta da etapa ${index + 1}`,
             guidance: String(step?.guidance || "").trim() || `Orientação para conduzir a etapa ${index + 1}.`
         }))
-        : parseDebateSteps(draft?.stackHtml || "");
-    const safeSteps = steps.length ? steps : [
-        { title: "Abertura", time: "5 min", question: "Qual ? a pergunta que vai orientar o debate?", guidance: "Apresente o tema e organize as primeiras falas." },
+        : parseDebateSteps(initialDraft.stackHtml || "");
+
+    const safeSteps = parsedSteps.length ? parsedSteps : [
+        { title: "Abertura", time: "5 min", question: "Qual é a pergunta que vai orientar o debate?", guidance: "Apresente o tema e organize as primeiras falas." },
         { title: "Argumentação", time: "8 min", question: "Quais são os argumentos mais fortes de cada lado?", guidance: "Estimule justificativas e exemplos concretos." },
         { title: "Fechamento", time: "5 min", question: "O que podemos concluir com base no que foi discutido?", guidance: "Retome os pontos principais e feche a atividade." }
-    ];
+    ].map((step, index) => ({ ...step, index }));
 
-    const title = controls["debate-titulo"] || "Debate guiado";
-    const format = controls["debate-formato"] || "Dois lados";
-    const aiMode = controls["debate-acao-ia"] || "Organizar roteiro de debate";
-    const mainQuestion = controls["debate-pergunta"] || "Pergunta central do debate";
-    const sideA = controls["debate-lado-a"] || "Posição A";
-    const sideB = controls["debate-lado-b"] || "Posição B";
+    controls["debate-titulo"] = controls["debate-titulo"] || "Debate guiado";
+    controls["debate-formato"] = controls["debate-formato"] || "Dois lados";
+    controls["debate-acao-ia"] = controls["debate-acao-ia"] || "Organizar roteiro de debate";
+    controls["debate-pergunta"] = controls["debate-pergunta"] || "Pergunta central do debate";
+    controls["debate-lado-a"] = controls["debate-lado-a"] || "Posição A";
+    controls["debate-lado-b"] = controls["debate-lado-b"] || "Posição B";
+
+    runtime.draftState = {
+        ...initialDraft,
+        controls,
+        steps: safeSteps.map((step, index) => ({ ...step, index })),
+        stackHtml: serializeDebateSteps(safeSteps)
+    };
+    runtime.steps = runtime.draftState.steps;
+    if (runtime.activeIndex >= runtime.steps.length) {
+        runtime.activeIndex = Math.max(0, runtime.steps.length - 1);
+    }
+    window.__educariaDebateRuntime = runtime;
 
     const cardRoot = document.querySelector(".debate-stage-card");
     const sidesRoot = document.querySelector(".debate-stage-sides");
@@ -215,12 +302,6 @@ function renderDebateApplication() {
         });
     };
 
-    runtime.steps = safeSteps;
-    if (runtime.activeIndex >= safeSteps.length) {
-        runtime.activeIndex = Math.max(0, safeSteps.length - 1);
-    }
-    window.__educariaDebateRuntime = runtime;
-
     const updateViewportMetrics = () => {
         const shell = document.querySelector(".debate-stage-shell");
         const shellStyles = shell ? getComputedStyle(shell) : null;
@@ -237,6 +318,9 @@ function renderDebateApplication() {
             stageWidth: Math.max(320, layoutRoot?.clientWidth || window.innerWidth)
         };
     };
+
+    const format = runtime.draftState.controls["debate-formato"];
+    const aiMode = runtime.draftState.controls["debate-acao-ia"];
     const normalizedFormat = normalizeDebateToken(format);
     const normalizedAiMode = normalizeDebateToken(aiMode);
 
@@ -252,22 +336,69 @@ function renderDebateApplication() {
             ? "debate-mode--guided"
             : "debate-mode--balanced";
 
-    if (cardRoot) {
+    const applyCardVariant = () => {
+        if (!cardRoot) return;
         cardRoot.classList.remove("debate-variant--circle", "debate-variant--groups", "debate-variant--sides");
         cardRoot.classList.remove("debate-mode--question", "debate-mode--guided", "debate-mode--balanced");
         cardRoot.classList.add(variantClass, modeClass);
-    }
+    };
 
-    setTextAll("[data-debate-stage-title]", title);
-    setTextAll("[data-debate-stage-format]", format);
-    setTextAll("[data-debate-stage-main-question]", mainQuestion);
-    setTextAll("[data-debate-stage-side-a]", sideA);
-    setTextAll("[data-debate-stage-side-b]", sideB);
+    const syncDebateInlineEditUi = () => {
+        document.body.classList.toggle("debate-inline-editing", Boolean(runtime.inlineEditEnabled));
 
-    setTextAll("[data-debate-stage-side-a-label]", variantClass === "debate-variant--groups" ? "Grupo 1" : "Lado A");
-    setTextAll("[data-debate-stage-side-b-label]", variantClass === "debate-variant--groups" ? "Grupo 2" : "Lado B");
-    const guidanceLabel = modeClass === "debate-mode--guided" ? "Condução" : "Mediação";
-    setTextAll("[data-debate-stage-guidance-label]", guidanceLabel);
+        document.querySelectorAll("[data-debate-inline-edit-toggle]").forEach((button) => {
+            button.setAttribute("aria-pressed", String(Boolean(runtime.inlineEditEnabled)));
+            button.textContent = runtime.inlineEditEnabled ? "Concluir edição" : "Editar aqui";
+        });
+
+        document.querySelectorAll("[data-debate-inline-edit-note]").forEach((note) => {
+            note.hidden = !runtime.inlineEditEnabled;
+        });
+
+        document.querySelectorAll("[data-debate-editable]").forEach((node) => {
+            if (runtime.inlineEditEnabled) {
+                node.setAttribute("contenteditable", "true");
+                node.setAttribute("spellcheck", "true");
+                node.setAttribute("tabindex", "0");
+                node.setAttribute("role", "textbox");
+                return;
+            }
+
+            node.removeAttribute("contenteditable");
+            node.removeAttribute("spellcheck");
+            node.removeAttribute("tabindex");
+            node.removeAttribute("role");
+        });
+    };
+
+    const persistRuntimeDraft = () => {
+        runtime.draftState.steps = runtime.steps.map((step, index) => ({
+            index,
+            title: String(step?.title || ""),
+            time: String(step?.time || ""),
+            question: String(step?.question || ""),
+            guidance: String(step?.guidance || "")
+        }));
+        runtime.draftState.stackHtml = serializeDebateSteps(runtime.draftState.steps);
+        writeDebateDraft(runtime.draftState);
+    };
+
+    const scheduleDraftSave = () => {
+        window.clearTimeout(runtime.saveTimer);
+        runtime.saveTimer = window.setTimeout(persistRuntimeDraft, 140);
+    };
+
+    const renderStaticFields = () => {
+        applyCardVariant();
+        setTextAll("[data-debate-stage-title]", runtime.draftState.controls["debate-titulo"]);
+        setTextAll("[data-debate-stage-format]", runtime.draftState.controls["debate-formato"]);
+        setTextAll("[data-debate-stage-main-question]", runtime.draftState.controls["debate-pergunta"]);
+        setTextAll("[data-debate-stage-side-a]", runtime.draftState.controls["debate-lado-a"]);
+        setTextAll("[data-debate-stage-side-b]", runtime.draftState.controls["debate-lado-b"]);
+        setTextAll("[data-debate-stage-side-a-label]", variantClass === "debate-variant--groups" ? "Grupo 1" : "Lado A");
+        setTextAll("[data-debate-stage-side-b-label]", variantClass === "debate-variant--groups" ? "Grupo 2" : "Lado B");
+        setTextAll("[data-debate-stage-guidance-label]", modeClass === "debate-mode--guided" ? "Condução" : "Mediação");
+    };
 
     const renderStep = () => {
         const step = runtime.steps[runtime.activeIndex];
@@ -278,11 +409,7 @@ function renderDebateApplication() {
         const sideALabel = variantClass === "debate-variant--groups" ? "Grupo 1" : "Lado A";
         const sideBLabel = variantClass === "debate-variant--groups" ? "Grupo 2" : "Lado B";
 
-        if (cardRoot) {
-            cardRoot.classList.remove("debate-variant--circle", "debate-variant--groups", "debate-variant--sides");
-            cardRoot.classList.remove("debate-mode--question", "debate-mode--guided", "debate-mode--balanced");
-            cardRoot.classList.add(variantClass, modeClass);
-        }
+        renderStaticFields();
 
         if (sidesRoot) {
             sidesRoot.hidden = variantClass === "debate-variant--circle";
@@ -306,21 +433,77 @@ function renderDebateApplication() {
         });
 
         syncDebateGuidanceUi(runtime);
+        syncDebateInlineEditUi();
         applyDebateDensity(cardRoot, runtime.steps, viewport);
+    };
+
+    const updateEditableBinding = (node, rerender = false) => {
+        const binding = node?.dataset?.debateEditable;
+        if (!binding) return false;
+
+        const multiline = node.dataset.debateEditableMultiline === "true";
+        const value = readDebateEditableValue(node, multiline);
+
+        if (binding.startsWith("control:")) {
+            const key = binding.slice("control:".length);
+            const changed = runtime.draftState.controls[key] !== value;
+            if (changed) {
+                runtime.draftState.controls[key] = value;
+                scheduleDraftSave();
+            }
+            if (rerender) {
+                renderStep();
+            } else if (changed) {
+                applyDebateDensity(cardRoot, runtime.steps, viewport);
+            }
+            return changed || rerender;
+        }
+
+        if (binding.startsWith("step:")) {
+            const key = binding.slice("step:".length);
+            const step = runtime.steps[runtime.activeIndex];
+            if (!step) return false;
+            const changed = step[key] !== value;
+            if (changed) {
+                step[key] = value;
+                scheduleDraftSave();
+            }
+            if (rerender) {
+                renderStep();
+            } else if (changed) {
+                applyDebateDensity(cardRoot, runtime.steps, viewport);
+            }
+            return changed || rerender;
+        }
+
+        return false;
     };
 
     updateViewportMetrics();
     renderStep();
+    persistRuntimeDraft();
 
     if (!document.body?.dataset?.debateRuntimeBound) {
         document.body.dataset.debateRuntimeBound = "true";
-        window.__educariaDebateRuntime = runtime;
+
         document.addEventListener("click", (event) => {
+            const editToggle = event.target.closest("[data-debate-inline-edit-toggle]");
+            if (editToggle) {
+                event.preventDefault();
+                runtime.inlineEditEnabled = !runtime.inlineEditEnabled;
+                if (!runtime.inlineEditEnabled && document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur();
+                }
+                syncDebateInlineEditUi();
+                return;
+            }
+
             const guidanceToggle = event.target.closest("[data-debate-guidance-toggle]");
             if (guidanceToggle) {
                 event.preventDefault();
                 runtime.guidanceOpen = !runtime.guidanceOpen;
                 syncDebateGuidanceUi(runtime);
+                syncDebateInlineEditUi();
                 return;
             }
 
@@ -355,36 +538,72 @@ function renderDebateApplication() {
                 renderStep();
             }
         });
-    }
 
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape" && runtime.guidanceOpen) {
-            runtime.guidanceOpen = false;
-            syncDebateGuidanceUi(runtime);
-            return;
-        }
-
-        if (event.key === "ArrowLeft" && runtime.activeIndex > 0) {
-            runtime.activeIndex -= 1;
-            renderStep();
-        }
-
-        if (event.key === "ArrowRight" && runtime.activeIndex < runtime.steps.length - 1) {
-            runtime.activeIndex += 1;
-            renderStep();
-        }
-    });
-
-    window.addEventListener("resize", () => {
-        if (resizeFrame) {
-            window.cancelAnimationFrame(resizeFrame);
-        }
-
-        resizeFrame = window.requestAnimationFrame(() => {
-            updateViewportMetrics();
-            renderStep();
+        document.addEventListener("input", (event) => {
+            const editable = event.target.closest("[data-debate-editable][contenteditable='true']");
+            if (!editable) return;
+            updateEditableBinding(editable, false);
         });
-    });
+
+        document.addEventListener("focusout", (event) => {
+            const editable = event.target.closest("[data-debate-editable][contenteditable='true']");
+            if (!editable) return;
+            updateEditableBinding(editable, true);
+        }, true);
+
+        document.addEventListener("paste", (event) => {
+            const editable = event.target.closest("[data-debate-editable][contenteditable='true']");
+            if (!editable) return;
+
+            event.preventDefault();
+            const pastedText = (event.clipboardData || window.clipboardData)?.getData("text") || "";
+            document.execCommand("insertText", false, pastedText);
+        });
+
+        document.addEventListener("keydown", (event) => {
+            const editable = event.target.closest("[data-debate-editable][contenteditable='true']");
+            if (editable) {
+                const multiline = editable.dataset.debateEditableMultiline === "true";
+                if (!multiline && event.key === "Enter") {
+                    event.preventDefault();
+                    editable.blur();
+                }
+
+                if (event.key === "Escape") {
+                    event.preventDefault();
+                    editable.blur();
+                }
+                return;
+            }
+
+            if (event.key === "Escape" && runtime.guidanceOpen) {
+                runtime.guidanceOpen = false;
+                syncDebateGuidanceUi(runtime);
+                return;
+            }
+
+            if (event.key === "ArrowLeft" && runtime.activeIndex > 0) {
+                runtime.activeIndex -= 1;
+                renderStep();
+            }
+
+            if (event.key === "ArrowRight" && runtime.activeIndex < runtime.steps.length - 1) {
+                runtime.activeIndex += 1;
+                renderStep();
+            }
+        });
+
+        window.addEventListener("resize", () => {
+            if (resizeFrame) {
+                window.cancelAnimationFrame(resizeFrame);
+            }
+
+            resizeFrame = window.requestAnimationFrame(() => {
+                updateViewportMetrics();
+                renderStep();
+            });
+        });
+    }
 }
 
 if (document.readyState === "loading") {

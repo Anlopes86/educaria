@@ -8,6 +8,7 @@
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/presentation-inline-edit.js" defer></script>
     <script src="../assets/js/match-runtime.js" defer></script>
 </head>
 <body data-material-type="match">
@@ -15,8 +16,10 @@
         <header class="presentation-topbar presentation-topbar--minimal">
             <div class="platform-top-actions">
                 <a href="ligar-pontos-builder.html" class="platform-link-button platform-link-secondary" data-return-to-editor>Voltar à edição</a>
+                <button type="button" class="platform-link-button platform-link-secondary" data-inline-edit-toggle aria-pressed="false">Editar aqui</button>
                 <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
             </div>
+            <p class="presentation-inline-edit-note" data-inline-edit-note hidden>Edite o título, os nomes das colunas e os pares diretamente na apresentação.</p>
         </header>
 
         <section class="match-stage-layout match-stage-layout--full">

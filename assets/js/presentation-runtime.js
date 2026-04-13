@@ -14,6 +14,14 @@ function readSlidesDraft() {
     }
 }
 
+function writeSlidesDraft(state) {
+    try {
+        localStorage.setItem(scopedStorageKey(SLIDES_DRAFT_KEY), JSON.stringify(state));
+    } catch (error) {
+        console.warn("EducarIA presentation save unavailable:", error);
+    }
+}
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -90,6 +98,65 @@ function buildFallbackSlides() {
         slideColor: "#d7f5f6",
         textColor: "#0f172a"
     }];
+}
+
+function serializeSlideCards(slides) {
+    return slides.map((slide, index) => `
+        <section class="platform-question-card activity-content-card" data-slide-card>
+            <div class="platform-form-grid">
+                <div class="platform-field platform-field-wide">
+                    <label>Título</label>
+                    <input data-field="slide-title" type="text" value="${escapeHtml(slide.title || `Slide ${index + 1}`)}">
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>Subtítulo</label>
+                    <input data-field="slide-subtitle" type="text" value="${escapeHtml(slide.subtitle || "")}">
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>Corpo</label>
+                    <textarea data-field="slide-body" rows="4">${escapeHtml(slide.body || "")}</textarea>
+                </div>
+                <div class="platform-field">
+                    <label>Modo de imagem</label>
+                    <select data-field="slide-image-mode">
+                        <option selected>${escapeHtml(slide.imageMode || "Sem imagem")}</option>
+                    </select>
+                </div>
+                <div class="platform-field">
+                    <label>Layout</label>
+                    <select data-field="slide-layout">
+                        <option selected>${escapeHtml(slide.layoutMode || "stack")}</option>
+                    </select>
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>Prompt da imagem</label>
+                    <textarea data-field="slide-image-prompt" rows="3">${escapeHtml(slide.imagePrompt || "")}</textarea>
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>URL da imagem</label>
+                    <input data-field="slide-image-url" type="text" value="${escapeHtml(slide.imageUrl || "")}">
+                </div>
+                <div class="platform-field">
+                    <label>Fonte</label>
+                    <select data-field="slide-font">
+                        <option selected>${escapeHtml(slide.fontChoice || "Destaque moderno")}</option>
+                    </select>
+                </div>
+                <div class="platform-field">
+                    <label>Cor de destaque</label>
+                    <input data-field="slide-accent-color" type="color" value="${escapeHtml(slide.accentColor || "#0ea5e9")}">
+                </div>
+                <div class="platform-field">
+                    <label>Cor do slide</label>
+                    <input data-field="slide-color" type="color" value="${escapeHtml(slide.slideColor || "#d7f5f6")}">
+                </div>
+                <div class="platform-field">
+                    <label>Cor do texto</label>
+                    <input data-field="slide-text-color" type="color" value="${escapeHtml(slide.textColor || "#0f172a")}">
+                </div>
+            </div>
+        </section>
+    `).join("");
 }
 
 function renderSlideBody(body) {
@@ -352,7 +419,7 @@ function applySplitAspect(slideRoot, media) {
     slideRoot.style.setProperty("--split-media-max-height", "min(66vh, 700px)");
 }
 
-function renderPresentation(slides) {
+function renderPresentation(slides, draft = {}) {
     const slideRoot = document.querySelector("[data-presentation-slide]");
     const copyRoot = document.querySelector("[data-presentation-copy]");
     const slideTitle = document.querySelector("[data-presentation-title]");
@@ -373,8 +440,32 @@ function renderPresentation(slides) {
         stageWidth: window.innerWidth
     };
     let resizeFrame = 0;
+    let saveTimer = 0;
+    let inlineEdit = null;
+
+    const state = {
+        ...draft,
+        slides: slides.map((slide, index) => ({ ...slide, index })),
+        stackHtml: serializeSlideCards(slides)
+    };
+
+    slideTitle.dataset.inlineEditable = "slide:title";
+    slideSubtitle.dataset.inlineEditable = "slide:subtitle";
+    slideBody.dataset.inlineEditable = "slide:body";
+    slideBody.dataset.inlineEditableMultiline = "true";
 
     const turma = typeof readSelectedClass === "function" ? readSelectedClass() : "";
+
+    const persistState = () => {
+        state.slides = state.slides.map((slide, index) => ({ ...slide, index }));
+        state.stackHtml = serializeSlideCards(state.slides);
+        writeSlidesDraft(state);
+    };
+
+    const scheduleSave = () => {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(persistState, 140);
+    };
 
     const updateViewportMetrics = () => {
         const shellStyles = shell ? getComputedStyle(shell) : null;
@@ -418,14 +509,18 @@ function renderPresentation(slides) {
     };
 
     const paint = () => {
-        const slide = slides[currentIndex];
+        const slide = state.slides[currentIndex];
 
         slideTitle.textContent = slide.title;
         slideSubtitle.textContent = slide.subtitle || "";
-        slideSubtitle.hidden = !slide.subtitle;
-        slideBody.innerHTML = renderStructuredSlideBody(slide.body);
+        slideSubtitle.hidden = !slide.subtitle && !inlineEdit?.enabled;
+        if (inlineEdit?.enabled) {
+            slideBody.textContent = slide.body || "";
+        } else {
+            slideBody.innerHTML = renderStructuredSlideBody(slide.body);
+        }
         classLabel.textContent = turma ? `${turma} • ${slide.title}` : slide.title;
-        counter.textContent = `${currentIndex + 1} de ${slides.length}`;
+        counter.textContent = `${currentIndex + 1} de ${state.slides.length}`;
 
         slideRoot.style.background = `linear-gradient(180deg, ${slide.slideColor} 0%, #ffffff 100%)`;
         slideRoot.style.setProperty("--slide-accent", slide.accentColor || slide.textColor);
@@ -493,9 +588,44 @@ function renderPresentation(slides) {
         }
 
         prevButton.disabled = currentIndex === 0;
-        nextButton.disabled = currentIndex === slides.length - 1;
+        nextButton.disabled = currentIndex === state.slides.length - 1;
         slideRoot.style.visibility = "visible";
+        inlineEdit?.syncUi();
     };
+
+    if (typeof createPresentationInlineEditController === "function") {
+        inlineEdit = createPresentationInlineEditController({
+            onModeChange() {
+                paint();
+            },
+            onInput(node) {
+                const binding = String(node.dataset.inlineEditable || "");
+                const slide = state.slides[currentIndex];
+                if (!slide) return;
+                const nextValue = readInlineEditableValue(node, node.dataset.inlineEditableMultiline === "true");
+
+                if (binding === "slide:title" && slide.title !== nextValue) {
+                    slide.title = nextValue;
+                    scheduleSave();
+                    return;
+                }
+
+                if (binding === "slide:subtitle" && slide.subtitle !== nextValue) {
+                    slide.subtitle = nextValue;
+                    scheduleSave();
+                    return;
+                }
+
+                if (binding === "slide:body" && slide.body !== nextValue) {
+                    slide.body = nextValue;
+                    scheduleSave();
+                }
+            },
+            onCommit() {
+                paint();
+            }
+        });
+    }
 
     prevButton.addEventListener("click", () => {
         if (currentIndex === 0) return;
@@ -504,7 +634,7 @@ function renderPresentation(slides) {
     });
 
     nextButton.addEventListener("click", () => {
-        if (currentIndex >= slides.length - 1) return;
+        if (currentIndex >= state.slides.length - 1) return;
         currentIndex += 1;
         paint();
     });
@@ -519,13 +649,14 @@ function renderPresentation(slides) {
 
         if (event.key === "ArrowRight") {
             event.preventDefault();
-            if (currentIndex >= slides.length - 1) return;
+            if (currentIndex >= state.slides.length - 1) return;
             currentIndex += 1;
             paint();
         }
     });
 
     updateViewportMetrics();
+    persistState();
     paint();
 
     window.addEventListener("resize", () => {
@@ -543,5 +674,5 @@ function renderPresentation(slides) {
 document.addEventListener("DOMContentLoaded", () => {
     const draft = readSlidesDraft();
     const slides = draft ? parseSlideCards(draft.stackHtml) : [];
-    renderPresentation(slides.length ? slides : buildFallbackSlides());
+    renderPresentation(slides.length ? slides : buildFallbackSlides(), draft || {});
 });

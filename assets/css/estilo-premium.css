@@ -9395,6 +9395,139 @@ body:not(.lesson-sequence-stage-page) .lesson-sequence-stage-nav {
     border: 0;
 }
 
+.debate-inline-edit-note {
+    margin: 10px auto 0;
+    padding: 10px 14px;
+    width: fit-content;
+    max-width: min(100%, 720px);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--gray-dark);
+    font-size: 0.95rem;
+    text-align: center;
+    box-shadow: 0 16px 28px -24px rgba(15, 23, 42, 0.3);
+}
+
+.debate-inline-editing [data-debate-editable] {
+    cursor: text;
+    transition: box-shadow 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.debate-inline-editing [data-debate-editable]:hover {
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.24);
+}
+
+.debate-inline-editing [data-debate-editable]:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow:
+        inset 0 0 0 2px rgba(14, 165, 233, 0.38),
+        0 14px 28px -22px rgba(14, 165, 233, 0.42);
+}
+
+.debate-inline-editing [data-debate-editable="control:debate-titulo"]:focus,
+.debate-inline-editing [data-debate-editable="step:title"]:focus,
+.debate-inline-editing [data-debate-editable="step:question"]:focus,
+.debate-inline-editing [data-debate-editable="step:guidance"]:focus {
+    transform: translateY(-1px);
+}
+
+.presentation-inline-edit-note {
+    margin: 10px auto 0;
+    padding: 10px 14px;
+    width: fit-content;
+    max-width: min(100%, 760px);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.82);
+    color: var(--gray-dark);
+    font-size: 0.95rem;
+    text-align: center;
+    box-shadow: 0 16px 28px -24px rgba(15, 23, 42, 0.3);
+}
+
+.presentation-inline-editing [data-inline-editable] {
+    cursor: text;
+    transition: box-shadow 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.presentation-inline-editing [data-inline-editable]:hover {
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.24);
+}
+
+.presentation-inline-editing [data-inline-editable]:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow:
+        inset 0 0 0 2px rgba(14, 165, 233, 0.38),
+        0 14px 28px -22px rgba(14, 165, 233, 0.42);
+}
+
+.presentation-inline-editing [data-inline-editable][data-inline-editable-multiline="true"] {
+    white-space: pre-wrap;
+}
+
+.presentation-inline-editing .flashcards-stage-card,
+.presentation-inline-editing .memory-stage-card,
+.presentation-inline-editing .wheel-stage-card,
+.presentation-inline-editing .match-stage-card,
+.presentation-inline-editing .mind-stage-card,
+.presentation-inline-editing .quiz-application-card,
+.presentation-inline-editing .presentation-slide {
+    cursor: default;
+}
+
+.presentation-inline-editing .flashcards-stage-inner {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    width: min(100%, 980px);
+    height: auto;
+    aspect-ratio: auto;
+    transform: none !important;
+    cursor: default;
+}
+
+.presentation-inline-editing .flashcards-stage-face {
+    position: relative;
+    transform: none;
+    backface-visibility: visible;
+    min-height: 320px;
+    cursor: default;
+}
+
+.presentation-inline-editing .memory-stage-tile.is-editing {
+    border-color: color-mix(in srgb, var(--memory-accent, #22c55e) 46%, white);
+    background: color-mix(in srgb, var(--memory-accent, #22c55e) 14%, white);
+    box-shadow: 0 18px 32px -24px rgba(15, 23, 42, 0.26);
+}
+
+.presentation-inline-editing .memory-stage-tile.is-editing strong {
+    display: block;
+    width: 100%;
+}
+
+.presentation-inline-editing .wheel-stage-label[data-inline-editable]:hover,
+.presentation-inline-editing .wheel-stage-label[data-inline-editable]:focus {
+    border-radius: 16px;
+}
+
+.presentation-inline-editing .wheel-stage-labels {
+    pointer-events: auto;
+}
+
+.presentation-inline-editing .wheel-stage-label[data-inline-editable] {
+    pointer-events: auto;
+}
+
+.presentation-inline-editing .match-stage-item strong[data-inline-editable],
+.presentation-inline-editing .mind-stage-branch strong[data-inline-editable],
+.presentation-inline-editing .mind-stage-branch em[data-inline-editable],
+.presentation-inline-editing .option-text[data-inline-editable] {
+    display: block;
+}
+
 .debate-stage-layout--full {
     position: relative;
     grid-template-columns: minmax(0, 1fr);

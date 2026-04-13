@@ -4,19 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apresentação de Debate Guiado | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260413-2">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260413-3">
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
-    <script src="../assets/js/debate-runtime.js?v=20260412-5" defer></script>
+    <script src="../assets/js/debate-runtime.js?v=20260413-6" defer></script>
 </head>
 <body class="debate-presentation-shell" data-material-type="debate">
     <main class="presentation-shell debate-stage-shell">
         <header class="presentation-topbar presentation-topbar--minimal">
             <div class="platform-top-actions">
                 <a href="debate-guiado-builder.html" class="platform-link-button platform-link-secondary" data-return-to-editor>Voltar à edição</a>
+                <button type="button" class="platform-link-button platform-link-secondary" data-debate-inline-edit-toggle aria-pressed="false">Editar aqui</button>
                 <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
             </div>
+            <p class="debate-inline-edit-note" data-debate-inline-edit-note hidden>Edite os blocos diretamente na apresentação. O salvamento acontece automaticamente.</p>
         </header>
 
         <section class="debate-stage-layout debate-stage-layout--full">
@@ -24,23 +26,23 @@
                 <div class="debate-stage-head">
                     <div>
                         <span class="platform-section-label" data-debate-stage-format>Dois lados</span>
-                        <h1 data-debate-stage-title>Debate guiado</h1>
+                        <h1 data-debate-stage-title data-debate-editable="control:debate-titulo">Debate guiado</h1>
                     </div>
                     <div class="debate-stage-counter" data-debate-stage-counter>1 de 3</div>
                 </div>
 
-                <div class="debate-stage-question" data-debate-stage-main-question>Pergunta central do debate</div>
+                <div class="debate-stage-question" data-debate-stage-main-question data-debate-editable="control:debate-pergunta">Pergunta central do debate</div>
 
                 <div class="debate-stage-content">
                     <aside class="debate-stage-rail">
                         <div class="debate-stage-sides">
                             <article class="debate-stage-side">
                                 <span class="platform-section-label" data-debate-stage-side-a-label>Lado A</span>
-                                <strong data-debate-stage-side-a>Posição A</strong>
+                                <strong data-debate-stage-side-a data-debate-editable="control:debate-lado-a">Posição A</strong>
                             </article>
                             <article class="debate-stage-side">
                                 <span class="platform-section-label" data-debate-stage-side-b-label>Lado B</span>
-                                <strong data-debate-stage-side-b>Posição B</strong>
+                                <strong data-debate-stage-side-b data-debate-editable="control:debate-lado-b">Posição B</strong>
                             </article>
                         </div>
                     </aside>
@@ -48,13 +50,13 @@
                     <section class="debate-stage-main">
                         <section class="debate-stage-step">
                             <div class="debate-stage-step-head">
-                                <span class="platform-section-label" data-debate-stage-time>5 min</span>
+                                <span class="platform-section-label" data-debate-stage-time data-debate-editable="step:time">5 min</span>
                                 <button type="button" class="platform-link-button platform-link-secondary debate-guidance-toggle" data-debate-guidance-toggle aria-expanded="false">Mediação</button>
                             </div>
                             <div class="debate-stage-step-copy">
-                                <h2 data-debate-stage-step-title>Etapa</h2>
+                                <h2 data-debate-stage-step-title data-debate-editable="step:title">Etapa</h2>
                                 <div class="debate-stage-step-question-card">
-                                    <h3 data-debate-stage-step-question>Pergunta da etapa</h3>
+                                    <h3 data-debate-stage-step-question data-debate-editable="step:question">Pergunta da etapa</h3>
                                 </div>
                             </div>
                         </section>
@@ -69,7 +71,7 @@
                         </div>
                         <button type="button" class="platform-link-button platform-link-secondary debate-guidance-close" data-debate-guidance-close>Fechar</button>
                     </div>
-                    <div class="debate-stage-guidance-text" data-debate-stage-guidance>Orientação para conduzir esta etapa.</div>
+                    <div class="debate-stage-guidance-text" data-debate-stage-guidance data-debate-editable="step:guidance" data-debate-editable-multiline="true">Orientação para conduzir esta etapa.</div>
                 </aside>
             </article>
 

@@ -14,6 +14,14 @@ function readQuizDraft() {
     }
 }
 
+function writeQuizDraft(state) {
+    try {
+        localStorage.setItem(scopedStorageKey(QUIZ_DRAFT_KEY), JSON.stringify(state));
+    } catch (error) {
+        console.warn("EducarIA quiz save unavailable:", error);
+    }
+}
+
 function escapeHtml(value) {
     return String(value ?? "")
         .replaceAll("&", "&amp;")
@@ -66,6 +74,49 @@ function parseQuizQuestions(stackHtml) {
     });
 }
 
+function serializeQuizQuestions(questions) {
+    return questions.map((question, index) => `
+        <section class="platform-question-card activity-content-card" data-quiz-question>
+            <div class="platform-form-grid">
+                <div class="platform-field platform-field-wide">
+                    <label>Enunciado</label>
+                    <textarea data-field="prompt" rows="3">${escapeHtml(question.prompt)}</textarea>
+                </div>
+                <div class="platform-field">
+                    <label>Tipo</label>
+                    <select data-field="type">
+                        <option selected>${escapeHtml(question.type || "Multipla escolha")}</option>
+                    </select>
+                </div>
+                <div class="platform-field">
+                    <label>Correta</label>
+                    <select data-field="correct">
+                        <option selected>${escapeHtml(question.correct || "")}</option>
+                    </select>
+                </div>
+                ${(question.options || []).map((option) => `
+                    <div class="platform-field platform-field-wide">
+                        <label>${escapeHtml(option.key)}</label>
+                        <input data-option data-option-key="${escapeHtml(option.key)}" type="text" value="${escapeHtml(option.value)}">
+                    </div>
+                `).join("")}
+                <div class="platform-field platform-field-wide">
+                    <label>Explicação</label>
+                    <textarea data-field="explanation" rows="3">${escapeHtml(question.explanation || "")}</textarea>
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>Critério</label>
+                    <input data-field="criteria" type="text" value="${escapeHtml(question.criteria || "")}">
+                </div>
+                <div class="platform-field platform-field-wide">
+                    <label>Resposta modelo</label>
+                    <textarea data-field="model" rows="3">${escapeHtml(question.model || "")}</textarea>
+                </div>
+            </div>
+        </section>
+    `).join("");
+}
+
 function buildFallbackQuiz() {
     return [{
         index: 0,
@@ -98,12 +149,37 @@ function renderQuizApplication(questions, controls = {}) {
     const modalContent = document.querySelector("[data-quiz-explanation-content]");
     const closeModalButton = document.querySelector("[data-quiz-explanation-close]");
     let currentIndex = 0;
+    let saveTimer = 0;
+    let inlineEdit = null;
+
+    const state = {
+        controls: {
+            ...controls,
+            "quiz-tema": controls["quiz-tema"] || "Quiz"
+        },
+        questions: questions.map((question, index) => ({ ...question, index })),
+        stackHtml: serializeQuizQuestions(questions)
+    };
+
+    title.dataset.inlineEditable = "control:quiz-tema";
+    prompt.dataset.inlineEditable = "question:prompt";
+    prompt.dataset.inlineEditableMultiline = "true";
 
     const turma = typeof readSelectedClass === "function" ? readSelectedClass() : "";
-    const materialTheme = controls["quiz-tema"] || "Quiz";
 
     const isBinaryQuestion = (question) => question.type === "Verdadeiro ou falso";
     const normalizeCorrectKey = (question) => String(question.correct || "").trim();
+
+    const persistState = () => {
+        state.questions = state.questions.map((question, index) => ({ ...question, index }));
+        state.stackHtml = serializeQuizQuestions(state.questions);
+        writeQuizDraft(state);
+    };
+
+    const scheduleSave = () => {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(persistState, 140);
+    };
 
     const closeModal = () => {
         if (modal) modal.hidden = true;
@@ -113,20 +189,21 @@ function renderQuizApplication(questions, controls = {}) {
         if (!modal || !modalTitle || !modalContent) return;
         modalTitle.textContent = question.prompt;
         modalContent.innerHTML = `
-            <p>${escapeHtml(question.explanation || "Sem explicacao.")}</p>
-            ${question.criteria ? `<p><strong>Criterio:</strong> ${escapeHtml(question.criteria)}</p>` : ""}
-            ${question.model ? `<p><strong>Resposta modelo:</strong> ${escapeHtml(question.model)}</p>` : ""}
+            <p data-inline-editable="question:explanation" data-inline-editable-multiline="true">${escapeHtml(question.explanation || "Sem explicação.")}</p>
+            ${question.criteria ? `<p><strong>Critério:</strong> <span data-inline-editable="question:criteria">${escapeHtml(question.criteria)}</span></p>` : ""}
+            ${question.model ? `<p><strong>Resposta modelo:</strong> <span data-inline-editable="question:model" data-inline-editable-multiline="true">${escapeHtml(question.model)}</span></p>` : ""}
         `;
         modal.hidden = false;
+        inlineEdit?.syncUi();
     };
 
     const paint = () => {
-        const question = questions[currentIndex];
+        const question = state.questions[currentIndex];
         const isOpenQuestion = question.type === "Pergunta aberta";
 
-        if (title) title.textContent = materialTheme;
-        if (classLabel) classLabel.textContent = turma || materialTheme;
-        if (counter) counter.textContent = `${currentIndex + 1} de ${questions.length}`;
+        if (title) title.textContent = state.controls["quiz-tema"];
+        if (classLabel) classLabel.textContent = turma || state.controls["quiz-tema"];
+        if (counter) counter.textContent = `${currentIndex + 1} de ${state.questions.length}`;
         prompt.textContent = question.prompt;
         if (helper) helper.textContent = question.type;
         prompt.classList.toggle("quiz-application-prompt--open", isOpenQuestion);
@@ -142,20 +219,74 @@ function renderQuizApplication(questions, controls = {}) {
             optionsRoot.innerHTML = question.options.map((option) => `
                 <button type="button" class="option-btn ${isBinaryQuestion(question) ? "is-binary" : ""}" data-runtime-option="${escapeHtml(option.key)}">
                     <span class="option-letter">${isBinaryQuestion(question) ? escapeHtml(option.value) : escapeHtml(option.key.replace("Alternativa ", ""))}</span>
-                    <span class="option-text">${escapeHtml(option.value)}</span>
+                    <span class="option-text" data-inline-editable="question:option:${escapeHtml(option.key)}">${escapeHtml(option.value)}</span>
                 </button>
             `).join("");
         }
 
         prevButton.disabled = currentIndex === 0;
-        nextButton.disabled = currentIndex === questions.length - 1;
+        nextButton.disabled = currentIndex === state.questions.length - 1;
+        inlineEdit?.syncUi();
     };
 
+    if (typeof createPresentationInlineEditController === "function") {
+        inlineEdit = createPresentationInlineEditController({
+            onInput(node) {
+                const binding = String(node.dataset.inlineEditable || "");
+                const nextValue = readInlineEditableValue(node, node.dataset.inlineEditableMultiline === "true");
+
+                if (binding.startsWith("control:")) {
+                    const key = binding.slice("control:".length);
+                    if (state.controls[key] === nextValue) return;
+                    state.controls[key] = nextValue;
+                    scheduleSave();
+                    return;
+                }
+
+                const question = state.questions[currentIndex];
+                if (!question) return;
+
+                if (binding === "question:prompt") {
+                    if (question.prompt === nextValue) return;
+                    question.prompt = nextValue;
+                    scheduleSave();
+                    return;
+                }
+
+                if (binding === "question:explanation" || binding === "question:criteria" || binding === "question:model") {
+                    const field = binding.replace("question:", "");
+                    if (question[field] === nextValue) return;
+                    question[field] = nextValue;
+                    scheduleSave();
+                    return;
+                }
+
+                const optionMatch = binding.match(/^question:option:(.+)$/);
+                if (!optionMatch) return;
+
+                const key = optionMatch[1];
+                const option = question.options.find((item) => item.key === key);
+                if (!option || option.value === nextValue) return;
+                option.value = nextValue;
+                scheduleSave();
+            },
+            onCommit() {
+                const question = state.questions[currentIndex];
+                paint();
+                if (modal && !modal.hidden && question) {
+                    openModal(question);
+                }
+            }
+        });
+    }
+
     optionsRoot.addEventListener("click", (event) => {
+        if (inlineEdit?.enabled) return;
+
         const button = event.target.closest("[data-runtime-option]");
         if (!button) return;
 
-        const question = questions[currentIndex];
+        const question = state.questions[currentIndex];
         const selectedKey = button.dataset.runtimeOption || "";
         const correctKey = normalizeCorrectKey(question);
 
@@ -185,7 +316,7 @@ function renderQuizApplication(questions, controls = {}) {
     });
 
     revealButton.addEventListener("click", () => {
-        openModal(questions[currentIndex]);
+        openModal(state.questions[currentIndex]);
     });
 
     closeModalButton?.addEventListener("click", closeModal);
@@ -200,7 +331,7 @@ function renderQuizApplication(questions, controls = {}) {
     });
 
     nextButton.addEventListener("click", () => {
-        if (currentIndex >= questions.length - 1) return;
+        if (currentIndex >= state.questions.length - 1) return;
         currentIndex += 1;
         paint();
     });
@@ -215,12 +346,13 @@ function renderQuizApplication(questions, controls = {}) {
 
         if (event.key === "ArrowRight") {
             event.preventDefault();
-            if (currentIndex >= questions.length - 1) return;
+            if (currentIndex >= state.questions.length - 1) return;
             currentIndex += 1;
             paint();
         }
     });
 
+    persistState();
     paint();
 }
 

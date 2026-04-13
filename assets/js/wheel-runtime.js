@@ -14,6 +14,14 @@ function readWheelDraft() {
     }
 }
 
+function writeWheelDraft(state) {
+    try {
+        localStorage.setItem(scopedStorageKey(WHEEL_DRAFT_KEY), JSON.stringify(state));
+    } catch (error) {
+        console.warn("EducarIA wheel save unavailable:", error);
+    }
+}
+
 function parseWheelSegments(stackHtml) {
     if (!stackHtml) return [];
 
@@ -70,6 +78,28 @@ function wrapWheelLabel(text, maxCharsPerLine = 10, maxLines = 2) {
     });
 }
 
+function serializeWheelSegments(segments) {
+    return segments.map((segment, index) => `
+        <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
+            <div class="activity-card-header">
+                <div>
+                    <span class="platform-section-label" data-wheel-label>Espaço ${index + 1}</span>
+                </div>
+            </div>
+            <div class="platform-form-grid">
+                <div class="platform-field platform-field-wide">
+                    <label>Texto</label>
+                    <input data-wheel-text type="text" value="${escapeWheelText(segment.text)}">
+                </div>
+                <div class="platform-field">
+                    <label>Cor</label>
+                    <input data-wheel-color type="color" value="${escapeWheelText(segment.color || "#22c55e")}">
+                </div>
+            </div>
+        </section>
+    `).join("");
+}
+
 function buildWheelDiscSvg(segments) {
     const size = 560;
     const cx = 280;
@@ -104,7 +134,7 @@ function buildWheelDiscSvg(segments) {
     `;
 }
 
-function buildWheelLabels(segments) {
+function buildWheelLabels(segments, editEnabled = false) {
     const slice = (Math.PI * 2) / segments.length;
     const labelRadius = segments.length >= 10 ? 35 : segments.length >= 7 ? 33 : 31;
     const maxChars = segments.length >= 10 ? 8 : segments.length >= 7 ? 10 : 13;
@@ -114,26 +144,36 @@ function buildWheelLabels(segments) {
         const midAngle = -Math.PI / 2 + index * slice + slice / 2;
         const x = 50 + Math.cos(midAngle) * labelRadius;
         const y = 50 + Math.sin(midAngle) * labelRadius;
-        const lines = wrapWheelLabel(segment.text, maxChars, 4);
+        const labelContent = editEnabled
+            ? escapeWheelText(segment.text)
+            : wrapWheelLabel(segment.text, maxChars, 4).map((line) => `<span>${escapeWheelText(line)}</span>`).join("");
+        const editableAttrs = editEnabled ? ` data-inline-editable="segment:${index}"` : "";
 
         return `
-            <div class="wheel-stage-label ${fontClass}" style="left:${x}%;top:${y}%;">
-                ${lines.map((line) => `<span>${escapeWheelText(line)}</span>`).join("")}
+            <div class="wheel-stage-label ${fontClass}" style="left:${x}%;top:${y}%;"${editableAttrs}>
+                ${labelContent}
             </div>
         `;
     }).join("");
 }
 
 function renderWheelApplication() {
-    const draft = readWheelDraft();
-    const controls = draft?.controls || {};
-    const segments = parseWheelSegments(draft?.stackHtml || "");
-    const safeSegments = segments.length ? segments : [
+    const draft = readWheelDraft() || {};
+    const controls = { ...(draft.controls || {}) };
+    const segments = parseWheelSegments(draft.stackHtml || "");
+    const safeSegments = (segments.length ? segments : [
         { text: "Revisar conceito", color: "#22c55e" },
         { text: "Responder pergunta", color: "#0ea5e9" },
         { text: "Fazer desafio", color: "#f59e0b" },
         { text: "Compartilhar exemplo", color: "#ec4899" }
-    ];
+    ]).map((segment, index) => ({ ...segment, index }));
+
+    const state = {
+        ...draft,
+        controls,
+        segments: safeSegments,
+        stackHtml: serializeWheelSegments(safeSegments)
+    };
 
     const resultRoot = document.querySelector("[data-wheel-stage-result]");
     const svgRoot = document.querySelector("[data-wheel-stage-svg]");
@@ -142,8 +182,21 @@ function renderWheelApplication() {
 
     let isSpinning = false;
     let currentRotation = 0;
-    let activeSegments = [...safeSegments];
+    let activeSegments = [...state.segments];
     let pendingRemovalIndex = -1;
+    let saveTimer = 0;
+    let inlineEdit = null;
+
+    const persistState = () => {
+        state.segments = state.segments.map((segment, index) => ({ ...segment, index }));
+        state.stackHtml = serializeWheelSegments(state.segments);
+        writeWheelDraft(state);
+    };
+
+    const scheduleSave = () => {
+        window.clearTimeout(saveTimer);
+        saveTimer = window.setTimeout(persistState, 140);
+    };
 
     const normalizedRotation = () => ((currentRotation % 360) + 360) % 360;
 
@@ -172,21 +225,31 @@ function renderWheelApplication() {
         if (!svgRoot || !activeSegments.length) return;
         svgRoot.innerHTML = `
             <div class="wheel-stage-disc" data-wheel-stage-disc>${buildWheelDiscSvg(activeSegments)}</div>
-            <div class="wheel-stage-labels" data-wheel-stage-labels>${buildWheelLabels(activeSegments)}</div>
+            <div class="wheel-stage-labels" data-wheel-stage-labels>${buildWheelLabels(activeSegments, inlineEdit?.enabled)}</div>
         `;
         applyRotation(normalizedRotation(), "none");
+        inlineEdit?.syncUi();
     };
 
     const updateButtonsAvailability = (disabled) => {
         spinButtons.forEach((button) => {
-            button.disabled = disabled;
+            button.disabled = disabled || Boolean(inlineEdit?.enabled);
         });
     };
 
-    renderDisc();
+    const resetVisibleSegments = () => {
+        activeSegments = [...state.segments];
+        pendingRemovalIndex = -1;
+        isSpinning = false;
+        renderDisc();
+        updateButtonsAvailability(false);
+        if (resultRoot) {
+            resultRoot.textContent = "Aguardando giro";
+        }
+    };
 
     const spin = () => {
-        if (isSpinning || !activeSegments.length) return;
+        if (inlineEdit?.enabled || isSpinning || !activeSegments.length) return;
 
         if (shouldEliminateWinner && pendingRemovalIndex >= 0) {
             activeSegments.splice(pendingRemovalIndex, 1);
@@ -234,17 +297,51 @@ function renderWheelApplication() {
             }
 
             isSpinning = false;
-
             updateButtonsAvailability(false);
         }, 4800);
     };
+
+    if (typeof createPresentationInlineEditController === "function") {
+        inlineEdit = createPresentationInlineEditController({
+            onModeChange(enabled) {
+                if (enabled) {
+                    resetVisibleSegments();
+                } else {
+                    renderDisc();
+                    updateButtonsAvailability(false);
+                }
+            },
+            onInput(node) {
+                const match = String(node.dataset.inlineEditable || "").match(/^segment:(\d+)$/);
+                if (!match) return;
+
+                const segmentIndex = Number(match[1]);
+                const nextValue = readInlineEditableValue(node, false);
+                const segment = activeSegments[segmentIndex];
+                if (!segment || segment.text === nextValue) return;
+
+                segment.text = nextValue;
+                const sourceSegment = state.segments.find((item) => item.index === segment.index);
+                if (sourceSegment) {
+                    sourceSegment.text = nextValue;
+                }
+                scheduleSave();
+            },
+            onCommit() {
+                renderDisc();
+            }
+        });
+    }
+
+    renderDisc();
+    persistState();
 
     spinButtons.forEach((button) => {
         button.addEventListener("click", spin);
     });
 
     document.addEventListener("keydown", (event) => {
-        if (event.code !== "Space") return;
+        if (event.code !== "Space" || inlineEdit?.enabled) return;
         event.preventDefault();
         spin();
     });
