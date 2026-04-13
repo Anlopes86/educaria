@@ -4,7 +4,9 @@
       "Bash(npm ls:*)",
       "Bash(npm install:*)",
       "Bash(netstat -ano)",
-      "Bash(findstr :8787)"
+      "Bash(findstr :8787)",
+      "Bash(npm info:*)",
+      "Bash(node -p \"const p=JSON.parse\\(require\\('fs'\\).readFileSync\\(0,'utf8'\\)\\); Object.keys\\(p.peerDependencies||{}\\).join\\(', '\\) || 'none'\")"
     ]
   }
 }
