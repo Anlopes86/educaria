@@ -297,7 +297,17 @@ window.educariaTrack = educariaTrack;
 
 function authNextPath() {
     const params = new URLSearchParams(window.location.search);
-    return params.get("next") || authDashboardPath();
+    const next = params.get("next") || "";
+    if (next) {
+        try {
+            // Resolve against the current origin and reject anything that escapes it
+            const resolved = new URL(next, window.location.origin);
+            if (resolved.origin === window.location.origin) {
+                return resolved.pathname + resolved.search + resolved.hash;
+            }
+        } catch (_) {}
+    }
+    return authDashboardPath();
 }
 
 function updateAuthFeedback(message, type = "neutral") {
