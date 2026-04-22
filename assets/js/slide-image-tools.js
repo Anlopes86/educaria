@@ -1,3 +1,7 @@
+function escapeSvgText(value) {
+    return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+
 function createSvgDataUrl(title, subtitle, palette) {
     const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
@@ -11,8 +15,8 @@ function createSvgDataUrl(title, subtitle, palette) {
             <circle cx="980" cy="140" r="120" fill="rgba(255,255,255,0.18)"/>
             <circle cx="180" cy="580" r="160" fill="rgba(255,255,255,0.14)"/>
             <rect x="90" y="96" width="1020" height="528" rx="36" fill="rgba(255,255,255,0.18)"/>
-            <text x="120" y="230" font-family="Arial, sans-serif" font-size="54" font-weight="700" fill="#0f172a">${title}</text>
-            <text x="120" y="310" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#0f172a">${subtitle}</text>
+            <text x="120" y="230" font-family="Arial, sans-serif" font-size="54" font-weight="700" fill="#0f172a">${escapeSvgText(title)}</text>
+            <text x="120" y="310" font-family="Arial, sans-serif" font-size="28" font-weight="600" fill="#0f172a">${escapeSvgText(subtitle)}</text>
         </svg>
     `;
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;

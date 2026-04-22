@@ -1,3 +1,7 @@
+function escapeHtml(value) {
+    return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+}
+
 const DASHBOARD_TOUR_STORAGE_PREFIX = "educaria:dashboard-tour:";
 const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
 const DASHBOARD_CORE_FORMATS = [
@@ -56,9 +60,9 @@ function hydrateTeacherDashboard() {
     classesRoot.innerHTML = classes.map((className) => {
         const classActivities = typeof classMaterials === "function" ? classMaterials(className) : [];
         return `
-            <a href="turma.html" class="quick-class-card" data-dashboard-class-link="${className}">
+            <a href="turma.html" class="quick-class-card" data-dashboard-class-link="${escapeHtml(className)}">
                 <span class="route-tag">${classActivities.length} ${classActivities.length === 1 ? "atividade" : "atividades"}</span>
-                <h3>${className}</h3>
+                <h3>${escapeHtml(className)}</h3>
                 <p>Abra a turma para criar novas atividades ou retomar o acervo j\u00e1 salvo.</p>
             </a>
         `;
@@ -175,7 +179,7 @@ function hydrateQuickCreateForm() {
 
     classSelect.innerHTML = classes.map((className) => {
         const selected = className === current ? " selected" : "";
-        return `<option value="${className}"${selected}>${className}</option>`;
+        return `<option value="${escapeHtml(className)}"${selected}>${escapeHtml(className)}</option>`;
     }).join("");
 
     if (!classSelect.value && classes[0]) {

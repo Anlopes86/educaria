@@ -1,3 +1,7 @@
+function escapeHtml(value) {
+    return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+}
+
 const TURMA_CONTEXT_KEY = "educaria:selectedClass";
 const TURMA_LIST_KEY = "educaria:classList";
 const EDUCARIA_RESET_KEY = "educaria:reset:empty-state-v1";
@@ -204,7 +208,7 @@ function populateClassPicker() {
         return;
     }
 
-    picker.innerHTML = classes.map((turma) => `<option value="${turma}">${turma}</option>`).join("");
+    picker.innerHTML = classes.map((turma) => `<option value="${escapeHtml(turma)}">${escapeHtml(turma)}</option>`).join("");
     syncSelectedOption(picker, current || classes[0]);
 }
 

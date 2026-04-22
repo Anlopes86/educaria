@@ -4,7 +4,7 @@ import express from "express";
 import cors from "cors";
 import multer from "multer";
 import mammoth from "mammoth";
-import pdfParse from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import { GoogleGenAI } from "@google/genai";
 
 const app = express();
@@ -41,6 +41,11 @@ if (String(process.env.TRUST_PROXY || "").trim().toLowerCase() === "true") {
     app.set("trust proxy", 1);
 }
 
+/**
+ * Parses a comma-separated list of allowed CORS origins from an env string.
+ * @param {string} value - Raw env value (e.g. "https://app.com,http://localhost:5500")
+ * @returns {string[]} Array of trimmed, non-empty origin strings
+ */
 function parseAllowedOrigins(value) {
     return String(value || "")
         .split(",")
@@ -97,6 +102,12 @@ function parseMaxAge(cacheControl) {
     return match ? Number(match[1]) : 3600;
 }
 
+/**
+ * Fetches and in-memory-caches Firebase public signing certificates.
+ * Respects the Cache-Control max-age from Google's endpoint; refreshes 60 s early.
+ * @returns {Promise<Record<string, string>>} Map of key-id → PEM certificate
+ * @throws {Error} If the Google endpoint returns a non-2xx response
+ */
 async function firebasePublicCerts() {
     const now = Date.now();
     if (firebaseCertCache.expiresAt > now && Object.keys(firebaseCertCache.certs).length) {
@@ -115,6 +126,13 @@ async function firebasePublicCerts() {
     return firebaseCertCache.certs;
 }
 
+/**
+ * Verifies a Firebase ID token (RS256 JWT) without the Firebase Admin SDK.
+ * Checks format, algorithm, audience, issuer, subject, expiry, issued-at, and RSA signature.
+ * @param {string} idToken - Raw JWT from the client's Authorization header
+ * @returns {Promise<object>} Decoded JWT payload (includes `sub`, `uid`, `email`, etc.)
+ * @throws {Error} Descriptive error code string if any validation step fails
+ */
 async function verifyFirebaseIdToken(idToken) {
     if (!firebaseProjectId) {
         throw new Error("firebase_project_id_missing");
@@ -174,6 +192,12 @@ async function verifyFirebaseIdToken(idToken) {
     return payload;
 }
 
+/**
+ * Express middleware: per-IP sliding-window rate limiter for AI endpoints.
+ * Tracks request counts in {@link aiRateLimitBuckets}. Sets X-RateLimit-* headers.
+ * Bypassed entirely when AI_RATE_LIMIT_MAX is 0 or unset.
+ * @type {import('express').RequestHandler}
+ */
 function aiRateLimit(request, response, next) {
     if (!aiRateLimitMax || aiRateLimitMax < 1) {
         next();
@@ -222,6 +246,13 @@ function aiCreditUserKey(request) {
     return request.educariaUser?.uid || request.educariaUser?.sub || request.ip || "anonymous";
 }
 
+/**
+ * Returns the daily credit status for the user making the request.
+ * User is identified by Firebase UID when auth is enabled, otherwise by IP.
+ * Credits reset at midnight Pacific time (UTC-8/UTC-7).
+ * @param {import('express').Request} request
+ * @returns {{ day: string, limit: number, used: number, remaining: number, resetAt: string }}
+ */
 function aiDailyCreditsFor(request) {
     const day = dailyCreditDateKey();
     const key = `${aiCreditUserKey(request)}:${day}`;
@@ -240,6 +271,12 @@ function hasAiDailyCredit(request) {
     return aiDailyCreditsFor(request).remaining > 0;
 }
 
+/**
+ * Increments the daily credit counter for the request's user and returns the updated stats.
+ * Call this only after a successful AI generation — not before.
+ * @param {import('express').Request} request
+ * @returns {{ day: string, limit: number, used: number, remaining: number, resetAt: string }}
+ */
 function consumeAiDailyCredit(request) {
     const day = dailyCreditDateKey();
     const key = `${aiCreditUserKey(request)}:${day}`;
@@ -247,6 +284,12 @@ function consumeAiDailyCredit(request) {
     return aiDailyCreditsFor(request);
 }
 
+/**
+ * Express middleware: enforces Firebase authentication on AI routes.
+ * Passes through immediately when AI_AUTH_REQUIRED is not "true".
+ * On success, attaches the decoded JWT payload to `request.educariaUser`.
+ * @type {import('express').RequestHandler}
+ */
 async function requireAiAuth(request, response, next) {
     if (!aiAuthRequired) {
         next();
@@ -544,6 +587,13 @@ const crosswordSchema = {
     }
 };
 
+/**
+ * Returns the Gemini responseJsonSchema config for a given activity type.
+ * @param {string} materialType - One of: quiz, slides, flashcards, memory, match,
+ *   wheel, wordsearch, mindmap, debate, crossword
+ * @returns {{ name: string, description: string, schema: object } | null}
+ *   Schema config, or null if the type is not recognised
+ */
 function schemaFor(materialType) {
     if (materialType === "quiz") {
         return {
@@ -628,6 +678,13 @@ function schemaFor(materialType) {
     return null;
 }
 
+/**
+ * Strips RTF control words and returns plain text.
+ * Lightweight alternative to a full RTF parser — sufficient for the structured
+ * template files in assets/templates/.
+ * @param {Buffer} buffer - Raw RTF file buffer
+ * @returns {string} Plain text with excess blank lines collapsed
+ */
 function extractTextFromRtf(buffer) {
     return String(buffer?.toString("utf8") || "")
         .replace(/\\par[d]?/g, "\n")
@@ -639,6 +696,14 @@ function extractTextFromRtf(buffer) {
         .trim();
 }
 
+/**
+ * Parses plain text from a filled-in wheel RTF template into a wheel JSON object.
+ * Recognises lines matching "Espaço N: <value>" and assigns palette colors cyclically.
+ * Filters out unfilled placeholder entries (e.g. "Revisao rapida").
+ * @param {string} sourceText - Plain text extracted from the RTF template
+ * @returns {{ title: string, eliminate_used: boolean, segments: Array<{ text: string, color: string }> }}
+ * @throws {Error} If fewer than 2 usable segments are found
+ */
 function parseWheelTemplateText(sourceText) {
     const palette = ["#22c55e", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#6366f1", "#84cc16", "#f97316", "#06b6d4", "#a855f7"];
     const normalizedLines = String(sourceText || "")
@@ -683,6 +748,15 @@ function parseWheelTemplateText(sourceText) {
     };
 }
 
+/**
+ * Builds the Portuguese-language Gemini prompt for a given activity type.
+ * Includes pedagogical instructions, format rules, teacher goal, and source text.
+ * Falls back to a slides prompt for unrecognised types.
+ * @param {string} materialType - Activity type key (e.g. "quiz", "flashcards")
+ * @param {string} action - Teacher's stated goal, injected verbatim into the prompt
+ * @param {string} sourceText - Raw source material from teacher input or uploaded file
+ * @returns {string} Full prompt string ready to send to Gemini
+ */
 function promptFor(materialType, action, sourceText) {
     if (materialType === "quiz") {
         return [
@@ -1039,6 +1113,13 @@ function normalizeSlideBody(body, slideType) {
     return normalizedLines.join("\n");
 }
 
+/**
+ * Post-processes a Gemini-generated slides object to enforce display constraints:
+ * trims body text to max lines/words by slide type, caps teacher_notes at 22 words,
+ * and sets the layout field based on whether an image_prompt is present.
+ * @param {{ slides: Array<object> }} material - Raw slides object from Gemini
+ * @returns {{ slides: Array<object> }} Normalised slides object, safe for the builder
+ */
 function normalizeSlidesMaterial(material) {
     if (!material || !Array.isArray(material.slides)) {
         return material;
@@ -1096,6 +1177,14 @@ function normalizeLooseJson(text) {
         .trim();
 }
 
+/**
+ * Parses JSON from a Gemini model response, handling common output artifacts.
+ * First tries to extract a fenced code block or brace-bounded substring, then
+ * normalises smart quotes and trailing commas before a second parse attempt.
+ * @param {string} text - Raw text response from Gemini
+ * @returns {object} Parsed JSON object
+ * @throws {Error} If the text cannot be parsed after normalisation
+ */
 function parseGeneratedJson(text) {
     const candidate = extractJsonCandidate(text);
     if (!candidate) {
@@ -1126,6 +1215,17 @@ function fallbackJsonPrompt(schemaConfig) {
     ].join(" ");
 }
 
+/**
+ * Calls Gemini to generate a structured activity, with a two-attempt retry strategy:
+ *   1. Schema-enforced mode: responseMimeType=application/json + responseJsonSchema
+ *   2. Plain JSON mode: appends a fallback instruction asking for raw JSON only
+ * @param {string} materialType - Activity type key
+ * @param {string} action - Teacher's goal string
+ * @param {string} sourceText - Source material text
+ * @param {{ name: string, description: string, schema: object }} schemaConfig - Schema from {@link schemaFor}
+ * @returns {Promise<object>} Parsed JSON material object
+ * @throws {Error} If both attempts fail
+ */
 async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig) {
     const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
     const basePrompt = promptFor(materialType, action, sourceText);
@@ -1169,6 +1269,12 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
     throw lastError || new Error("ai_generation_failed");
 }
 
+/**
+ * Builds the image generation prompt for a single slide.
+ * Instructs Gemini to produce a clean, school-appropriate horizontal illustration.
+ * @param {{ title?: string, subtitle?: string, body?: string, prompt?: string }} slide
+ * @returns {string} Full prompt string for the image generation model
+ */
 function imagePromptForSlide({ title, subtitle, body, prompt }) {
     return [
         "Voce cria ilustracoes educativas para slides de professores no Brasil.",
@@ -1184,6 +1290,13 @@ function imagePromptForSlide({ title, subtitle, body, prompt }) {
     ].filter(Boolean).join("\n\n");
 }
 
+/**
+ * Extracts plain text from a multer-uploaded file.
+ * Supported formats: .txt (UTF-8), .docx (mammoth), .rtf (custom stripper), .pdf (PDFParse.getText).
+ * Returns an empty string for unsupported or missing files.
+ * @param {import('multer').File | undefined} file - Multer file object with buffer in memory
+ * @returns {Promise<string>} Extracted plain text
+ */
 async function extractTextFromFile(file) {
     if (!file) return "";
 
@@ -1203,7 +1316,7 @@ async function extractTextFromFile(file) {
     }
 
     if (fileName.endsWith(".pdf")) {
-        const result = await pdfParse(file.buffer);
+        const result = await new PDFParse({ data: file.buffer }).getText();
         return result.text || "";
     }
 
@@ -1243,8 +1356,8 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(400).json({ error: "Tipo de material nao suportado." });
         }
 
-        if (!gemini) {
-            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
+        if (action.length > 500) {
+            return response.status(400).json({ error: "Objetivo do professor muito longo (max 500 caracteres)." });
         }
 
         if (!hasAiDailyCredit(request)) {
@@ -1265,6 +1378,17 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(400).json({ error: "Envie um texto-base ou arquivo suportado." });
         }
 
+        if (sourceText.length > 50_000) {
+            return response.status(400).json({ error: "Texto-base muito longo (max 50 000 caracteres)." });
+        }
+
+        if (!gemini) {
+            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
+        }
+
+        // Credit is consumed only after a successful generation to avoid charging on errors.
+        // The check and consume happen in the same request without await between them,
+        // which is safe for a single-process server.
         const rawMaterial = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
         const material = materialType === "slides"
             ? normalizeSlidesMaterial(rawMaterial)
@@ -1280,7 +1404,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
         console.error("EducarIA AI service error:", error);
         return response.status(500).json({
             error: "Falha ao gerar material com IA.",
-            detail: error instanceof Error ? error.message : "unknown_error"
+            ...(process.env.NODE_ENV === "development" && { detail: error instanceof Error ? error.message : "unknown_error" })
         });
     }
 });
@@ -1314,14 +1438,6 @@ app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.sing
 
 app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, response) => {
     try {
-        if (!aiImageGenerationEnabled) {
-            return response.status(403).json({ error: "Geracao de imagem por IA desativada no Free Tier." });
-        }
-
-        if (!gemini) {
-            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
-        }
-
         const title = String(request.body.title || "").trim();
         const subtitle = String(request.body.subtitle || "").trim();
         const body = String(request.body.body || "").trim();
@@ -1329,6 +1445,18 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
 
         if (!title && !subtitle && !body && !prompt) {
             return response.status(400).json({ error: "Envie contexto suficiente para gerar a imagem." });
+        }
+
+        if ((title + subtitle + body + prompt).length > 2_000) {
+            return response.status(400).json({ error: "Contexto da imagem muito longo (max 2 000 caracteres no total)." });
+        }
+
+        if (!aiImageGenerationEnabled) {
+            return response.status(403).json({ error: "Geracao de imagem por IA desativada no Free Tier." });
+        }
+
+        if (!gemini) {
+            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
         }
 
         const result = await gemini.models.generateContent({
@@ -1354,7 +1482,7 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
         console.error("EducarIA image generation error:", error);
         return response.status(500).json({
             error: "Falha ao gerar imagem com IA.",
-            detail: error instanceof Error ? error.message : "unknown_error"
+            ...(process.env.NODE_ENV === "development" && { detail: error instanceof Error ? error.message : "unknown_error" })
         });
     }
 });
