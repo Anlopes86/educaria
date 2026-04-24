@@ -1,43 +1,46 @@
 # Firebase Setup
 
-Para ativar o login real com Firebase neste projeto:
+Este projeto usa Firebase Auth + Firestore no frontend.
+
+## 1. Configure o app Web no Firebase
 
 1. Crie um projeto no Firebase.
-2. Adicione um app Web no projeto.
-3. Copie o `firebaseConfig` do console do Firebase.
-4. Preencha os valores em `assets/js/firebase-config.js`.
-5. Em `Authentication`, habilite o provedor `Email/Password`.
-6. Em `Firestore Database`, crie o banco no modo nativo.
-7. Crie uma regra inicial de desenvolvimento semelhante a:
+2. Adicione um app Web.
+3. Copie o objeto `firebaseConfig` do console.
+4. Habilite `Authentication > Email/Password`.
+5. Crie o Firestore em modo nativo.
+6. Configure o Firebase Storage.
 
-```txt
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /teachers/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
+## 2. Defina as chaves sem commitar segredo
+
+O arquivo versionado `assets/js/firebase-config.js` agora usa placeholders por padrao.
+
+No browser (uma vez por ambiente), rode:
+
+```js
+setEducariaFirebaseConfig({
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+  storageBucket: "...",
+  messagingSenderId: "...",
+  appId: "...",
+  measurementId: "..."
+}, { persist: true });
 ```
 
-O fluxo atual usa:
+Isso salva a config no `localStorage` e evita colocar credenciais no Git.
 
-- Firebase Auth para cadastro, login e logout
-- Firestore para salvar o perfil do professor em `teachers/{uid}`
+## 3. Regras de seguranca recomendadas
 
-## Campos já preparados para futura estrutura escolar
+Use os arquivos:
 
-O perfil do professor em `teachers/{uid}` já pode carregar estes campos sem mudar a experiência atual:
+- `firebase/firestore.rules`
+- `firebase/storage.rules`
 
-- `institution`: nome exibido da escola ou instituição
-- `institutionName`: nome normalizado para evoluções futuras
-- `institutionId`: identificador simples da instituição para escopo compartilhado
-- `role`: papel do usuário, começando por `teacher`
-- `plan`: plano atual do usuário
-- `billingIntent`: intenção de upgrade para o plano Pro
+Eles restringem leitura/escrita aos dados do proprio professor (`request.auth.uid`).
 
-Estrutura esperada:
+## 4. Estrutura de dados esperada
 
 ```txt
 teachers/{uid} {
@@ -52,10 +55,16 @@ teachers/{uid} {
 }
 ```
 
-Isso ainda não ativa modo escola. Serve apenas para evitar retrabalho quando o produto evoluir para biblioteca institucional, coordenação e gestão multiusuário.
+Subcolecoes usadas:
 
-Referências oficiais:
+- `teachers/{uid}/classes/{classId}/materials/{materialId}`
+- `teachers/{uid}/productAnalyticsEvents/{eventId}`
 
-- https://firebase.google.com/docs/web/setup
-- https://firebase.google.com/docs/auth/web/password-auth
-- https://firebase.google.com/docs/firestore/manage-data/add-data
+## Nota importante
+
+No Firebase Web SDK, o `apiKey` nao e segredo isoladamente.
+O controle real de seguranca vem de:
+
+1. Regras de Firestore/Storage
+2. Auth obrigatorio
+3. Limites e monitoramento de uso

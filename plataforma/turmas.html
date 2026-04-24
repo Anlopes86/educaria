@@ -17,6 +17,7 @@
     <script src="../assets/js/classes-overview.js" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-page="classes-overview">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="../index.html" class="platform-brand app-sidebar-brand">
@@ -32,7 +33,7 @@
                 <span data-sidebar-institution>Conta educacional</span>
             </div>
 
-            <nav class="app-sidebar-nav">
+            <nav class="app-sidebar-nav" aria-label="Navegacao principal">
                 <a href="index.html" class="sidebar-nav-link">Painel</a>
 
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
@@ -93,7 +94,7 @@
             </div>
         </aside>
 
-        <main class="app-content">
+        <main id="main-content" class="app-content" tabindex="-1">
             <section class="focus-card">
                 <div class="page-section-title">
                     <div>
@@ -103,6 +104,8 @@
                     <p>Use "Ver materiais" para abrir o acervo da turma ou "Criar material" para ir direto ao painel de ferramentas já com a turma selecionada.</p>
                 </div>
 
+                <div class="class-material-filters" data-classes-overview-filters></div>
+                <p class="class-material-filter-summary" data-classes-overview-filter-summary hidden></p>
                 <div class="class-dashboard-grid" data-classes-overview-grid></div>
             </section>
 
@@ -130,5 +133,3 @@
     </div>
 </body>
 </html>
-
-

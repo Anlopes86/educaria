@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -20,6 +20,7 @@
     <script src="../assets/js/app-sidebar.js" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-page="library-overview">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="../index.html" class="platform-brand app-sidebar-brand">
@@ -34,7 +35,7 @@
                 <strong data-sidebar-teacher>Professor</strong>
                 <span data-sidebar-institution>Conta educacional</span>
             </div>
-            <nav class="app-sidebar-nav">
+            <nav class="app-sidebar-nav" aria-label="Navegacao principal">
                 <a href="index.html" class="sidebar-nav-link">Painel</a>
 
                 <a href="turmas.html" class="sidebar-nav-link" data-sidebar-classes-page-link>Turmas</a>
@@ -96,7 +97,7 @@
             </div>
         </aside>
 
-        <main class="app-content">
+        <main id="main-content" class="app-content" tabindex="-1">
             <section class="focus-card library-overview-panel">
                 <div class="page-section-title">
                     <div>
@@ -111,6 +112,8 @@
                     <a href="index.html" class="platform-link-button platform-link-secondary">Voltar para o painel</a>
                 </div>
 
+                <div class="class-material-filters" data-library-material-filters></div>
+                <p class="class-material-filter-summary" data-library-material-filter-summary hidden></p>
                 <div class="class-activity-groups" data-library-materials></div>
             </section>
         </main>

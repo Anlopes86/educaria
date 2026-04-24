@@ -17,6 +17,7 @@
     <script src="../assets/js/class-format-picker.js" defer></script>
 </head>
 <body class="product-body theme-class" data-requires-auth="true" data-class-page-ready="false" data-page="class-detail">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="index.html" class="platform-brand app-sidebar-brand">
@@ -32,7 +33,7 @@
                 <span data-sidebar-institution>Conta educacional</span>
             </div>
 
-            <nav class="app-sidebar-nav">
+            <nav class="app-sidebar-nav" aria-label="Navegacao principal">
                 <a href="index.html" class="sidebar-nav-link">Painel</a>
 
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
@@ -93,7 +94,7 @@
             </div>
         </aside>
 
-        <main class="app-content">
+        <main id="main-content" class="app-content" tabindex="-1">
             <section class="app-page-intro class-page-intro">
                 <div class="app-page-intro__content">
                     <h1 data-class-title>Turma</h1>
@@ -106,7 +107,7 @@
                         <span class="platform-section-label">Fluxo principal</span>
                         <h2>Prepare a próxima aula desta turma</h2>
                     </div>
-                    <p data-class-focus-summary>Slides, quiz e biblioteca formam o fluxo central para planejar mais rápido e reaproveitar melhor.</p>
+                    <p data-class-focus-summary>Fluxo recomendado: Slides (10-15 min) para conduzir, Quiz (5-8 min) para revisar e Biblioteca para reaproveitar.</p>
                 </div>
 
                 <div class="teacher-dashboard-kpis">
@@ -129,6 +130,7 @@
                 </div>
 
                 <div class="utility-actions" data-class-primary-actions></div>
+                <div class="class-recent-lesson-slot" data-class-recent-lesson></div>
             </section>
 
             <section class="focus-card class-library-panel" id="atividades-salvas">
@@ -140,9 +142,12 @@
                     <p>Ficam aqui apenas os materiais da turma selecionada, agrupados por formato para facilitar retomada, edição e apresentação.</p>
                 </div>
 
+                <div class="class-material-filters" data-class-material-filters></div>
+                <p class="class-material-filter-summary" data-class-material-filter-summary hidden></p>
                 <div class="class-activity-groups" data-saved-lessons></div>
             </section>
         </main>
     </div>
 </body>
 </html>
+

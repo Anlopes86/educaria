@@ -168,6 +168,7 @@ function createSidebarClass() {
     const composedName = `${className} - ${subject}`;
     const classes = getAvailableClasses();
     const exists = classes.some((item) => item === composedName);
+    const wasFirstClass = !exists && classes.length === 0;
 
     if (!exists) {
         saveClassList([...classes, composedName]);
@@ -181,6 +182,20 @@ function createSidebarClass() {
             subject
         });
     }
+
+    if (wasFirstClass && typeof window.educariaMarkMilestone === "function") {
+        window.educariaMarkMilestone("activation_first_class_created", {
+            source: "sidebar",
+            className: composedName,
+            subject
+        });
+    }
+    if (typeof window.educariaEvaluateActivationMilestones === "function") {
+        window.educariaEvaluateActivationMilestones("sidebar_class_create", {
+            markCompletion: true
+        });
+    }
+
     renderSidebarClasses();
 
     if (feedback) {
@@ -225,7 +240,13 @@ function setActiveSidebarLinks() {
     document.querySelectorAll(".sidebar-nav-link[href], .sidebar-subitem[href]").forEach((link) => {
         const href = link.getAttribute("href") || "";
         const normalized = href.split("#")[0];
-        link.classList.toggle("is-active", normalized === currentPath);
+        const isActive = normalized === currentPath;
+        link.classList.toggle("is-active", isActive);
+        if (isActive) {
+            link.setAttribute("aria-current", "page");
+        } else {
+            link.removeAttribute("aria-current");
+        }
     });
 }
 

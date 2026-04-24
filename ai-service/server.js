@@ -7,6 +7,15 @@ import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import { GoogleGenAI } from "@google/genai";
 
+function parseNonNegativeNumber(value, fallback) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        return fallback;
+    }
+
+    return parsed;
+}
+
 const app = express();
 const port = Number(process.env.PORT || 8787);
 const maxUploadMb = Number(process.env.AI_MAX_UPLOAD_MB || 5);
@@ -27,7 +36,14 @@ const firebaseProjectId = String(
 ).trim();
 const aiRateLimitWindowMs = Number(process.env.AI_RATE_LIMIT_WINDOW_MS || 60_000);
 const aiRateLimitMax = Number(process.env.AI_RATE_LIMIT_MAX || 8);
-const aiDailyCreditLimit = Number(process.env.AI_DAILY_CREDIT_LIMIT || 5);
+const aiDailyCreditLimitDefault = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT, 5);
+const aiDailyCreditLimitFree = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_FREE, aiDailyCreditLimitDefault);
+const aiDailyCreditLimitPro = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_PRO, Math.max(aiDailyCreditLimitDefault, 20));
+const aiDailyCreditLimits = {
+    free: aiDailyCreditLimitFree,
+    pro: aiDailyCreditLimitPro
+};
+const aiProUidAllowList = new Set(parseAllowedOrigins(process.env.AI_PRO_UIDS));
 const aiImageGenerationEnabled = String(process.env.AI_IMAGE_GENERATION_ENABLED || "").trim().toLowerCase() === "true";
 const firebaseCertUrl = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
 const firebaseCertCache = {
@@ -246,20 +262,61 @@ function aiCreditUserKey(request) {
     return request.educariaUser?.uid || request.educariaUser?.sub || request.ip || "anonymous";
 }
 
+function normalizeTeacherPlan(value) {
+    return String(value || "").trim().toLowerCase() === "pro" ? "pro" : "free";
+}
+
+function aiPlanForRequest(request) {
+    const user = request.educariaUser || {};
+    const uid = String(user.uid || user.sub || "").trim();
+    const claimedPlan = normalizeTeacherPlan(
+        user.plan ||
+        user.educaria_plan ||
+        user.subscription_plan ||
+        user["https://educaria.app/plan"]
+    );
+
+    if (claimedPlan === "pro") {
+        return "pro";
+    }
+
+    if (uid && aiProUidAllowList.has(uid)) {
+        return "pro";
+    }
+
+    return "free";
+}
+
+function aiDailyCreditLimitForPlan(plan) {
+    const normalizedPlan = normalizeTeacherPlan(plan);
+    if (normalizedPlan === "pro") {
+        return aiDailyCreditLimits.pro;
+    }
+
+    return aiDailyCreditLimits.free;
+}
+
+function aiCreditBucketKey(request, day) {
+    return `${aiCreditUserKey(request)}:${aiPlanForRequest(request)}:${day}`;
+}
+
 /**
  * Returns the daily credit status for the user making the request.
  * User is identified by Firebase UID when auth is enabled, otherwise by IP.
  * Credits reset at midnight Pacific time (UTC-8/UTC-7).
  * @param {import('express').Request} request
- * @returns {{ day: string, limit: number, used: number, remaining: number, resetAt: string }}
+ * @returns {{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string }}
  */
 function aiDailyCreditsFor(request) {
     const day = dailyCreditDateKey();
-    const key = `${aiCreditUserKey(request)}:${day}`;
+    const plan = aiPlanForRequest(request);
+    const key = aiCreditBucketKey(request, day);
     const used = aiDailyCreditBuckets.get(key) || 0;
-    const limit = Math.max(0, aiDailyCreditLimit);
+    const limit = aiDailyCreditLimitForPlan(plan);
     return {
         day,
+        plan,
+        limits: aiDailyCreditLimits,
         limit,
         used,
         remaining: Math.max(0, limit - used),
@@ -275,11 +332,11 @@ function hasAiDailyCredit(request) {
  * Increments the daily credit counter for the request's user and returns the updated stats.
  * Call this only after a successful AI generation — not before.
  * @param {import('express').Request} request
- * @returns {{ day: string, limit: number, used: number, remaining: number, resetAt: string }}
+ * @returns {{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string }}
  */
 function consumeAiDailyCredit(request) {
     const day = dailyCreditDateKey();
-    const key = `${aiCreditUserKey(request)}:${day}`;
+    const key = aiCreditBucketKey(request, day);
     aiDailyCreditBuckets.set(key, (aiDailyCreditBuckets.get(key) || 0) + 1);
     return aiDailyCreditsFor(request);
 }
@@ -1333,7 +1390,8 @@ app.get("/api/health", (_request, response) => {
             windowMs: aiRateLimitWindowMs,
             max: aiRateLimitMax
         },
-        dailyCreditLimit: aiDailyCreditLimit,
+        dailyCreditLimits: aiDailyCreditLimits,
+        proUidAllowListSize: aiProUidAllowList.size,
         maxUploadMb,
         imageGenerationEnabled: aiImageGenerationEnabled
     });
@@ -1361,9 +1419,13 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
         }
 
         if (!hasAiDailyCredit(request)) {
+            const credits = aiDailyCreditsFor(request);
+            const upgradeHint = credits.plan === "free" && credits.limits.pro > credits.limit
+                ? " Faca upgrade para o plano Pro para liberar mais geracoes por dia."
+                : "";
             return response.status(429).json({
-                error: "Seus creditos diarios de IA acabaram. Eles voltam amanha.",
-                credits: aiDailyCreditsFor(request)
+                error: `Seus creditos diarios de IA acabaram.${upgradeHint} Eles voltam amanha.`,
+                credits
             });
         }
 

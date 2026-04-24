@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -19,7 +19,8 @@
     <script src="../assets/js/lesson-sequence-builder.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="lesson">
-    <main class="platform-shell platform-flow-shell lesson-review-shell lesson-sequence-shell">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <main id="main-content" class="platform-shell platform-flow-shell lesson-review-shell lesson-sequence-shell" tabindex="-1">
         <header class="platform-topbar">
             <a href="turma.html" class="platform-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
@@ -31,7 +32,7 @@
             <div class="platform-top-actions">
                 <a href="turma.html" class="platform-link-button platform-link-secondary">Voltar para a turma</a>
                 <a href="aula-completa-apresentacao.html" class="platform-link-button platform-link-secondary" data-open-lesson-sequence-presentation>Abrir apresentação</a>
-                <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="lesson" data-save-target="turma.html">Salvar na turma</button>
+                <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="lesson" data-save-target="turma.html" aria-label="Salvar na turma (acao principal)">Salvar na turma</button>
             </div>
         </header>
 
@@ -39,9 +40,10 @@
             <section class="focus-card lesson-sequence-main">
                 <details class="editor-disclosure lesson-sequence-step-disclosure lesson-sequence-meta-panel">
                     <summary>
-                        <span>Informações da aula</span>
+                        <span>Essencial da aula</span>
                     </summary>
                     <div class="editor-disclosure-body lesson-sequence-step-body">
+                        <p class="activity-manual-guide">Defina nome, tempo e objetivo. Depois monte os blocos na ordem da aula.</p>
                         <div class="platform-form-grid lesson-sequence-meta-grid">
                             <div class="platform-field">
                                 <label for="lesson-title">Nome da aula</label>

@@ -184,7 +184,7 @@ function refineSlideBodyText(body, slideType = "content") {
         .map((line) => line.trim())
         .filter(Boolean)
         .flatMap((line) => {
-            const clean = line.replace(/^[-*••]\s*/, "").trim();
+            const clean = line.replace(/^[-*•]\s*/, "").trim();
             return clean
                 .split(/(?<=:)\s+|;\s+|(?<=[.!?])\s+/)
                 .map((part) => part.trim())
@@ -232,7 +232,7 @@ function refineSlideBodyTextSafe(body, slideType = "content") {
         .filter(Boolean);
 
     const logicalUnits = (sourceLines.length > 1 ? sourceLines : protectedRaw.split(/(?<=[!?;])\s+|(?<=\.)\s+(?=[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])/))
-        .map((item) => restoreSlideAbbreviationsSafe(item).replace(/^[-*••ââ‚¬Â¢]\s*/, "").trim())
+        .map((item) => restoreSlideAbbreviationsSafe(item).replace(/^[-*•]\s*/, "").trim())
         .filter(Boolean)
         .flatMap((item) => protectSlideAbbreviationsSafe(item)
             .split(/;\s+|(?<=[!?])\s+|(?<=\.)\s+(?=[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])/)
@@ -1219,13 +1219,70 @@ function resolveTemplateEndpoint() {
     return endpoint.replace(/\/api\/ai\/generate$/, "/api/model-template/generate");
 }
 
+class EducariaAiRequestError extends Error {
+    constructor(message, options = {}) {
+        super(String(message || "Nao foi possivel gerar o material com IA."));
+        this.name = "EducariaAiRequestError";
+        this.status = Number(options.status || 0);
+        this.code = String(options.code || "").trim();
+        this.credits = options.credits || null;
+    }
+}
+
+function educariaTrackAiEvent(name, metadata = {}) {
+    if (typeof window.educariaTrack !== "function") return;
+    window.educariaTrack(name, metadata);
+}
+
+function aiErrorCodeFromMessage(message) {
+    const normalized = String(message || "").toLowerCase();
+    if (!normalized) return "unknown";
+    if (normalized.includes("credito") || normalized.includes("quota") || normalized.includes("resource_exhausted")) return "daily_limit";
+    if (normalized.includes("login necessario") || normalized.includes("sessao invalida") || normalized.includes("sessao expirada")) return "auth";
+    if (normalized.includes("health check")) return "service_unavailable";
+    return "request_failed";
+}
+
+function aiErrorToUserMessage(error) {
+    const detail = error instanceof Error ? error.message : "Erro desconhecido.";
+    const normalizedDetail = String(detail).toLowerCase();
+    const status = Number(error?.status || 0);
+    const credits = error?.credits || null;
+    const isQuotaError = status === 429 ||
+        normalizedDetail.includes("quota") ||
+        normalizedDetail.includes("resource_exhausted") ||
+        normalizedDetail.includes("credito");
+    const isAuthError = status === 401 || normalizedDetail.includes("login necessario") || normalizedDetail.includes("sessao invalida");
+    const isServiceUnavailable = status === 503 || normalizedDetail.includes("health check");
+
+    if (isQuotaError) {
+        if (credits?.plan === "free" && Number(credits?.limits?.pro || 0) > Number(credits?.limit || 0)) {
+            return "Seus creditos diarios acabaram. Faca upgrade para o plano Pro para liberar mais geracoes por dia.";
+        }
+        return "Seus creditos diarios de IA acabaram por hoje. Tente novamente apos o reset.";
+    }
+
+    if (isAuthError) {
+        return "Sua sessao expirou. Entre novamente para continuar usando a IA.";
+    }
+
+    if (isServiceUnavailable) {
+        return "A IA esta indisponivel no momento. Tente novamente em alguns instantes.";
+    }
+
+    return "Nao foi possivel gerar este material agora. Tente novamente em instantes.";
+}
+
 async function checkAiHealth() {
     const response = await fetch(resolveAiHealthEndpoint(), {
         method: "GET"
     });
 
     if (!response.ok) {
-        throw new Error(`Health check falhou com status ${response.status}.`);
+        throw new EducariaAiRequestError(`Health check falhou com status ${response.status}.`, {
+            status: response.status,
+            code: "health_check_failed"
+        });
     }
 
     return response.json();
@@ -1255,7 +1312,11 @@ async function requestStructuredMaterial(materialType, sourceText, file, action)
                 detail: { credits: errorPayload.credits }
             }));
         }
-        throw new Error(errorPayload?.error || "Não foi possível gerar o material com IA.");
+        throw new EducariaAiRequestError(errorPayload?.error || "Nao foi possivel gerar o material com IA.", {
+            status: response.status,
+            code: aiErrorCodeFromMessage(errorPayload?.error),
+            credits: errorPayload?.credits || null
+        });
     }
 
     const payload = await response.json();
@@ -1426,6 +1487,10 @@ async function generateMaterialFromTemplate(materialType, button) {
     button.textContent = "Lendo modelo...";
 
     try {
+        educariaTrackAiEvent("ai_model_generate_started", {
+            materialType,
+            hasFile: Boolean(file)
+        });
         let material = null;
 
         if (materialType === "wheel") {
@@ -1444,9 +1509,18 @@ async function generateMaterialFromTemplate(materialType, button) {
             throw new Error("O arquivo modelo não trouxe dados suficientes para preencher o editor.");
         }
 
+        educariaTrackAiEvent("ai_model_generate_succeeded", {
+            materialType,
+            hasFile: Boolean(file)
+        });
         openAiReadyModal();
     } catch (error) {
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
+        educariaTrackAiEvent("ai_model_generate_failed", {
+            materialType,
+            hasFile: Boolean(file),
+            detail
+        });
         window.alert(`Não foi possível montar o material a partir do arquivo modelo.\n\nDetalhe: ${detail}`);
     } finally {
         button.disabled = false;
@@ -1494,6 +1568,12 @@ async function generateMaterial(materialType, button) {
     button.textContent = "Gerando...";
 
     try {
+        educariaTrackAiEvent("ai_generate_started", {
+            materialType,
+            sourceChars: sourceText.length,
+            hasFile: Boolean(file),
+            requestedCount: requestedCount || 0
+        });
         await checkAiHealth();
 
         let generationHints = materialType === "quiz"
@@ -1570,16 +1650,31 @@ async function generateMaterial(materialType, button) {
             throw new Error("A resposta da IA não trouxe dados suficientes para preencher o editor.");
         }
 
+        educariaTrackAiEvent("ai_generate_succeeded", {
+            materialType,
+            sourceChars: sourceText.length,
+            hasFile: Boolean(file),
+            requestedCount: requestedCount || 0,
+            creditsRemaining: Number(payload?.credits?.remaining ?? -1),
+            creditsLimit: Number(payload?.credits?.limit ?? -1),
+            plan: payload?.credits?.plan || ""
+        });
         openAiReadyModal();
     } catch (error) {
         const endpoint = resolveAiEndpoint();
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
-        const normalizedDetail = String(detail).toLowerCase();
-        const isQuotaError = normalizedDetail.includes("quota") || normalizedDetail.includes("429") || normalizedDetail.includes("resource_exhausted");
-        const userMessage = isQuotaError
-            ? "Voce ficou sem creditos de IA para gerar este material."
-            : "Nao foi possivel gerar este material agora. Tente novamente em instantes.";
+        const status = Number(error?.status || 0);
+        const userMessage = aiErrorToUserMessage(error);
 
+        educariaTrackAiEvent("ai_generate_failed", {
+            materialType,
+            sourceChars: sourceText.length,
+            hasFile: Boolean(file),
+            requestedCount: requestedCount || 0,
+            status,
+            code: String(error?.code || aiErrorCodeFromMessage(detail)),
+            detail
+        });
         console.warn("EducarIA AI generation error:", { endpoint, detail, error });
         window.alert(userMessage);
     } finally {

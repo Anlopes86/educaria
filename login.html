@@ -12,7 +12,8 @@
     <script src="assets/js/auth-flow.js" defer></script>
 </head>
 <body class="product-body theme-auth" data-auth-page="true" data-auth-screen="login">
-    <main class="auth-shell">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <main id="main-content" class="auth-shell" tabindex="-1">
         <section class="auth-panel auth-panel--brand">
             <a href="index.html" class="auth-brand auth-brand--hero">
                 <img src="assets/images/educar-logo.png" alt="EducarIA" class="auth-brand-logo-large">
@@ -38,11 +39,11 @@
             <form class="auth-form" data-login-form>
                 <div class="platform-field">
                     <label for="login-email">Email</label>
-                    <input id="login-email" name="email" type="email" placeholder="professor@escola.com.br">
+                    <input id="login-email" name="email" type="email" autocomplete="email" required placeholder="professor@escola.com.br">
                 </div>
                 <div class="platform-field">
                     <label for="login-password">Senha</label>
-                    <input id="login-password" name="password" type="password" placeholder="Digite sua senha">
+                    <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Digite sua senha">
                 </div>
 
                 <button type="submit" class="platform-link-button platform-link-primary auth-submit">Entrar</button>

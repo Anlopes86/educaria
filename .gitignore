@@ -1,2 +1,3 @@
 ai-service/node_modules/
 ai-service/.env
+assets/js/firebase-config.local.js

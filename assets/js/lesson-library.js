@@ -11,9 +11,19 @@ const LESSON_SCOPE_CLASS = "class";
 const LESSONS_REMOTE_COLLECTION = "lessons";
 const LESSON_STATUS_DRAFT = "draft";
 const LESSON_STATUS_READY = "ready";
+const CLASS_MATERIAL_FILTERS = [
+    { id: "all", label: "Todos", types: null },
+    { id: "lesson", label: "Aulas", types: ["lesson"] },
+    { id: "slides", label: "Slides", types: ["slides"] },
+    { id: "quiz", label: "Quizzes", types: ["quiz"] },
+    { id: "flashcards", label: "Flashcards", types: ["flashcards"] },
+    { id: "others", label: "Outros", types: ["wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"] }
+];
 
 let lessonsSyncPromise = null;
 let lastLessonsSyncUid = "";
+let activeClassMaterialFilter = "all";
+let activeLibraryMaterialFilter = "all";
 
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
@@ -1009,6 +1019,56 @@ function materialGroupDescription(type) {
     return "Sequências para conduzir a aula projetada.";
 }
 
+function classMaterialFilterDefinition(filterId) {
+    return CLASS_MATERIAL_FILTERS.find((filter) => filter.id === filterId) || CLASS_MATERIAL_FILTERS[0];
+}
+
+function classMaterialFilterCount(lessons, filterId) {
+    const filter = classMaterialFilterDefinition(filterId);
+    if (!Array.isArray(lessons) || !lessons.length) return 0;
+    if (!Array.isArray(filter.types) || !filter.types.length) return lessons.length;
+
+    return lessons.filter((lesson) => filter.types.includes(lesson.materialType || "slides")).length;
+}
+
+function classMaterialFilterApply(lessons, filterId) {
+    const filter = classMaterialFilterDefinition(filterId);
+    if (!Array.isArray(lessons) || !lessons.length) return [];
+    if (!Array.isArray(filter.types) || !filter.types.length) return [...lessons];
+
+    return lessons.filter((lesson) => filter.types.includes(lesson.materialType || "slides"));
+}
+
+function lessonStatusLabel(status) {
+    return normalizeLessonStatus(status) === LESSON_STATUS_READY ? "Pronto para projetar" : "Rascunho";
+}
+
+function classFilterSummaryLabel(filterId, filteredCount, totalCount) {
+    const filter = classMaterialFilterDefinition(filterId);
+    if (filter.id === "all") {
+        return `${totalCount} ${totalCount === 1 ? "atividade" : "atividades"} nesta turma.`;
+    }
+
+    if (!filteredCount) {
+        return `Sem resultados em ${filter.label.toLowerCase()} para esta turma.`;
+    }
+
+    return `${filteredCount} ${filteredCount === 1 ? "atividade" : "atividades"} em ${filter.label.toLowerCase()}.`;
+}
+
+function libraryFilterSummaryLabel(filterId, filteredCount, totalCount) {
+    const filter = classMaterialFilterDefinition(filterId);
+    if (filter.id === "all") {
+        return `${totalCount} ${totalCount === 1 ? "material" : "materiais"} na biblioteca.`;
+    }
+
+    if (!filteredCount) {
+        return `Sem resultados em ${filter.label.toLowerCase()} na biblioteca.`;
+    }
+
+    return `${filteredCount} ${filteredCount === 1 ? "material" : "materiais"} em ${filter.label.toLowerCase()}.`;
+}
+
 function selectedClassFromAvailableClasses() {
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
     const current = currentClassName() || "";
@@ -1032,7 +1092,7 @@ function classActivitySummary(lessons) {
         .slice(0, 3)
         .map(([type, count]) => `${materialGroupLabel(type)} (${count})`);
 
-    return ordered.join(" • ");
+    return ordered.join(" \u2022 ");
 }
 
 function countClassMaterialsByTypes(lessons, types) {
@@ -1045,11 +1105,12 @@ function countClassMaterialsByTypes(lessons, types) {
 function hydrateClassFocusPanel(classes, turma, lessons) {
     const summaryNode = document.querySelector("[data-class-focus-summary]");
     const actionsNode = document.querySelector("[data-class-primary-actions]");
+    const recentNode = document.querySelector("[data-class-recent-lesson]");
     const materialCountNode = document.querySelector("[data-class-material-count]");
     const slideCountNode = document.querySelector("[data-class-slide-count]");
     const quizCountNode = document.querySelector("[data-class-quiz-count]");
     const libraryCountNode = document.querySelector("[data-class-library-count]");
-    if (!summaryNode && !actionsNode && !materialCountNode && !slideCountNode && !quizCountNode && !libraryCountNode) {
+    if (!summaryNode && !actionsNode && !recentNode && !materialCountNode && !slideCountNode && !quizCountNode && !libraryCountNode) {
         return;
     }
 
@@ -1057,6 +1118,65 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
     const slideLikeCount = countClassMaterialsByTypes(classLessons, ["slides", "lesson"]);
     const quizCount = countClassMaterialsByTypes(classLessons, "quiz");
     const libraryCount = typeof libraryMaterials === "function" ? libraryMaterials().length : 0;
+    const latestLesson = classLessons[0] || null;
+
+    const renderRecentLesson = () => {
+        if (!recentNode) return;
+
+        if (!classes.length) {
+            recentNode.innerHTML = `
+                <article class="class-recent-lesson-card class-recent-lesson-card--empty">
+                    <span class="route-tag">Sem turma selecionada</span>
+                    <h3>Crie ou selecione uma turma para continuar</h3>
+                    <p>Depois disso, as atividades mais recentes desta turma aparecem aqui com ações rápidas.</p>
+                </article>
+            `;
+            return;
+        }
+
+        if (!latestLesson) {
+            recentNode.innerHTML = `
+                <article class="class-recent-lesson-card class-recent-lesson-card--empty">
+                    <span class="route-tag">Sem atividade recente</span>
+                    <h3>${escapeHtml(turma)} ainda não tem atividade salva</h3>
+                    <p>Comece com Slides para conduzir a aula e finalize com Quiz para revisar em poucos minutos.</p>
+                    <div class="lesson-history-actions">
+                        <a href="slides-builder.html" class="platform-link-button platform-link-primary">Criar slides (10-15 min)</a>
+                        <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">Criar quiz (5-8 min)</a>
+                    </div>
+                </article>
+            `;
+            return;
+        }
+
+        const safeMaterial = latestLesson.materialType || "slides";
+        const safeTitle = escapeHtml(latestLesson.title || materialGroupLabel(safeMaterial));
+        const safeSummary = escapeHtml(latestLesson.summary || materialGroupDescription(safeMaterial));
+        const safeType = escapeHtml(latestLesson.type || materialGroupLabel(safeMaterial));
+        const safeStatus = escapeHtml(lessonStatusLabel(latestLesson.status));
+        const statusClass = escapeHtml(normalizeLessonStatus(latestLesson.status));
+        const safeUpdatedAt = escapeHtml(formatLessonDate(latestLesson.updatedAt));
+        const safeId = escapeHtml(latestLesson.id || "");
+        const editorPath = escapeHtml(editorPathForLesson(latestLesson));
+        const presentationPath = escapeHtml(presentationPathForLesson(latestLesson));
+
+        recentNode.innerHTML = `
+            <article class="class-recent-lesson-card">
+                <span class="route-tag">Atividade mais recente</span>
+                <h3>${safeTitle}</h3>
+                <p>${safeSummary}</p>
+                <div class="lesson-history-meta">
+                    <span>Atualizado em ${safeUpdatedAt}</span>
+                    <span>${safeType}</span>
+                    <span class="lesson-status-chip lesson-status-chip--${statusClass}">${safeStatus}</span>
+                </div>
+                <div class="lesson-history-actions">
+                    <a href="${editorPath}" class="platform-link-button platform-link-primary" data-edit-lesson="${safeId}">Continuar edição</a>
+                    <a href="${presentationPath}" class="platform-link-button platform-link-secondary" data-present-lesson="${safeId}">Apresentar agora</a>
+                </div>
+            </article>
+        `;
+    };
 
     if (materialCountNode) materialCountNode.textContent = `${classLessons.length}`;
     if (slideCountNode) slideCountNode.textContent = `${slideLikeCount}`;
@@ -1065,7 +1185,7 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
 
     if (!classes.length) {
         if (summaryNode) {
-            summaryNode.textContent = "Crie a primeira turma para começar o fluxo principal da plataforma e organizar os materiais desde a origem.";
+            summaryNode.textContent = "Crie a primeira turma para iniciar o fluxo principal: Slides (10-15 min), Quiz (5-8 min) e Biblioteca para reaproveitar.";
         }
 
         if (actionsNode) {
@@ -1074,26 +1194,30 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
                 <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Abrir biblioteca</a>
             `;
         }
+        renderRecentLesson();
         return;
     }
 
     if (summaryNode) {
         if (!classLessons.length) {
-            summaryNode.textContent = `${turma} ainda não tem materiais salvos. Comece por slides ou uma aula completa e finalize com um quiz de revisão.`;
+            summaryNode.textContent = `${turma} ainda nao tem materiais salvos. Sugestao: comece com Slides (10-15 min), feche com Quiz (5-8 min) e salve na Biblioteca.`;
         } else {
             const latestLabel = classLessons[0]?.updatedAt ? formatLessonDate(classLessons[0].updatedAt) : "agora";
-            summaryNode.textContent = `${turma} tem ${classLessons.length} materiais salvos. Última atualização: ${latestLabel}. Fluxo recomendado: aula/slides -> quiz -> biblioteca.`;
+            summaryNode.textContent = `${turma} tem ${classLessons.length} materiais salvos. Ultima atualizacao: ${latestLabel}. Fluxo recomendado: Slides -> Quiz -> Biblioteca.`;
         }
     }
 
     if (actionsNode) {
         actionsNode.innerHTML = `
-            <a href="slides-builder.html" class="platform-link-button platform-link-primary">Criar slides</a>
-            <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">Criar quiz</a>
-            <a href="criar-aula.html" class="platform-link-button platform-link-secondary">Montar aula completa</a>
+            <a href="gerar-aula.html" class="platform-link-button platform-link-primary">Escolher formato para esta turma</a>
+            <a href="slides-builder.html" class="platform-link-button platform-link-secondary">Criar slides (10-15 min)</a>
+            <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">Criar quiz (5-8 min)</a>
+            <a href="criar-aula.html" class="platform-link-button platform-link-secondary">Montar aula completa (15-25 min)</a>
             <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Abrir biblioteca</a>
         `;
     }
+
+    renderRecentLesson();
 }
 
 function hydrateClassCards() {
@@ -1145,26 +1269,46 @@ function bindSaveLessonAction() {
             button.addEventListener("click", (event) => {
                 event.preventDefault();
                 const material = button.dataset.saveMaterial || "";
+                const previousLessonsCount = readLessonsLibrary().length;
                 if (material && typeof setCurrentMaterialType === "function") {
                     setCurrentMaterialType(material);
                 }
                 if (material === "lesson" && typeof saveLessonSequenceToClass === "function") {
                     const saveMode = button.dataset.saveScope || LESSON_SCOPE_CLASS;
                     saveLessonSequenceToClass(saveMode);
+                    if (typeof window.educariaEvaluateActivationMilestones === "function") {
+                        window.educariaEvaluateActivationMilestones("save_lesson_sequence", {
+                            markCompletion: true
+                        });
+                    }
                     window.location.href = button.dataset.saveTarget || "turma.html";
                     return;
                 }
                 const saveMode = button.dataset.saveScope || LESSON_SCOPE_CLASS;
-                if (saveMode === LESSON_SCOPE_LIBRARY) {
-                    saveCurrentLessonToLibrary(material);
-                } else {
-                    saveCurrentLessonToClass(material);
-                }
+                const savedRecord = saveMode === LESSON_SCOPE_LIBRARY
+                    ? saveCurrentLessonToLibrary(material)
+                    : saveCurrentLessonToClass(material);
                 if (typeof educariaTrack === "function") {
                     educariaTrack("lesson_saved", {
-                        materialType: material || "slides",
+                        materialType: savedRecord?.materialType || material || "slides",
                         scope: saveMode,
                         target: button.dataset.saveTarget || ""
+                    });
+                }
+
+                const lessonsCount = readLessonsLibrary().length;
+                const createdFirstActivity = lessonsCount > 0 && previousLessonsCount === 0;
+                if (createdFirstActivity && typeof window.educariaMarkMilestone === "function") {
+                    window.educariaMarkMilestone("activation_first_activity_saved", {
+                        source: "save_lesson_action",
+                        materialType: savedRecord?.materialType || material || "slides",
+                        scope: saveMode,
+                        lessonsCount
+                    });
+                }
+                if (typeof window.educariaEvaluateActivationMilestones === "function") {
+                    window.educariaEvaluateActivationMilestones("save_lesson_action", {
+                        markCompletion: true
                     });
                 }
                 window.location.href = button.dataset.saveTarget || "turma.html";
@@ -1192,7 +1336,9 @@ function hydrateClassPage() {
     const listRoot = document.querySelector("[data-saved-lessons]");
     const selectRoot = document.querySelector("[data-saved-lessons-select]");
     const actionsRoot = document.querySelector("[data-saved-lessons-actions]");
-    if (!listRoot && !selectRoot) return;
+    const filterRoot = document.querySelector("[data-class-material-filters]");
+    const filterSummaryRoot = document.querySelector("[data-class-material-filter-summary]");
+    if (!listRoot && !selectRoot && !filterRoot && !filterSummaryRoot) return;
 
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
     const turma = selectedClassFromAvailableClasses();
@@ -1204,8 +1350,51 @@ function hydrateClassPage() {
         node.textContent = turma || "Nenhuma turma selecionada";
     });
 
-    const lessons = classMaterials(turma);
-    hydrateClassFocusPanel(classes, turma, lessons);
+    const allLessons = classMaterials(turma);
+    hydrateClassFocusPanel(classes, turma, allLessons);
+
+    const filterExists = CLASS_MATERIAL_FILTERS.some((filter) => filter.id === activeClassMaterialFilter);
+    if (!filterExists) {
+        activeClassMaterialFilter = "all";
+    }
+
+    let filteredLessons = classMaterialFilterApply(allLessons, activeClassMaterialFilter);
+    if (allLessons.length && !filteredLessons.length && activeClassMaterialFilter !== "all") {
+        activeClassMaterialFilter = "all";
+        filteredLessons = [...allLessons];
+    }
+
+    if (filterRoot) {
+        if (!classes.length || !allLessons.length) {
+            filterRoot.innerHTML = "";
+        } else {
+            filterRoot.innerHTML = CLASS_MATERIAL_FILTERS.map((filter) => {
+                const count = classMaterialFilterCount(allLessons, filter.id);
+                const isActive = filter.id === activeClassMaterialFilter;
+                return `
+                    <button
+                        type="button"
+                        class="class-material-filter${isActive ? " is-active" : ""}"
+                        data-class-material-filter="${filter.id}"
+                        aria-pressed="${isActive ? "true" : "false"}"
+                        ${count === 0 && !isActive ? "disabled" : ""}
+                    >
+                        <span>${filter.label}</span>
+                        <small>${count}</small>
+                    </button>
+                `;
+            }).join("");
+        }
+    }
+    if (filterSummaryRoot) {
+        if (!classes.length || !allLessons.length) {
+            filterSummaryRoot.hidden = true;
+            filterSummaryRoot.textContent = "";
+        } else {
+            filterSummaryRoot.hidden = false;
+            filterSummaryRoot.textContent = classFilterSummaryLabel(activeClassMaterialFilter, filteredLessons.length, allLessons.length);
+        }
+    }
 
     if (!classes.length) {
         if (listRoot) {
@@ -1226,11 +1415,18 @@ function hydrateClassPage() {
         if (actionsRoot) {
             actionsRoot.innerHTML = "";
         }
+        if (filterRoot) {
+            filterRoot.innerHTML = "";
+        }
+        if (filterSummaryRoot) {
+            filterSummaryRoot.hidden = true;
+            filterSummaryRoot.textContent = "";
+        }
         markClassPageReady();
         return;
     }
 
-    if (!lessons.length) {
+    if (!allLessons.length) {
         if (listRoot) {
             listRoot.innerHTML = `
                 <article class="lesson-history-card">
@@ -1249,12 +1445,44 @@ function hydrateClassPage() {
         if (actionsRoot) {
             actionsRoot.innerHTML = "";
         }
+        if (filterRoot) {
+            filterRoot.innerHTML = "";
+        }
+        if (filterSummaryRoot) {
+            filterSummaryRoot.hidden = true;
+            filterSummaryRoot.textContent = "";
+        }
+        markClassPageReady();
+        return;
+    }
+
+    if (!filteredLessons.length) {
+        const filter = classMaterialFilterDefinition(activeClassMaterialFilter);
+        if (listRoot) {
+            listRoot.innerHTML = `
+                <article class="lesson-history-card">
+                    <span class="route-tag">Filtro: ${filter.label}</span>
+                    <h3>Nenhuma atividade neste filtro</h3>
+                    <p>Troque o filtro para ver outros formatos salvos nesta turma.</p>
+                </article>
+            `;
+        }
+
+        if (selectRoot) {
+            selectRoot.innerHTML = `<option>Nenhuma atividade em ${filter.label.toLowerCase()}</option>`;
+            selectRoot.disabled = true;
+        }
+
+        if (actionsRoot) {
+            actionsRoot.innerHTML = "";
+        }
+
         markClassPageReady();
         return;
     }
 
     if (listRoot) {
-        const groupedLessons = lessons.reduce((groups, lesson) => {
+        const groupedLessons = filteredLessons.reduce((groups, lesson) => {
             const key = lesson.materialType || "slides";
             if (!groups[key]) groups[key] = [];
             groups[key].push(lesson);
@@ -1262,7 +1490,8 @@ function hydrateClassPage() {
         }, {});
 
         const groupOrder = ["lesson", "quiz", "slides", "flashcards", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"];
-        listRoot.innerHTML = groupOrder
+        const visibleGroupOrder = groupOrder.filter((key) => (groupedLessons[key] || []).length > 0);
+        listRoot.innerHTML = visibleGroupOrder
             .map((key) => {
                 const groupItems = groupedLessons[key] || [];
                 const count = groupItems.length;
@@ -1284,6 +1513,7 @@ function hydrateClassPage() {
                                     <div class="lesson-history-meta">
                                         <span>Atualizado em ${formatLessonDate(lesson.updatedAt)}</span>
                                         <span>${lesson.type}</span>
+                                        <span class="lesson-status-chip lesson-status-chip--${lesson.status || LESSON_STATUS_DRAFT}">${lessonStatusLabel(lesson.status)}</span>
                                     </div>
                                     <div class="lesson-history-actions">
                                         <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-present-lesson="${lesson.id}">Apresentar</a>
@@ -1310,13 +1540,13 @@ function hydrateClassPage() {
 
     if (selectRoot) {
         selectRoot.disabled = false;
-        selectRoot.innerHTML = lessons.map((lesson, index) => `
+        selectRoot.innerHTML = filteredLessons.map((lesson, index) => `
             <option value="${escapeHtml(lesson.id)}" ${index === 0 ? "selected" : ""}>${escapeHtml(lesson.title)} - ${escapeHtml(lesson.type)} - ${escapeHtml(formatLessonDate(lesson.updatedAt))}</option>
         `).join("");
     }
 
     if (actionsRoot) {
-        const activeLesson = lessons[0];
+        const activeLesson = filteredLessons[0];
         actionsRoot.innerHTML = `
             <a href="${escapeHtml(presentationPathForLesson(activeLesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="present">Apresentar</a>
             <a href="${escapeHtml(editorPathForLesson(activeLesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="edit">Editar</a>
@@ -1331,6 +1561,38 @@ function hydrateClassPage() {
 
 function bindLessonActivationLinks() {
     document.addEventListener("click", (event) => {
+        const libraryFilterTrigger = event.target.closest("[data-library-material-filter]");
+        if (libraryFilterTrigger) {
+            event.preventDefault();
+            const nextFilter = libraryFilterTrigger.dataset.libraryMaterialFilter || "all";
+            if (nextFilter !== activeLibraryMaterialFilter) {
+                activeLibraryMaterialFilter = nextFilter;
+                if (typeof educariaTrack === "function") {
+                    educariaTrack("library_material_filter_changed", {
+                        filter: nextFilter
+                    });
+                }
+            }
+            hydrateLibraryPage();
+            return;
+        }
+
+        const classFilterTrigger = event.target.closest("[data-class-material-filter]");
+        if (classFilterTrigger) {
+            event.preventDefault();
+            const nextFilter = classFilterTrigger.dataset.classMaterialFilter || "all";
+            if (nextFilter !== activeClassMaterialFilter) {
+                activeClassMaterialFilter = nextFilter;
+                if (typeof educariaTrack === "function") {
+                    educariaTrack("class_material_filter_changed", {
+                        filter: nextFilter
+                    });
+                }
+            }
+            hydrateClassPage();
+            return;
+        }
+
         const classCardTrigger = event.target.closest("[data-class-card-link]");
         if (classCardTrigger) {
             event.preventDefault();
@@ -1459,11 +1721,56 @@ function bindClassPageRefresh() {
 function hydrateLibraryPage() {
     const root = document.querySelector("[data-library-materials]");
     const countNode = document.querySelector("[data-library-count]");
-    if (!root && !countNode) return;
+    const filterRoot = document.querySelector("[data-library-material-filters]");
+    const filterSummaryRoot = document.querySelector("[data-library-material-filter-summary]");
+    if (!root && !countNode && !filterRoot && !filterSummaryRoot) return;
 
     const lessons = libraryMaterials();
     if (countNode) {
         countNode.textContent = `${lessons.length} ${lessons.length === 1 ? "material salvo" : "materiais salvos"}`;
+    }
+
+    const filterExists = CLASS_MATERIAL_FILTERS.some((filter) => filter.id === activeLibraryMaterialFilter);
+    if (!filterExists) {
+        activeLibraryMaterialFilter = "all";
+    }
+
+    let filteredLessons = classMaterialFilterApply(lessons, activeLibraryMaterialFilter);
+    if (lessons.length && !filteredLessons.length && activeLibraryMaterialFilter !== "all") {
+        activeLibraryMaterialFilter = "all";
+        filteredLessons = [...lessons];
+    }
+
+    if (filterRoot) {
+        if (!lessons.length) {
+            filterRoot.innerHTML = "";
+        } else {
+            filterRoot.innerHTML = CLASS_MATERIAL_FILTERS.map((filter) => {
+                const count = classMaterialFilterCount(lessons, filter.id);
+                const isActive = filter.id === activeLibraryMaterialFilter;
+                return `
+                    <button
+                        type="button"
+                        class="class-material-filter${isActive ? " is-active" : ""}"
+                        data-library-material-filter="${filter.id}"
+                        aria-pressed="${isActive ? "true" : "false"}"
+                        ${count === 0 && !isActive ? "disabled" : ""}
+                    >
+                        <span>${filter.label}</span>
+                        <small>${count}</small>
+                    </button>
+                `;
+            }).join("");
+        }
+    }
+    if (filterSummaryRoot) {
+        if (!lessons.length) {
+            filterSummaryRoot.hidden = true;
+            filterSummaryRoot.textContent = "";
+        } else {
+            filterSummaryRoot.hidden = false;
+            filterSummaryRoot.textContent = libraryFilterSummaryLabel(activeLibraryMaterialFilter, filteredLessons.length, lessons.length);
+        }
     }
 
     if (!root) return;
@@ -1472,13 +1779,25 @@ function hydrateLibraryPage() {
             <article class="lesson-history-card">
                 <span class="route-tag">Biblioteca vazia</span>
                 <h3>Nenhum material salvo na biblioteca ainda</h3>
-                <p>Use “Salvar na biblioteca” em qualquer atividade para montar seu acervo reutilizável.</p>
+                <p>Use &quot;Salvar na biblioteca&quot; em qualquer atividade para montar seu acervo reutilizável.</p>
             </article>
         `;
         return;
     }
 
-    const groupedLessons = lessons.reduce((groups, lesson) => {
+    if (!filteredLessons.length) {
+        const filter = classMaterialFilterDefinition(activeLibraryMaterialFilter);
+        root.innerHTML = `
+            <article class="lesson-history-card">
+                <span class="route-tag">Filtro: ${filter.label}</span>
+                <h3>Nenhum material neste filtro</h3>
+                <p>Troque o filtro para visualizar outros formatos salvos na biblioteca.</p>
+            </article>
+        `;
+        return;
+    }
+
+    const groupedLessons = filteredLessons.reduce((groups, lesson) => {
         const key = lesson.materialType || "slides";
         if (!groups[key]) groups[key] = [];
         groups[key].push(lesson);
@@ -1486,7 +1805,8 @@ function hydrateLibraryPage() {
     }, {});
 
     const groupOrder = ["lesson", "quiz", "slides", "flashcards", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"];
-    root.innerHTML = groupOrder.map((key) => {
+    const visibleGroupOrder = groupOrder.filter((key) => (groupedLessons[key] || []).length > 0);
+    root.innerHTML = visibleGroupOrder.map((key) => {
         const groupItems = groupedLessons[key] || [];
         const count = groupItems.length;
 
@@ -1507,6 +1827,7 @@ function hydrateLibraryPage() {
                                 <div class="lesson-history-meta">
                                     <span>Atualizado em ${formatLessonDate(lesson.updatedAt)}</span>
                                     <span>${lesson.type}</span>
+                                    <span class="lesson-status-chip lesson-status-chip--${lesson.status || LESSON_STATUS_DRAFT}">${lessonStatusLabel(lesson.status)}</span>
                                 </div>
                                 <div class="lesson-history-actions">
                                     <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-edit-lesson="${lesson.id}">Editar</a>
@@ -1572,3 +1893,4 @@ window.addEventListener("pageshow", (event) => {
         syncLessonsWithFirebase();
     }
 });
+

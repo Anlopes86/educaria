@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -22,7 +22,8 @@
     <script src="../assets/js/ai-material-generator.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="debate" data-requires-auth="true">
-    <main class="platform-shell platform-flow-shell activity-editor-shell">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <main id="main-content" class="platform-shell platform-flow-shell activity-editor-shell" tabindex="-1">
         <header class="platform-topbar">
             <a href="index.html" class="platform-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
@@ -39,7 +40,7 @@
         </header>
         <div class="builder-floating-actions">
             <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="debate" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="debate" data-save-target="turma.html">Salvar na turma</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="debate" data-save-target="turma.html" aria-label="Salvar na turma (acao principal)">Salvar na turma</button>
             <a href="debate-guiado-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
         </div>
 
@@ -98,7 +99,7 @@
 
                 <details class="editor-disclosure">
                     <summary>
-                        <span>Configuração manual</span>
+                        <span>Mais opcoes da atividade</span>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
@@ -139,15 +140,16 @@
                     </div>
                 </details>
 
-                <details class="editor-disclosure">
+                <details class="editor-disclosure" data-disclosure-default>
                     <summary>
-                        <span>Editar manualmente</span>
+                        <span>Editar manualmente (essencial)</span>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-clear-draft>Limpar conteúdo</button>
                         </div>
+                        <p class="activity-manual-guide">Defina titulo, pergunta e etapas. Use Mais opcoes da atividade para formato e lados.</p>
 
                 <div class="platform-question-stack activity-card-stack" data-debate-steps>
                     <section class="platform-question-card activity-content-card debate-step-card" data-debate-step>
@@ -281,4 +283,3 @@
     </main>
 </body>
 </html>
-

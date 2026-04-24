@@ -239,6 +239,18 @@ function createClassFromForm() {
     ensureClassOption(picker, turma);
     saveSelectedClass(turma);
 
+    if (!alreadyExists && classes.length === 0 && typeof window.educariaMarkMilestone === "function") {
+        window.educariaMarkMilestone("activation_first_class_created", {
+            source: "turma_context_form",
+            className: turma
+        });
+    }
+    if (typeof window.educariaEvaluateActivationMilestones === "function") {
+        window.educariaEvaluateActivationMilestones("turma_context_create", {
+            markCompletion: true
+        });
+    }
+
     if (feedback) {
         feedback.hidden = false;
         feedback.textContent = alreadyExists

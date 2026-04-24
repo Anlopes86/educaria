@@ -16,6 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
             requestAnimationFrame(() => {
                 target.scrollIntoView({ behavior: "smooth", block: "start" });
             });
+        } else {
+            const defaultDisclosure = pane.querySelector('.editor-disclosure[data-disclosure-default]');
+            if (defaultDisclosure instanceof HTMLDetailsElement) {
+                defaultDisclosure.open = true;
+            }
         }
 
         pane.addEventListener(

@@ -12,7 +12,8 @@
     <script src="assets/js/auth-flow.js" defer></script>
 </head>
 <body class="product-body theme-auth" data-auth-page="true" data-auth-screen="register">
-    <main class="auth-shell">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <main id="main-content" class="auth-shell" tabindex="-1">
         <section class="auth-panel auth-panel--brand">
             <a href="index.html" class="auth-brand auth-brand--hero">
                 <img src="assets/images/educar-logo.png" alt="EducarIA" class="auth-brand-logo-large">
@@ -38,23 +39,23 @@
             <form class="auth-form" data-register-form>
                 <div class="platform-field">
                     <label for="register-name">Nome</label>
-                    <input id="register-name" name="name" type="text" placeholder="Seu nome completo">
+                    <input id="register-name" name="name" type="text" autocomplete="name" required placeholder="Seu nome completo">
                 </div>
                 <div class="platform-field">
                     <label for="register-email">Email</label>
-                    <input id="register-email" name="email" type="email" placeholder="professor@escola.com.br">
+                    <input id="register-email" name="email" type="email" autocomplete="email" required placeholder="professor@escola.com.br">
                 </div>
                 <div class="platform-field">
                     <label for="register-institution">Instituição de ensino</label>
-                    <input id="register-institution" name="institution" type="text" placeholder="Nome da escola ou rede de ensino">
+                    <input id="register-institution" name="institution" type="text" autocomplete="organization" placeholder="Nome da escola ou rede de ensino">
                 </div>
                 <div class="platform-field">
                     <label for="register-password">Senha</label>
-                    <input id="register-password" name="password" type="password" placeholder="Crie uma senha com pelo menos 6 caracteres">
+                    <input id="register-password" name="password" type="password" autocomplete="new-password" required placeholder="Crie uma senha com pelo menos 6 caracteres">
                 </div>
                 <div class="platform-field">
                     <label for="register-password-confirm">Confirmar senha</label>
-                    <input id="register-password-confirm" name="password_confirm" type="password" placeholder="Repita a senha">
+                    <input id="register-password-confirm" name="password_confirm" type="password" autocomplete="new-password" required placeholder="Repita a senha">
                 </div>
 
                 <button type="submit" class="platform-link-button platform-link-primary auth-submit">Criar conta</button>

@@ -3,7 +3,9 @@ const SETTINGS_SESSION_KEY = "educaria:auth:session";
 
 function settingsFirebaseReady() {
     const config = window.EDUCARIA_FIREBASE_CONFIG || {};
-    return Object.values(config).every((value) => {
+    const requiredKeys = ["apiKey", "authDomain", "projectId", "storageBucket", "messagingSenderId", "appId"];
+    return requiredKeys.every((key) => {
+        const value = config[key];
         return typeof value === "string" && value.trim() && !value.startsWith("COLE_AQUI");
     });
 }
@@ -143,7 +145,7 @@ async function handleSettingsProfileSubmit(event) {
     const services = settingsServices();
     const feedback = document.querySelector("[data-settings-profile-feedback]");
     if (!services) {
-        updateSettingsFeedback(feedback, "Configure o Firebase antes de editar o perfil.", "error");
+        updateSettingsFeedback(feedback, "Servico de autenticacao indisponivel no momento. Tente novamente em instantes.", "error");
         return;
     }
 
@@ -223,7 +225,7 @@ async function handleSettingsPasswordSubmit(event) {
     const services = settingsServices();
     const feedback = document.querySelector("[data-settings-password-feedback]");
     if (!services) {
-        updateSettingsFeedback(feedback, "Configure o Firebase antes de editar a senha.", "error");
+        updateSettingsFeedback(feedback, "Servico de autenticacao indisponivel no momento. Tente novamente em instantes.", "error");
         return;
     }
 
@@ -290,7 +292,7 @@ async function handleSettingsUpgradeSubmit(event) {
     const services = settingsServices();
     const feedback = document.querySelector("[data-settings-upgrade-feedback]");
     if (!services) {
-        updateSettingsFeedback(feedback, "Configure o Firebase antes de registrar interesse no upgrade.", "error");
+        updateSettingsFeedback(feedback, "Servico de autenticacao indisponivel no momento. Tente novamente em instantes.", "error");
         return;
     }
 

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -24,7 +24,8 @@
     <script src="../assets/js/ai-material-generator.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="quiz" data-requires-auth="true">
-    <main class="platform-shell platform-flow-shell activity-editor-shell">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <main id="main-content" class="platform-shell platform-flow-shell activity-editor-shell" tabindex="-1">
         <header class="platform-topbar">
             <a href="index.html" class="platform-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
@@ -41,7 +42,7 @@
         </header>
         <div class="builder-floating-actions">
             <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="quiz" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="quiz" data-save-target="turma.html">Salvar na turma</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="quiz" data-save-target="turma.html" aria-label="Salvar na turma (acao principal)">Salvar na turma</button>
             <a href="quiz-aplicacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
         </div>
 
@@ -49,7 +50,7 @@
             <div>
                 <span class="focus-eyebrow">Editor de quiz</span>
                 <h1>Monte as perguntas e valide no preview.</h1>
-                <p>Primeiro a pergunta. Depois a resposta.</p>
+                <p>Comece pelo essencial. Abra Mais opcoes so se precisar.</p>
             </div>
         </section>
 
@@ -122,12 +123,13 @@
                     </div>
                 </details>
 
-                <details class="editor-disclosure">
+                <details class="editor-disclosure" data-disclosure-default>
                     <summary>
-                        <span>Editar manualmente</span>
+                        <span>Editar manualmente (essencial)</span>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
+                        <p class="activity-manual-guide">Preencha enunciado e tipo. Use Mais opcoes para ajustes finos.</p>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-clear-draft>Limpar conteúdo</button>
                         </div>
@@ -166,6 +168,8 @@
                                         </select>
                                     </div>
                                 </div>
+                                <details class="activity-optional-disclosure">
+                                    <summary>Mais opcoes: alternativas e apoio</summary>
                                 <div class="activity-optional-block">
                                     <span class="route-tag">Alternativas e apoio</span>
                                     <div class="platform-question-stack">
@@ -191,6 +195,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                </details>
                             </section>
 
                             <section class="platform-question-card quiz-editor-card activity-content-card" data-quiz-question>
@@ -217,19 +222,27 @@
                                             <option>Verdadeiro ou falso</option>
                                         </select>
                                     </div>
-                                    <div class="platform-field">
-                                        <label>Critério</label>
-                                        <input data-field="criteria" type="text" value="">
-                                    </div>
-                                    <div class="platform-field platform-field-wide">
-                                        <label>Resposta modelo</label>
-                                        <textarea data-field="model" rows="3"></textarea>
-                                    </div>
-                                    <div class="platform-field platform-field-wide">
-                                        <label>Explicação</label>
-                                        <textarea data-field="explanation" rows="3"></textarea>
+                                </div>
+                                <details class="activity-optional-disclosure">
+                                    <summary>Mais opcoes: criterio e explicacao</summary>
+                                <div class="activity-optional-block">
+                                    <span class="route-tag">Apoio para pergunta aberta</span>
+                                    <div class="platform-form-grid">
+                                        <div class="platform-field">
+                                            <label>Critério</label>
+                                            <input data-field="criteria" type="text" value="">
+                                        </div>
+                                        <div class="platform-field platform-field-wide">
+                                            <label>Resposta modelo</label>
+                                            <textarea data-field="model" rows="3"></textarea>
+                                        </div>
+                                        <div class="platform-field platform-field-wide">
+                                            <label>Explicação</label>
+                                            <textarea data-field="explanation" rows="3"></textarea>
+                                        </div>
                                     </div>
                                 </div>
+                                </details>
                             </section>
                         </div>
 
@@ -250,4 +263,3 @@
     </main>
 </body>
 </html>
-

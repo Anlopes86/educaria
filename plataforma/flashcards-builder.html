@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -25,7 +25,8 @@
     <script src="../assets/js/flashcards-theme-controls.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="flashcards" data-requires-auth="true">
-    <main class="platform-shell platform-flow-shell activity-editor-shell">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <main id="main-content" class="platform-shell platform-flow-shell activity-editor-shell" tabindex="-1">
         <header class="platform-topbar">
             <a href="index.html" class="platform-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
@@ -42,7 +43,7 @@
         </header>
         <div class="builder-floating-actions">
             <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="flashcards" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="flashcards" data-save-target="turma.html">Salvar na turma</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="flashcards" data-save-target="turma.html" aria-label="Salvar na turma (acao principal)">Salvar na turma</button>
             <a href="flashcards-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
         </div>
 
@@ -50,7 +51,7 @@
             <div>
                 <span class="focus-eyebrow">Editor de flashcards</span>
                 <h1>Edite frente e verso com o preview ao lado.</h1>
-                <p>Clareza no conteúdo. Aparência como ajuste.</p>
+                <p>Comece por frente e verso. Abra Mais opcoes para ajustes visuais.</p>
             </div>
         </section>
 
@@ -130,12 +131,13 @@
                     </div>
                 </details>
 
-                <details class="editor-disclosure">
+                <details class="editor-disclosure" data-disclosure-default>
                     <summary>
-                        <span>Editar manualmente</span>
+                        <span>Editar manualmente (essencial)</span>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
+                        <p class="activity-manual-guide">Preencha frente e verso primeiro. Use Mais opcoes para anotacoes e aparencia.</p>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-clear-draft>Limpar conteúdo</button>
                         </div>
@@ -167,6 +169,8 @@
                                     </div>
                                 </div>
 
+                                <details class="activity-optional-disclosure">
+                                    <summary>Mais opcoes: aparencia</summary>
                                 <div class="activity-optional-block">
                                     <span class="route-tag">Aparência opcional</span>
                                     <div class="platform-form-grid activity-style-grid">
@@ -184,6 +188,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                </details>
                             </section>
 
                             <section class="platform-question-card flashcards-editor-card activity-content-card" data-flashcard>
@@ -213,6 +218,8 @@
                                     </div>
                                 </div>
 
+                                <details class="activity-optional-disclosure">
+                                    <summary>Mais opcoes: aparencia</summary>
                                 <div class="activity-optional-block">
                                     <span class="route-tag">Aparência opcional</span>
                                     <div class="platform-form-grid activity-style-grid">
@@ -230,6 +237,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                </details>
                             </section>
                         </div>
 
@@ -250,4 +258,3 @@
     </main>
 </body>
 </html>
-

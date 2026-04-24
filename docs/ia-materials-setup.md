@@ -48,6 +48,9 @@ FIREBASE_PROJECT_ID=educaria-f46b2
 AI_RATE_LIMIT_WINDOW_MS=60000
 AI_RATE_LIMIT_MAX=8
 AI_DAILY_CREDIT_LIMIT=5
+AI_DAILY_CREDIT_LIMIT_FREE=5
+AI_DAILY_CREDIT_LIMIT_PRO=20
+AI_PRO_UIDS=uid1,uid2
 AI_MAX_UPLOAD_MB=5
 AI_JSON_LIMIT=2mb
 AI_IMAGE_GENERATION_ENABLED=false
@@ -58,7 +61,16 @@ ALLOWED_ORIGIN=http://127.0.0.1:5500
 
 Com `AI_AUTH_REQUIRED=true`, o backend aceita chamadas de IA somente com um Firebase ID token valido no header `Authorization: Bearer ...`. O frontend dos builders ja envia esse token a partir do usuario logado.
 
-`AI_DAILY_CREDIT_LIMIT` define quantas geracoes de conteudo cada usuario pode fazer por dia. Cada chamada bem-sucedida para `POST /api/ai/generate` desconta 1 credito.
+`AI_DAILY_CREDIT_LIMIT` funciona como fallback.
+
+`AI_DAILY_CREDIT_LIMIT_FREE` e `AI_DAILY_CREDIT_LIMIT_PRO` definem limites diarios por plano.
+
+O plano pode ser resolvido por:
+
+- claim `plan=pro` no Firebase ID token
+- UID listado em `AI_PRO_UIDS` (fase inicial)
+
+Cada chamada bem-sucedida para `POST /api/ai/generate` desconta 1 credito.
 
 O contador atual roda no processo do `ai-service` e reinicia se o servico reiniciar. Para varias instancias ou controle financeiro mais rigido, mova esse contador para Redis, Firestore via Admin SDK ou outro banco de servidor.
 

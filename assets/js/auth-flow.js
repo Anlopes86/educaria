@@ -1,6 +1,7 @@
 const EDUCARIA_SESSION_KEY = "educaria:auth:session";
 const EDUCARIA_TEACHER_CACHE_KEY = "educaria:auth:teacher-cache";
 const EDUCARIA_ANALYTICS_EVENTS_KEY = "educaria:analytics:events";
+const EDUCARIA_MILESTONE_KEY_PREFIX = "educaria:milestone:";
 const EDUCARIA_ANALYTICS_LIMIT = 400;
 
 let educariaAnalyticsFlushTimer = 0;
@@ -44,7 +45,9 @@ function firebaseConfig() {
 }
 
 function firebaseConfigReady() {
-    return Object.values(firebaseConfig()).every((value) => {
+    const requiredKeys = ["apiKey", "authDomain", "projectId", "storageBucket", "messagingSenderId", "appId"];
+    return requiredKeys.every((key) => {
+        const value = firebaseConfig()[key];
         return typeof value === "string" && value.trim() && !value.startsWith("COLE_AQUI");
     });
 }
@@ -295,6 +298,108 @@ function educariaTrack(name, metadata = {}) {
 
 window.educariaTrack = educariaTrack;
 
+function milestoneActorId() {
+    const teacher = readCurrentTeacher();
+    const uid = String(teacher?.uid || "").trim();
+    if (uid) return uid.toLowerCase();
+
+    const email = normalizeEmail(teacher?.email || "");
+    if (email) return email;
+
+    try {
+        const sessionEmail = normalizeEmail(localStorage.getItem(EDUCARIA_SESSION_KEY) || "");
+        if (sessionEmail) return sessionEmail;
+    } catch (error) {
+        console.warn("EducarIA milestone unavailable:", error);
+    }
+
+    return "anonimo";
+}
+
+function milestoneStorageKey(name) {
+    const normalized = String(name || "").trim().toLowerCase();
+    return `${EDUCARIA_MILESTONE_KEY_PREFIX}${milestoneActorId()}:${normalized}`;
+}
+
+function hasMilestone(name) {
+    if (!name) return false;
+    try {
+        return localStorage.getItem(milestoneStorageKey(name)) === "done";
+    } catch (error) {
+        console.warn("EducarIA milestone unavailable:", error);
+        return false;
+    }
+}
+
+function markMilestone(name, metadata = {}) {
+    if (!name || hasMilestone(name)) return false;
+
+    try {
+        localStorage.setItem(milestoneStorageKey(name), "done");
+    } catch (error) {
+        console.warn("EducarIA milestone unavailable:", error);
+    }
+
+    const event = educariaTrack(name, {
+        milestone: true,
+        ...metadata
+    });
+
+    document.dispatchEvent(new CustomEvent("educaria-milestone", {
+        detail: {
+            name,
+            event
+        }
+    }));
+
+    return true;
+}
+
+function readActivationSnapshot() {
+    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
+    const lessons = typeof readLessonsLibrary === "function" ? readLessonsLibrary() : [];
+
+    return {
+        classesCount: classes.length,
+        lessonsCount: lessons.length
+    };
+}
+
+function evaluateActivationMilestones(source = "unknown", options = {}) {
+    const markSteps = Boolean(options.markSteps);
+    const markCompletion = options.markCompletion !== false;
+    const snapshot = readActivationSnapshot();
+    const { classesCount, lessonsCount } = snapshot;
+
+    if (markSteps && classesCount > 0) {
+        markMilestone("activation_first_class_created", {
+            source,
+            classesCount
+        });
+    }
+
+    if (markSteps && lessonsCount > 0) {
+        markMilestone("activation_first_activity_saved", {
+            source,
+            lessonsCount
+        });
+    }
+
+    if (markCompletion && classesCount > 0 && lessonsCount > 0) {
+        markMilestone("activation_completed", {
+            source,
+            classesCount,
+            lessonsCount
+        });
+    }
+
+    return snapshot;
+}
+
+window.educariaHasMilestone = hasMilestone;
+window.educariaMarkMilestone = markMilestone;
+window.educariaEvaluateActivationMilestones = evaluateActivationMilestones;
+
 function authNextPath() {
     const params = new URLSearchParams(window.location.search);
     const next = params.get("next") || "";
@@ -326,6 +431,32 @@ function clearAuthFeedback() {
     feedback.dataset.state = "";
 }
 
+function hydrateFeedbackLiveRegions() {
+    const selectors = [
+        "[data-auth-feedback]",
+        "[data-sidebar-class-feedback]",
+        "[data-create-class-feedback]",
+        "[data-settings-profile-feedback]",
+        "[data-settings-password-feedback]",
+        "[data-settings-upgrade-feedback]",
+        "[data-settings-pilot-feedback]"
+    ];
+
+    selectors.forEach((selector) => {
+        document.querySelectorAll(selector).forEach((element) => {
+            if (!element.getAttribute("role")) {
+                element.setAttribute("role", "status");
+            }
+            if (!element.getAttribute("aria-live")) {
+                element.setAttribute("aria-live", "polite");
+            }
+            if (!element.getAttribute("aria-atomic")) {
+                element.setAttribute("aria-atomic", "true");
+            }
+        });
+    });
+}
+
 function notifyAuthChanged() {
     document.dispatchEvent(new CustomEvent("educaria-auth-changed", {
         detail: { teacher: readCurrentTeacher() }
@@ -336,7 +467,7 @@ function showFirebaseConfigMessageIfNeeded() {
     if (firebaseConfigReady()) return false;
 
     if (document.body?.dataset.authPage === "true") {
-        updateAuthFeedback("Configure o Firebase em assets/js/firebase-config.js para ativar login e cadastro reais.", "error");
+        updateAuthFeedback("A autenticacao esta temporariamente indisponivel. Tente novamente em instantes.", "error");
     }
     return true;
 }
@@ -403,7 +534,7 @@ function bindLoginForm() {
         const password = String(form.querySelector('input[name="password"]')?.value || "").trim();
 
         if (!services) {
-            updateAuthFeedback("Configure o Firebase antes de usar o login.", "error");
+            updateAuthFeedback("Nao foi possivel conectar ao servico de autenticacao. Tente novamente em instantes.", "error");
             return;
         }
 
@@ -448,7 +579,7 @@ function bindRegisterForm() {
         const passwordConfirm = String(form.querySelector('input[name="password_confirm"]')?.value || "").trim();
 
         if (!services) {
-            updateAuthFeedback("Configure o Firebase antes de usar o cadastro.", "error");
+            updateAuthFeedback("Nao foi possivel conectar ao servico de autenticacao. Tente novamente em instantes.", "error");
             return;
         }
 
@@ -543,6 +674,7 @@ function syncAuthStateWithFirebase() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    hydrateFeedbackLiveRegions();
     educariaTrack("page_view", { screen: analyticsPageName() });
     showFirebaseConfigMessageIfNeeded();
     redirectAuthenticatedFromAuthPages();

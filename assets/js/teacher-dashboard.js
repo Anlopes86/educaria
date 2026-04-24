@@ -1,13 +1,13 @@
-function escapeHtml(value) {
+﻿function escapeHtml(value) {
     return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
 const DASHBOARD_TOUR_STORAGE_PREFIX = "educaria:dashboard-tour:";
 const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
 const DASHBOARD_CORE_FORMATS = [
-    { href: "slides-builder.html", label: "Slides" },
-    { href: "quiz-builder.html", label: "Quiz" },
-    { href: "criar-aula.html", label: "Aula completa" }
+    { href: "slides-builder.html", label: "Slides (10-15 min)" },
+    { href: "quiz-builder.html", label: "Quiz (5-8 min)" },
+    { href: "criar-aula.html", label: "Aula completa (15-25 min)" }
 ];
 const DASHBOARD_EXTRA_FORMATS = [
     { href: "flashcards-builder.html", label: "Flashcards" },
@@ -22,6 +22,7 @@ const DASHBOARD_EXTRA_FORMATS = [
 ];
 const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_EXTRA_FORMATS];
 const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
+const DASHBOARD_TOUR_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 let dashboardTourState = null;
 
@@ -92,7 +93,7 @@ function quickCreateActionLabel(target) {
 function syncDashboardFormatHierarchy() {
     const quickCopy = document.querySelector(".dashboard-quick-create p");
     if (quickCopy) {
-        quickCopy.textContent = "Escolha a turma, selecione um formato principal e entre direto no editor para começar a criar.";
+        quickCopy.textContent = "Escolha a turma, use um formato principal e entre direto no editor. Sugestao rapida: Slides (10-15 min), Quiz (5-8 min), Aula completa (15-25 min).";
     }
 
     const toolkitSection = document.getElementById("activity-toolkit");
@@ -121,13 +122,13 @@ function syncDashboardFormatHierarchy() {
     const slidesCard = grid.querySelector('.dashboard-tool-card--slides .dashboard-tool-content p');
     const lessonCard = grid.querySelector('.dashboard-tool-card--lesson .dashboard-tool-content p');
     if (slidesCard) {
-        slidesCard.textContent = "Estruture a aula projetada e conduza a explicação com mais clareza.";
+        slidesCard.textContent = "Quando usar: conduzir explicacao e organizar a sequencia da aula. Tempo estimado: 10 a 15 min.";
     }
     if (quizCard) {
-        quizCard.textContent = "Feche a aula com revisão rápida, participação e feedback imediato.";
+        quizCard.textContent = "Quando usar: revisar conteudo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.";
     }
     if (lessonCard) {
-        lessonCard.textContent = "Monte uma sequência completa para conduzir a aula do início ao fim.";
+        lessonCard.textContent = "Quando usar: planejar bloco completo com inicio, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.";
     }
 
     let secondary = toolkitSection.querySelector(".dashboard-toolkit-secondary");
@@ -141,7 +142,7 @@ function syncDashboardFormatHierarchy() {
     secondary.innerHTML = `
         <div>
             <strong>Mais formatos</strong>
-            <p>Explore outros formatos disponíveis para variar a dinâmica da aula e enriquecer o repertório com a turma.</p>
+            <p>Use formatos extras para momentos especificos da aula: retomada curta, dinamica rapida ou fechamento leve.</p>
         </div>
         <div class="dashboard-toolkit-links">
             ${DASHBOARD_EXTRA_FORMATS.map((format) => `
@@ -231,6 +232,13 @@ function bindQuickCreateForm() {
                 label: quickCreateActionLabel(target)
             });
         }
+        if (typeof window.educariaMarkMilestone === "function") {
+            window.educariaMarkMilestone("activation_builder_opened", {
+                source: "dashboard_quick_create",
+                className,
+                target
+            });
+        }
 
         window.location.href = target;
     });
@@ -263,6 +271,11 @@ function refreshTeacherDashboard() {
     hydrateTeacherDashboard();
     hydrateDashboardGreeting();
     hydrateQuickCreateForm();
+    if (typeof window.educariaEvaluateActivationMilestones === "function") {
+        window.educariaEvaluateActivationMilestones("dashboard_refresh", {
+            markCompletion: false
+        });
+    }
     setDashboardReadyState(true);
 }
 
@@ -358,7 +371,7 @@ function dashboardTourSteps() {
         {
             selector: '[data-dashboard-tour-anchor="toolkit"]',
             title: "Comece pelos principais",
-            description: "Aqui ficam os quatro formatos principais da plataforma. Os extras continuam disponíveis logo abaixo quando você precisar variar a dinâmica."
+            description: "Aqui ficam os tres formatos principais da plataforma. Os extras continuam disponiveis logo abaixo quando voce precisar variar a dinamica."
         },
         {
             selector: '[data-dashboard-tour-anchor="library"]',
@@ -366,6 +379,26 @@ function dashboardTourSteps() {
             description: "A biblioteca concentra os materiais que você salvou nos builders, para revisar, editar e reutilizar depois."
         }
     ];
+}
+
+function dashboardProgressSnapshot() {
+    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
+    const lessons = typeof readLessonsLibrary === "function" ? readLessonsLibrary() : [];
+    return {
+        classesCount: classes.length,
+        lessonsCount: lessons.length
+    };
+}
+
+function shouldAutoStartDashboardTour() {
+    if (hasSeenDashboardTour()) return false;
+    const snapshot = dashboardProgressSnapshot();
+    return snapshot.classesCount === 0 || snapshot.lessonsCount === 0;
+}
+
+function trackDashboardTourEvent(name, metadata = {}) {
+    if (typeof educariaTrack !== "function") return;
+    educariaTrack(name, metadata);
 }
 
 function buildDashboardTour() {
@@ -408,13 +441,16 @@ function buildDashboardTour() {
         steps: dashboardTourSteps(),
         index: 0,
         previousPanel: "",
+        entrypoint: "manual",
+        startedAt: 0,
+        lastFocusedElement: null,
         rafId: 0,
         repositionHandler: null,
         keyHandler: null
     };
 
     dashboardTourState.closeButtons.forEach((button) => {
-        button.addEventListener("click", () => closeDashboardTour(true));
+        button.addEventListener("click", () => closeDashboardTour(true, "skipped"));
     });
 
     dashboardTourState.previous.addEventListener("click", () => {
@@ -427,7 +463,7 @@ function buildDashboardTour() {
         if (!dashboardTourState) return;
         const isLastStep = dashboardTourState.index >= dashboardTourState.steps.length - 1;
         if (isLastStep) {
-            closeDashboardTour(true);
+            closeDashboardTour(true, "completed");
             return;
         }
 
@@ -492,7 +528,7 @@ function updateDashboardTourGeometry() {
 
     const target = document.querySelector(step.selector);
     if (!target) {
-        closeDashboardTour(true);
+        closeDashboardTour(true, "target_missing");
         return;
     }
 
@@ -534,7 +570,7 @@ function renderDashboardTourStep(shouldScroll) {
 
     const target = document.querySelector(step.selector);
     if (!target) {
-        closeDashboardTour(true);
+        closeDashboardTour(true, "target_missing");
         return;
     }
 
@@ -578,14 +614,29 @@ function attachDashboardTourListeners() {
         if (!dashboardTourState || dashboardTourState.root.hidden) return;
 
         if (event.key === "Escape") {
-            closeDashboardTour(true);
+            closeDashboardTour(true, "dismissed");
+        } else if (event.key === "Tab") {
+            const focusable = [...dashboardTourState.card.querySelectorAll(DASHBOARD_TOUR_FOCUSABLE_SELECTOR)]
+                .filter((element) => !element.disabled && element.getAttribute("aria-hidden") !== "true");
+            if (!focusable.length) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            if (event.shiftKey && active === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && active === last) {
+                event.preventDefault();
+                first.focus();
+            }
         } else if (event.key === "ArrowLeft" && dashboardTourState.index > 0) {
             dashboardTourState.index -= 1;
             renderDashboardTourStep(false);
         } else if (event.key === "ArrowRight") {
             const isLastStep = dashboardTourState.index >= dashboardTourState.steps.length - 1;
             if (isLastStep) {
-                closeDashboardTour(true);
+                closeDashboardTour(true, "completed");
                 return;
             }
 
@@ -599,12 +650,30 @@ function attachDashboardTourListeners() {
     document.addEventListener("keydown", dashboardTourState.keyHandler);
 }
 
-function closeDashboardTour(markSeen) {
+function closeDashboardTour(markSeen, reason = "dismissed") {
     if (!dashboardTourState) return;
+
+    const completed = reason === "completed";
+    const stepsSeen = Math.max(1, dashboardTourState.index + 1);
+    const durationMs = dashboardTourState.startedAt ? Math.max(0, Date.now() - dashboardTourState.startedAt) : 0;
 
     if (markSeen) {
         markDashboardTourSeen();
     }
+    if (completed && typeof window.educariaMarkMilestone === "function") {
+        window.educariaMarkMilestone("onboarding_tour_completed", {
+            entrypoint: dashboardTourState.entrypoint || "unknown",
+            stepsSeen,
+            durationMs
+        });
+    }
+    trackDashboardTourEvent("dashboard_tour_closed", {
+        reason,
+        completed,
+        entrypoint: dashboardTourState.entrypoint || "unknown",
+        stepsSeen,
+        durationMs
+    });
 
     dashboardTourState.root.hidden = true;
     dashboardTourState.highlight.removeAttribute("style");
@@ -612,20 +681,41 @@ function closeDashboardTour(markSeen) {
     dashboardTourState.card.style.removeProperty("top");
     setDashboardTourSidebarPanel(dashboardTourState.previousPanel || "");
     detachDashboardTourListeners();
+    dashboardTourState.lastFocusedElement?.focus?.();
 }
 
-function startDashboardTour(force) {
+function startDashboardTour(force, entrypoint = "manual") {
     if (!force && hasSeenDashboardTour()) return;
 
+    const snapshot = dashboardProgressSnapshot();
     const state = buildDashboardTour();
     state.index = 0;
     state.previousPanel = currentDashboardSidebarPanel();
+    state.entrypoint = entrypoint;
+    state.startedAt = Date.now();
+    state.lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     state.root.hidden = false;
     if (!force) {
         markDashboardTourSeen();
     }
+    if (typeof window.educariaMarkMilestone === "function") {
+        window.educariaMarkMilestone("onboarding_tour_started", {
+            entrypoint,
+            classesCount: snapshot.classesCount,
+            lessonsCount: snapshot.lessonsCount
+        });
+    }
+    trackDashboardTourEvent("dashboard_tour_started", {
+        entrypoint,
+        force,
+        classesCount: snapshot.classesCount,
+        lessonsCount: snapshot.lessonsCount
+    });
     attachDashboardTourListeners();
     renderDashboardTourStep(true);
+    window.setTimeout(() => {
+        state.next?.focus?.();
+    }, 40);
 }
 
 function bindDashboardTourTrigger() {
@@ -634,7 +724,7 @@ function bindDashboardTourTrigger() {
         if (!trigger) return;
 
         event.preventDefault();
-        startDashboardTour(true);
+        startDashboardTour(true, "manual");
     });
 }
 
@@ -647,7 +737,8 @@ document.addEventListener("DOMContentLoaded", () => {
     syncAndRefreshTeacherDashboard();
 
     window.setTimeout(() => {
-        startDashboardTour(false);
+        if (!shouldAutoStartDashboardTour()) return;
+        startDashboardTour(false, "auto");
     }, 480);
 });
 
@@ -662,3 +753,4 @@ document.addEventListener("educaria-classes-updated", () => {
 window.addEventListener("pageshow", () => {
     syncAndRefreshTeacherDashboard();
 });
+

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -22,6 +22,7 @@
     <script src="../assets/js/teacher-dashboard.js" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
+    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="../index.html" class="platform-brand app-sidebar-brand">
@@ -40,7 +41,7 @@
                 </div>
             </div>
 
-            <nav class="app-sidebar-nav dashboard-sidebar-nav">
+            <nav class="app-sidebar-nav dashboard-sidebar-nav" aria-label="Navegacao principal">
                 <a href="index.html" class="sidebar-nav-link is-active">Painel</a>
 
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false">Criar turma</button>
@@ -101,7 +102,7 @@
             </div>
         </aside>
 
-        <main class="app-content dashboard-overview-content">
+        <main id="main-content" class="app-content dashboard-overview-content" tabindex="-1">
             <section class="dashboard-hero-panel">
                 <div class="dashboard-hero-copy">
                     <span class="dashboard-eyebrow">Painel do professor</span>
@@ -119,7 +120,7 @@
                 <aside class="dashboard-quick-create" data-dashboard-tour-anchor="quick-create">
                     <span class="dashboard-next-class-tag">Criação rápida</span>
                     <strong>Crie uma atividade em poucos cliques</strong>
-                    <p>Escolha a turma, selecione o formato e entre direto no editor para começar a criar.</p>
+                    <p>Escolha a turma, use um formato principal e entre direto no editor. Sugestao rapida: Slides (10-15 min), Quiz (5-8 min), Aula completa (15-25 min).</p>
 
                     <div class="dashboard-quick-create-form">
                         <label class="dashboard-quick-field">
@@ -132,9 +133,9 @@
                         <label class="dashboard-quick-field">
                             <span>Atividade</span>
                             <select data-dashboard-quick-format>
-                                <option value="slides-builder.html">Slides</option>
-                                <option value="quiz-builder.html">Quiz</option>
-                                <option value="criar-aula.html">Aula completa</option>
+                                <option value="slides-builder.html">Slides (10-15 min)</option>
+                                <option value="quiz-builder.html">Quiz (5-8 min)</option>
+                                <option value="criar-aula.html">Aula completa (15-25 min)</option>
                                 <option value="flashcards-builder.html">Flashcards</option>
                                 <option value="jogo-memoria-builder.html">Jogo da memória</option>
                                 <option value="roleta-builder.html">Roleta</option>
@@ -172,7 +173,7 @@
                         </div>
                         <div class="dashboard-tool-content">
                             <h3>Slides</h3>
-                            <p>Estruture a aula projetada e conduza a explicação com mais clareza.</p>
+                            <p>Quando usar: conduzir explicacao e organizar a sequencia da aula. Tempo estimado: 10 a 15 min.</p>
                         </div>
                     </a>
 
@@ -187,7 +188,7 @@
                         </div>
                         <div class="dashboard-tool-content">
                             <h3>Quiz</h3>
-                            <p>Feche a aula com revisão rápida, participação e feedback imediato.</p>
+                            <p>Quando usar: revisar conteudo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.</p>
                         </div>
                     </a>
 
@@ -201,7 +202,7 @@
                         </div>
                         <div class="dashboard-tool-content">
                             <h3>Aula completa</h3>
-                            <p>Monte uma sequência completa para conduzir a aula do início ao fim.</p>
+                            <p>Quando usar: planejar bloco completo com inicio, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.</p>
                         </div>
                     </a>
                 </div>
@@ -209,7 +210,7 @@
                 <div class="dashboard-toolkit-secondary" id="extra-formats">
                     <div>
                         <strong>Mais formatos</strong>
-                        <p>Explore outros formatos disponíveis para variar a dinâmica da aula e enriquecer o repertório com a turma.</p>
+                        <p>Use formatos extras para momentos especificos da aula: retomada curta, dinamica rapida ou fechamento leve.</p>
                     </div>
                     <div class="dashboard-toolkit-links">
                         <a href="flashcards-builder.html" class="dashboard-toolkit-link">Flashcards</a>
@@ -276,3 +277,4 @@
     </div>
 </body>
 </html>
+
