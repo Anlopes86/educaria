@@ -3,69 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar Conta | EducarIA</title>
+    <title data-i18n="auth.register.title">Criar Conta | EducarIA</title>
     <link rel="stylesheet" href="assets/css/estilo-premium.css">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/i18n.js" defer></script>
     <script src="assets/js/auth-flow.js" defer></script>
 </head>
 <body class="product-body theme-auth" data-auth-page="true" data-auth-screen="register">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content" data-i18n="auth.skip">Pular para o conteudo principal</a>
     <main id="main-content" class="auth-shell" tabindex="-1">
         <section class="auth-panel auth-panel--brand">
             <a href="index.html" class="auth-brand auth-brand--hero">
                 <img src="assets/images/educar-logo.png" alt="EducarIA" class="auth-brand-logo-large">
             </a>
             <h1 class="auth-register-headline">
-                <span>O melhor hub de</span>
-                <span>ferramentas</span>
-                <span>educacionais</span>
-                <span>para professores</span>
-                <span>do Brasil</span>
+                <span data-i18n="auth.hero.line1">O melhor hub de</span>
+                <span data-i18n="auth.hero.line2">ferramentas</span>
+                <span data-i18n="auth.hero.line3">educacionais</span>
+                <span data-i18n="auth.hero.line4">para professores</span>
+                <span data-i18n="auth.hero.line5">do Brasil</span>
             </h1>
         </section>
 
         <section class="auth-panel auth-panel--form">
             <div class="page-section-title">
                 <div>
-                    <span class="platform-section-label">Cadastro</span>
-                    <h2>Criar conta</h2>
+                    <span class="platform-section-label" data-i18n="auth.register.label">Cadastro</span>
+                    <h2 data-i18n="auth.register.heading">Criar conta</h2>
                 </div>
-                <p>Preencha os dados do professor e crie uma senha para entrar na plataforma e começar a montar suas turmas.</p>
+                <p data-i18n="auth.register.copy">Preencha os dados do professor e crie uma senha para entrar na plataforma e começar a montar suas turmas.</p>
             </div>
 
             <form class="auth-form" data-register-form>
                 <div class="platform-field">
-                    <label for="register-name">Nome</label>
-                    <input id="register-name" name="name" type="text" autocomplete="name" required placeholder="Seu nome completo">
+                    <label for="register-name" data-i18n="auth.fields.name">Nome</label>
+                    <input id="register-name" name="name" type="text" autocomplete="name" required placeholder="Seu nome completo" data-i18n-placeholder="auth.fields.name.placeholder">
                 </div>
                 <div class="platform-field">
-                    <label for="register-email">Email</label>
-                    <input id="register-email" name="email" type="email" autocomplete="email" required placeholder="professor@escola.com.br">
+                    <label for="register-email" data-i18n="auth.fields.email">Email</label>
+                    <input id="register-email" name="email" type="email" autocomplete="email" required placeholder="professor@escola.com.br" data-i18n-placeholder="auth.fields.email.placeholder">
                 </div>
                 <div class="platform-field">
-                    <label for="register-institution">Instituição de ensino</label>
-                    <input id="register-institution" name="institution" type="text" autocomplete="organization" placeholder="Nome da escola ou rede de ensino">
+                    <label for="register-institution" data-i18n="auth.fields.institution">Instituição de ensino</label>
+                    <input id="register-institution" name="institution" type="text" autocomplete="organization" placeholder="Nome da escola ou rede de ensino" data-i18n-placeholder="auth.fields.institution.placeholder">
                 </div>
                 <div class="platform-field">
-                    <label for="register-password">Senha</label>
-                    <input id="register-password" name="password" type="password" autocomplete="new-password" required placeholder="Crie uma senha com pelo menos 6 caracteres">
+                    <label for="register-password" data-i18n="auth.fields.password">Senha</label>
+                    <input id="register-password" name="password" type="password" autocomplete="new-password" required placeholder="Crie uma senha com pelo menos 6 caracteres" data-i18n-placeholder="auth.fields.newPassword.placeholder">
                 </div>
                 <div class="platform-field">
-                    <label for="register-password-confirm">Confirmar senha</label>
-                    <input id="register-password-confirm" name="password_confirm" type="password" autocomplete="new-password" required placeholder="Repita a senha">
+                    <label for="register-password-confirm" data-i18n="auth.fields.confirmPassword">Confirmar senha</label>
+                    <input id="register-password-confirm" name="password_confirm" type="password" autocomplete="new-password" required placeholder="Repita a senha" data-i18n-placeholder="auth.fields.confirmPassword.placeholder">
                 </div>
 
-                <button type="submit" class="platform-link-button platform-link-primary auth-submit">Criar conta</button>
+                <button type="submit" class="platform-link-button platform-link-primary auth-submit" data-i18n="auth.actions.register">Criar conta</button>
                 <p class="auth-feedback" data-auth-feedback hidden></p>
             </form>
 
             <div class="auth-helper-card">
-                <strong>Já tem conta?</strong>
-                <p>Entre com o email cadastrado para abrir sua plataforma.</p>
-                <a href="login.html" class="platform-link-button platform-link-secondary">Ir para login</a>
+                <strong data-i18n="auth.register.hasAccount">Já tem conta?</strong>
+                <p data-i18n="auth.register.hasAccountCopy">Entre com o email cadastrado para abrir sua plataforma.</p>
+                <a href="login.html" class="platform-link-button platform-link-secondary" data-i18n="auth.actions.goLogin">Ir para login</a>
             </div>
         </section>
     </main>

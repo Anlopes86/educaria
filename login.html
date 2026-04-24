@@ -3,57 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrar | EducarIA</title>
+    <title data-i18n="auth.login.title">Entrar | EducarIA</title>
     <link rel="stylesheet" href="assets/css/estilo-premium.css">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/i18n.js" defer></script>
     <script src="assets/js/auth-flow.js" defer></script>
 </head>
 <body class="product-body theme-auth" data-auth-page="true" data-auth-screen="login">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content" data-i18n="auth.skip">Pular para o conteudo principal</a>
     <main id="main-content" class="auth-shell" tabindex="-1">
         <section class="auth-panel auth-panel--brand">
             <a href="index.html" class="auth-brand auth-brand--hero">
                 <img src="assets/images/educar-logo.png" alt="EducarIA" class="auth-brand-logo-large">
             </a>
             <h1 class="auth-login-headline">
-                <span>O melhor hub de</span>
-                <span>ferramentas</span>
-                <span>educacionais</span>
-                <span>para professores</span>
-                <span>do Brasil</span>
+                <span data-i18n="auth.hero.line1">O melhor hub de</span>
+                <span data-i18n="auth.hero.line2">ferramentas</span>
+                <span data-i18n="auth.hero.line3">educacionais</span>
+                <span data-i18n="auth.hero.line4">para professores</span>
+                <span data-i18n="auth.hero.line5">do Brasil</span>
             </h1>
         </section>
 
         <section class="auth-panel auth-panel--form">
             <div class="page-section-title">
                 <div>
-                    <span class="platform-section-label">Entrar</span>
-                    <h2>Acesse sua conta</h2>
+                    <span class="platform-section-label" data-i18n="auth.login.label">Entrar</span>
+                    <h2 data-i18n="auth.login.heading">Acesse sua conta</h2>
                 </div>
-                <p>Use email e senha para abrir sua conta e continuar o trabalho na plataforma.</p>
+                <p data-i18n="auth.login.copy">Use email e senha para abrir sua conta e continuar o trabalho na plataforma.</p>
             </div>
 
             <form class="auth-form" data-login-form>
                 <div class="platform-field">
-                    <label for="login-email">Email</label>
-                    <input id="login-email" name="email" type="email" autocomplete="email" required placeholder="professor@escola.com.br">
+                    <label for="login-email" data-i18n="auth.fields.email">Email</label>
+                    <input id="login-email" name="email" type="email" autocomplete="email" required placeholder="professor@escola.com.br" data-i18n-placeholder="auth.fields.email.placeholder">
                 </div>
                 <div class="platform-field">
-                    <label for="login-password">Senha</label>
-                    <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Digite sua senha">
+                    <label for="login-password" data-i18n="auth.fields.password">Senha</label>
+                    <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="Digite sua senha" data-i18n-placeholder="auth.fields.password.placeholder">
                 </div>
 
-                <button type="submit" class="platform-link-button platform-link-primary auth-submit">Entrar</button>
+                <button type="submit" class="platform-link-button platform-link-primary auth-submit" data-i18n="auth.actions.login">Entrar</button>
                 <p class="auth-feedback" data-auth-feedback hidden></p>
             </form>
 
             <div class="auth-helper-card">
-                <strong>Ainda não tem cadastro?</strong>
-                <p>Crie sua conta com nome, email e instituição de ensino para começar.</p>
-                <a href="cadastro.html" class="platform-link-button platform-link-secondary">Criar cadastro</a>
+                <strong data-i18n="auth.login.noAccount">Ainda não tem cadastro?</strong>
+                <p data-i18n="auth.login.noAccountCopy">Crie sua conta com nome, email e instituição de ensino para começar.</p>
+                <a href="cadastro.html" class="platform-link-button platform-link-secondary" data-i18n="auth.actions.createAccount">Criar cadastro</a>
             </div>
         </section>
     </main>

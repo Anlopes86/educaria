@@ -17,6 +17,11 @@ function authDashboardPath() {
     return window.location.pathname.includes("/plataforma/") ? "index.html" : "plataforma/index.html";
 }
 
+function authTranslate(key, fallback) {
+    if (typeof window.educariaTranslate !== "function") return fallback;
+    return window.educariaTranslate(key) || fallback;
+}
+
 function normalizeEmail(value) {
     return String(value || "").trim().toLowerCase();
 }
@@ -487,7 +492,7 @@ function showFirebaseConfigMessageIfNeeded() {
     if (firebaseConfigReady()) return false;
 
     if (document.body?.dataset.authPage === "true") {
-        updateAuthFeedback("A autenticacao esta temporariamente indisponivel. Tente novamente em instantes.", "error");
+        updateAuthFeedback(authTranslate("auth.feedback.unavailable", "A autenticacao esta temporariamente indisponivel. Tente novamente em instantes."), "error");
     }
     return true;
 }
@@ -512,13 +517,13 @@ function redirectAuthenticatedFromAuthPages() {
 
 function mapFirebaseError(error) {
     const code = error?.code || "";
-    if (code === "auth/email-already-in-use") return "Ja existe uma conta com esse email.";
-    if (code === "auth/invalid-email") return "Digite um email valido.";
-    if (code === "auth/weak-password") return "A senha precisa ser mais forte.";
-    if (code === "auth/user-not-found") return "Nenhuma conta encontrada com esse email.";
-    if (code === "auth/wrong-password") return "Senha incorreta.";
-    if (code === "auth/invalid-credential") return "Email ou senha incorretos.";
-    return "Não foi possível concluir a autenticação agora.";
+    if (code === "auth/email-already-in-use") return authTranslate("auth.errors.emailInUse", "Ja existe uma conta com esse email.");
+    if (code === "auth/invalid-email") return authTranslate("auth.errors.invalidEmail", "Digite um email valido.");
+    if (code === "auth/weak-password") return authTranslate("auth.errors.weakPassword", "A senha precisa ser mais forte.");
+    if (code === "auth/user-not-found") return authTranslate("auth.errors.userNotFound", "Nenhuma conta encontrada com esse email.");
+    if (code === "auth/wrong-password") return authTranslate("auth.errors.wrongPassword", "Senha incorreta.");
+    if (code === "auth/invalid-credential") return authTranslate("auth.errors.invalidCredential", "Email ou senha incorretos.");
+    return authTranslate("auth.errors.generic", "Nao foi possivel concluir a autenticacao agora.");
 }
 
 function readTeacherProfileFromFirebase(user) {
@@ -554,22 +559,22 @@ function bindLoginForm() {
         const password = String(form.querySelector('input[name="password"]')?.value || "").trim();
 
         if (!services) {
-            updateAuthFeedback("Nao foi possivel conectar ao servico de autenticacao. Tente novamente em instantes.", "error");
+            updateAuthFeedback(authTranslate("auth.feedback.connectUnavailable", "Nao foi possivel conectar ao servico de autenticacao. Tente novamente em instantes."), "error");
             return;
         }
 
         if (!email) {
-            updateAuthFeedback("Digite o email para entrar.", "error");
+            updateAuthFeedback(authTranslate("auth.feedback.enterEmail", "Digite o email para entrar."), "error");
             return;
         }
 
         if (!password) {
-            updateAuthFeedback("Digite sua senha para continuar.", "error");
+            updateAuthFeedback(authTranslate("auth.feedback.enterPassword", "Digite sua senha para continuar."), "error");
             return;
         }
 
         try {
-            updateAuthFeedback("Entrando na sua conta...", "success");
+            updateAuthFeedback(authTranslate("auth.feedback.signingIn", "Entrando na sua conta..."), "success");
             const credential = await services.auth.signInWithEmailAndPassword(email, password);
             const teacher = await readTeacherProfileFromFirebase(credential.user);
             writeCachedTeacher(teacher);
@@ -599,27 +604,27 @@ function bindRegisterForm() {
         const passwordConfirm = String(form.querySelector('input[name="password_confirm"]')?.value || "").trim();
 
         if (!services) {
-            updateAuthFeedback("Nao foi possivel conectar ao servico de autenticacao. Tente novamente em instantes.", "error");
+            updateAuthFeedback(authTranslate("auth.feedback.connectUnavailable", "Nao foi possivel conectar ao servico de autenticacao. Tente novamente em instantes."), "error");
             return;
         }
 
         if (!name || !email || !password || !passwordConfirm) {
-            updateAuthFeedback("Preencha nome, email e senha para criar sua conta.", "error");
+            updateAuthFeedback(authTranslate("auth.feedback.registerRequired", "Preencha nome, email e senha para criar sua conta."), "error");
             return;
         }
 
         if (password.length < 6) {
-            updateAuthFeedback("A senha precisa ter pelo menos 6 caracteres.", "error");
+            updateAuthFeedback(authTranslate("auth.feedback.passwordLength", "A senha precisa ter pelo menos 6 caracteres."), "error");
             return;
         }
 
         if (password !== passwordConfirm) {
-            updateAuthFeedback("As senhas não coincidem. Confira e tente novamente.", "error");
+            updateAuthFeedback(authTranslate("auth.feedback.passwordMismatch", "As senhas nao coincidem. Confira e tente novamente."), "error");
             return;
         }
 
         try {
-            updateAuthFeedback("Criando sua conta...", "success");
+            updateAuthFeedback(authTranslate("auth.feedback.creatingAccount", "Criando sua conta..."), "success");
             const credential = await services.auth.createUserWithEmailAndPassword(email, password);
             await credential.user.updateProfile({ displayName: name });
             const normalizedInstitution = normalizeInstitutionName(institution);

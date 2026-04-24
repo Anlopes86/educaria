@@ -15,6 +15,7 @@ Plataforma para professores criarem e organizarem materiais didaticos com apoio 
 - Servico de IA e creditos: `docs/ia-materials-setup.md`
 - Organizacao gradual do CSS: `docs/css-architecture.md`
 - Internacionalizacao: `docs/i18n.md`
+- Regressao de i18n: `docs/i18n-regression.md`
 - Checkout e plano Pro: `docs/billing-checkout.md`
 - Checklists de regressao: `docs/regressao-filtros-fluxos.md`
 

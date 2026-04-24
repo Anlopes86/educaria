@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Painel do Professor | EducarIA</title>
+    <title data-i18n="dashboard.title">Painel do Professor | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
@@ -15,6 +15,7 @@
     <script src="../assets/js/firebase-config.js"></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
@@ -22,14 +23,14 @@
     <script src="../assets/js/teacher-dashboard.js" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteudo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="../index.html" class="platform-brand app-sidebar-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Painel do professor</strong>
+                    <strong data-i18n="dashboard.brand.section">Painel do professor</strong>
                 </div>
             </a>
 
@@ -41,20 +42,20 @@
                 </div>
             </div>
 
-            <nav class="app-sidebar-nav dashboard-sidebar-nav" aria-label="Navegacao principal">
-                <a href="index.html" class="sidebar-nav-link is-active">Painel</a>
+            <nav class="app-sidebar-nav dashboard-sidebar-nav" aria-label="Navegacao principal" data-i18n-aria-label="dashboard.nav.main">
+                <a href="index.html" class="sidebar-nav-link is-active" data-i18n="dashboard.nav.dashboard">Painel</a>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false">Criar turma</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false" data-i18n="dashboard.nav.createClass">Criar turma</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="create-class" hidden>
                     <div class="sidebar-create-card" data-dashboard-tour-anchor="create-class-form">
                         <div class="platform-field">
-                            <label for="sidebar-nome-turma">Nova turma</label>
-                            <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma">
+                            <label for="sidebar-nome-turma" data-i18n="dashboard.sidebar.newClass">Nova turma</label>
+                            <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma" data-i18n-placeholder="dashboard.sidebar.className">
                         </div>
                         <div class="platform-field">
-                            <label for="sidebar-materia">Matéria</label>
+                            <label for="sidebar-materia" data-i18n="dashboard.sidebar.subject">Matéria</label>
                             <select id="sidebar-materia">
-                                <option value="">Selecione a matéria</option>
+                                <option value="" data-i18n="dashboard.sidebar.subject.placeholder">Selecione a matéria</option>
                                 <option value="Matemática">Matemática</option>
                                 <option value="Português">Português</option>
                                 <option value="Ciências">Ciências</option>
@@ -65,12 +66,12 @@
                                 <option value="Educação física">Educação física</option>
                             </select>
                         </div>
-                        <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class>Criar turma</button>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class data-i18n="dashboard.nav.createClass">Criar turma</button>
                         <p class="sidebar-feedback" data-sidebar-class-feedback hidden></p>
                     </div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false">Criar atividade</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false" data-i18n="dashboard.nav.createActivity">Criar atividade</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
                     <div class="sidebar-subitems">
                         <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
@@ -88,50 +89,50 @@
                     </div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Minhas turmas</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false" data-i18n="dashboard.nav.myClasses">Minhas turmas</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
                     <div class="sidebar-subitems" data-sidebar-class-list></div>
                 </div>
 
-                <a href="biblioteca.html" class="sidebar-nav-link">Biblioteca</a>
-                <a href="configuracoes.html" class="sidebar-nav-link">Configurações</a>
+                <a href="biblioteca.html" class="sidebar-nav-link" data-i18n="dashboard.nav.library">Biblioteca</a>
+                <a href="configuracoes.html" class="sidebar-nav-link" data-i18n="dashboard.nav.settings">Configurações</a>
             </nav>
 
             <div class="app-sidebar-footer">
-                <button type="button" class="platform-link-button platform-link-secondary" data-logout>Sair</button>
+                <button type="button" class="platform-link-button platform-link-secondary" data-logout data-i18n="dashboard.actions.logout">Sair</button>
             </div>
         </aside>
 
         <main id="main-content" class="app-content dashboard-overview-content" tabindex="-1">
             <section class="dashboard-hero-panel">
                 <div class="dashboard-hero-copy">
-                    <span class="dashboard-eyebrow">Painel do professor</span>
+                    <span class="dashboard-eyebrow" data-i18n="dashboard.hero.eyebrow">Painel do professor</span>
                     <h1><span data-dashboard-greeting>Bom dia</span>, <span data-sidebar-teacher>Professor</span>!</h1>
-                    <p>Pronto para transformar sua aula hoje? Crie materiais com mais rapidez e organize tudo sem perder contexto.</p>
+                    <p data-i18n="dashboard.hero.copy">Pronto para transformar sua aula hoje? Crie materiais com mais rapidez e organize tudo sem perder contexto.</p>
 
                     <div class="dashboard-hero-actions">
-                        <a href="#activity-toolkit" class="platform-link-button platform-link-primary" data-dashboard-tour-anchor="hero-action">Criar atividade</a>
-                        <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Biblioteca</a>
+                        <a href="#activity-toolkit" class="platform-link-button platform-link-primary" data-dashboard-tour-anchor="hero-action" data-i18n="dashboard.actions.createActivity">Criar atividade</a>
+                        <a href="biblioteca.html" class="platform-link-button platform-link-secondary" data-i18n="dashboard.nav.library">Biblioteca</a>
                         <span class="ai-credits-pill" data-ai-credits>Créditos de IA: carregando...</span>
                     </div>
-                    <button type="button" class="dashboard-guide-trigger" data-dashboard-tour-start>Ver guia rápido</button>
+                    <button type="button" class="dashboard-guide-trigger" data-dashboard-tour-start data-i18n="dashboard.actions.quickGuide">Ver guia rápido</button>
                 </div>
 
                 <aside class="dashboard-quick-create" data-dashboard-tour-anchor="quick-create">
-                    <span class="dashboard-next-class-tag">Criação rápida</span>
-                    <strong>Crie uma atividade em poucos cliques</strong>
-                    <p>Escolha a turma, use um formato principal e entre direto no editor. Sugestao rapida: Slides (10-15 min), Quiz (5-8 min), Aula completa (15-25 min).</p>
+                    <span class="dashboard-next-class-tag" data-i18n="dashboard.quick.tag">Criação rápida</span>
+                    <strong data-i18n="dashboard.quick.title">Crie uma atividade em poucos cliques</strong>
+                    <p data-dashboard-quick-copy data-i18n="dashboard.quick.copy">Escolha a turma, use um formato principal e entre direto no editor. Sugestao rapida: Slides (10-15 min), Quiz (5-8 min), Aula completa (15-25 min).</p>
 
                     <div class="dashboard-quick-create-form">
                         <label class="dashboard-quick-field">
-                            <span>Turma</span>
+                            <span data-i18n="dashboard.quick.class">Turma</span>
                             <select data-dashboard-quick-class>
-                                <option value="">Selecione uma turma</option>
+                                <option value="" data-i18n="dashboard.quick.selectClass">Selecione uma turma</option>
                             </select>
                         </label>
 
                         <label class="dashboard-quick-field">
-                            <span>Atividade</span>
+                            <span data-i18n="dashboard.quick.activity">Atividade</span>
                             <select data-dashboard-quick-format>
                                 <option value="slides-builder.html">Slides (10-15 min)</option>
                                 <option value="quiz-builder.html">Quiz (5-8 min)</option>
@@ -148,7 +149,7 @@
                             </select>
                         </label>
 
-                        <button type="button" class="platform-link-button platform-link-primary" data-dashboard-quick-open>Criar</button>
+                        <button type="button" class="platform-link-button platform-link-primary" data-dashboard-quick-open data-i18n="dashboard.actions.create">Criar</button>
                     </div>
                 </aside>
             </section>
@@ -156,10 +157,10 @@
             <section class="dashboard-section" id="activity-toolkit">
                 <div class="dashboard-section-head">
                     <div>
-                        <span class="platform-section-label">Fluxo principal</span>
-                        <h2>Comece por aqui</h2>
+                        <span class="platform-section-label" data-i18n="dashboard.toolkit.label">Fluxo principal</span>
+                        <h2 data-i18n="dashboard.toolkit.title">Comece por aqui</h2>
                     </div>
-                    <a href="#extra-formats" class="dashboard-inline-link">Ver formatos extras</a>
+                    <a href="#extra-formats" class="dashboard-inline-link" data-i18n="dashboard.toolkit.extraLink">Ver formatos extras</a>
                 </div>
 
                 <div class="dashboard-toolkit-grid" data-dashboard-tour-anchor="toolkit">
@@ -172,8 +173,8 @@
                             </svg>
                         </div>
                         <div class="dashboard-tool-content">
-                            <h3>Slides</h3>
-                            <p>Quando usar: conduzir explicacao e organizar a sequencia da aula. Tempo estimado: 10 a 15 min.</p>
+                            <h3 data-i18n="dashboard.formats.slides">Slides</h3>
+                            <p data-i18n="dashboard.toolkit.slides.copy">Quando usar: conduzir explicacao e organizar a sequencia da aula. Tempo estimado: 10 a 15 min.</p>
                         </div>
                     </a>
 
@@ -187,8 +188,8 @@
                             </svg>
                         </div>
                         <div class="dashboard-tool-content">
-                            <h3>Quiz</h3>
-                            <p>Quando usar: revisar conteudo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.</p>
+                            <h3 data-i18n="dashboard.formats.quiz">Quiz</h3>
+                            <p data-i18n="dashboard.toolkit.quiz.copy">Quando usar: revisar conteudo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.</p>
                         </div>
                     </a>
 
@@ -201,16 +202,16 @@
                             </svg>
                         </div>
                         <div class="dashboard-tool-content">
-                            <h3>Aula completa</h3>
-                            <p>Quando usar: planejar bloco completo com inicio, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.</p>
+                            <h3 data-i18n="dashboard.formats.lesson">Aula completa</h3>
+                            <p data-i18n="dashboard.toolkit.lesson.copy">Quando usar: planejar bloco completo com inicio, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.</p>
                         </div>
                     </a>
                 </div>
 
                 <div class="dashboard-toolkit-secondary" id="extra-formats">
                     <div>
-                        <strong>Mais formatos</strong>
-                        <p>Use formatos extras para momentos especificos da aula: retomada curta, dinamica rapida ou fechamento leve.</p>
+                        <strong data-i18n="dashboard.toolkit.moreFormats">Mais formatos</strong>
+                        <p data-i18n="dashboard.toolkit.moreFormats.copy">Use formatos extras para momentos especificos da aula: retomada curta, dinamica rapida ou fechamento leve.</p>
                     </div>
                     <div class="dashboard-toolkit-links">
                         <a href="flashcards-builder.html" class="dashboard-toolkit-link">Flashcards</a>
@@ -229,8 +230,8 @@
             <section class="dashboard-section">
                 <div class="dashboard-section-head">
                     <div>
-                        <span class="platform-section-label">Meu ecossistema</span>
-                        <h2>Turmas ativas</h2>
+                        <span class="platform-section-label" data-i18n="dashboard.classes.label">Meu ecossistema</span>
+                        <h2 data-i18n="dashboard.classes.title">Turmas ativas</h2>
                     </div>
                     <div class="dashboard-class-nav" aria-hidden="true">
                         <span>&lt;</span>
@@ -241,36 +242,36 @@
                 <div class="teacher-dashboard-kpis dashboard-overview-kpis">
                     <article class="teacher-dashboard-kpi">
                         <strong data-dashboard-class-count>0</strong>
-                        <span>turmas</span>
+                        <span data-i18n="dashboard.kpi.classes">turmas</span>
                     </article>
                     <article class="teacher-dashboard-kpi">
                         <strong data-dashboard-activity-count>0</strong>
-                        <span>atividades</span>
+                        <span data-i18n="dashboard.kpi.activities">atividades</span>
                     </article>
                     <article class="teacher-dashboard-kpi">
                         <strong data-dashboard-library-count>0</strong>
-                        <span>na biblioteca</span>
+                        <span data-i18n="dashboard.kpi.library">na biblioteca</span>
                     </article>
                 </div>
 
                 <div class="quick-class-grid dashboard-quick-grid dashboard-class-grid" data-dashboard-classes>
                     <article class="quick-class-card quick-class-card--active">
-                        <span class="route-tag">Sem turmas</span>
-                        <h3>Nenhuma turma criada ainda</h3>
-                        <p>Use o botão Criar turma na lateral para começar.</p>
+                        <span class="route-tag" data-i18n="dashboard.empty.noClasses">Sem turmas</span>
+                        <h3 data-i18n="dashboard.empty.noClassesTitle">Nenhuma turma criada ainda</h3>
+                        <p data-i18n="dashboard.empty.noClassesCopy">Use o botão Criar turma na lateral para começar.</p>
                     </article>
                 </div>
             </section>
 
             <section class="dashboard-library-banner">
                 <div class="dashboard-library-banner__copy">
-                    <span class="platform-section-label">Seu acervo</span>
-                    <h2>Reveja seus materiais salvos</h2>
-                    <p>A biblioteca reúne as atividades e aulas que você mesmo salvou para reutilizar, editar e organizar por turma.</p>
+                    <span class="platform-section-label" data-i18n="dashboard.library.label">Seu acervo</span>
+                    <h2 data-i18n="dashboard.library.title">Reveja seus materiais salvos</h2>
+                    <p data-i18n="dashboard.library.copy">A biblioteca reúne as atividades e aulas que você mesmo salvou para reutilizar, editar e organizar por turma.</p>
                 </div>
 
                 <div class="dashboard-library-banner__actions">
-                    <a href="biblioteca.html" class="platform-link-button platform-link-secondary" data-dashboard-tour-anchor="library">Abrir biblioteca</a>
+                    <a href="biblioteca.html" class="platform-link-button platform-link-secondary" data-dashboard-tour-anchor="library" data-i18n="dashboard.actions.openLibrary">Abrir biblioteca</a>
                 </div>
             </section>
         </main>

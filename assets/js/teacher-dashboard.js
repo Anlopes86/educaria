@@ -26,6 +26,11 @@ const DASHBOARD_TOUR_FOCUSABLE_SELECTOR = 'button, [href], input, select, textar
 
 let dashboardTourState = null;
 
+function dashboardTranslate(key, fallback) {
+    if (typeof window.educariaTranslate !== "function") return fallback;
+    return window.educariaTranslate(key) || fallback;
+}
+
 function setDashboardReadyState(isReady) {
     if (!document.body) return;
     document.body.dataset.dashboardReady = isReady ? "true" : "false";
@@ -50,9 +55,9 @@ function hydrateTeacherDashboard() {
     if (!classes.length) {
         classesRoot.innerHTML = `
             <article class="quick-class-card quick-class-card--active">
-                <span class="route-tag">Sem turmas</span>
-                <h3>Nenhuma turma criada ainda</h3>
-                <p>Use o bot\u00e3o Criar turma na lateral para come\u00e7ar.</p>
+                <span class="route-tag">${dashboardTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
+                <h3>${dashboardTranslate("dashboard.empty.noClassesTitle", "Nenhuma turma criada ainda")}</h3>
+                <p>${dashboardTranslate("dashboard.empty.noClassesCopy", "Use o botao Criar turma na lateral para comecar.")}</p>
             </article>
         `;
         return;
@@ -62,9 +67,9 @@ function hydrateTeacherDashboard() {
         const classActivities = typeof classMaterials === "function" ? classMaterials(className) : [];
         return `
             <a href="turma.html" class="quick-class-card" data-dashboard-class-link="${escapeHtml(className)}">
-                <span class="route-tag">${classActivities.length} ${classActivities.length === 1 ? "atividade" : "atividades"}</span>
+                <span class="route-tag">${classActivities.length} ${classActivities.length === 1 ? dashboardTranslate("dashboard.count.activity", "atividade") : dashboardTranslate("dashboard.count.activities", "atividades")}</span>
                 <h3>${escapeHtml(className)}</h3>
-                <p>Abra a turma para criar novas atividades ou retomar o acervo j\u00e1 salvo.</p>
+                <p>${dashboardTranslate("dashboard.classCard.copy", "Abra a turma para criar novas atividades ou retomar o acervo ja salvo.")}</p>
             </a>
         `;
     }).join("");
@@ -72,9 +77,9 @@ function hydrateTeacherDashboard() {
 
 function dashboardGreeting() {
     const hour = new Date().getHours();
-    if (hour < 12) return "Bom dia";
-    if (hour < 18) return "Boa tarde";
-    return "Boa noite";
+    if (hour < 12) return dashboardTranslate("dashboard.greeting.morning", "Bom dia");
+    if (hour < 18) return dashboardTranslate("dashboard.greeting.afternoon", "Boa tarde");
+    return dashboardTranslate("dashboard.greeting.evening", "Boa noite");
 }
 
 function hydrateDashboardGreeting() {
@@ -84,16 +89,16 @@ function hydrateDashboardGreeting() {
 }
 
 function quickCreateActionLabel(target) {
-    if (target === "slides-builder.html") return "Abrir slides";
-    if (target === "quiz-builder.html") return "Abrir quiz";
-    if (target === "criar-aula.html") return "Montar aula";
-    return "Abrir ferramenta";
+    if (target === "slides-builder.html") return dashboardTranslate("dashboard.actions.openSlides", "Abrir slides");
+    if (target === "quiz-builder.html") return dashboardTranslate("dashboard.actions.openQuiz", "Abrir quiz");
+    if (target === "criar-aula.html") return dashboardTranslate("dashboard.actions.buildLesson", "Montar aula");
+    return dashboardTranslate("dashboard.actions.openTool", "Abrir ferramenta");
 }
 
 function syncDashboardFormatHierarchy() {
-    const quickCopy = document.querySelector(".dashboard-quick-create p");
+    const quickCopy = document.querySelector("[data-dashboard-quick-copy]");
     if (quickCopy) {
-        quickCopy.textContent = "Escolha a turma, use um formato principal e entre direto no editor. Sugestao rapida: Slides (10-15 min), Quiz (5-8 min), Aula completa (15-25 min).";
+        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Escolha a turma, use um formato principal e entre direto no editor. Sugestao rapida: Slides (10-15 min), Quiz (5-8 min), Aula completa (15-25 min).");
     }
 
     const toolkitSection = document.getElementById("activity-toolkit");
@@ -102,10 +107,10 @@ function syncDashboardFormatHierarchy() {
     const sectionLabel = toolkitSection.querySelector(".platform-section-label");
     const sectionTitle = toolkitSection.querySelector("h2");
     const sectionLink = toolkitSection.querySelector(".dashboard-inline-link");
-    if (sectionLabel) sectionLabel.textContent = "Fluxo principal";
-    if (sectionTitle) sectionTitle.textContent = "Comece por aqui";
+    if (sectionLabel) sectionLabel.textContent = dashboardTranslate("dashboard.toolkit.label", "Fluxo principal");
+    if (sectionTitle) sectionTitle.textContent = dashboardTranslate("dashboard.toolkit.title", "Comece por aqui");
     if (sectionLink) {
-        sectionLink.textContent = "Ver formatos extras";
+        sectionLink.textContent = dashboardTranslate("dashboard.toolkit.extraLink", "Ver formatos extras");
         sectionLink.setAttribute("href", "#extra-formats");
     }
 
@@ -122,13 +127,13 @@ function syncDashboardFormatHierarchy() {
     const slidesCard = grid.querySelector('.dashboard-tool-card--slides .dashboard-tool-content p');
     const lessonCard = grid.querySelector('.dashboard-tool-card--lesson .dashboard-tool-content p');
     if (slidesCard) {
-        slidesCard.textContent = "Quando usar: conduzir explicacao e organizar a sequencia da aula. Tempo estimado: 10 a 15 min.";
+        slidesCard.textContent = dashboardTranslate("dashboard.toolkit.slides.copy", "Quando usar: conduzir explicacao e organizar a sequencia da aula. Tempo estimado: 10 a 15 min.");
     }
     if (quizCard) {
-        quizCard.textContent = "Quando usar: revisar conteudo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.";
+        quizCard.textContent = dashboardTranslate("dashboard.toolkit.quiz.copy", "Quando usar: revisar conteudo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.");
     }
     if (lessonCard) {
-        lessonCard.textContent = "Quando usar: planejar bloco completo com inicio, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.";
+        lessonCard.textContent = dashboardTranslate("dashboard.toolkit.lesson.copy", "Quando usar: planejar bloco completo com inicio, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.");
     }
 
     let secondary = toolkitSection.querySelector(".dashboard-toolkit-secondary");
@@ -141,8 +146,8 @@ function syncDashboardFormatHierarchy() {
 
     secondary.innerHTML = `
         <div>
-            <strong>Mais formatos</strong>
-            <p>Use formatos extras para momentos especificos da aula: retomada curta, dinamica rapida ou fechamento leve.</p>
+            <strong>${dashboardTranslate("dashboard.toolkit.moreFormats", "Mais formatos")}</strong>
+            <p>${dashboardTranslate("dashboard.toolkit.moreFormats.copy", "Use formatos extras para momentos especificos da aula: retomada curta, dinamica rapida ou fechamento leve.")}</p>
         </div>
         <div class="dashboard-toolkit-links">
             ${DASHBOARD_EXTRA_FORMATS.map((format) => `
@@ -162,11 +167,11 @@ function hydrateQuickCreateForm() {
     const current = typeof readSelectedClass === "function" ? readSelectedClass() : "";
 
     if (!classes.length) {
-        classSelect.innerHTML = `<option value="">Crie uma turma primeiro</option>`;
+        classSelect.innerHTML = `<option value="">${dashboardTranslate("dashboard.quick.createClassFirst", "Crie uma turma primeiro")}</option>`;
         classSelect.disabled = true;
         formatSelect.disabled = true;
         openButton.disabled = true;
-        openButton.textContent = "Criar";
+        openButton.textContent = dashboardTranslate("dashboard.actions.create", "Criar");
         return;
     }
 
@@ -747,6 +752,10 @@ document.addEventListener("educaria-auth-changed", () => {
 });
 
 document.addEventListener("educaria-classes-updated", () => {
+    refreshTeacherDashboard();
+});
+
+document.addEventListener("educaria-language-changed", () => {
     refreshTeacherDashboard();
 });
 

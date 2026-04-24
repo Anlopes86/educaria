@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turma | EducarIA</title>
+    <title data-i18n="classDetail.title">Turma | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
@@ -17,14 +18,14 @@
     <script src="../assets/js/class-format-picker.js" defer></script>
 </head>
 <body class="product-body theme-class" data-requires-auth="true" data-class-page-ready="false" data-page="class-detail">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteudo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="index.html" class="platform-brand app-sidebar-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Turma</strong>
+                    <strong data-i18n="classDetail.brand.section">Turma</strong>
                 </div>
             </a>
 
@@ -33,25 +34,25 @@
                 <span data-sidebar-institution>Conta educacional</span>
             </div>
 
-            <nav class="app-sidebar-nav" aria-label="Navegacao principal">
-                <a href="index.html" class="sidebar-nav-link">Painel</a>
+            <nav class="app-sidebar-nav" aria-label="Navegacao principal" data-i18n-aria-label="dashboard.nav.main">
+                <a href="index.html" class="sidebar-nav-link" data-i18n="dashboard.nav.dashboard">Painel</a>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false" data-i18n="dashboard.nav.myClasses">Turmas</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
                     <div class="sidebar-subitems" data-sidebar-class-list></div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false">Criar turma</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false" data-i18n="dashboard.nav.createClass">Criar turma</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="create-class" hidden>
                     <div class="sidebar-create-card">
                         <div class="platform-field">
-                            <label for="sidebar-nome-turma">Nova turma</label>
-                            <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma">
+                            <label for="sidebar-nome-turma" data-i18n="dashboard.sidebar.newClass">Nova turma</label>
+                            <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma" data-i18n-placeholder="dashboard.sidebar.className">
                         </div>
                         <div class="platform-field">
-                            <label for="sidebar-materia">Matéria</label>
+                            <label for="sidebar-materia" data-i18n="dashboard.sidebar.subject">Materia</label>
                             <select id="sidebar-materia">
-                                <option value="">Selecione a matéria</option>
+                                <option value="" data-i18n="dashboard.sidebar.subject.placeholder">Selecione a materia</option>
                                 <option value="Matematica">Matemática</option>
                                 <option value="Portugues">Português</option>
                                 <option value="Ciencias">Ciências</option>
@@ -62,12 +63,12 @@
                                 <option value="Educacao fisica">Educação física</option>
                             </select>
                         </div>
-                        <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class>Criar turma</button>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class data-i18n="dashboard.nav.createClass">Criar turma</button>
                         <p class="sidebar-feedback" data-sidebar-class-feedback hidden></p>
                     </div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false">Criar atividade</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false" data-i18n="dashboard.nav.createActivity">Criar atividade</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
                     <div class="sidebar-subitems">
                         <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
@@ -85,12 +86,12 @@
                     </div>
                 </div>
 
-                <a href="biblioteca.html" class="sidebar-nav-link">Biblioteca</a>
-                <a href="configuracoes.html" class="sidebar-nav-link">Configurações</a>
+                <a href="biblioteca.html" class="sidebar-nav-link" data-i18n="dashboard.nav.library">Biblioteca</a>
+                <a href="configuracoes.html" class="sidebar-nav-link" data-i18n="dashboard.nav.settings">Configuracoes</a>
             </nav>
 
             <div class="app-sidebar-footer">
-                <button type="button" class="platform-link-button platform-link-secondary" data-logout>Sair</button>
+                <button type="button" class="platform-link-button platform-link-secondary" data-logout data-i18n="dashboard.actions.logout">Sair</button>
             </div>
         </aside>
 
@@ -104,28 +105,28 @@
             <section class="focus-card">
                 <div class="page-section-title">
                     <div>
-                        <span class="platform-section-label">Fluxo principal</span>
-                        <h2>Prepare a próxima aula desta turma</h2>
+                        <span class="platform-section-label" data-i18n="classDetail.flow.label">Fluxo principal</span>
+                        <h2 data-i18n="classDetail.flow.title">Prepare a proxima aula desta turma</h2>
                     </div>
-                    <p data-class-focus-summary>Fluxo recomendado: Slides (10-15 min) para conduzir, Quiz (5-8 min) para revisar e Biblioteca para reaproveitar.</p>
+                    <p data-class-focus-summary data-i18n="classDetail.flow.copy">Fluxo recomendado: Slides (10-15 min) para conduzir, Quiz (5-8 min) para revisar e Biblioteca para reaproveitar.</p>
                 </div>
 
                 <div class="teacher-dashboard-kpis">
                     <article class="teacher-dashboard-kpi">
                         <strong data-class-material-count>0</strong>
-                        <span>materiais da turma</span>
+                        <span data-i18n="classDetail.kpi.materials">materiais da turma</span>
                     </article>
                     <article class="teacher-dashboard-kpi">
                         <strong data-class-slide-count>0</strong>
-                        <span>aulas e slides</span>
+                        <span data-i18n="classDetail.kpi.slides">aulas e slides</span>
                     </article>
                     <article class="teacher-dashboard-kpi">
                         <strong data-class-quiz-count>0</strong>
-                        <span>quizzes</span>
+                        <span data-i18n="classDetail.kpi.quizzes">quizzes</span>
                     </article>
                     <article class="teacher-dashboard-kpi">
                         <strong data-class-library-count>0</strong>
-                        <span>na biblioteca</span>
+                        <span data-i18n="dashboard.kpi.library">na biblioteca</span>
                     </article>
                 </div>
 
@@ -136,10 +137,10 @@
             <section class="focus-card class-library-panel" id="atividades-salvas">
                 <div class="page-section-title">
                     <div>
-                        <span class="platform-section-label">Atividades da turma</span>
+                        <span class="platform-section-label" data-i18n="classDetail.activities.label">Atividades da turma</span>
                         <h2 data-class-title>Turma</h2>
                     </div>
-                    <p>Ficam aqui apenas os materiais da turma selecionada, agrupados por formato para facilitar retomada, edição e apresentação.</p>
+                    <p data-i18n="classDetail.activities.copy">Ficam aqui apenas os materiais da turma selecionada, agrupados por formato para facilitar retomada, edicao e apresentacao.</p>
                 </div>
 
                 <div class="class-material-filters" data-class-material-filters></div>

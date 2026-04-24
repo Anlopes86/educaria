@@ -2,6 +2,13 @@ function escapeHtml(value) {
     return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
 
+function lessonLibraryTranslate(key, fallback) {
+    if (typeof window !== "undefined" && typeof window.educariaTranslate === "function") {
+        return window.educariaTranslate(key, fallback);
+    }
+    return fallback || key;
+}
+
 const LESSONS_LIBRARY_KEY = "educaria:lessons";
 const ACTIVE_LESSON_KEY = "educaria:activeLessonId";
 const CLASS_CONTEXT_KEY = "educaria:selectedClass";
@@ -12,12 +19,12 @@ const LESSONS_REMOTE_COLLECTION = "lessons";
 const LESSON_STATUS_DRAFT = "draft";
 const LESSON_STATUS_READY = "ready";
 const CLASS_MATERIAL_FILTERS = [
-    { id: "all", label: "Todos", types: null },
-    { id: "lesson", label: "Aulas", types: ["lesson"] },
-    { id: "slides", label: "Slides", types: ["slides"] },
-    { id: "quiz", label: "Quizzes", types: ["quiz"] },
-    { id: "flashcards", label: "Flashcards", types: ["flashcards"] },
-    { id: "others", label: "Outros", types: ["wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"] }
+    { id: "all", label: "Todos", labelKey: "classDetail.filters.all", types: null },
+    { id: "lesson", label: "Aulas", labelKey: "classDetail.filters.lesson", types: ["lesson"] },
+    { id: "slides", label: "Slides", labelKey: "classDetail.filters.slides", types: ["slides"] },
+    { id: "quiz", label: "Quizzes", labelKey: "classDetail.filters.quiz", types: ["quiz"] },
+    { id: "flashcards", label: "Flashcards", labelKey: "classDetail.filters.flashcards", types: ["flashcards"] },
+    { id: "others", label: "Outros", labelKey: "classDetail.filters.others", types: ["wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"] }
 ];
 
 let lessonsSyncPromise = null;
@@ -1087,6 +1094,11 @@ function materialGroupDescription(type) {
     return "Sequências para conduzir a aula projetada.";
 }
 
+function classMaterialFilterLabel(filter) {
+    if (!filter) return "";
+    return lessonLibraryTranslate(filter.labelKey, filter.label);
+}
+
 function classMaterialFilterDefinition(filterId) {
     return CLASS_MATERIAL_FILTERS.find((filter) => filter.id === filterId) || CLASS_MATERIAL_FILTERS[0];
 }
@@ -1177,33 +1189,41 @@ function lessonPedagogyTagsHtml(lesson) {
 }
 
 function lessonStatusLabel(status) {
-    return normalizeLessonStatus(status) === LESSON_STATUS_READY ? "Pronto para projetar" : "Rascunho";
+    return normalizeLessonStatus(status) === LESSON_STATUS_READY
+        ? lessonLibraryTranslate("classDetail.status.ready", "Pronto para projetar")
+        : lessonLibraryTranslate("classDetail.status.draft", "Rascunho");
 }
 
 function classFilterSummaryLabel(filterId, filteredCount, totalCount) {
     const filter = classMaterialFilterDefinition(filterId);
+    const filterLabel = classMaterialFilterLabel(filter).toLowerCase();
     if (filter.id === "all") {
-        return `${totalCount} ${totalCount === 1 ? "atividade" : "atividades"} nesta turma.`;
+        const noun = lessonLibraryTranslate(totalCount === 1 ? "dashboard.count.activity" : "dashboard.count.activities", totalCount === 1 ? "atividade" : "atividades");
+        return `${totalCount} ${noun} ${lessonLibraryTranslate("classDetail.filters.summaryInClass", "nesta turma.")}`;
     }
 
     if (!filteredCount) {
-        return `Sem resultados em ${filter.label.toLowerCase()} para esta turma.`;
+        return `${lessonLibraryTranslate("classDetail.filters.summaryNone", "Sem resultados em")} ${filterLabel} ${lessonLibraryTranslate("classDetail.filters.summaryForClass", "para esta turma.")}`;
     }
 
-    return `${filteredCount} ${filteredCount === 1 ? "atividade" : "atividades"} em ${filter.label.toLowerCase()}.`;
+    const noun = lessonLibraryTranslate(filteredCount === 1 ? "dashboard.count.activity" : "dashboard.count.activities", filteredCount === 1 ? "atividade" : "atividades");
+    return `${filteredCount} ${noun} ${lessonLibraryTranslate("classes.filters.summaryIn", "em")} ${filterLabel}.`;
 }
 
 function libraryFilterSummaryLabel(filterId, filteredCount, totalCount) {
     const filter = classMaterialFilterDefinition(filterId);
+    const filterLabel = classMaterialFilterLabel(filter).toLowerCase();
     if (filter.id === "all") {
-        return `${totalCount} ${totalCount === 1 ? "material" : "materiais"} na biblioteca.`;
+        const noun = lessonLibraryTranslate(totalCount === 1 ? "library.count.material" : "library.count.materials", totalCount === 1 ? "material" : "materiais");
+        return `${totalCount} ${noun} ${lessonLibraryTranslate("library.filters.summaryInLibrary", "na biblioteca.")}`;
     }
 
     if (!filteredCount) {
-        return `Sem resultados em ${filter.label.toLowerCase()} na biblioteca.`;
+        return `${lessonLibraryTranslate("library.filters.summaryNone", "Sem resultados em")} ${filterLabel} ${lessonLibraryTranslate("library.filters.summaryInLibrary", "na biblioteca.")}`;
     }
 
-    return `${filteredCount} ${filteredCount === 1 ? "material" : "materiais"} em ${filter.label.toLowerCase()}.`;
+    const noun = lessonLibraryTranslate(filteredCount === 1 ? "library.count.material" : "library.count.materials", filteredCount === 1 ? "material" : "materiais");
+    return `${filteredCount} ${noun} ${lessonLibraryTranslate("classes.filters.summaryIn", "em")} ${filterLabel}.`;
 }
 
 function selectedClassFromAvailableClasses() {
@@ -1215,7 +1235,7 @@ function selectedClassFromAvailableClasses() {
 
 function classActivitySummary(lessons) {
     if (!Array.isArray(lessons) || !lessons.length) {
-        return "Nenhuma atividade criada ainda.";
+        return lessonLibraryTranslate("classes.empty.noActivitiesYet", "Nenhuma atividade criada ainda.");
     }
 
     const counts = lessons.reduce((result, lesson) => {
@@ -1263,9 +1283,9 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
         if (!classes.length) {
             recentNode.innerHTML = `
                 <article class="class-recent-lesson-card class-recent-lesson-card--empty">
-                    <span class="route-tag">Sem turma selecionada</span>
-                    <h3>Crie ou selecione uma turma para continuar</h3>
-                    <p>Depois disso, as atividades mais recentes desta turma aparecem aqui com ações rápidas.</p>
+                    <span class="route-tag">${lessonLibraryTranslate("classDetail.empty.noSelectedClass", "Sem turma selecionada")}</span>
+                    <h3>${lessonLibraryTranslate("classDetail.empty.selectClassTitle", "Crie ou selecione uma turma para continuar")}</h3>
+                    <p>${lessonLibraryTranslate("classDetail.empty.selectClassCopy", "Depois disso, as atividades mais recentes desta turma aparecem aqui com acoes rapidas.")}</p>
                 </article>
             `;
             return;
@@ -1274,12 +1294,12 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
         if (!latestLesson) {
             recentNode.innerHTML = `
                 <article class="class-recent-lesson-card class-recent-lesson-card--empty">
-                    <span class="route-tag">Sem atividade recente</span>
+                    <span class="route-tag">${lessonLibraryTranslate("classDetail.empty.noRecentActivity", "Sem atividade recente")}</span>
                     <h3>${escapeHtml(turma)} ainda não tem atividade salva</h3>
-                    <p>Comece com Slides para conduzir a aula e finalize com Quiz para revisar em poucos minutos.</p>
+                    <p>${lessonLibraryTranslate("classDetail.empty.startWithSlides", "Comece com Slides para conduzir a aula e finalize com Quiz para revisar em poucos minutos.")}</p>
                     <div class="lesson-history-actions">
-                        <a href="slides-builder.html" class="platform-link-button platform-link-primary">Criar slides (10-15 min)</a>
-                        <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">Criar quiz (5-8 min)</a>
+                        <a href="slides-builder.html" class="platform-link-button platform-link-primary">${lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")}</a>
+                        <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")}</a>
                     </div>
                 </article>
             `;
@@ -1299,17 +1319,17 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
 
         recentNode.innerHTML = `
             <article class="class-recent-lesson-card">
-                <span class="route-tag">Atividade mais recente</span>
+                <span class="route-tag">${lessonLibraryTranslate("classDetail.latest.mostRecent", "Atividade mais recente")}</span>
                 <h3>${safeTitle}</h3>
                 <p>${safeSummary}</p>
                 <div class="lesson-history-meta">
-                    <span>Atualizado em ${safeUpdatedAt}</span>
+                    <span>${lessonLibraryTranslate("classes.latest.updatedAt", "Atualizado em")} ${safeUpdatedAt}</span>
                     <span>${safeType}</span>
                     <span class="lesson-status-chip lesson-status-chip--${statusClass}">${safeStatus}</span>
                 </div>
                 <div class="lesson-history-actions">
-                    <a href="${editorPath}" class="platform-link-button platform-link-primary" data-edit-lesson="${safeId}">Continuar edição</a>
-                    <a href="${presentationPath}" class="platform-link-button platform-link-secondary" data-present-lesson="${safeId}">Apresentar agora</a>
+                    <a href="${editorPath}" class="platform-link-button platform-link-primary" data-edit-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.continueEditing", "Continuar edicao")}</a>
+                    <a href="${presentationPath}" class="platform-link-button platform-link-secondary" data-present-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.presentNow", "Apresentar agora")}</a>
                 </div>
             </article>
         `;
@@ -1322,13 +1342,13 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
 
     if (!classes.length) {
         if (summaryNode) {
-            summaryNode.textContent = "Crie a primeira turma para iniciar o fluxo principal: Slides (10-15 min), Quiz (5-8 min) e Biblioteca para reaproveitar.";
+            summaryNode.textContent = lessonLibraryTranslate("classDetail.flow.noClassesSummary", "Crie a primeira turma para iniciar o fluxo principal: Slides (10-15 min), Quiz (5-8 min) e Biblioteca para reaproveitar.");
         }
 
         if (actionsNode) {
             actionsNode.innerHTML = `
-                <a href="index.html" class="platform-link-button platform-link-primary">Voltar ao painel</a>
-                <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Abrir biblioteca</a>
+                <a href="index.html" class="platform-link-button platform-link-primary">${lessonLibraryTranslate("classDetail.actions.backToDashboard", "Voltar ao painel")}</a>
+                <a href="biblioteca.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("dashboard.actions.openLibrary", "Abrir biblioteca")}</a>
             `;
         }
         renderRecentLesson();
@@ -1337,20 +1357,20 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
 
     if (summaryNode) {
         if (!classLessons.length) {
-            summaryNode.textContent = `${turma} ainda nao tem materiais salvos. Sugestao: comece com Slides (10-15 min), feche com Quiz (5-8 min) e salve na Biblioteca.`;
+            summaryNode.textContent = `${turma} ${lessonLibraryTranslate("classDetail.flow.noMaterialsSummary", "ainda nao tem materiais salvos. Sugestao: comece com Slides (10-15 min), feche com Quiz (5-8 min) e salve na Biblioteca.")}`;
         } else {
-            const latestLabel = classLessons[0]?.updatedAt ? formatLessonDate(classLessons[0].updatedAt) : "agora";
-            summaryNode.textContent = `${turma} tem ${classLessons.length} materiais salvos. Ultima atualizacao: ${latestLabel}. Fluxo recomendado: Slides -> Quiz -> Biblioteca.`;
+            const latestLabel = classLessons[0]?.updatedAt ? formatLessonDate(classLessons[0].updatedAt) : lessonLibraryTranslate("classDetail.time.now", "agora");
+            summaryNode.textContent = `${turma} ${lessonLibraryTranslate("classDetail.flow.hasMaterialsPrefix", "tem")} ${classLessons.length} ${lessonLibraryTranslate("classDetail.flow.hasMaterialsSuffix", "materiais salvos. Ultima atualizacao:")} ${latestLabel}. ${lessonLibraryTranslate("classDetail.flow.recommended", "Fluxo recomendado: Slides -> Quiz -> Biblioteca.")}`;
         }
     }
 
     if (actionsNode) {
         actionsNode.innerHTML = `
-            <a href="gerar-aula.html" class="platform-link-button platform-link-primary">Escolher formato para esta turma</a>
-            <a href="slides-builder.html" class="platform-link-button platform-link-secondary">Criar slides (10-15 min)</a>
-            <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">Criar quiz (5-8 min)</a>
-            <a href="criar-aula.html" class="platform-link-button platform-link-secondary">Montar aula completa (15-25 min)</a>
-            <a href="biblioteca.html" class="platform-link-button platform-link-secondary">Abrir biblioteca</a>
+            <a href="gerar-aula.html" class="platform-link-button platform-link-primary">${lessonLibraryTranslate("classDetail.actions.chooseFormat", "Escolher formato para esta turma")}</a>
+            <a href="slides-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")}</a>
+            <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")}</a>
+            <a href="criar-aula.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.buildFullLesson", "Montar aula completa (15-25 min)")}</a>
+            <a href="biblioteca.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("dashboard.actions.openLibrary", "Abrir biblioteca")}</a>
         `;
     }
 
@@ -1370,9 +1390,9 @@ function hydrateClassCards() {
     if (!classes.length) {
         root.innerHTML = `
             <article class="quick-class-card quick-class-card--active">
-                <span class="route-tag">Sem turmas</span>
-                <h3>Nenhuma turma criada ainda</h3>
-                <p>Use o botao Criar turma na lateral para montar a primeira turma e comecar a salvar atividades.</p>
+                <span class="route-tag">${lessonLibraryTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
+                <h3>${lessonLibraryTranslate("dashboard.empty.noClassesTitle", "Nenhuma turma criada ainda")}</h3>
+                <p>${lessonLibraryTranslate("classDetail.empty.noClassesCardCopy", "Use o botao Criar turma na lateral para montar a primeira turma e comecar a salvar atividades.")}</p>
             </article>
         `;
         return;
@@ -1380,7 +1400,7 @@ function hydrateClassCards() {
 
     root.innerHTML = classes.map((className) => {
         const lessons = classMaterials(className);
-        const latest = lessons[0]?.updatedAt ? formatLessonDate(lessons[0].updatedAt) : "Sem atividades ainda";
+        const latest = lessons[0]?.updatedAt ? formatLessonDate(lessons[0].updatedAt) : lessonLibraryTranslate("classes.empty.noActivitiesShort", "Sem atividades ainda");
         const countLabel = `${lessons.length} ${lessons.length === 1 ? "atividade" : "atividades"}`;
         const activeClass = className === selectedClass ? " quick-class-card--active" : "";
 
@@ -1391,7 +1411,7 @@ function hydrateClassCards() {
                 <p>${classActivitySummary(lessons)}</p>
                 <div class="lesson-history-meta">
                     <span>${latest}</span>
-                    <span>${lessons.length ? `${new Set(lessons.map((lesson) => lesson.materialType || "slides")).size} formatos` : "0 formatos"}</span>
+                    <span>${lessons.length ? `${new Set(lessons.map((lesson) => lesson.materialType || "slides")).size} ${lessonLibraryTranslate("classes.count.formats", "formatos")}` : `0 ${lessonLibraryTranslate("classes.count.formats", "formatos")}`}</span>
                 </div>
             </a>
         `;
@@ -1484,7 +1504,7 @@ function hydrateClassPage() {
     }
 
     document.querySelectorAll("[data-class-title]").forEach((node) => {
-        node.textContent = turma || "Nenhuma turma selecionada";
+        node.textContent = turma || lessonLibraryTranslate("classDetail.empty.noSelectedClass", "Nenhuma turma selecionada");
     });
 
     const allLessons = classMaterials(turma);
@@ -1516,7 +1536,7 @@ function hydrateClassPage() {
                         aria-pressed="${isActive ? "true" : "false"}"
                         ${count === 0 && !isActive ? "disabled" : ""}
                     >
-                        <span>${filter.label}</span>
+                        <span>${classMaterialFilterLabel(filter)}</span>
                         <small>${count}</small>
                     </button>
                 `;
@@ -1537,15 +1557,15 @@ function hydrateClassPage() {
         if (listRoot) {
             listRoot.innerHTML = `
                 <article class="lesson-history-card">
-                    <span class="route-tag">Sem turmas</span>
-                    <h3>Crie a primeira turma para começar</h3>
-                    <p>Depois de criar a turma, as atividades salvas vao aparecer organizadas aqui.</p>
+                    <span class="route-tag">${lessonLibraryTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
+                    <h3>${lessonLibraryTranslate("classDetail.empty.createFirstClassTitle", "Crie a primeira turma para comecar")}</h3>
+                    <p>${lessonLibraryTranslate("classDetail.empty.createFirstClassCopy", "Depois de criar a turma, as atividades salvas vao aparecer organizadas aqui.")}</p>
                 </article>
             `;
         }
 
         if (selectRoot) {
-            selectRoot.innerHTML = `<option>Nenhuma turma criada ainda</option>`;
+            selectRoot.innerHTML = `<option>${lessonLibraryTranslate("dashboard.empty.noClassesTitle", "Nenhuma turma criada ainda")}</option>`;
             selectRoot.disabled = true;
         }
 
@@ -1567,15 +1587,15 @@ function hydrateClassPage() {
         if (listRoot) {
             listRoot.innerHTML = `
                 <article class="lesson-history-card">
-                    <span class="route-tag">Sem atividades salvas</span>
-                    <h3>Nenhuma atividade pronta ainda</h3>
-                    <p>Salve uma atividade finalizada para ela aparecer aqui e poder ser reaberta depois.</p>
+                    <span class="route-tag">${lessonLibraryTranslate("classDetail.empty.noSavedActivities", "Sem atividades salvas")}</span>
+                    <h3>${lessonLibraryTranslate("classDetail.empty.noReadyActivityTitle", "Nenhuma atividade pronta ainda")}</h3>
+                    <p>${lessonLibraryTranslate("classDetail.empty.noReadyActivityCopy", "Salve uma atividade finalizada para ela aparecer aqui e poder ser reaberta depois.")}</p>
                 </article>
             `;
         }
 
         if (selectRoot) {
-            selectRoot.innerHTML = `<option>Nenhuma atividade salva nesta turma</option>`;
+            selectRoot.innerHTML = `<option>${lessonLibraryTranslate("classDetail.empty.noSavedInClass", "Nenhuma atividade salva nesta turma")}</option>`;
             selectRoot.disabled = true;
         }
 
@@ -1598,15 +1618,15 @@ function hydrateClassPage() {
         if (listRoot) {
             listRoot.innerHTML = `
                 <article class="lesson-history-card">
-                    <span class="route-tag">Filtro: ${filter.label}</span>
-                    <h3>Nenhuma atividade neste filtro</h3>
-                    <p>Troque o filtro para ver outros formatos salvos nesta turma.</p>
+                    <span class="route-tag">${lessonLibraryTranslate("classes.filters.tag", "Filtro")}: ${classMaterialFilterLabel(filter)}</span>
+                    <h3>${lessonLibraryTranslate("classDetail.empty.noFilterActivityTitle", "Nenhuma atividade neste filtro")}</h3>
+                    <p>${lessonLibraryTranslate("classDetail.empty.noFilterActivityCopy", "Troque o filtro para ver outros formatos salvos nesta turma.")}</p>
                 </article>
             `;
         }
 
         if (selectRoot) {
-            selectRoot.innerHTML = `<option>Nenhuma atividade em ${filter.label.toLowerCase()}</option>`;
+            selectRoot.innerHTML = `<option>${lessonLibraryTranslate("classDetail.empty.noActivityIn", "Nenhuma atividade em")} ${classMaterialFilterLabel(filter).toLowerCase()}</option>`;
             selectRoot.disabled = true;
         }
 
@@ -1637,7 +1657,7 @@ function hydrateClassPage() {
                 <details class="editor-disclosure lesson-group-section lesson-group-disclosure">
                     <summary>
                         <span>${materialGroupLabel(key)}</span>
-                        <small>${count} ${count === 1 ? "atividade" : "atividades"}</small>
+                        <small>${count} ${lessonLibraryTranslate(count === 1 ? "dashboard.count.activity" : "dashboard.count.activities", count === 1 ? "atividade" : "atividades")}</small>
                     </summary>
                     <div class="editor-disclosure-body lesson-group-body">
                         ${count ? `
@@ -1648,16 +1668,16 @@ function hydrateClassPage() {
                                     <h3>${lesson.title}</h3>
                                     <p>${lesson.summary}</p>
                                     <div class="lesson-history-meta">
-                                        <span>Atualizado em ${formatLessonDate(lesson.updatedAt)}</span>
+                                        <span>${lessonLibraryTranslate("classes.latest.updatedAt", "Atualizado em")} ${formatLessonDate(lesson.updatedAt)}</span>
                                         <span>${lesson.type}</span>
                                         <span class="lesson-status-chip lesson-status-chip--${lesson.status || LESSON_STATUS_DRAFT}">${lessonStatusLabel(lesson.status)}</span>
                                     </div>
                                     <div class="lesson-history-actions">
-                                        <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-present-lesson="${lesson.id}">Apresentar</a>
-                                        <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-edit-lesson="${lesson.id}">Editar</a>
-                                        <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${lesson.id}">Adicionar a biblioteca</button>
-                                        <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${lesson.id}">Duplicar para outra turma</button>
-                                        <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Remover</button>
+                                        <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-present-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
+                                        <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-edit-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.addToLibrary", "Adicionar a biblioteca")}</button>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.duplicateToClass", "Duplicar para outra turma")}</button>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.remove", "Remover")}</button>
                                     </div>
                                 </article>
                             `).join("")}
@@ -1665,7 +1685,7 @@ function hydrateClassPage() {
                         ` : `
                         <article class="lesson-history-card lesson-history-card--empty">
                             <span class="route-tag">${materialGroupLabel(key)}</span>
-                            <h3>Nenhuma atividade salva</h3>
+                            <h3>${lessonLibraryTranslate("classDetail.empty.noSavedActivityTitle", "Nenhuma atividade salva")}</h3>
                             <p>${materialGroupDescription(key)}</p>
                         </article>
                         `}
@@ -1685,11 +1705,11 @@ function hydrateClassPage() {
     if (actionsRoot) {
         const activeLesson = filteredLessons[0];
         actionsRoot.innerHTML = `
-            <a href="${escapeHtml(presentationPathForLesson(activeLesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="present">Apresentar</a>
-            <a href="${escapeHtml(editorPathForLesson(activeLesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="edit">Editar</a>
-            <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="library">Adicionar a biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="duplicate">Duplicar para outra turma</button>
-            <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="delete">Remover</button>
+            <a href="${escapeHtml(presentationPathForLesson(activeLesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="present">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
+            <a href="${escapeHtml(editorPathForLesson(activeLesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="edit">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
+            <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="library">${lessonLibraryTranslate("classDetail.actions.addToLibrary", "Adicionar a biblioteca")}</button>
+            <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="duplicate">${lessonLibraryTranslate("classDetail.actions.duplicateToClass", "Duplicar para outra turma")}</button>
+            <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="delete">${lessonLibraryTranslate("classDetail.actions.remove", "Remover")}</button>
         `;
     }
 
@@ -1895,7 +1915,7 @@ function hydrateLibraryPage() {
 
     const lessons = libraryMaterials();
     if (countNode) {
-        countNode.textContent = `${lessons.length} ${lessons.length === 1 ? "material salvo" : "materiais salvos"}`;
+        countNode.textContent = `${lessons.length} ${lessonLibraryTranslate(lessons.length === 1 ? "library.count.savedMaterial" : "library.count.savedMaterials", lessons.length === 1 ? "material salvo" : "materiais salvos")}`;
     }
 
     const filterExists = CLASS_MATERIAL_FILTERS.some((filter) => filter.id === activeLibraryMaterialFilter);
@@ -1944,7 +1964,7 @@ function hydrateLibraryPage() {
                         aria-pressed="${isActive ? "true" : "false"}"
                         ${count === 0 && !isActive ? "disabled" : ""}
                     >
-                        <span>${filter.label}</span>
+                        <span>${classMaterialFilterLabel(filter)}</span>
                         <small>${count}</small>
                     </button>
                 `;
@@ -1965,9 +1985,9 @@ function hydrateLibraryPage() {
     if (!lessons.length) {
         root.innerHTML = `
             <article class="lesson-history-card">
-                <span class="route-tag">Biblioteca vazia</span>
-                <h3>Nenhum material salvo na biblioteca ainda</h3>
-                <p>Use &quot;Salvar na biblioteca&quot; em qualquer atividade para montar seu acervo reutilizável.</p>
+                <span class="route-tag">${lessonLibraryTranslate("library.empty.label", "Biblioteca vazia")}</span>
+                <h3>${lessonLibraryTranslate("library.empty.title", "Nenhum material salvo na biblioteca ainda")}</h3>
+                <p>${lessonLibraryTranslate("library.empty.copy", "Use Salvar na biblioteca em qualquer atividade para montar seu acervo reutilizavel.")}</p>
             </article>
         `;
         root.setAttribute("aria-busy", "false");
@@ -1977,16 +1997,18 @@ function hydrateLibraryPage() {
     if (!filteredLessons.length) {
         const filter = classMaterialFilterDefinition(activeLibraryMaterialFilter);
         const hasSearch = Boolean(normalizeSearchText(librarySearchQuery));
-        const statusLabel = activeLibraryStatusFilter === LESSON_STATUS_READY ? "prontos" : "rascunhos";
+        const statusLabel = activeLibraryStatusFilter === LESSON_STATUS_READY
+            ? lessonLibraryTranslate("library.status.readyPlural", "prontos")
+            : lessonLibraryTranslate("library.status.draftPlural", "rascunhos");
         const message = hasSearch
-            ? "Revise a busca ou limpe os filtros para ver mais materiais."
+            ? lessonLibraryTranslate("library.empty.searchCopy", "Revise a busca ou limpe os filtros para ver mais materiais.")
             : activeLibraryStatusFilter !== "all"
-                ? `Nao ha materiais ${statusLabel} com estes filtros.`
-                : "Troque o filtro para visualizar outros formatos salvos na biblioteca.";
+                ? `${lessonLibraryTranslate("library.empty.noStatusPrefix", "Nao ha materiais")} ${statusLabel} ${lessonLibraryTranslate("library.empty.noStatusSuffix", "com estes filtros.")}`
+                : lessonLibraryTranslate("library.empty.noFilterCopy", "Troque o filtro para visualizar outros formatos salvos na biblioteca.");
         root.innerHTML = `
             <article class="lesson-history-card">
-                <span class="route-tag">Filtro: ${filter.label}</span>
-                <h3>Nenhum material neste filtro</h3>
+                <span class="route-tag">${lessonLibraryTranslate("classes.filters.tag", "Filtro")}: ${classMaterialFilterLabel(filter)}</span>
+                <h3>${lessonLibraryTranslate("library.empty.noFilterTitle", "Nenhum material neste filtro")}</h3>
                 <p>${message}</p>
             </article>
         `;
@@ -2011,7 +2033,7 @@ function hydrateLibraryPage() {
             <details class="editor-disclosure lesson-group-section lesson-group-disclosure">
                 <summary>
                     <span>${materialGroupLabel(key)}</span>
-                    <small>${count} ${count === 1 ? "material" : "materiais"}</small>
+                    <small>${count} ${lessonLibraryTranslate(count === 1 ? "library.count.material" : "library.count.materials", count === 1 ? "material" : "materiais")}</small>
                 </summary>
                 <div class="editor-disclosure-body lesson-group-body">
                     ${count ? `
@@ -2022,16 +2044,16 @@ function hydrateLibraryPage() {
                                 <h3>${escapeHtml(lesson.title)}</h3>
                                 <p>${escapeHtml(lesson.summary)}</p>
                                 <div class="lesson-history-meta">
-                                    <span>Atualizado em ${escapeHtml(formatLessonDate(lesson.updatedAt))}</span>
+                                    <span>${lessonLibraryTranslate("classes.latest.updatedAt", "Atualizado em")} ${escapeHtml(formatLessonDate(lesson.updatedAt))}</span>
                                     <span>${escapeHtml(lesson.type)}</span>
                                     <span class="lesson-status-chip lesson-status-chip--${escapeHtml(lesson.status || LESSON_STATUS_DRAFT)}">${escapeHtml(lessonStatusLabel(lesson.status))}</span>
                                 </div>
                                 ${lessonPedagogyTagsHtml(lesson)}
                                 <div class="lesson-history-actions">
-                                    <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-edit-lesson="${escapeHtml(lesson.id)}">Editar</a>
-                                    <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-present-lesson="${escapeHtml(lesson.id)}">Apresentar</a>
-                                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(lesson.id)}">Adicionar a turma</button>
-                                    <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(lesson.id)}">Excluir</button>
+                                    <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
+                                    <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-present-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("library.actions.addToClass", "Adicionar a turma")}</button>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("library.actions.delete", "Excluir")}</button>
                                 </div>
                             </article>
                         `).join("")}
@@ -2039,7 +2061,7 @@ function hydrateLibraryPage() {
                     ` : `
                     <article class="lesson-history-card lesson-history-card--empty">
                         <span class="route-tag">${materialGroupLabel(key)}</span>
-                        <h3>Nenhum material salvo</h3>
+                        <h3>${lessonLibraryTranslate("library.empty.noSavedMaterialTitle", "Nenhum material salvo")}</h3>
                         <p>${materialGroupDescription(key)}</p>
                     </article>
                     `}
@@ -2072,6 +2094,13 @@ document.addEventListener("educaria-classes-updated", () => {
 });
 
 document.addEventListener("educaria-lessons-updated", () => {
+    hydrateCompletionSummary();
+    hydrateClassCards();
+    hydrateClassPage();
+    hydrateLibraryPage();
+});
+
+document.addEventListener("educaria-language-changed", () => {
     hydrateCompletionSummary();
     hydrateClassCards();
     hydrateClassPage();

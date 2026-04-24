@@ -1,16 +1,32 @@
 const CLASSES_OVERVIEW_FILTERS = [
-    { id: "all", label: "Todas" },
-    { id: "active", label: "Com atividades" },
-    { id: "empty", label: "Sem atividades" },
-    { id: "slides", label: "Com slides/aula" },
-    { id: "quiz", label: "Com quiz" }
+    { id: "all", labelKey: "classes.filters.all", fallback: "Todas" },
+    { id: "active", labelKey: "classes.filters.active", fallback: "Com atividades" },
+    { id: "empty", labelKey: "classes.filters.empty", fallback: "Sem atividades" },
+    { id: "slides", labelKey: "classes.filters.slides", fallback: "Com slides/aula" },
+    { id: "quiz", labelKey: "classes.filters.quiz", fallback: "Com quiz" }
 ];
 
 let activeClassesOverviewFilter = "all";
 
+function classesTranslate(key, fallback) {
+    if (typeof window !== "undefined" && typeof window.educariaTranslate === "function") {
+        return window.educariaTranslate(key, fallback);
+    }
+    return fallback || key;
+}
+
+function classesOverviewFilterLabel(filter) {
+    if (!filter) return "";
+    return classesTranslate(filter.labelKey, filter.fallback);
+}
+
+function classesOverviewPlural(count, singularKey, pluralKey, singularFallback, pluralFallback) {
+    return classesTranslate(count === 1 ? singularKey : pluralKey, count === 1 ? singularFallback : pluralFallback);
+}
+
 function classesOverviewSummary(lessons) {
     if (!Array.isArray(lessons) || !lessons.length) {
-        return "Nenhuma atividade criada ainda.";
+        return classesTranslate("classes.empty.noActivitiesYet", "Nenhuma atividade criada ainda.");
     }
 
     const counts = lessons.reduce((result, lesson) => {
@@ -28,7 +44,7 @@ function classesOverviewSummary(lessons) {
 
 function classesOverviewLatestLabel(lessons) {
     if (!Array.isArray(lessons) || !lessons.length) {
-        return "Sem atividades ainda";
+        return classesTranslate("classes.empty.noActivitiesShort", "Sem atividades ainda");
     }
 
     const latest = lessons[0]?.updatedAt || "";
@@ -83,15 +99,18 @@ function classesOverviewFilterApply(cards, filterId) {
 
 function classesOverviewFilterSummaryLabel(filterId, filteredCount, totalCount) {
     const filter = classesOverviewFilterDefinition(filterId);
+    const filterLabel = classesOverviewFilterLabel(filter).toLowerCase();
     if (filter.id === "all") {
-        return `${totalCount} ${totalCount === 1 ? "turma" : "turmas"} no painel.`;
+        const noun = classesOverviewPlural(totalCount, "classes.count.class", "classes.count.classes", "turma", "turmas");
+        return `${totalCount} ${noun} ${classesTranslate("classes.filters.summaryInPanel", "no painel.")}`;
     }
 
     if (!filteredCount) {
-        return `Sem turmas em ${filter.label.toLowerCase()}.`;
+        return `${classesTranslate("classes.filters.summaryNone", "Sem turmas em")} ${filterLabel}.`;
     }
 
-    return `${filteredCount} ${filteredCount === 1 ? "turma" : "turmas"} em ${filter.label.toLowerCase()}.`;
+    const noun = classesOverviewPlural(filteredCount, "classes.count.class", "classes.count.classes", "turma", "turmas");
+    return `${filteredCount} ${noun} ${classesTranslate("classes.filters.summaryIn", "em")} ${filterLabel}.`;
 }
 
 function renderClassesOverviewFilters(root, cards) {
@@ -113,7 +132,7 @@ function renderClassesOverviewFilters(root, cards) {
                 aria-pressed="${isActive ? "true" : "false"}"
                 ${count === 0 && !isActive ? "disabled" : ""}
             >
-                <span>${filter.label}</span>
+                <span>${classesOverviewFilterLabel(filter)}</span>
                 <small>${count}</small>
             </button>
         `;
@@ -161,9 +180,9 @@ function hydrateClassesOverviewPage() {
     if (!classes.length) {
         root.innerHTML = `
             <article class="lesson-history-card">
-                <span class="route-tag">Sem turmas</span>
-                <h3>Nenhuma turma criada ainda</h3>
-                <p>Use o botão Criar turma na lateral para começar e organizar suas atividades por turma.</p>
+                <span class="route-tag">${classesTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
+                <h3>${classesTranslate("dashboard.empty.noClassesTitle", "Nenhuma turma criada ainda")}</h3>
+                <p>${classesTranslate("classes.empty.noClassesCopy", "Use o botao Criar turma na lateral para comecar e organizar suas atividades por turma.")}</p>
             </article>
         `;
         return;
@@ -173,22 +192,22 @@ function hydrateClassesOverviewPage() {
         const filter = classesOverviewFilterDefinition(activeClassesOverviewFilter);
         root.innerHTML = `
             <article class="lesson-history-card">
-                <span class="route-tag">Filtro: ${filter.label}</span>
-                <h3>Nenhuma turma encontrada neste filtro</h3>
-                <p>Troque o filtro para visualizar outras turmas do painel.</p>
+                <span class="route-tag">${classesTranslate("classes.filters.tag", "Filtro")}: ${classesOverviewFilterLabel(filter)}</span>
+                <h3>${classesTranslate("classes.empty.noFilterTitle", "Nenhuma turma encontrada neste filtro")}</h3>
+                <p>${classesTranslate("classes.empty.noFilterCopy", "Troque o filtro para visualizar outras turmas do painel.")}</p>
             </article>
         `;
         return;
     }
 
     root.innerHTML = filteredCards.map((card) => {
-        const countLabel = `${card.materialCount} ${card.materialCount === 1 ? "atividade" : "atividades"}`;
+        const countLabel = `${card.materialCount} ${classesOverviewPlural(card.materialCount, "dashboard.count.activity", "dashboard.count.activities", "atividade", "atividades")}`;
         const safe = typeof escapeHtml === "function" ? escapeHtml : (value) => String(value || "");
         const safeClassName = safe(card.className);
         const classToken = encodeURIComponent(card.className);
         const latestLesson = card.latestLesson && typeof card.latestLesson === "object" ? card.latestLesson : null;
         const latestLessonTitle = latestLesson
-            ? safe(latestLesson.title || (typeof materialGroupLabel === "function" ? materialGroupLabel(latestLesson.materialType || "slides") : "Atividade"))
+            ? safe(latestLesson.title || (typeof materialGroupLabel === "function" ? materialGroupLabel(latestLesson.materialType || "slides") : classesTranslate("classes.count.activity", "Atividade")))
             : "";
         const latestLessonId = latestLesson ? safe(latestLesson.id || "") : "";
         const latestLessonUpdated = latestLesson?.updatedAt
@@ -208,20 +227,20 @@ function hydrateClassesOverviewPage() {
                 <p>${safe(card.summary)}</p>
                 <div class="lesson-history-meta">
                     <span>${safe(card.latestLabel)}</span>
-                    <span>${card.formatsCount} ${card.formatsCount === 1 ? "formato" : "formatos"}</span>
+                    <span>${card.formatsCount} ${classesOverviewPlural(card.formatsCount, "classes.count.format", "classes.count.formats", "formato", "formatos")}</span>
                 </div>
                 ${latestLesson ? `
                 <div class="class-overview-latest">
-                    <span class="class-overview-latest-label">Atividade recente</span>
+                    <span class="class-overview-latest-label">${classesTranslate("classes.latest.label", "Atividade recente")}</span>
                     <strong>${latestLessonTitle}</strong>
-                    <small>${safe(latestLessonUpdated ? `Atualizada em ${latestLessonUpdated}` : "Atualização recente")}</small>
+                    <small>${safe(latestLessonUpdated ? `${classesTranslate("classes.latest.updatedAt", "Atualizada em")} ${latestLessonUpdated}` : classesTranslate("classes.latest.recentUpdate", "Atualizacao recente"))}</small>
                 </div>
                 ` : ""}
                 <div class="lesson-history-actions">
-                    <a href="turma.html#atividades-salvas" class="platform-link-button platform-link-primary" data-class-open-materials="${classToken}">Ver materiais</a>
-                    <a href="index.html#activity-toolkit" class="platform-link-button platform-link-secondary" data-class-create-material="${classToken}">Criar material</a>
-                    ${latestLesson ? `<a href="${latestLessonEditorPath}" class="platform-link-button platform-link-secondary" data-class-open-editor="${classToken}" data-lesson-id="${latestLessonId}">Continuar edição</a>` : ""}
-                    ${latestLesson ? `<a href="${latestLessonPresentationPath}" class="platform-link-button platform-link-secondary" data-class-open-presentation="${classToken}" data-lesson-id="${latestLessonId}">Apresentar agora</a>` : ""}
+                    <a href="turma.html#atividades-salvas" class="platform-link-button platform-link-primary" data-class-open-materials="${classToken}">${classesTranslate("classes.actions.viewMaterials", "Ver materiais")}</a>
+                    <a href="index.html#activity-toolkit" class="platform-link-button platform-link-secondary" data-class-create-material="${classToken}">${classesTranslate("classes.actions.createMaterial", "Criar material")}</a>
+                    ${latestLesson ? `<a href="${latestLessonEditorPath}" class="platform-link-button platform-link-secondary" data-class-open-editor="${classToken}" data-lesson-id="${latestLessonId}">${classesTranslate("classes.actions.continueEditing", "Continuar edicao")}</a>` : ""}
+                    ${latestLesson ? `<a href="${latestLessonPresentationPath}" class="platform-link-button platform-link-secondary" data-class-open-presentation="${classToken}" data-lesson-id="${latestLessonId}">${classesTranslate("classes.actions.presentNow", "Apresentar agora")}</a>` : ""}
                 </div>
             </article>
         `;
@@ -310,5 +329,9 @@ document.addEventListener("educaria-classes-updated", () => {
 });
 
 document.addEventListener("educaria-lessons-updated", () => {
+    hydrateClassesOverviewPage();
+});
+
+document.addEventListener("educaria-language-changed", () => {
     hydrateClassesOverviewPage();
 });
