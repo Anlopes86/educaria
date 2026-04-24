@@ -766,6 +766,10 @@ function applyMatchColorControl(draftState) {
 }
 
 function resolveLessonAiEndpoint() {
+    if (typeof window.educariaAiEndpoint === "function") {
+        return window.educariaAiEndpoint();
+    }
+
     if (window.EDUCARIA_AI_ENDPOINT) {
         return window.EDUCARIA_AI_ENDPOINT;
     }

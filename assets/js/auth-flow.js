@@ -54,6 +54,16 @@ function firebaseConfigReady() {
     });
 }
 
+async function waitForFirebaseConfig() {
+    if (window.educariaFirebaseConfigReady && typeof window.educariaFirebaseConfigReady.then === "function") {
+        try {
+            await window.educariaFirebaseConfigReady;
+        } catch (error) {
+            console.warn("EducarIA Firebase config runtime unavailable:", error);
+        }
+    }
+}
+
 function firebaseServices() {
     if (!firebaseConfigReady() || typeof firebase === "undefined") return null;
 
@@ -683,8 +693,9 @@ function syncAuthStateWithFirebase() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     hydrateFeedbackLiveRegions();
+    await waitForFirebaseConfig();
     educariaTrack("page_view", { screen: analyticsPageName() });
     scheduleEducariaAnalyticsAutoFlush();
     showFirebaseConfigMessageIfNeeded();

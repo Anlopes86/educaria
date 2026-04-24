@@ -1,5 +1,6 @@
 (function initEducariaFirebaseConfig() {
     const STORAGE_KEY = "educaria:firebase:config";
+    const RUNTIME_CONFIG_FILE = "firebase-config.local.js";
     const DEFAULT_CONFIG = {
         apiKey: "COLE_AQUI_API_KEY",
         authDomain: "COLE_AQUI_AUTH_DOMAIN",
@@ -48,13 +49,32 @@
         }, { ...DEFAULT_CONFIG });
     }
 
-    const resolvedConfig = mergeConfig(
+    function runtimeConfigUrl() {
+        const currentScript = document.currentScript;
+        if (!currentScript?.src) return `assets/js/${RUNTIME_CONFIG_FILE}`;
+
+        return currentScript.src.replace(/firebase-config\.js(?:\?.*)?$/, RUNTIME_CONFIG_FILE);
+    }
+
+    function loadRuntimeConfigScript() {
+        if (typeof document === "undefined") return Promise.resolve();
+
+        return new Promise((resolve) => {
+            const script = document.createElement("script");
+            script.src = runtimeConfigUrl();
+            script.async = false;
+            script.onload = () => resolve();
+            script.onerror = () => resolve();
+            document.head.appendChild(script);
+        });
+    }
+
+    window.EDUCARIA_FIREBASE_CONFIG = mergeConfig(
         window.EDUCARIA_FIREBASE_CONFIG,
         window.EDUCARIA_FIREBASE_CONFIG_OVERRIDE,
         readStoredConfig()
     );
 
-    window.EDUCARIA_FIREBASE_CONFIG = resolvedConfig;
     window.setEducariaFirebaseConfig = function setEducariaFirebaseConfig(nextConfig, options = {}) {
         const persist = Boolean(options.persist);
         const config = buildConfig(nextConfig);
@@ -80,4 +100,13 @@
         window.EDUCARIA_FIREBASE_CONFIG = { ...DEFAULT_CONFIG };
         return window.EDUCARIA_FIREBASE_CONFIG;
     };
+
+    window.educariaFirebaseConfigReady = loadRuntimeConfigScript().then(() => {
+        window.EDUCARIA_FIREBASE_CONFIG = mergeConfig(
+            window.EDUCARIA_FIREBASE_CONFIG,
+            window.EDUCARIA_FIREBASE_CONFIG_OVERRIDE,
+            readStoredConfig()
+        );
+        return window.EDUCARIA_FIREBASE_CONFIG;
+    });
 })();

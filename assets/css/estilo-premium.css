@@ -8,6 +8,7 @@
 @import url('./components/filters.css');
 @import url('./layouts/app-shell.css');
 @import url('./pages/settings.css');
+@import url('./pages/library.css');
 
 .container {
     width: 100%;
@@ -2802,93 +2803,6 @@ body.product-body.theme-overview[data-page="classes-overview"] .class-overview-c
 }
 
 body.product-body.theme-overview[data-page="classes-overview"] .class-overview-card .platform-link-secondary {
-    border-color: rgba(37, 99, 235, 0.18);
-    color: #18438a;
-    background: rgba(255, 255, 255, 0.92);
-}
-
-body.product-body.theme-overview[data-page="library-overview"] {
-    background:
-        radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 24%),
-        radial-gradient(circle at top right, rgba(14, 165, 233, 0.1), transparent 22%),
-        linear-gradient(180deg, #f8fbff 0%, #eef5ff 100%);
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .app-page-intro {
-    border-radius: 28px;
-    border: 1px solid rgba(37, 99, 235, 0.12);
-    background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.9), transparent 30%),
-        linear-gradient(135deg, rgba(37, 99, 235, 0.08) 0%, rgba(14, 165, 233, 0.05) 100%);
-    box-shadow: 0 18px 36px -32px rgba(37, 99, 235, 0.24);
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .app-page-intro__content {
-    gap: 14px;
-    max-width: 860px;
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .app-page-intro .focus-eyebrow {
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.12) 0%, rgba(14, 165, 233, 0.1) 100%);
-    color: #0f4aa3;
-    box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.08);
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .app-page-intro__content h1 {
-    color: #0f2f69;
-    font-size: clamp(2.4rem, 4vw, 3.3rem);
-    letter-spacing: -0.04em;
-    line-height: 0.96;
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .app-page-intro__content p {
-    max-width: 62ch;
-    color: #466182;
-    font-size: 1rem;
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .library-overview-panel {
-    position: relative;
-    overflow: hidden;
-    border-color: rgba(37, 99, 235, 0.14);
-    background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
-    box-shadow: 0 22px 40px -30px rgba(15, 23, 42, 0.26);
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .library-overview-panel::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 6px;
-    background: linear-gradient(90deg, #2563eb, #38bdf8);
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .platform-section-label {
-    color: #0f4aa3;
-    background: rgba(59, 130, 246, 0.12);
-    box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.08);
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .page-section-title h2 {
-    color: #102a56;
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .page-section-title p {
-    color: #466182;
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .library-overview-panel .utility-actions {
-    margin-top: 18px;
-    margin-bottom: 24px;
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .library-overview-panel .platform-link-primary {
-    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-    color: #ffffff;
-    box-shadow: 0 16px 28px -20px rgba(37, 99, 235, 0.48);
-}
-
-body.product-body.theme-overview[data-page="library-overview"] .library-overview-panel .platform-link-secondary {
     border-color: rgba(37, 99, 235, 0.18);
     color: #18438a;
     background: rgba(255, 255, 255, 0.92);

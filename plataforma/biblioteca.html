@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Biblioteca | EducarIA</title>
+    <title data-i18n="library.title">Biblioteca | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
@@ -14,20 +14,21 @@
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/firebase-config.js"></script>
     <script src="../assets/js/auth-flow.js" defer></script>
+    <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/app-sidebar.js" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-page="library-overview">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content" data-i18n="library.skip">Pular para o conteudo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="../index.html" class="platform-brand app-sidebar-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Biblioteca</strong>
+                    <strong data-i18n="library.brand.section">Biblioteca</strong>
                 </div>
             </a>
 
@@ -35,26 +36,26 @@
                 <strong data-sidebar-teacher>Professor</strong>
                 <span data-sidebar-institution>Conta educacional</span>
             </div>
-            <nav class="app-sidebar-nav" aria-label="Navegacao principal">
-                <a href="index.html" class="sidebar-nav-link">Painel</a>
+            <nav class="app-sidebar-nav" aria-label="Navegacao principal" data-i18n-aria-label="library.nav.main">
+                <a href="index.html" class="sidebar-nav-link" data-i18n="library.nav.dashboard">Painel</a>
 
-                <a href="turmas.html" class="sidebar-nav-link" data-sidebar-classes-page-link>Turmas</a>
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas rápidas</button>
+                <a href="turmas.html" class="sidebar-nav-link" data-sidebar-classes-page-link data-i18n="library.nav.classes">Turmas</a>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false" data-i18n="library.nav.quickClasses">Turmas rápidas</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
                     <div class="sidebar-subitems" data-sidebar-class-list></div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false">Criar turma</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false" data-i18n="library.nav.createClass">Criar turma</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="create-class" hidden>
                     <div class="sidebar-create-card">
                         <div class="platform-field">
-                            <label for="sidebar-nome-turma">Nova turma</label>
-                            <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma">
+                            <label for="sidebar-nome-turma" data-i18n="library.sidebar.newClass">Nova turma</label>
+                            <input id="sidebar-nome-turma" type="text" placeholder="Nome da turma" data-i18n-placeholder="library.sidebar.className">
                         </div>
                         <div class="platform-field">
-                            <label for="sidebar-materia">Matéria</label>
+                            <label for="sidebar-materia" data-i18n="library.sidebar.subject">Matéria</label>
                             <select id="sidebar-materia">
-                                <option value="">Selecione a matéria</option>
+                                <option value="" data-i18n="library.sidebar.subject.placeholder">Selecione a matéria</option>
                                 <option value="Matematica">Matemática</option>
                                 <option value="Portugues">Português</option>
                                 <option value="Ciencias">Ciências</option>
@@ -65,12 +66,12 @@
                                 <option value="Educacao fisica">Educação física</option>
                             </select>
                         </div>
-                        <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class>Criar turma</button>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-sidebar-create-class data-i18n="library.nav.createClass">Criar turma</button>
                         <p class="sidebar-feedback" data-sidebar-class-feedback hidden></p>
                     </div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false">Criar atividade</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false" data-i18n="library.nav.createActivity">Criar atividade</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
                     <div class="sidebar-subitems">
                         <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
@@ -88,12 +89,12 @@
                     </div>
                 </div>
 
-                <a href="biblioteca.html" class="sidebar-nav-link">Biblioteca</a>
-                <a href="configuracoes.html" class="sidebar-nav-link">Configurações</a>
+                <a href="biblioteca.html" class="sidebar-nav-link" data-i18n="library.nav.library">Biblioteca</a>
+                <a href="configuracoes.html" class="sidebar-nav-link" data-i18n="library.nav.settings">Configurações</a>
             </nav>
 
             <div class="app-sidebar-footer">
-                <button type="button" class="platform-link-button platform-link-secondary" data-logout>Sair</button>
+                <button type="button" class="platform-link-button platform-link-secondary" data-logout data-i18n="library.actions.logout">Sair</button>
             </div>
         </aside>
 
@@ -101,20 +102,43 @@
             <section class="focus-card library-overview-panel">
                 <div class="page-section-title">
                     <div>
-                        <span class="platform-section-label">Materiais</span>
-                        <h2 data-library-count></h2>
+                        <span class="platform-section-label" data-i18n="library.materials.label">Materiais</span>
+                        <h2 data-library-count role="status" aria-live="polite" aria-atomic="true"></h2>
                     </div>
-                    <p>Abra, edite ou apresente qualquer material salvo independentemente de turma.</p>
+                    <p data-i18n="library.materials.copy">Abra, edite ou apresente qualquer material salvo independentemente de turma.</p>
                 </div>
 
                 <div class="utility-actions">
-                    <a href="index.html#activity-toolkit" class="platform-link-button platform-link-primary">Criar atividade</a>
-                    <a href="index.html" class="platform-link-button platform-link-secondary">Voltar para o painel</a>
+                    <a href="index.html#activity-toolkit" class="platform-link-button platform-link-primary" data-i18n="library.actions.createActivity">Criar atividade</a>
+                    <a href="index.html" class="platform-link-button platform-link-secondary" data-i18n="library.actions.backDashboard">Voltar para o painel</a>
+                </div>
+
+                <div class="library-filter-panel" data-library-filter-panel>
+                    <div class="platform-field library-search-field">
+                        <label for="library-search" data-i18n="library.filters.search">Buscar material</label>
+                        <input id="library-search" type="search" placeholder="Titulo, resumo ou tipo" data-library-search data-i18n-placeholder="library.filters.search.placeholder">
+                    </div>
+                    <div class="platform-field">
+                        <label for="library-status-filter" data-i18n="library.filters.status">Status</label>
+                        <select id="library-status-filter" data-library-status-filter>
+                            <option value="all" data-i18n="library.filters.status.all">Todos</option>
+                            <option value="ready" data-i18n="library.filters.status.ready">Prontos</option>
+                            <option value="draft" data-i18n="library.filters.status.draft">Rascunhos</option>
+                        </select>
+                    </div>
+                    <div class="platform-field">
+                        <label for="library-sort" data-i18n="library.filters.sort">Ordenar</label>
+                        <select id="library-sort" data-library-sort>
+                            <option value="recent" data-i18n="library.filters.sort.recent">Atualizados recentemente</option>
+                            <option value="title" data-i18n="library.filters.sort.title">Titulo A-Z</option>
+                            <option value="used" data-i18n="library.filters.sort.used">Mais usados</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="class-material-filters" data-library-material-filters></div>
-                <p class="class-material-filter-summary" data-library-material-filter-summary hidden></p>
-                <div class="class-activity-groups" data-library-materials></div>
+                <p class="class-material-filter-summary" data-library-material-filter-summary role="status" aria-live="polite" aria-atomic="true" hidden></p>
+                <div class="class-activity-groups" data-library-materials aria-live="polite" aria-busy="false"></div>
             </section>
         </main>
     </div>

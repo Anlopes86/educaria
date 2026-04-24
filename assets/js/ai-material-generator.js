@@ -1194,6 +1194,10 @@ function buildFallbackWordsearch(sourceText, requestedCount) {
 }
 
 function resolveAiEndpoint() {
+    if (typeof window.educariaAiEndpoint === "function") {
+        return window.educariaAiEndpoint();
+    }
+
     if (window.EDUCARIA_AI_ENDPOINT) {
         return window.EDUCARIA_AI_ENDPOINT;
     }
@@ -1210,11 +1214,19 @@ function resolveAiEndpoint() {
 }
 
 function resolveAiHealthEndpoint() {
+    if (typeof window.educariaAiEndpoint === "function") {
+        return window.educariaAiEndpoint("/api/health");
+    }
+
     const endpoint = resolveAiEndpoint();
     return endpoint.replace(/\/api\/ai\/generate$/, "/api/health");
 }
 
 function resolveTemplateEndpoint() {
+    if (typeof window.educariaAiEndpoint === "function") {
+        return window.educariaAiEndpoint("/api/model-template/generate");
+    }
+
     const endpoint = resolveAiEndpoint();
     return endpoint.replace(/\/api\/ai\/generate$/, "/api/model-template/generate");
 }

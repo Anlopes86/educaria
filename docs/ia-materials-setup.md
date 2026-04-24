@@ -50,6 +50,8 @@ AI_RATE_LIMIT_MAX=8
 AI_DAILY_CREDIT_LIMIT=5
 AI_DAILY_CREDIT_LIMIT_FREE=5
 AI_DAILY_CREDIT_LIMIT_PRO=20
+AI_CREDIT_STORE=memory
+AI_CREDIT_STORE_PATH=.data/ai-credits.json
 AI_PRO_UIDS=uid1,uid2
 AI_MAX_UPLOAD_MB=5
 AI_JSON_LIMIT=2mb
@@ -72,7 +74,16 @@ O plano pode ser resolvido por:
 
 Cada chamada bem-sucedida para `POST /api/ai/generate` desconta 1 credito.
 
-O contador atual roda no processo do `ai-service` e reinicia se o servico reiniciar. Para varias instancias ou controle financeiro mais rigido, mova esse contador para Redis, Firestore via Admin SDK ou outro banco de servidor.
+Por padrao, `AI_CREDIT_STORE=memory` mantem o contador no processo do `ai-service`.
+
+Para persistir o consumo entre reinicios em uma instalacao simples, use:
+
+```env
+AI_CREDIT_STORE=file
+AI_CREDIT_STORE_PATH=.data/ai-credits.json
+```
+
+O modo `file` grava um JSON local e remove dias antigos automaticamente. Ele resolve o problema de reinicio do servico, mas ainda nao e o armazenamento ideal para varias instancias rodando ao mesmo tempo. Para controle financeiro mais rigido em producao horizontal, mova esse contador para Redis, Firestore via Admin SDK ou outro banco de servidor com incremento atomico.
 
 No frontend, `assets/js/ai-credits.js` consulta `GET /api/ai/credits`, atualiza todos os elementos com `data-ai-credits` e expõe `ensureEducariaAiCreditsAvailable()`. Os geradores chamam essa funcao antes de enviar uma nova geracao para evitar chamadas conhecidamente sem saldo.
 

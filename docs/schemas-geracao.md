@@ -225,6 +225,13 @@ Tipos esperados:
 - `imagem`
 - `modelo_interno`
 
+Materiais salvos na biblioteca tambem preservam metadados leves:
+
+- `bnccCodes`: codigos detectados em titulo, resumo ou rascunho, como `EF08LI01` e `EM13LGG101`
+- `tags`: marcadores pedagogicos inferidos, como `avaliacao`, `revisao`, `argumentacao`, `vocabulario` e `organizacao`
+
+Esses metadados entram na busca da biblioteca e aparecem como chips nos cards.
+
 ## 7. Fluxo esperado
 
 1. Professor informa turma, tema, tempo e objetivo.

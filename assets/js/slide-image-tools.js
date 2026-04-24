@@ -26,6 +26,10 @@ const LOCAL_PLACEHOLDER_IMAGE_MODE = "Placeholder local";
 const LEGACY_AI_IMAGE_MODE = "Gerar com IA";
 
 function resolveAiGenerateEndpoint() {
+    if (typeof window.educariaAiEndpoint === "function") {
+        return window.educariaAiEndpoint();
+    }
+
     if (window.EDUCARIA_AI_ENDPOINT) {
         return window.EDUCARIA_AI_ENDPOINT;
     }
@@ -38,6 +42,10 @@ function resolveAiGenerateEndpoint() {
 }
 
 function resolveAiImageEndpoint() {
+    if (typeof window.educariaAiEndpoint === "function") {
+        return window.educariaAiEndpoint("/api/ai/generate-image");
+    }
+
     return resolveAiGenerateEndpoint().replace(/\/api\/ai\/generate$/, "/api/ai/generate-image");
 }
 

@@ -11,6 +11,7 @@ Plataforma para professores criarem e organizarem materiais didaticos com apoio 
 ## Documentacao
 
 - Firebase e regras de seguranca: `docs/firebase-setup.md`
+- Deploy Firebase sem config no GitHub: `docs/deploy-firebase-config.md`
 - Servico de IA e creditos: `docs/ia-materials-setup.md`
 - Organizacao gradual do CSS: `docs/css-architecture.md`
 - Internacionalizacao: `docs/i18n.md`

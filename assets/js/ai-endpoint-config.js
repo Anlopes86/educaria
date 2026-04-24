@@ -10,7 +10,7 @@
 
     window.EDUCARIA_AI_ENDPOINT = isLocal ? LOCAL_ENDPOINT : REMOTE_ENDPOINT;
 
-    function resolveAiEndpoint(path) {
+    function resolveAiEndpoint(path = "/api/ai/generate") {
         return window.EDUCARIA_AI_ENDPOINT.replace(/\/api\/ai\/generate$/, path);
     }
 
@@ -46,5 +46,17 @@
 
     window.educariaAiCreditsEndpoint = function educariaAiCreditsEndpoint() {
         return resolveAiEndpoint("/api/ai/credits");
+    };
+
+    window.educariaBillingCheckoutEndpoint = function educariaBillingCheckoutEndpoint() {
+        return resolveAiEndpoint("/api/billing/checkout");
+    };
+
+    window.educariaBillingStatusEndpoint = function educariaBillingStatusEndpoint() {
+        return resolveAiEndpoint("/api/billing/status");
+    };
+
+    window.educariaAiEndpoint = function educariaAiEndpoint(path = "/api/ai/generate") {
+        return resolveAiEndpoint(path);
     };
 })();

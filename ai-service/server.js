@@ -1,5 +1,7 @@
 import "dotenv/config";
 import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 import express from "express";
 import cors from "cors";
 import multer from "multer";
@@ -43,8 +45,13 @@ const aiDailyCreditLimits = {
     free: aiDailyCreditLimitFree,
     pro: aiDailyCreditLimitPro
 };
+const aiCreditStore = String(process.env.AI_CREDIT_STORE || "memory").trim().toLowerCase();
+const aiCreditStorePath = path.resolve(process.env.AI_CREDIT_STORE_PATH || ".data/ai-credits.json");
 const aiProUidAllowList = new Set(parseAllowedOrigins(process.env.AI_PRO_UIDS));
 const aiImageGenerationEnabled = String(process.env.AI_IMAGE_GENERATION_ENABLED || "").trim().toLowerCase() === "true";
+const billingCheckoutUrl = String(process.env.BILLING_CHECKOUT_URL || "").trim();
+const billingWebhookSecret = String(process.env.BILLING_WEBHOOK_SECRET || "").trim();
+const billingStorePath = path.resolve(process.env.BILLING_STORE_PATH || ".data/billing-events.json");
 const firebaseCertUrl = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
 const firebaseCertCache = {
     expiresAt: 0,
@@ -52,6 +59,11 @@ const firebaseCertCache = {
 };
 const aiRateLimitBuckets = new Map();
 const aiDailyCreditBuckets = new Map();
+const billingRecords = new Map();
+let aiCreditFileLoaded = false;
+let aiCreditFileWriteQueue = Promise.resolve();
+let billingStoreLoaded = false;
+let billingStoreWriteQueue = Promise.resolve();
 
 if (String(process.env.TRUST_PROXY || "").trim().toLowerCase() === "true") {
     app.set("trust proxy", 1);
@@ -284,6 +296,10 @@ function aiPlanForRequest(request) {
         return "pro";
     }
 
+    if (uid && billingRecords.get(uid)?.plan === "pro") {
+        return "pro";
+    }
+
     return "free";
 }
 
@@ -300,14 +316,228 @@ function aiCreditBucketKey(request, day) {
     return `${aiCreditUserKey(request)}:${aiPlanForRequest(request)}:${day}`;
 }
 
+function aiCreditStoreType() {
+    return aiCreditStore === "file" ? "file" : "memory";
+}
+
+function aiCreditFileStoreEnabled() {
+    return aiCreditStoreType() === "file";
+}
+
+function normalizeStoredCreditCount(value) {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        return 0;
+    }
+
+    return Math.floor(parsed);
+}
+
+async function loadAiCreditFileStore() {
+    if (!aiCreditFileStoreEnabled() || aiCreditFileLoaded) {
+        return;
+    }
+
+    try {
+        const content = await fs.readFile(aiCreditStorePath, "utf8");
+        const parsed = JSON.parse(content);
+        const buckets = parsed?.buckets && typeof parsed.buckets === "object" ? parsed.buckets : parsed;
+
+        Object.entries(buckets || {}).forEach(([key, value]) => {
+            const used = normalizeStoredCreditCount(value);
+            if (used > 0) {
+                aiDailyCreditBuckets.set(key, used);
+            }
+        });
+    } catch (error) {
+        if (error?.code !== "ENOENT") {
+            console.warn("EducarIA AI credit store could not be loaded:", error instanceof Error ? error.message : error);
+        }
+    } finally {
+        aiCreditFileLoaded = true;
+    }
+}
+
+async function persistAiCreditFileStore() {
+    if (!aiCreditFileStoreEnabled()) {
+        return;
+    }
+
+    const payload = JSON.stringify({
+        updatedAt: new Date().toISOString(),
+        buckets: Object.fromEntries(aiDailyCreditBuckets)
+    }, null, 2);
+
+    aiCreditFileWriteQueue = aiCreditFileWriteQueue.then(async () => {
+        await fs.mkdir(path.dirname(aiCreditStorePath), { recursive: true });
+        const tempPath = `${aiCreditStorePath}.${process.pid}.tmp`;
+        await fs.writeFile(tempPath, payload, "utf8");
+        await fs.rename(tempPath, aiCreditStorePath);
+    }).catch((error) => {
+        console.warn("EducarIA AI credit store could not be saved:", error instanceof Error ? error.message : error);
+    });
+
+    return aiCreditFileWriteQueue;
+}
+
+function normalizeBillingRecord(record) {
+    if (!record || typeof record !== "object") return null;
+
+    const uid = String(record.uid || record.teacherUid || record.userId || "").trim();
+    if (!uid) return null;
+
+    const plan = normalizeTeacherPlan(record.plan || "pro");
+    const status = String(record.status || "paid").trim().toLowerCase();
+    return {
+        uid,
+        plan,
+        status,
+        provider: String(record.provider || "manual").trim() || "manual",
+        reference: String(record.reference || record.externalReference || "").trim(),
+        email: String(record.email || "").trim(),
+        updatedAt: isoTimestampOrEmpty(record.updatedAt) || new Date().toISOString(),
+        raw: record.raw || null
+    };
+}
+
+async function loadBillingStore() {
+    if (billingStoreLoaded) {
+        return;
+    }
+
+    try {
+        const content = await fs.readFile(billingStorePath, "utf8");
+        const parsed = JSON.parse(content);
+        const records = Array.isArray(parsed?.records) ? parsed.records : [];
+        records.forEach((record) => {
+            const normalized = normalizeBillingRecord(record);
+            if (normalized?.plan === "pro" && normalized.status === "paid") {
+                billingRecords.set(normalized.uid, normalized);
+                aiProUidAllowList.add(normalized.uid);
+            }
+        });
+    } catch (error) {
+        if (error?.code !== "ENOENT") {
+            console.warn("EducarIA billing store could not be loaded:", error instanceof Error ? error.message : error);
+        }
+    } finally {
+        billingStoreLoaded = true;
+    }
+}
+
+async function persistBillingStore() {
+    const payload = JSON.stringify({
+        updatedAt: new Date().toISOString(),
+        records: [...billingRecords.values()]
+    }, null, 2);
+
+    billingStoreWriteQueue = billingStoreWriteQueue.then(async () => {
+        await fs.mkdir(path.dirname(billingStorePath), { recursive: true });
+        const tempPath = `${billingStorePath}.${process.pid}.tmp`;
+        await fs.writeFile(tempPath, payload, "utf8");
+        await fs.rename(tempPath, billingStorePath);
+    }).catch((error) => {
+        console.warn("EducarIA billing store could not be saved:", error instanceof Error ? error.message : error);
+    });
+
+    return billingStoreWriteQueue;
+}
+
+async function markBillingPlan(record) {
+    await loadBillingStore();
+    const normalized = normalizeBillingRecord(record);
+    if (!normalized) {
+        throw new Error("billing_uid_missing");
+    }
+
+    billingRecords.set(normalized.uid, normalized);
+    if (normalized.plan === "pro" && normalized.status === "paid") {
+        aiProUidAllowList.add(normalized.uid);
+    }
+
+    await persistBillingStore();
+    return normalized;
+}
+
+function billingReferenceForUser(user) {
+    const uid = String(user?.uid || user?.sub || "").trim();
+    if (!uid) return "";
+
+    const signature = crypto
+        .createHmac("sha256", billingWebhookSecret || firebaseProjectId || "educaria-billing")
+        .update(uid)
+        .digest("hex")
+        .slice(0, 16);
+
+    return `educaria:${uid}:${signature}`;
+}
+
+function billingCheckoutUrlForUser(user) {
+    if (!billingCheckoutUrl) return "";
+
+    const uid = String(user?.uid || user?.sub || "").trim();
+    const email = String(user?.email || "").trim();
+    const reference = billingReferenceForUser(user);
+    const url = new URL(billingCheckoutUrl);
+    url.searchParams.set("teacher_uid", uid);
+    url.searchParams.set("external_reference", reference);
+    if (email) {
+        url.searchParams.set("email", email);
+    }
+    return url.toString();
+}
+
+function verifyBillingWebhook(request) {
+    if (!billingWebhookSecret) return true;
+
+    const provided = String(
+        request.get("x-educaria-webhook-secret") ||
+        request.get("x-webhook-secret") ||
+        request.query.secret ||
+        ""
+    ).trim();
+
+    if (!provided) return false;
+
+    const expected = Buffer.from(billingWebhookSecret);
+    const actual = Buffer.from(provided);
+    return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+}
+
+function billingRecordFromWebhook(payload) {
+    const data = payload?.data && typeof payload.data === "object" ? payload.data : payload;
+    const status = String(data?.status || data?.payment_status || data?.type || "").trim().toLowerCase();
+    const paidStatuses = new Set(["paid", "approved", "completed", "checkout.session.completed", "payment_intent.succeeded"]);
+    if (!paidStatuses.has(status)) {
+        return null;
+    }
+
+    const reference = String(data?.external_reference || data?.externalReference || data?.client_reference_id || "").trim();
+    const referenceParts = reference.split(":");
+    const uidFromReference = referenceParts[0] === "educaria" ? referenceParts[1] : "";
+
+    return normalizeBillingRecord({
+        uid: data?.uid || data?.teacherUid || data?.teacher_uid || uidFromReference,
+        plan: "pro",
+        status: "paid",
+        provider: data?.provider || payload?.provider || "webhook",
+        reference,
+        email: data?.email || data?.customer_email || "",
+        updatedAt: new Date().toISOString(),
+        raw: payload
+    });
+}
+
 /**
  * Returns the daily credit status for the user making the request.
  * User is identified by Firebase UID when auth is enabled, otherwise by IP.
  * Credits reset at midnight Pacific time (UTC-8/UTC-7).
  * @param {import('express').Request} request
- * @returns {{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string }}
+ * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }>}
  */
-function aiDailyCreditsFor(request) {
+async function aiDailyCreditsFor(request) {
+    await loadAiCreditFileStore();
+    await loadBillingStore();
     const day = dailyCreditDateKey();
     const plan = aiPlanForRequest(request);
     const key = aiCreditBucketKey(request, day);
@@ -320,24 +550,28 @@ function aiDailyCreditsFor(request) {
         limit,
         used,
         remaining: Math.max(0, limit - used),
-        resetAt: nextDailyCreditResetAt()
+        resetAt: nextDailyCreditResetAt(),
+        store: aiCreditStoreType()
     };
 }
 
-function hasAiDailyCredit(request) {
-    return aiDailyCreditsFor(request).remaining > 0;
+async function hasAiDailyCredit(request) {
+    const credits = await aiDailyCreditsFor(request);
+    return credits.remaining > 0;
 }
 
 /**
  * Increments the daily credit counter for the request's user and returns the updated stats.
  * Call this only after a successful AI generation — not before.
  * @param {import('express').Request} request
- * @returns {{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string }}
+ * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }>}
  */
-function consumeAiDailyCredit(request) {
+async function consumeAiDailyCredit(request) {
+    await loadAiCreditFileStore();
     const day = dailyCreditDateKey();
     const key = aiCreditBucketKey(request, day);
     aiDailyCreditBuckets.set(key, (aiDailyCreditBuckets.get(key) || 0) + 1);
+    await persistAiCreditFileStore();
     return aiDailyCreditsFor(request);
 }
 
@@ -376,11 +610,17 @@ setInterval(() => {
     });
 
     const currentDay = dailyCreditDateKey();
+    let prunedCredits = false;
     aiDailyCreditBuckets.forEach((_used, key) => {
         if (!key.endsWith(`:${currentDay}`)) {
             aiDailyCreditBuckets.delete(key);
+            prunedCredits = true;
         }
     });
+
+    if (prunedCredits) {
+        persistAiCreditFileStore();
+    }
 }, Math.max(60_000, aiRateLimitWindowMs)).unref?.();
 
 const quizSchema = {
@@ -1381,6 +1621,8 @@ async function extractTextFromFile(file) {
 }
 
 app.get("/api/health", (_request, response) => {
+    loadBillingStore();
+
     response.json({
         ok: true,
         geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
@@ -1391,16 +1633,89 @@ app.get("/api/health", (_request, response) => {
             max: aiRateLimitMax
         },
         dailyCreditLimits: aiDailyCreditLimits,
+        dailyCreditStore: aiCreditStoreType(),
         proUidAllowListSize: aiProUidAllowList.size,
+        billingCheckoutConfigured: Boolean(billingCheckoutUrl),
+        billingWebhookConfigured: Boolean(billingWebhookSecret),
         maxUploadMb,
         imageGenerationEnabled: aiImageGenerationEnabled
     });
 });
 
-app.get("/api/ai/credits", aiRateLimit, requireAiAuth, (request, response) => {
+app.post("/api/billing/checkout", aiRateLimit, requireAiAuth, async (request, response) => {
+    try {
+        const user = request.educariaUser || {};
+        const uid = String(user.uid || user.sub || "").trim();
+
+        if (!uid) {
+            return response.status(401).json({ error: "Login necessario para iniciar o checkout." });
+        }
+
+        await loadBillingStore();
+        const record = billingRecords.get(uid) || null;
+        if (record?.plan === "pro" && record.status === "paid") {
+            return response.json({
+                ok: true,
+                alreadyPro: true,
+                plan: "pro"
+            });
+        }
+
+        const checkoutUrl = billingCheckoutUrlForUser(user);
+        if (!checkoutUrl) {
+            return response.status(503).json({
+                error: "Checkout nao configurado no backend.",
+                code: "billing_checkout_not_configured"
+            });
+        }
+
+        return response.json({
+            ok: true,
+            checkoutUrl,
+            reference: billingReferenceForUser(user)
+        });
+    } catch (error) {
+        console.error("EducarIA billing checkout error:", error);
+        return response.status(500).json({
+            error: "Nao foi possivel iniciar o checkout."
+        });
+    }
+});
+
+app.get("/api/billing/status", aiRateLimit, requireAiAuth, async (request, response) => {
+    const uid = String(request.educariaUser?.uid || request.educariaUser?.sub || "").trim();
+    await loadBillingStore();
+    const record = uid ? billingRecords.get(uid) : null;
+
     response.json({
         ok: true,
-        credits: aiDailyCreditsFor(request)
+        plan: record?.plan === "pro" && record.status === "paid" ? "pro" : aiPlanForRequest(request),
+        billing: record || null
+    });
+});
+
+app.post("/api/billing/webhook", async (request, response) => {
+    if (!verifyBillingWebhook(request)) {
+        return response.status(401).json({ error: "Webhook nao autorizado." });
+    }
+
+    const record = billingRecordFromWebhook(request.body || {});
+    if (!record) {
+        return response.json({ ok: true, ignored: true });
+    }
+
+    const saved = await markBillingPlan(record);
+    return response.json({
+        ok: true,
+        plan: saved.plan,
+        uid: saved.uid
+    });
+});
+
+app.get("/api/ai/credits", aiRateLimit, requireAiAuth, async (request, response) => {
+    response.json({
+        ok: true,
+        credits: await aiDailyCreditsFor(request)
     });
 });
 
@@ -1418,8 +1733,8 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(400).json({ error: "Objetivo do professor muito longo (max 500 caracteres)." });
         }
 
-        if (!hasAiDailyCredit(request)) {
-            const credits = aiDailyCreditsFor(request);
+        if (!(await hasAiDailyCredit(request))) {
+            const credits = await aiDailyCreditsFor(request);
             const upgradeHint = credits.plan === "free" && credits.limits.pro > credits.limit
                 ? " Faca upgrade para o plano Pro para liberar mais geracoes por dia."
                 : "";
@@ -1449,13 +1764,13 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
         }
 
         // Credit is consumed only after a successful generation to avoid charging on errors.
-        // The check and consume happen in the same request without await between them,
-        // which is safe for a single-process server.
+        // The file store is persistent across restarts, but multi-instance deployments
+        // should move this counter to an atomic database/queue.
         const rawMaterial = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
         const material = materialType === "slides"
             ? normalizeSlidesMaterial(rawMaterial)
             : rawMaterial;
-        const credits = consumeAiDailyCredit(request);
+        const credits = await consumeAiDailyCredit(request);
         return response.json({
             ok: true,
             materialType,

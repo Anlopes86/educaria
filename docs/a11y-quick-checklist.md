@@ -1,6 +1,6 @@
 # Checklist Rapido de Acessibilidade (WCAG)
 
-Data de referencia: 22/04/2026
+Data de referencia: 24/04/2026
 
 ## Escopo validado
 
@@ -29,6 +29,7 @@ Data de referencia: 22/04/2026
 6. Testar formularios de login/cadastro com `required` e `autocomplete`.
 7. Validar filtros de turmas/turma/biblioteca com `aria-pressed` correto no item ativo.
 8. Confirmar que elementos dinamicos de creditos IA usam `role="status"`, `aria-live="polite"` e `aria-atomic="true"`.
+9. Confirmar que contagem, resumo e resultados da biblioteca anunciam mudancas com live regions e `aria-busy`.
 
 ## Proximo ciclo recomendado
 

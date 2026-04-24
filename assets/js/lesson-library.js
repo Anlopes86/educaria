@@ -24,6 +24,9 @@ let lessonsSyncPromise = null;
 let lastLessonsSyncUid = "";
 let activeClassMaterialFilter = "all";
 let activeLibraryMaterialFilter = "all";
+let activeLibraryStatusFilter = "all";
+let activeLibrarySort = "recent";
+let librarySearchQuery = "";
 
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
@@ -78,6 +81,44 @@ function normalizeLessonStatus(value) {
         : LESSON_STATUS_DRAFT;
 }
 
+function normalizeStringList(value, limit = 8) {
+    const list = Array.isArray(value) ? value : String(value || "").split(",");
+    const seen = new Set();
+    return list
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .filter((item) => {
+            const key = item.toLowerCase();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        })
+        .slice(0, limit);
+}
+
+function extractBnccCodesFromText(value) {
+    const matches = String(value || "").match(/\b(?:EF\d{2}[A-Z]{2}\d{2}|EM\d{2}[A-Z]{3}\d{3})\b/gi) || [];
+    return normalizeStringList(matches.map((code) => code.toUpperCase()), 12);
+}
+
+function inferPedagogicalTags(lesson) {
+    const text = normalizeSearchText([
+        lesson?.title,
+        lesson?.summary,
+        lesson?.type,
+        lesson?.materialType
+    ].join(" "));
+    const tags = [];
+
+    if (text.includes("avaliacao") || text.includes("quiz")) tags.push("avaliacao");
+    if (text.includes("revisao") || text.includes("flashcard")) tags.push("revisao");
+    if (text.includes("debate") || text.includes("argument")) tags.push("argumentacao");
+    if (text.includes("vocabulario") || text.includes("palavra")) tags.push("vocabulario");
+    if (text.includes("mapa") || text.includes("conceito")) tags.push("organizacao");
+
+    return normalizeStringList(tags, 6);
+}
+
 function sortLessonsByUpdatedAt(lessons) {
     return [...lessons].sort((left, right) => {
         const timestampDiff = lessonTimestampValue(right) - lessonTimestampValue(left);
@@ -97,18 +138,30 @@ function normalizeLessonRecord(lesson) {
     const normalizedType = materialType === "hangman"
         ? "Forca"
         : (String(lesson.type || materialGroupLabel(materialType)).trim() || materialGroupLabel(materialType));
+    const baseRecord = {
+        title: String(lesson.title || "").trim() || "Material sem titulo",
+        summary: String(lesson.summary || "").trim() || "Material salvo sem resumo definido.",
+        type: normalizedType,
+        materialType
+    };
+    const bnccCodes = normalizeStringList([
+        ...normalizeStringList(lesson.bnccCodes, 12),
+        ...extractBnccCodesFromText(`${baseRecord.title} ${baseRecord.summary} ${String(lesson.draft || "").slice(0, 5000)}`)
+    ], 12);
 
     return {
         id: String(lesson.id || `lesson-${Date.now()}`),
         className: scope === LESSON_SCOPE_CLASS ? className : "",
         scope,
-        title: String(lesson.title || "").trim() || "Material sem título",
-        summary: String(lesson.summary || "").trim() || "Material salvo sem resumo definido.",
-        type: normalizedType,
-        materialType,
+        ...baseRecord,
         createdAt,
         updatedAt,
         status: normalizeLessonStatus(lesson.status),
+        bnccCodes,
+        tags: normalizeStringList([
+            ...normalizeStringList(lesson.tags, 6),
+            ...inferPedagogicalTags(baseRecord)
+        ], 6),
         lastOpenedAt: isoTimestampOrEmpty(lesson.lastOpenedAt),
         lastPresentedAt: isoTimestampOrEmpty(lesson.lastPresentedAt),
         lastUsedAt: isoTimestampOrEmpty(lesson.lastUsedAt),
@@ -862,6 +915,19 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
         : `lesson-${Date.now()}`;
     const now = new Date().toISOString();
     const createdAt = existing?.createdAt || now;
+    const bnccCodes = normalizeStringList([
+        ...normalizeStringList(existing?.bnccCodes, 12),
+        ...extractBnccCodesFromText(`${summary.title} ${summary.summary} ${rawDraft.slice(0, 5000)}`)
+    ], 12);
+    const tags = normalizeStringList([
+        ...normalizeStringList(existing?.tags, 6),
+        ...inferPedagogicalTags({
+            title: summary.title,
+            summary: summary.summary,
+            type: summary.type,
+            materialType
+        })
+    ], 6);
 
     return {
         id: lessonId,
@@ -874,6 +940,8 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
         createdAt,
         updatedAt: now,
         status: existing?.status || LESSON_STATUS_DRAFT,
+        bnccCodes,
+        tags,
         lastOpenedAt: existing?.lastOpenedAt || "",
         lastPresentedAt: existing?.lastPresentedAt || "",
         lastUsedAt: existing?.lastUsedAt || "",
@@ -1037,6 +1105,75 @@ function classMaterialFilterApply(lessons, filterId) {
     if (!Array.isArray(filter.types) || !filter.types.length) return [...lessons];
 
     return lessons.filter((lesson) => filter.types.includes(lesson.materialType || "slides"));
+}
+
+function normalizeSearchText(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
+
+function lessonMatchesLibrarySearch(lesson, query) {
+    const normalizedQuery = normalizeSearchText(query);
+    if (!normalizedQuery) return true;
+
+    const haystack = normalizeSearchText([
+        lesson.title,
+        lesson.summary,
+        lesson.type,
+        lesson.materialType,
+        materialGroupLabel(lesson.materialType || "slides"),
+        lessonStatusLabel(lesson.status),
+        ...(lesson.bnccCodes || []),
+        ...(lesson.tags || [])
+    ].join(" "));
+
+    return haystack.includes(normalizedQuery);
+}
+
+function sortLibraryMaterials(lessons, sortId) {
+    const sorted = [...lessons];
+    if (sortId === "title") {
+        return sorted.sort((left, right) => String(left.title || "").localeCompare(String(right.title || ""), "pt-BR"));
+    }
+
+    if (sortId === "used") {
+        return sorted.sort((left, right) => {
+            const usageDiff = Number(right.usageCount || 0) - Number(left.usageCount || 0);
+            if (usageDiff !== 0) return usageDiff;
+            return lessonTimestampValue(right) - lessonTimestampValue(left);
+        });
+    }
+
+    return sortLessonsByUpdatedAt(sorted);
+}
+
+function applyLibraryFilters(lessons) {
+    let filteredLessons = classMaterialFilterApply(lessons, activeLibraryMaterialFilter);
+
+    if (activeLibraryStatusFilter !== "all") {
+        filteredLessons = filteredLessons.filter((lesson) => normalizeLessonStatus(lesson.status) === activeLibraryStatusFilter);
+    }
+
+    filteredLessons = filteredLessons.filter((lesson) => lessonMatchesLibrarySearch(lesson, librarySearchQuery));
+    return sortLibraryMaterials(filteredLessons, activeLibrarySort);
+}
+
+function lessonPedagogyTagsHtml(lesson) {
+    const chips = [
+        ...(lesson.bnccCodes || []),
+        ...(lesson.tags || [])
+    ].slice(0, 5);
+
+    if (!chips.length) return "";
+
+    return `
+        <div class="lesson-pedagogy-tags" aria-label="Metadados pedagogicos">
+            ${chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("")}
+        </div>
+    `;
 }
 
 function lessonStatusLabel(status) {
@@ -1718,12 +1855,43 @@ function bindClassPageRefresh() {
     });
 }
 
+function bindLibraryFilterControls() {
+    document.addEventListener("input", (event) => {
+        const searchInput = event.target.closest("[data-library-search]");
+        if (!searchInput) return;
+
+        librarySearchQuery = searchInput.value || "";
+        hydrateLibraryPage();
+    });
+
+    document.addEventListener("change", (event) => {
+        const statusFilter = event.target.closest("[data-library-status-filter]");
+        if (statusFilter) {
+            activeLibraryStatusFilter = statusFilter.value || "all";
+            hydrateLibraryPage();
+            return;
+        }
+
+        const sortSelect = event.target.closest("[data-library-sort]");
+        if (sortSelect) {
+            activeLibrarySort = sortSelect.value || "recent";
+            hydrateLibraryPage();
+        }
+    });
+}
+
 function hydrateLibraryPage() {
     const root = document.querySelector("[data-library-materials]");
     const countNode = document.querySelector("[data-library-count]");
     const filterRoot = document.querySelector("[data-library-material-filters]");
     const filterSummaryRoot = document.querySelector("[data-library-material-filter-summary]");
+    const searchInput = document.querySelector("[data-library-search]");
+    const statusFilter = document.querySelector("[data-library-status-filter]");
+    const sortSelect = document.querySelector("[data-library-sort]");
     if (!root && !countNode && !filterRoot && !filterSummaryRoot) return;
+    if (root) {
+        root.setAttribute("aria-busy", "true");
+    }
 
     const lessons = libraryMaterials();
     if (countNode) {
@@ -1735,10 +1903,30 @@ function hydrateLibraryPage() {
         activeLibraryMaterialFilter = "all";
     }
 
-    let filteredLessons = classMaterialFilterApply(lessons, activeLibraryMaterialFilter);
+    if (!["all", LESSON_STATUS_READY, LESSON_STATUS_DRAFT].includes(activeLibraryStatusFilter)) {
+        activeLibraryStatusFilter = "all";
+    }
+
+    if (!["recent", "title", "used"].includes(activeLibrarySort)) {
+        activeLibrarySort = "recent";
+    }
+
+    if (searchInput && searchInput.value !== librarySearchQuery) {
+        searchInput.value = librarySearchQuery;
+    }
+
+    if (statusFilter && statusFilter.value !== activeLibraryStatusFilter) {
+        statusFilter.value = activeLibraryStatusFilter;
+    }
+
+    if (sortSelect && sortSelect.value !== activeLibrarySort) {
+        sortSelect.value = activeLibrarySort;
+    }
+
+    let filteredLessons = applyLibraryFilters(lessons);
     if (lessons.length && !filteredLessons.length && activeLibraryMaterialFilter !== "all") {
         activeLibraryMaterialFilter = "all";
-        filteredLessons = [...lessons];
+        filteredLessons = applyLibraryFilters(lessons);
     }
 
     if (filterRoot) {
@@ -1782,18 +1970,27 @@ function hydrateLibraryPage() {
                 <p>Use &quot;Salvar na biblioteca&quot; em qualquer atividade para montar seu acervo reutilizável.</p>
             </article>
         `;
+        root.setAttribute("aria-busy", "false");
         return;
     }
 
     if (!filteredLessons.length) {
         const filter = classMaterialFilterDefinition(activeLibraryMaterialFilter);
+        const hasSearch = Boolean(normalizeSearchText(librarySearchQuery));
+        const statusLabel = activeLibraryStatusFilter === LESSON_STATUS_READY ? "prontos" : "rascunhos";
+        const message = hasSearch
+            ? "Revise a busca ou limpe os filtros para ver mais materiais."
+            : activeLibraryStatusFilter !== "all"
+                ? `Nao ha materiais ${statusLabel} com estes filtros.`
+                : "Troque o filtro para visualizar outros formatos salvos na biblioteca.";
         root.innerHTML = `
             <article class="lesson-history-card">
                 <span class="route-tag">Filtro: ${filter.label}</span>
                 <h3>Nenhum material neste filtro</h3>
-                <p>Troque o filtro para visualizar outros formatos salvos na biblioteca.</p>
+                <p>${message}</p>
             </article>
         `;
+        root.setAttribute("aria-busy", "false");
         return;
     }
 
@@ -1821,19 +2018,20 @@ function hydrateLibraryPage() {
                     <div class="lesson-history-grid class-lesson-grid">
                         ${groupItems.map((lesson) => `
                             <article class="lesson-history-card lesson-history-card--grouped">
-                                <span class="route-tag">${materialGroupLabel(key)}</span>
-                                <h3>${lesson.title}</h3>
-                                <p>${lesson.summary}</p>
+                                <span class="route-tag">${escapeHtml(materialGroupLabel(key))}</span>
+                                <h3>${escapeHtml(lesson.title)}</h3>
+                                <p>${escapeHtml(lesson.summary)}</p>
                                 <div class="lesson-history-meta">
-                                    <span>Atualizado em ${formatLessonDate(lesson.updatedAt)}</span>
-                                    <span>${lesson.type}</span>
-                                    <span class="lesson-status-chip lesson-status-chip--${lesson.status || LESSON_STATUS_DRAFT}">${lessonStatusLabel(lesson.status)}</span>
+                                    <span>Atualizado em ${escapeHtml(formatLessonDate(lesson.updatedAt))}</span>
+                                    <span>${escapeHtml(lesson.type)}</span>
+                                    <span class="lesson-status-chip lesson-status-chip--${escapeHtml(lesson.status || LESSON_STATUS_DRAFT)}">${escapeHtml(lessonStatusLabel(lesson.status))}</span>
                                 </div>
+                                ${lessonPedagogyTagsHtml(lesson)}
                                 <div class="lesson-history-actions">
-                                    <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-edit-lesson="${lesson.id}">Editar</a>
-                                    <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-present-lesson="${lesson.id}">Apresentar</a>
-                                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${lesson.id}">Adicionar a turma</button>
-                                    <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">Excluir</button>
+                                    <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-edit-lesson="${escapeHtml(lesson.id)}">Editar</a>
+                                    <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-present-lesson="${escapeHtml(lesson.id)}">Apresentar</a>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(lesson.id)}">Adicionar a turma</button>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(lesson.id)}">Excluir</button>
                                 </div>
                             </article>
                         `).join("")}
@@ -1849,6 +2047,7 @@ function hydrateLibraryPage() {
             </details>
         `;
     }).join("");
+    root.setAttribute("aria-busy", "false");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -1859,6 +2058,7 @@ document.addEventListener("DOMContentLoaded", () => {
     hydrateLibraryPage();
     bindLessonActivationLinks();
     bindClassPageRefresh();
+    bindLibraryFilterControls();
     syncLessonsWithFirebase();
 });
 

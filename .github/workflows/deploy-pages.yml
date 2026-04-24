@@ -1,0 +1,57 @@
+name: Deploy Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject Firebase runtime config
+        env:
+          FIREBASE_CONFIG_JSON: ${{ secrets.EDUCARIA_FIREBASE_CONFIG_JSON }}
+        run: |
+          test -n "$FIREBASE_CONFIG_JSON"
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const raw = process.env.FIREBASE_CONFIG_JSON || "";
+          const config = JSON.parse(raw);
+          const content = `(function configureEducariaFirebaseRuntime() {
+              if (typeof window.setEducariaFirebaseConfig !== "function") return;
+
+              window.setEducariaFirebaseConfig(${JSON.stringify(config, null, 4)}, { persist: true });
+          })();
+          `;
+
+          fs.writeFileSync("assets/js/firebase-config.local.js", content, "utf8");
+          NODE
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

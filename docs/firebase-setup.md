@@ -11,9 +11,11 @@ Este projeto usa Firebase Auth + Firestore no frontend.
 5. Crie o Firestore em modo nativo.
 6. Configure o Firebase Storage.
 
-## 2. Defina as chaves sem commitar segredo
+## 2. Defina a configuracao sem commitar no GitHub
 
 O arquivo versionado `assets/js/firebase-config.js` usa apenas placeholders por padrao. Sem configurar estes valores, login, cadastro e sincronizacao com Firestore ficam desativados com seguranca.
+
+Para desenvolvimento local, prefira `assets/js/firebase-config.local.js`. Esse arquivo e carregado automaticamente e esta no `.gitignore`.
 
 No browser (uma vez por ambiente), rode:
 
@@ -30,6 +32,8 @@ setEducariaFirebaseConfig({
 ```
 
 Isso salva a config no `localStorage` e evita colocar credenciais no Git.
+
+Para GitHub Pages, use o workflow documentado em `docs/deploy-firebase-config.md`. Ele gera `firebase-config.local.js` no artefato publicado a partir de um secret do GitHub, sem gravar os valores no repositorio.
 
 Para voltar ao estado sem credenciais locais, rode:
 

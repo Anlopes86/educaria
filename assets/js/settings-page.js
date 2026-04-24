@@ -11,6 +11,16 @@ function settingsFirebaseReady() {
     });
 }
 
+async function waitForSettingsFirebaseConfig() {
+    if (window.educariaFirebaseConfigReady && typeof window.educariaFirebaseConfigReady.then === "function") {
+        try {
+            await window.educariaFirebaseConfigReady;
+        } catch (error) {
+            console.warn("EducarIA settings Firebase config unavailable:", error);
+        }
+    }
+}
+
 function settingsServices() {
     if (!settingsFirebaseReady() || typeof firebase === "undefined") return null;
 
@@ -72,19 +82,66 @@ function settingsCheckoutUrl() {
     }
 }
 
+function settingsCheckoutEndpoint() {
+    if (typeof window.educariaBillingCheckoutEndpoint === "function") {
+        return window.educariaBillingCheckoutEndpoint();
+    }
+    return "";
+}
+
+function settingsBillingStatusEndpoint() {
+    if (typeof window.educariaBillingStatusEndpoint === "function") {
+        return window.educariaBillingStatusEndpoint();
+    }
+    return "";
+}
+
+async function refreshSettingsBillingStatus() {
+    const endpoint = settingsBillingStatusEndpoint();
+    if (!endpoint || typeof window.educariaAiAuthHeaders !== "function") return null;
+
+    try {
+        const response = await fetch(endpoint, {
+            headers: await window.educariaAiAuthHeaders()
+        });
+        if (!response.ok) return null;
+
+        const payload = await response.json().catch(() => ({}));
+        const currentTeacher = settingsCurrentTeacher();
+        if (!payload?.plan || !currentTeacher) return payload;
+
+        const nextTeacher = {
+            ...currentTeacher,
+            plan: payload.plan,
+            billingIntent: payload.billing || currentTeacher.billingIntent || null
+        };
+        settingsWriteTeacherCache(nextTeacher);
+        settingsNotifyTeacherChanged();
+        return payload;
+    } catch (error) {
+        console.warn("EducarIA billing status unavailable:", error);
+        return null;
+    }
+}
+
 function hydrateSettingsCheckoutLink() {
     const url = settingsCheckoutUrl();
     document.querySelectorAll("[data-settings-checkout-link]").forEach((link) => {
-        if (!url) {
+        if (!url && !settingsCheckoutEndpoint()) {
             link.hidden = true;
             link.removeAttribute("href");
             return;
         }
 
         link.hidden = false;
-        link.href = url;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer";
+        link.href = url || "#";
+        if (url) {
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
+        } else {
+            link.removeAttribute("target");
+            link.removeAttribute("rel");
+        }
     });
 }
 
@@ -353,6 +410,44 @@ function bindSettingsForms() {
     upgradeForm?.addEventListener("submit", handleSettingsUpgradeSubmit);
 }
 
+async function openSettingsCheckout(event) {
+    const link = event.target.closest("[data-settings-checkout-link]");
+    if (!link) return;
+
+    const staticUrl = settingsCheckoutUrl();
+    if (staticUrl) return;
+
+    event.preventDefault();
+    const feedback = document.querySelector("[data-settings-upgrade-feedback]");
+    const endpoint = settingsCheckoutEndpoint();
+    if (!endpoint) {
+        updateSettingsFeedback(feedback, "Checkout nao configurado no momento.", "error");
+        return;
+    }
+
+    try {
+        updateSettingsFeedback(feedback, "Abrindo checkout seguro...", "success");
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {}
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || !payload?.checkoutUrl) {
+            throw new Error(payload?.error || "Checkout indisponivel.");
+        }
+
+        if (typeof educariaTrack === "function") {
+            educariaTrack("checkout_opened", {
+                section: "settings",
+                reference: payload.reference || ""
+            });
+        }
+        window.location.href = payload.checkoutUrl;
+    } catch (error) {
+        updateSettingsFeedback(feedback, error instanceof Error ? error.message : "Checkout indisponivel no momento.", "error");
+    }
+}
+
 async function handleSettingsUpgradeSubmit(event) {
     event.preventDefault();
 
@@ -482,11 +577,14 @@ function bindSettingsLanguage() {
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    await waitForSettingsFirebaseConfig();
+    await refreshSettingsBillingStatus();
     hydrateSettingsPage();
     bindSettingsForms();
     bindPilotActions();
     bindSettingsLanguage();
+    document.addEventListener("click", openSettingsCheckout);
 });
 
 document.addEventListener("educaria-auth-changed", () => {
