@@ -778,6 +778,13 @@ function resolveLessonAiEndpoint() {
 }
 
 async function requestLessonAiMaterial(materialType, sourceText, action) {
+    if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
+        const hasCredits = await window.ensureEducariaAiCreditsAvailable({ alert: false });
+        if (!hasCredits) {
+            throw new Error("Seus creditos diarios de IA acabaram por hoje.");
+        }
+    }
+
     const endpoint = resolveLessonAiEndpoint();
     const formData = new FormData();
     formData.append("materialType", materialType);
@@ -1788,6 +1795,13 @@ async function generateWholeLessonSequence(button) {
     if (!sourceText.trim()) {
         window.alert("Escreva um texto-base ou pelo menos o objetivo da aula para gerar todos os blocos.");
         return;
+    }
+
+    if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
+        const hasCredits = await window.ensureEducariaAiCreditsAvailable();
+        if (!hasCredits) {
+            return;
+        }
     }
 
     lessonSequenceGenerating = true;

@@ -3,9 +3,11 @@ const EDUCARIA_TEACHER_CACHE_KEY = "educaria:auth:teacher-cache";
 const EDUCARIA_ANALYTICS_EVENTS_KEY = "educaria:analytics:events";
 const EDUCARIA_MILESTONE_KEY_PREFIX = "educaria:milestone:";
 const EDUCARIA_ANALYTICS_LIMIT = 400;
+const EDUCARIA_ANALYTICS_AUTO_FLUSH_MS = 60_000;
 
 let educariaAnalyticsFlushTimer = 0;
 let educariaAnalyticsFlushPromise = null;
+let educariaAnalyticsAutoFlushTimer = 0;
 
 function authLoginPath() {
     return window.location.pathname.includes("/plataforma/") ? "../login.html" : "login.html";
@@ -280,6 +282,14 @@ function scheduleEducariaAnalyticsFlush() {
         educariaAnalyticsFlushTimer = 0;
         flushEducariaAnalytics();
     }, 1200);
+}
+
+function scheduleEducariaAnalyticsAutoFlush() {
+    window.clearInterval(educariaAnalyticsAutoFlushTimer);
+    educariaAnalyticsAutoFlushTimer = window.setInterval(() => {
+        if (document.visibilityState === "hidden") return;
+        flushEducariaAnalytics();
+    }, EDUCARIA_ANALYTICS_AUTO_FLUSH_MS);
 }
 
 function educariaTrack(name, metadata = {}) {
@@ -676,6 +686,7 @@ function syncAuthStateWithFirebase() {
 document.addEventListener("DOMContentLoaded", () => {
     hydrateFeedbackLiveRegions();
     educariaTrack("page_view", { screen: analyticsPageName() });
+    scheduleEducariaAnalyticsAutoFlush();
     showFirebaseConfigMessageIfNeeded();
     redirectAuthenticatedFromAuthPages();
     enforceAuth();
@@ -691,4 +702,10 @@ document.addEventListener("educaria-auth-changed", () => {
 
 window.addEventListener("pagehide", () => {
     flushEducariaAnalytics();
+});
+
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+        flushEducariaAnalytics();
+    }
 });

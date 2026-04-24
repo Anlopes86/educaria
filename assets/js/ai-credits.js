@@ -1,3 +1,6 @@
+let educariaLatestAiCredits = null;
+let educariaAiCreditsHydrationPromise = null;
+
 function aiPlanLabel(plan) {
     return String(plan || "").trim().toLowerCase() === "pro" ? "Pro" : "Gratis";
 }
@@ -15,7 +18,23 @@ function aiCreditsResetLabel(resetAt) {
 }
 
 function renderEducariaAiCredits(credits) {
+    educariaLatestAiCredits = credits || null;
+    window.educariaLatestAiCredits = educariaLatestAiCredits;
+    document.dispatchEvent(new CustomEvent("educaria-ai-credits-rendered", {
+        detail: { credits: educariaLatestAiCredits }
+    }));
+
     document.querySelectorAll("[data-ai-credits]").forEach((element) => {
+        if (!element.getAttribute("role")) {
+            element.setAttribute("role", "status");
+        }
+        if (!element.getAttribute("aria-live")) {
+            element.setAttribute("aria-live", "polite");
+        }
+        if (!element.getAttribute("aria-atomic")) {
+            element.setAttribute("aria-atomic", "true");
+        }
+
         if (!credits) {
             element.textContent = "Creditos de IA: indisponiveis";
             element.dataset.state = "unavailable";
@@ -29,10 +48,22 @@ function renderEducariaAiCredits(credits) {
     });
 }
 
+function educariaAiCreditsEmptyMessage(credits) {
+    const plan = String(credits?.plan || "").trim().toLowerCase();
+    const proLimit = Number(credits?.limits?.pro || 0);
+    const currentLimit = Number(credits?.limit || 0);
+
+    if (plan === "free" && proLimit > currentLimit) {
+        return "Seus creditos diarios de IA acabaram. O plano Pro libera mais geracoes por dia.";
+    }
+
+    return "Seus creditos diarios de IA acabaram por hoje. Tente novamente apos o reset.";
+}
+
 async function hydrateEducariaAiCredits() {
     if (typeof window.educariaAiCreditsEndpoint !== "function" || typeof window.educariaAiAuthHeaders !== "function") {
         renderEducariaAiCredits(null);
-        return;
+        return null;
     }
 
     try {
@@ -43,19 +74,55 @@ async function hydrateEducariaAiCredits() {
 
         if (!response.ok) {
             renderEducariaAiCredits(null);
-            return;
+            return null;
         }
 
         const payload = await response.json();
-        renderEducariaAiCredits(payload?.credits || null);
+        const credits = payload?.credits || null;
+        renderEducariaAiCredits(credits);
+        return credits;
     } catch (error) {
         console.warn("EducarIA AI credits unavailable:", error);
         renderEducariaAiCredits(null);
+        return null;
     }
+}
+
+async function refreshEducariaAiCredits() {
+    if (!educariaAiCreditsHydrationPromise) {
+        educariaAiCreditsHydrationPromise = hydrateEducariaAiCredits()
+            .finally(() => {
+                educariaAiCreditsHydrationPromise = null;
+            });
+    }
+
+    return educariaAiCreditsHydrationPromise;
+}
+
+async function ensureEducariaAiCreditsAvailable(options = {}) {
+    const refresh = options.refresh !== false;
+    const shouldAlert = options.alert !== false;
+    const credits = refresh ? await refreshEducariaAiCredits() : educariaLatestAiCredits;
+
+    if (!credits) {
+        return true;
+    }
+
+    if (Number(credits.remaining) > 0) {
+        return true;
+    }
+
+    if (shouldAlert) {
+        window.alert(educariaAiCreditsEmptyMessage(credits));
+    }
+
+    return false;
 }
 
 window.renderEducariaAiCredits = renderEducariaAiCredits;
 window.hydrateEducariaAiCredits = hydrateEducariaAiCredits;
+window.refreshEducariaAiCredits = refreshEducariaAiCredits;
+window.ensureEducariaAiCreditsAvailable = ensureEducariaAiCreditsAvailable;
 
 document.addEventListener("DOMContentLoaded", () => {
     hydrateEducariaAiCredits();

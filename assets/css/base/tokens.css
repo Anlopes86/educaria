@@ -1,0 +1,64 @@
+/* Design tokens shared across the legacy stylesheet and new modules. */
+:root {
+    /* Cores principais - Paleta sofisticada */
+    --navy-dark: #0A192F;
+    --navy-medium: #172A45;
+    --blue-vibrant: #007ACC;
+    --blue-light: #61DAFB;
+    --blue-accent: #4FC3F7;
+
+    --orange-dark: #FF8C00;
+    --orange-bright: #FFA500;
+    --yellow-gold: #FFD700;
+    --orange-gradient: linear-gradient(135deg, #FF8C00 0%, #FFA500 50%, #FFD700 100%);
+
+    /* Neutros premium */
+    --white: #FFFFFF;
+    --gray-light: #F8FAFC;
+    --gray-medium: #E2E8F0;
+    --gray-dark: #334155;
+    --black-soft: #1E293B;
+
+    /* Gradientes complexos */
+    --gradient-primary: linear-gradient(135deg, #0A192F 0%, #007ACC 50%, #61DAFB 100%);
+    --gradient-secondary: linear-gradient(135deg, #FF8C00 0%, #FFA500 50%, #FFD700 100%);
+    --gradient-hero: linear-gradient(135deg, #0A192F 0%, #172A45 25%, #007ACC 75%, #61DAFB 100%);
+    --gradient-card: linear-gradient(145deg, #FFFFFF 0%, #F8FAFC 100%);
+
+    /* Tipografia */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display: 'Poppins', sans-serif;
+
+    /* Espacamentos */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-2xl: 3rem;
+    --space-3xl: 4rem;
+    --space-4xl: 6rem;
+
+    /* Bordas */
+    --radius-sm: 0.5rem;
+    --radius-md: 0.75rem;
+    --radius-lg: 1rem;
+    --radius-xl: 1.5rem;
+    --radius-2xl: 2rem;
+    --radius-full: 9999px;
+
+    /* Sombras premium */
+    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+    --shadow-glow: 0 0 20px rgba(79, 195, 247, 0.3);
+
+    /* Transicoes */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}

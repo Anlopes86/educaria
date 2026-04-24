@@ -1,5 +1,6 @@
 const SETTINGS_TEACHER_CACHE_KEY = "educaria:auth:teacher-cache";
 const SETTINGS_SESSION_KEY = "educaria:auth:session";
+const SETTINGS_CHECKOUT_URL_KEY = "educaria:billing:checkout-url";
 
 function settingsFirebaseReady() {
     const config = window.EDUCARIA_FIREBASE_CONFIG || {};
@@ -59,22 +60,78 @@ function updateSettingsFeedback(target, message, type) {
     target.dataset.state = type;
 }
 
+function settingsCheckoutUrl() {
+    const configured = String(window.EDUCARIA_BILLING_CHECKOUT_URL || "").trim();
+    if (configured) return configured;
+
+    try {
+        return String(localStorage.getItem(SETTINGS_CHECKOUT_URL_KEY) || "").trim();
+    } catch (error) {
+        console.warn("EducarIA billing config unavailable:", error);
+        return "";
+    }
+}
+
+function hydrateSettingsCheckoutLink() {
+    const url = settingsCheckoutUrl();
+    document.querySelectorAll("[data-settings-checkout-link]").forEach((link) => {
+        if (!url) {
+            link.hidden = true;
+            link.removeAttribute("href");
+            return;
+        }
+
+        link.hidden = false;
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+    });
+}
+
+function hydrateSettingsCreditUsage(credits) {
+    const planUsage = document.querySelector("[data-settings-plan-usage]");
+    if (!planUsage) return;
+
+    if (!credits) {
+        planUsage.hidden = true;
+        return;
+    }
+
+    planUsage.hidden = false;
+    document.querySelectorAll("[data-settings-ai-remaining]").forEach((element) => {
+        element.textContent = String(credits.remaining ?? 0);
+    });
+    document.querySelectorAll("[data-settings-ai-current-limit]").forEach((element) => {
+        element.textContent = String(credits.limit ?? 0);
+    });
+    document.querySelectorAll("[data-settings-ai-pro-limit]").forEach((element) => {
+        element.textContent = String(credits.limits?.pro ?? credits.limit ?? 0);
+    });
+}
+
+function settingsTranslate(key, fallback) {
+    if (typeof window.educariaTranslate !== "function") return fallback;
+    return window.educariaTranslate(key) || fallback;
+}
+
 function settingsPlanLabel(plan) {
-    return String(plan || "").trim().toLowerCase() === "pro" ? "Pro" : "Gratuito";
+    return String(plan || "").trim().toLowerCase() === "pro"
+        ? "Pro"
+        : settingsTranslate("settings.plan.free", "Gratuito");
 }
 
 function settingsUpgradeStatusLabel(intent) {
     const status = String(intent?.status || "").trim().toLowerCase();
-    if (status === "requested") return "Solicitado";
-    if (status === "approved") return "Aprovado";
-    return "Sem solicitação";
+    if (status === "requested") return settingsTranslate("settings.upgrade.requested", "Solicitado");
+    if (status === "approved") return settingsTranslate("settings.upgrade.approved", "Aprovado");
+    return settingsTranslate("settings.upgrade.none", "Sem solicitação");
 }
 
 function settingsRoleLabel(role) {
     const normalized = String(role || "").trim().toLowerCase();
-    if (normalized === "institution_admin") return "Admin institucional";
-    if (normalized === "coordinator") return "Coordenador";
-    return "Professor";
+    if (normalized === "institution_admin") return settingsTranslate("settings.role.admin", "Admin institucional");
+    if (normalized === "coordinator") return settingsTranslate("settings.role.coordinator", "Coordenador");
+    return settingsTranslate("settings.role.teacher", "Professor");
 }
 
 function hydrateSettingsPage() {
@@ -82,6 +139,11 @@ function hydrateSettingsPage() {
     const nameField = document.getElementById("settings-name");
     const emailField = document.getElementById("settings-email");
     const institutionField = document.getElementById("settings-institution");
+    const languageField = document.querySelector("[data-settings-language]");
+
+    if (languageField && typeof window.getEducariaLanguage === "function") {
+        languageField.value = window.getEducariaLanguage();
+    }
 
     if (teacher) {
         if (nameField) nameField.value = teacher.name || "";
@@ -124,6 +186,9 @@ function hydrateSettingsPage() {
     document.querySelectorAll("[data-settings-pilot-events]").forEach((element) => {
         element.textContent = `${summary.eventCount || 0}`;
     });
+    document.querySelectorAll("[data-settings-pilot-pending]").forEach((element) => {
+        element.textContent = `${summary.pendingSync || 0}`;
+    });
     document.querySelectorAll("[data-settings-pilot-days]").forEach((element) => {
         element.textContent = `${summary.activeDays || 0}`;
     });
@@ -137,6 +202,8 @@ function hydrateSettingsPage() {
     document.querySelectorAll("[data-settings-plan-status]").forEach((element) => {
         element.textContent = settingsUpgradeStatusLabel(teacher?.billingIntent);
     });
+    hydrateSettingsCheckoutLink();
+    hydrateSettingsCreditUsage(window.educariaLatestAiCredits || null);
 }
 
 async function handleSettingsProfileSubmit(event) {
@@ -335,7 +402,8 @@ async function handleSettingsUpgradeSubmit(event) {
         if (typeof educariaTrack === "function") {
             educariaTrack("upgrade_requested", {
                 section: "settings",
-                noteLength: note.length
+                noteLength: note.length,
+                hasCheckoutUrl: Boolean(settingsCheckoutUrl())
             });
         }
         hydrateSettingsPage();
@@ -393,10 +461,32 @@ function bindPilotActions() {
     });
 }
 
+function bindSettingsLanguage() {
+    document.querySelector("[data-settings-language]")?.addEventListener("change", async (event) => {
+        const language = event.currentTarget.value;
+        if (typeof window.setEducariaLanguage !== "function") {
+            try {
+                localStorage.setItem("educaria:i18n:language", language);
+            } catch (error) {
+                console.warn("EducarIA language storage unavailable:", error);
+            }
+            return;
+        }
+        await window.setEducariaLanguage(language);
+        if (typeof educariaTrack === "function") {
+            educariaTrack("language_changed", {
+                section: "settings",
+                language
+            });
+        }
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     hydrateSettingsPage();
     bindSettingsForms();
     bindPilotActions();
+    bindSettingsLanguage();
 });
 
 document.addEventListener("educaria-auth-changed", () => {
@@ -404,5 +494,13 @@ document.addEventListener("educaria-auth-changed", () => {
 });
 
 document.addEventListener("educaria-analytics-tracked", () => {
+    hydrateSettingsPage();
+});
+
+document.addEventListener("educaria-ai-credits-rendered", (event) => {
+    hydrateSettingsCreditUsage(event.detail?.credits || null);
+});
+
+document.addEventListener("educaria-language-changed", () => {
     hydrateSettingsPage();
 });

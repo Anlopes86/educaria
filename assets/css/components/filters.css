@@ -1,0 +1,83 @@
+/* Shared filter pills and lightweight status chips. */
+.class-material-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 12px 0 10px;
+}
+
+.class-material-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--navy-dark);
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.class-material-filter small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    min-height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.08);
+    color: var(--gray-dark);
+    font-size: 0.72rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.class-material-filter.is-active {
+    border-color: rgba(37, 99, 235, 0.45);
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    box-shadow: 0 14px 24px -18px rgba(37, 99, 235, 0.55);
+}
+
+.class-material-filter.is-active small {
+    background: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.class-material-filter:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.class-material-filter-summary {
+    margin: 0 0 14px;
+    color: #35567e;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.lesson-status-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 24px;
+    padding: 0 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.lesson-status-chip--ready {
+    background: rgba(16, 185, 129, 0.16);
+    color: #066a4f;
+}
+
+.lesson-status-chip--draft {
+    background: rgba(245, 158, 11, 0.16);
+    color: #92400e;
+}

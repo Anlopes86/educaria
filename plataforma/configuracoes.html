@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurações | EducarIA</title>
+    <title data-i18n="settings.title">Configurações | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
@@ -12,6 +12,7 @@
     <script src="../assets/js/firebase-config.js"></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/app-sidebar.js" defer></script>
     <script src="../assets/js/settings-page.js" defer></script>
@@ -24,7 +25,7 @@
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Configurações</strong>
+                    <strong data-i18n="settings.brand.section">Configurações</strong>
                 </div>
             </a>
 
@@ -33,15 +34,15 @@
                 <span data-sidebar-institution>Conta educacional</span>
             </div>
 
-            <nav class="app-sidebar-nav" aria-label="Navegacao principal">
-                <a href="index.html" class="sidebar-nav-link">Painel</a>
+            <nav class="app-sidebar-nav" aria-label="Navegacao principal" data-i18n-aria-label="settings.nav.main">
+                <a href="index.html" class="sidebar-nav-link" data-i18n="settings.nav.dashboard">Painel</a>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false">Turmas</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false" data-i18n="settings.nav.classes">Turmas</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
                     <div class="sidebar-subitems" data-sidebar-class-list></div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false">Criar turma</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false" data-i18n="settings.nav.createClass">Criar turma</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="create-class" hidden>
                     <div class="sidebar-create-card">
                         <div class="platform-field">
@@ -67,7 +68,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false">Criar atividade</button>
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false" data-i18n="settings.nav.createActivity">Criar atividade</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
                     <div class="sidebar-subitems">
                         <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
@@ -85,26 +86,26 @@
                     </div>
                 </div>
 
-                <a href="biblioteca.html" class="sidebar-nav-link">Biblioteca</a>
-                <a href="configuracoes.html" class="sidebar-nav-link is-active">Configurações</a>
+                <a href="biblioteca.html" class="sidebar-nav-link" data-i18n="settings.nav.library">Biblioteca</a>
+                <a href="configuracoes.html" class="sidebar-nav-link is-active" data-i18n="settings.nav.settings">Configurações</a>
             </nav>
 
             <div class="app-sidebar-footer">
-                <button type="button" class="platform-link-button platform-link-secondary" data-logout>Sair</button>
+                <button type="button" class="platform-link-button platform-link-secondary" data-logout data-i18n="settings.actions.logout">Sair</button>
             </div>
         </aside>
 
         <main id="main-content" class="app-content" tabindex="-1">
             <section class="app-page-intro">
                 <div class="app-page-intro__content">
-                    <h1>Configurações da conta</h1>
-                    <p>Atualize seus dados principais, mantenha sua escola correta e altere sua senha quando precisar.</p>
+                    <h1 data-i18n="settings.hero.title">Configurações da conta</h1>
+                    <p data-i18n="settings.hero.copy">Atualize seus dados principais, mantenha sua escola correta e altere sua senha quando precisar.</p>
                 </div>
             </section>
 
             <section class="settings-grid">
                 <article class="focus-card settings-summary-card">
-                    <span class="platform-section-label">Perfil</span>
+                    <span class="platform-section-label" data-i18n="settings.profile.label">Perfil</span>
                     <h2 data-settings-teacher-name>Professor</h2>
                     <p data-settings-teacher-email>email@exemplo.com</p>
                     <div class="settings-summary-meta">
@@ -113,37 +114,45 @@
                         <span data-settings-teacher-institution-id>Sem vínculo institucional</span>
                         <span data-ai-credits>Créditos de IA: carregando...</span>
                     </div>
+                    <label class="platform-field settings-language-field" for="settings-language">
+                        <span data-i18n="settings.language.label">Idioma</span>
+                        <select id="settings-language" data-settings-language>
+                            <option value="pt-BR">Português (Brasil)</option>
+                            <option value="en-US">English</option>
+                            <option value="es-ES">Español</option>
+                        </select>
+                    </label>
                 </article>
 
                 <article class="focus-card">
                     <div class="page-section-title">
                         <div>
-                            <span class="platform-section-label">Dados pessoais</span>
-                            <h2>Editar perfil</h2>
+                            <span class="platform-section-label" data-i18n="settings.profile.edit.label">Dados pessoais</span>
+                            <h2 data-i18n="settings.profile.edit.title">Editar perfil</h2>
                         </div>
-                        <p>Esses dados aparecem no painel e ajudam a personalizar sua experiência.</p>
+                        <p data-i18n="settings.profile.edit.copy">Esses dados aparecem no painel e ajudam a personalizar sua experiência.</p>
                     </div>
 
                     <form class="settings-form" data-settings-profile-form>
                         <div class="platform-form-grid">
                             <div class="platform-field">
-                                <label for="settings-name">Nome</label>
-                                <input id="settings-name" name="name" type="text" placeholder="Seu nome">
+                                <label for="settings-name" data-i18n="settings.fields.name">Nome</label>
+                                <input id="settings-name" name="name" type="text" placeholder="Seu nome" data-i18n-placeholder="settings.fields.name.placeholder">
                             </div>
 
                             <div class="platform-field">
-                                <label for="settings-email">Email</label>
-                                <input id="settings-email" name="email" type="email" placeholder="voce@escola.com">
+                                <label for="settings-email" data-i18n="settings.fields.email">Email</label>
+                                <input id="settings-email" name="email" type="email" placeholder="voce@escola.com" data-i18n-placeholder="settings.fields.email.placeholder">
                             </div>
 
                             <div class="platform-field">
-                                <label for="settings-institution">Escola</label>
-                                <input id="settings-institution" name="institution" type="text" placeholder="Nome da escola">
+                                <label for="settings-institution" data-i18n="settings.fields.school">Escola</label>
+                                <input id="settings-institution" name="institution" type="text" placeholder="Nome da escola" data-i18n-placeholder="settings.fields.school.placeholder">
                             </div>
                         </div>
 
                         <div class="platform-form-actions">
-                            <button type="submit" class="platform-link-button platform-link-primary">Salvar perfil</button>
+                            <button type="submit" class="platform-link-button platform-link-primary" data-i18n="settings.actions.saveProfile">Salvar perfil</button>
                         </div>
                         <p class="settings-feedback" data-settings-profile-feedback hidden></p>
                     </form>
@@ -154,32 +163,32 @@
                 <article class="focus-card">
                     <div class="page-section-title">
                         <div>
-                            <span class="platform-section-label">Segurança</span>
-                            <h2>Alterar senha</h2>
+                            <span class="platform-section-label" data-i18n="settings.security.label">Segurança</span>
+                            <h2 data-i18n="settings.security.title">Alterar senha</h2>
                         </div>
-                        <p>Para sua seguranca, confirme a senha atual antes de definir uma nova.</p>
+                        <p data-i18n="settings.security.copy">Para sua seguranca, confirme a senha atual antes de definir uma nova.</p>
                     </div>
 
                     <form class="settings-form" data-settings-password-form>
                         <div class="platform-form-grid">
                             <div class="platform-field">
-                                <label for="settings-current-password">Senha atual</label>
-                                <input id="settings-current-password" name="current_password" type="password" placeholder="Senha atual">
+                                <label for="settings-current-password" data-i18n="settings.password.current">Senha atual</label>
+                                <input id="settings-current-password" name="current_password" type="password" placeholder="Senha atual" data-i18n-placeholder="settings.password.current">
                             </div>
 
                             <div class="platform-field">
-                                <label for="settings-new-password">Nova senha</label>
-                                <input id="settings-new-password" name="new_password" type="password" placeholder="Nova senha">
+                                <label for="settings-new-password" data-i18n="settings.password.new">Nova senha</label>
+                                <input id="settings-new-password" name="new_password" type="password" placeholder="Nova senha" data-i18n-placeholder="settings.password.new">
                             </div>
 
                             <div class="platform-field">
-                                <label for="settings-confirm-password">Confirmar nova senha</label>
-                                <input id="settings-confirm-password" name="confirm_password" type="password" placeholder="Confirme a nova senha">
+                                <label for="settings-confirm-password" data-i18n="settings.password.confirm">Confirmar nova senha</label>
+                                <input id="settings-confirm-password" name="confirm_password" type="password" placeholder="Confirme a nova senha" data-i18n-placeholder="settings.password.confirm">
                             </div>
                         </div>
 
                         <div class="platform-form-actions">
-                            <button type="submit" class="platform-link-button platform-link-primary">Atualizar senha</button>
+                            <button type="submit" class="platform-link-button platform-link-primary" data-i18n="settings.actions.updatePassword">Atualizar senha</button>
                         </div>
                         <p class="settings-feedback" data-settings-password-feedback hidden></p>
                     </form>
@@ -188,25 +197,41 @@
                 <article class="focus-card">
                     <div class="page-section-title">
                         <div>
-                            <span class="platform-section-label">Plano</span>
-                            <h2>Cobrança inicial</h2>
+                            <span class="platform-section-label" data-i18n="settings.plan.label">Plano</span>
+                            <h2 data-i18n="settings.plan.title">Cobrança inicial</h2>
                         </div>
-                        <p>Enquanto validamos o plano pago, você já pode registrar interesse no upgrade Pro e priorizar sua conta para a próxima etapa.</p>
+                        <p data-i18n="settings.plan.copy">Enquanto validamos o plano pago, você já pode registrar interesse no upgrade Pro e priorizar sua conta para a próxima etapa.</p>
                     </div>
 
                     <div class="settings-summary-meta">
-                        <span>Plano atual: <strong data-settings-plan-name>Gratuito</strong></span>
-                        <span>Status do upgrade: <strong data-settings-plan-status>Sem solicitação</strong></span>
+                        <span><span data-i18n="settings.plan.current">Plano atual:</span> <strong data-settings-plan-name>Gratuito</strong></span>
+                        <span><span data-i18n="settings.plan.status">Status do upgrade:</span> <strong data-settings-plan-status>Sem solicitação</strong></span>
+                    </div>
+
+                    <div class="settings-plan-usage" data-settings-plan-usage role="status" aria-live="polite" aria-atomic="true" hidden>
+                        <div>
+                            <span data-i18n="settings.plan.remaining">Créditos restantes</span>
+                            <strong data-settings-ai-remaining>0</strong>
+                        </div>
+                        <div>
+                            <span data-i18n="settings.plan.currentLimit">Limite do plano atual</span>
+                            <strong data-settings-ai-current-limit>0</strong>
+                        </div>
+                        <div>
+                            <span data-i18n="settings.plan.proLimit">Limite Pro</span>
+                            <strong data-settings-ai-pro-limit>0</strong>
+                        </div>
                     </div>
 
                     <form class="settings-form" data-settings-upgrade-form>
                         <div class="platform-field">
-                            <label for="settings-upgrade-note">O que você espera do plano Pro?</label>
-                            <textarea id="settings-upgrade-note" name="upgrade_note" rows="4" placeholder="Ex.: mais gerações com IA, biblioteca ampliada, relatórios ou recursos para minha rotina."></textarea>
+                            <label for="settings-upgrade-note" data-i18n="settings.plan.note">O que você espera do plano Pro?</label>
+                            <textarea id="settings-upgrade-note" name="upgrade_note" rows="4" placeholder="Ex.: mais gerações com IA, biblioteca ampliada, relatórios ou recursos para minha rotina." data-i18n-placeholder="settings.plan.note.placeholder"></textarea>
                         </div>
 
                         <div class="platform-form-actions">
-                            <button type="submit" class="platform-link-button platform-link-primary">Solicitar upgrade Pro</button>
+                            <button type="submit" class="platform-link-button platform-link-primary" data-i18n="settings.actions.requestUpgrade">Solicitar upgrade Pro</button>
+                            <a href="#" class="platform-link-button platform-link-secondary" data-settings-checkout-link data-i18n="settings.actions.checkout" hidden>Ir para pagamento</a>
                         </div>
                         <p class="settings-feedback" data-settings-upgrade-feedback hidden></p>
                     </form>
@@ -215,23 +240,24 @@
                 <article class="focus-card">
                     <div class="page-section-title">
                         <div>
-                            <span class="platform-section-label">Programa piloto</span>
-                            <h2>Acompanhar uso</h2>
+                            <span class="platform-section-label" data-i18n="settings.pilot.label">Programa piloto</span>
+                            <h2 data-i18n="settings.pilot.title">Acompanhar uso</h2>
                         </div>
-                        <p>Use este bloco para identificar a conta no piloto e exportar os eventos básicos de uso enquanto validamos retenção.</p>
+                        <p data-i18n="settings.pilot.copy">Use este bloco para identificar a conta no piloto e exportar os eventos básicos de uso enquanto validamos retenção.</p>
                     </div>
 
                     <div class="settings-summary-meta">
-                        <span>ID do piloto: <strong data-settings-pilot-id>carregando...</strong></span>
-                        <span>Eventos: <strong data-settings-pilot-events>0</strong></span>
-                        <span>Dias ativos: <strong data-settings-pilot-days>0</strong></span>
-                        <span>Última atividade: <strong data-settings-pilot-last-event>Sem eventos</strong></span>
+                        <span><span data-i18n="settings.pilot.id">ID do piloto:</span> <strong data-settings-pilot-id>carregando...</strong></span>
+                        <span><span data-i18n="settings.pilot.events">Eventos:</span> <strong data-settings-pilot-events>0</strong></span>
+                        <span><span data-i18n="settings.pilot.pending">Pendentes de sync:</span> <strong data-settings-pilot-pending>0</strong></span>
+                        <span><span data-i18n="settings.pilot.activeDays">Dias ativos:</span> <strong data-settings-pilot-days>0</strong></span>
+                        <span><span data-i18n="settings.pilot.lastActivity">Última atividade:</span> <strong data-settings-pilot-last-event>Sem eventos</strong></span>
                     </div>
 
                     <div class="platform-form-actions">
-                        <button type="button" class="platform-link-button platform-link-primary" data-settings-copy-pilot-id>Copiar ID</button>
-                        <button type="button" class="platform-link-button platform-link-secondary" data-settings-export-analytics>Exportar eventos</button>
-                        <button type="button" class="platform-link-button platform-link-secondary" data-settings-sync-analytics>Sincronizar agora</button>
+                        <button type="button" class="platform-link-button platform-link-primary" data-settings-copy-pilot-id data-i18n="settings.actions.copyPilot">Copiar ID</button>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-settings-export-analytics data-i18n="settings.actions.exportEvents">Exportar eventos</button>
+                        <button type="button" class="platform-link-button platform-link-secondary" data-settings-sync-analytics data-i18n="settings.actions.syncNow">Sincronizar agora</button>
                     </div>
                     <p class="settings-feedback" data-settings-pilot-feedback hidden></p>
                 </article>

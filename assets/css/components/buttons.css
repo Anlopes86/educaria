@@ -1,0 +1,37 @@
+/* Shared button-like links and actions. */
+.platform-form-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.platform-link-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 999px;
+    font-size: 0.96rem;
+    font-weight: 800;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.platform-link-button:hover {
+    transform: translateY(-1px);
+}
+
+.platform-link-primary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0f766e 0%, #0891b2 100%);
+    box-shadow: 0 18px 30px -24px rgba(8, 145, 178, 0.8);
+}
+
+.platform-link-secondary {
+    color: var(--navy-dark);
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}

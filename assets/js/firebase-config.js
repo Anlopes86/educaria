@@ -1,13 +1,13 @@
 (function initEducariaFirebaseConfig() {
     const STORAGE_KEY = "educaria:firebase:config";
     const DEFAULT_CONFIG = {
-        apiKey: "AIzaSyBd-ZXX-yNNhIctaYufhWVNhwWk_fXBRL4",
-        authDomain: "educaria-f46b2.firebaseapp.com",
-        projectId: "educaria-f46b2",
-        storageBucket: "educaria-f46b2.firebasestorage.app",
-        messagingSenderId: "856146928482",
-        appId: "1:856146928482:web:2d5a5aa8b868ef19b1c23b",
-        measurementId: "G-MXLZ2HQKY2"
+        apiKey: "COLE_AQUI_API_KEY",
+        authDomain: "COLE_AQUI_AUTH_DOMAIN",
+        projectId: "COLE_AQUI_PROJECT_ID",
+        storageBucket: "COLE_AQUI_STORAGE_BUCKET",
+        messagingSenderId: "COLE_AQUI_MESSAGING_SENDER_ID",
+        appId: "COLE_AQUI_APP_ID",
+        measurementId: "COLE_AQUI_MEASUREMENT_ID"
     };
 
     function readStoredConfig() {

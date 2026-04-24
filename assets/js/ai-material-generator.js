@@ -1574,6 +1574,20 @@ async function generateMaterial(materialType, button) {
             hasFile: Boolean(file),
             requestedCount: requestedCount || 0
         });
+
+        if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
+            const hasCredits = await window.ensureEducariaAiCreditsAvailable();
+            if (!hasCredits) {
+                educariaTrackAiEvent("ai_generate_blocked", {
+                    materialType,
+                    sourceChars: sourceText.length,
+                    hasFile: Boolean(file),
+                    reason: "daily_limit"
+                });
+                return;
+            }
+        }
+
         await checkAiHealth();
 
         let generationHints = materialType === "quiz"

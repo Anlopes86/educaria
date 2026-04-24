@@ -13,7 +13,7 @@ Este projeto usa Firebase Auth + Firestore no frontend.
 
 ## 2. Defina as chaves sem commitar segredo
 
-O arquivo versionado `assets/js/firebase-config.js` agora usa placeholders por padrao.
+O arquivo versionado `assets/js/firebase-config.js` usa apenas placeholders por padrao. Sem configurar estes valores, login, cadastro e sincronizacao com Firestore ficam desativados com seguranca.
 
 No browser (uma vez por ambiente), rode:
 
@@ -30,6 +30,14 @@ setEducariaFirebaseConfig({
 ```
 
 Isso salva a config no `localStorage` e evita colocar credenciais no Git.
+
+Para voltar ao estado sem credenciais locais, rode:
+
+```js
+resetEducariaFirebaseConfig();
+```
+
+Se preferir injetar a configuracao antes desse arquivo carregar, defina `window.EDUCARIA_FIREBASE_CONFIG_OVERRIDE` com o mesmo formato do objeto acima.
 
 ## 3. Regras de seguranca recomendadas
 
@@ -52,6 +60,8 @@ teachers/{uid} {
   role: "teacher" | "coordinator" | "institution_admin"
   plan: "free" | "pro"
   billingIntent: object | null
+  aiCredits: object | null
+  monthlyUsage: object | null
 }
 ```
 
@@ -59,6 +69,8 @@ Subcolecoes usadas:
 
 - `teachers/{uid}/classes/{classId}/materials/{materialId}`
 - `teachers/{uid}/productAnalyticsEvents/{eventId}`
+
+Os eventos de analytics ficam primeiro no `localStorage` e sao sincronizados automaticamente em lotes pequenos quando ha sessao Firebase ativa. A pagina de configuracoes tambem permite sincronizacao manual.
 
 ## Nota importante
 

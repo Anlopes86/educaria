@@ -44,7 +44,7 @@ GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_IMAGE_MODEL=gemini-3.1-flash-image-preview
 AI_AUTH_REQUIRED=true
-FIREBASE_PROJECT_ID=educaria-f46b2
+FIREBASE_PROJECT_ID=your_firebase_project_id_here
 AI_RATE_LIMIT_WINDOW_MS=60000
 AI_RATE_LIMIT_MAX=8
 AI_DAILY_CREDIT_LIMIT=5
@@ -73,6 +73,10 @@ O plano pode ser resolvido por:
 Cada chamada bem-sucedida para `POST /api/ai/generate` desconta 1 credito.
 
 O contador atual roda no processo do `ai-service` e reinicia se o servico reiniciar. Para varias instancias ou controle financeiro mais rigido, mova esse contador para Redis, Firestore via Admin SDK ou outro banco de servidor.
+
+No frontend, `assets/js/ai-credits.js` consulta `GET /api/ai/credits`, atualiza todos os elementos com `data-ai-credits` e expõe `ensureEducariaAiCreditsAvailable()`. Os geradores chamam essa funcao antes de enviar uma nova geracao para evitar chamadas conhecidamente sem saldo.
+
+Na pagina de configuracoes, o botao de pagamento aparece somente quando houver uma URL configurada em `window.EDUCARIA_BILLING_CHECKOUT_URL` ou no `localStorage` com a chave `educaria:billing:checkout-url`. Esse link deve apontar para um checkout criado por Stripe, Mercado Pago ou outro provedor, e o webhook do provedor ainda precisa atualizar `teachers/{uid}.plan` ou as claims do Firebase.
 
 No Free Tier, mantenha `AI_IMAGE_GENERATION_ENABLED=false`. Os slides usam placeholder local em vez de chamar modelo de imagem.
 

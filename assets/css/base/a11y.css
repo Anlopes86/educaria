@@ -1,0 +1,55 @@
+/* Shared accessibility helpers. */
+.skip-link {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    z-index: 2000;
+    min-height: 40px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #0f172a;
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+    transform: translateY(-140%);
+    transition: transform 140ms ease;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+    transform: translateY(0);
+    outline: 3px solid #0ea5e9;
+    outline-offset: 2px;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid #0ea5e9;
+    outline-offset: 2px;
+    box-shadow: none;
+}
+
+.platform-link-button:focus-visible,
+.sidebar-nav-link:focus-visible,
+.sidebar-subitem:focus-visible,
+.dashboard-tool-card:focus-visible,
+.dashboard-toolkit-link:focus-visible {
+    outline: 3px solid #0ea5e9;
+    outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

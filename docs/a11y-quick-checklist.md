@@ -28,6 +28,7 @@ Data de referencia: 22/04/2026
 5. Testar tour do dashboard com teclado (setas e `Esc`).
 6. Testar formularios de login/cadastro com `required` e `autocomplete`.
 7. Validar filtros de turmas/turma/biblioteca com `aria-pressed` correto no item ativo.
+8. Confirmar que elementos dinamicos de creditos IA usam `role="status"`, `aria-live="polite"` e `aria-atomic="true"`.
 
 ## Proximo ciclo recomendado
 
