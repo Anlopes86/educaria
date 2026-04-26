@@ -33,7 +33,7 @@ function collectReferencedKeys() {
     const files = walk(root);
     const patterns = [
         /\bdata-i18n(?:-[a-z-]+)?="([^"]+)"/g,
-        /\b(?:classesTranslate|dashboardTranslate|lessonLibraryTranslate|settingsTranslate)\(\s*"([^"]+)"/g,
+        /\b(?:classesTranslate|dashboardTranslate|lessonLibraryTranslate|settingsTranslate|sidebarTranslate)\(\s*"([^"]+)"/g,
         /\bwindow\.educariaTranslate\(\s*"([^"]+)"/g
     ];
 

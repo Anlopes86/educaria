@@ -1473,6 +1473,37 @@ function bindSaveLessonAction() {
         });
 }
 
+function hydrateBuilderCommonActions() {
+    document.querySelectorAll("[data-save-lesson]").forEach((button) => {
+        const saveScope = button.dataset.saveScope || LESSON_SCOPE_CLASS;
+        if (saveScope === LESSON_SCOPE_LIBRARY) {
+            button.textContent = lessonLibraryTranslate("builder.actions.saveLibrary", "Salvar na biblioteca");
+            return;
+        }
+
+        button.textContent = lessonLibraryTranslate("builder.actions.saveClass", "Salvar na turma");
+        button.setAttribute("aria-label", lessonLibraryTranslate("builder.actions.saveClassPrimary", "Salvar na turma (acao principal)"));
+    });
+
+    document.querySelectorAll(".builder-floating-actions a").forEach((link) => {
+        const href = link.getAttribute("href") || "";
+        if (/apresentacao|aplicacao/.test(href)) {
+            link.textContent = lessonLibraryTranslate("classDetail.actions.present", "Apresentar");
+        }
+    });
+
+    document.querySelectorAll(".platform-top-actions a").forEach((link) => {
+        const href = link.getAttribute("href") || "";
+        if (href === "index.html") {
+            link.textContent = lessonLibraryTranslate("library.actions.backDashboard", "Voltar para painel");
+        } else if (href === "biblioteca.html") {
+            link.textContent = lessonLibraryTranslate("builder.actions.backLibrary", "Voltar a biblioteca");
+        } else if (href.includes("#activity-toolkit")) {
+            link.textContent = lessonLibraryTranslate("builder.actions.chooseOther", "Escolher outra atividade");
+        }
+    });
+}
+
 function deleteLessonAndRefresh(id) {
     if (!id) return;
     removeLessonById(id);
@@ -2073,6 +2104,7 @@ function hydrateLibraryPage() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    hydrateBuilderCommonActions();
     bindSaveLessonAction();
     hydrateCompletionSummary();
     hydrateClassCards();
@@ -2101,6 +2133,7 @@ document.addEventListener("educaria-lessons-updated", () => {
 });
 
 document.addEventListener("educaria-language-changed", () => {
+    hydrateBuilderCommonActions();
     hydrateCompletionSummary();
     hydrateClassCards();
     hydrateClassPage();

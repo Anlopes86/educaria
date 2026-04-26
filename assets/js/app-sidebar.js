@@ -6,6 +6,13 @@ function sidebarTeacherName() {
     return "Professor";
 }
 
+function sidebarTranslate(key, fallback) {
+    if (typeof window !== "undefined" && typeof window.educariaTranslate === "function") {
+        return window.educariaTranslate(key, fallback);
+    }
+    return fallback || key;
+}
+
 function sidebarTeacherInstitution() {
     if (typeof readCurrentTeacher === "function") {
         const teacher = readCurrentTeacher();
@@ -16,20 +23,20 @@ function sidebarTeacherInstitution() {
 
 const SIDEBAR_FORMATS = {
     core: [
-        { href: "slides-builder.html", label: "Slides" },
-        { href: "quiz-builder.html", label: "Quiz" },
-        { href: "criar-aula.html", label: "Aula completa" }
+        { href: "slides-builder.html", label: "Slides", labelKey: "dashboard.formats.slides" },
+        { href: "quiz-builder.html", label: "Quiz", labelKey: "dashboard.formats.quiz" },
+        { href: "criar-aula.html", label: "Aula completa", labelKey: "dashboard.formats.lesson" }
     ],
     extra: [
-        { href: "flashcards-builder.html", label: "Flashcards" },
-        { href: "jogo-memoria-builder.html", label: "Jogo da memória" },
-        { href: "roleta-builder.html", label: "Roleta" },
-        { href: "ligar-pontos-builder.html", label: "Ligar pontos" },
-        { href: "mapa-mental-builder.html", label: "Mapa mental" },
-        { href: "debate-guiado-builder.html", label: "Debate guiado" },
-        { href: "caca-palavras-builder.html", label: "Caça-palavras" },
-        { href: "palavras-cruzadas-builder.html", label: "Palavras cruzadas" },
-        { href: "forca-builder.html", label: "Forca" }
+        { href: "flashcards-builder.html", label: "Flashcards", labelKey: "sidebar.formats.flashcards" },
+        { href: "jogo-memoria-builder.html", label: "Jogo da memoria", labelKey: "sidebar.formats.memory" },
+        { href: "roleta-builder.html", label: "Roleta", labelKey: "sidebar.formats.wheel" },
+        { href: "ligar-pontos-builder.html", label: "Ligar pontos", labelKey: "sidebar.formats.match" },
+        { href: "mapa-mental-builder.html", label: "Mapa mental", labelKey: "sidebar.formats.mindmap" },
+        { href: "debate-guiado-builder.html", label: "Debate guiado", labelKey: "sidebar.formats.debate" },
+        { href: "caca-palavras-builder.html", label: "Caca-palavras", labelKey: "sidebar.formats.wordsearch" },
+        { href: "palavras-cruzadas-builder.html", label: "Palavras cruzadas", labelKey: "sidebar.formats.crossword" },
+        { href: "forca-builder.html", label: "Forca", labelKey: "sidebar.formats.hangman" }
     ]
 };
 
@@ -63,18 +70,18 @@ function ensureSidebarClassesPageLink() {
             const link = document.createElement("a");
             link.href = "turmas.html";
             link.className = "sidebar-nav-link";
-            link.textContent = "Turmas";
+            link.textContent = sidebarTranslate("dashboard.nav.myClasses", "Turmas");
             link.setAttribute("data-sidebar-classes-page-link", "");
             parent.insertBefore(link, button);
         }
 
-        button.textContent = "Turmas rápidas";
+        button.textContent = sidebarTranslate("sidebar.nav.quickClasses", "Turmas rapidas");
     });
 }
 
 function renderSidebarCurrentClass(current) {
     document.querySelectorAll("[data-sidebar-current-class]").forEach((element) => {
-        element.textContent = current || "Nenhuma turma selecionada";
+        element.textContent = current || sidebarTranslate("classDetail.empty.noSelectedClass", "Nenhuma turma selecionada");
     });
 }
 
@@ -86,11 +93,11 @@ function renderSidebarFormats() {
 
         panel.innerHTML = `
             <div class="sidebar-subgroup">
-                <span class="sidebar-subgroup-label">Formatos principais</span>
+                <span class="sidebar-subgroup-label">${sidebarTranslate("sidebar.formats.core", "Formatos principais")}</span>
                 <div class="sidebar-subitems" data-sidebar-format-list="core"></div>
             </div>
             <div class="sidebar-subgroup">
-                <span class="sidebar-subgroup-label">Mais formatos</span>
+                <span class="sidebar-subgroup-label">${sidebarTranslate("dashboard.toolkit.moreFormats", "Mais formatos")}</span>
                 <div class="sidebar-subitems" data-sidebar-format-list="extra"></div>
             </div>
         `;
@@ -104,7 +111,7 @@ function renderSidebarFormats() {
             const active = item.href === currentPath ? " is-active" : "";
             return `
                 <a href="${item.href}" class="sidebar-subitem${active}">
-                    ${escapeSidebarHtml(item.label)}
+                    ${escapeSidebarHtml(sidebarTranslate(item.labelKey, item.label))}
                 </a>
             `;
         }).join("");
@@ -122,8 +129,8 @@ function renderSidebarClasses() {
     if (!classes.length) {
         root.innerHTML = `
             <div class="sidebar-empty-state">
-                <strong>Nenhuma turma criada</strong>
-                <span>Crie a primeira turma no formulario abaixo.</span>
+                <strong>${sidebarTranslate("sidebar.empty.noClasses", "Nenhuma turma criada")}</strong>
+                <span>${sidebarTranslate("sidebar.empty.createFirstClass", "Crie a primeira turma no formulario abaixo.")}</span>
             </div>
         `;
         return;
@@ -150,7 +157,7 @@ function createSidebarClass() {
     if (!className) {
         if (feedback) {
             feedback.hidden = false;
-            feedback.textContent = "Digite um nome para criar a turma.";
+            feedback.textContent = sidebarTranslate("sidebar.feedback.enterClassName", "Digite um nome para criar a turma.");
         }
         nameField.focus();
         return;
@@ -159,7 +166,7 @@ function createSidebarClass() {
     if (!subject) {
         if (feedback) {
             feedback.hidden = false;
-            feedback.textContent = "Escolha a matéria da turma.";
+            feedback.textContent = sidebarTranslate("sidebar.feedback.chooseSubject", "Escolha a materia da turma.");
         }
         subjectField?.focus();
         return;
@@ -201,8 +208,8 @@ function createSidebarClass() {
     if (feedback) {
         feedback.hidden = false;
         feedback.textContent = exists
-            ? `A turma ${composedName} ja estava criada e foi selecionada.`
-            : `Turma ${composedName} criada e selecionada.`;
+            ? `${sidebarTranslate("sidebar.feedback.alreadyExistsPrefix", "A turma")} ${composedName} ${sidebarTranslate("sidebar.feedback.alreadyExistsSuffix", "ja estava criada e foi selecionada.")}`
+            : `${sidebarTranslate("sidebar.feedback.createdPrefix", "Turma")} ${composedName} ${sidebarTranslate("sidebar.feedback.createdSuffix", "criada e selecionada.")}`;
     }
 
     nameField.value = "";
@@ -328,5 +335,11 @@ document.addEventListener("educaria-auth-changed", () => {
 });
 
 document.addEventListener("educaria-classes-updated", () => {
+    renderSidebarClasses();
+});
+
+document.addEventListener("educaria-language-changed", () => {
+    ensureSidebarClassesPageLink();
+    renderSidebarFormats();
     renderSidebarClasses();
 });
