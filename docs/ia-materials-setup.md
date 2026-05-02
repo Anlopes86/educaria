@@ -24,10 +24,11 @@ Isso evita conectar uma API sem contrato claro.
 
 1. O professor cola um texto ou envia um arquivo no builder.
 2. O frontend envia isso para `POST /api/ai/generate`.
-3. O backend extrai texto de `.txt`, `.docx` e `.pdf`.
-4. O backend chama o Gemini.
-5. A resposta volta em JSON estruturado.
-6. O frontend preenche automaticamente os cards do builder.
+3. O backend valida tamanho, extensao, MIME e assinatura basica do arquivo.
+4. O backend extrai texto de `.txt`, `.docx`, `.rtf` e `.pdf`.
+5. O backend chama o Gemini.
+6. A resposta volta em JSON estruturado.
+7. O frontend preenche automaticamente os cards do builder.
 
 ## Como rodar
 
@@ -90,6 +91,17 @@ No frontend, `assets/js/ai-credits.js` consulta `GET /api/ai/credits`, atualiza 
 Na pagina de configuracoes, o botao de pagamento aparece somente quando houver uma URL configurada em `window.EDUCARIA_BILLING_CHECKOUT_URL` ou no `localStorage` com a chave `educaria:billing:checkout-url`. Esse link deve apontar para um checkout criado por Stripe, Mercado Pago ou outro provedor, e o webhook do provedor ainda precisa atualizar `teachers/{uid}.plan` ou as claims do Firebase.
 
 No Free Tier, mantenha `AI_IMAGE_GENERATION_ENABLED=false`. Os slides usam placeholder local em vez de chamar modelo de imagem.
+
+## Uploads aceitos
+
+O limite de tamanho vem de `AI_MAX_UPLOAD_MB` e o padrao e 5 MB. O backend aceita apenas arquivos com extensao e MIME coerentes para:
+
+- `.txt`
+- `.docx`
+- `.rtf`
+- `.pdf`
+
+Antes da extracao, o backend tambem confere assinaturas simples de RTF, DOCX/ZIP e PDF. Arquivos com extensao trocada ou formato desconhecido retornam `400` com mensagem de arquivo nao suportado. Os campos de upload do frontend foram alinhados para nao oferecer `.doc`, porque o servico nao extrai Word legado.
 
 Em deploys como Render, configure essas mesmas variaveis no painel do servico. O arquivo `.env` local nao vai para o GitHub.
 

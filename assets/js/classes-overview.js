@@ -146,6 +146,9 @@ function hydrateClassesOverviewPage() {
     const filterRoot = document.querySelector("[data-classes-overview-filters]");
     const filterSummary = document.querySelector("[data-classes-overview-filter-summary]");
     if (!root && !classCount && !activityCount && !filterRoot && !filterSummary) return;
+    if (root) {
+        root.setAttribute("aria-busy", "true");
+    }
 
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
     const cards = classesOverviewCards(classes);
@@ -185,6 +188,7 @@ function hydrateClassesOverviewPage() {
                 <p>${classesTranslate("classes.empty.noClassesCopy", "Use o botao Criar turma na lateral para comecar e organizar suas atividades por turma.")}</p>
             </article>
         `;
+        root.setAttribute("aria-busy", "false");
         return;
     }
 
@@ -197,6 +201,7 @@ function hydrateClassesOverviewPage() {
                 <p>${classesTranslate("classes.empty.noFilterCopy", "Troque o filtro para visualizar outras turmas do painel.")}</p>
             </article>
         `;
+        root.setAttribute("aria-busy", "false");
         return;
     }
 
@@ -245,6 +250,7 @@ function hydrateClassesOverviewPage() {
             </article>
         `;
     }).join("");
+    root.setAttribute("aria-busy", "false");
 }
 
 function bindClassesOverviewActions() {

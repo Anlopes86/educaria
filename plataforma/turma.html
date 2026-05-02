@@ -111,7 +111,7 @@
                     <p data-class-focus-summary data-i18n="classDetail.flow.copy">Fluxo recomendado: Slides (10-15 min) para conduzir, Quiz (5-8 min) para revisar e Biblioteca para reaproveitar.</p>
                 </div>
 
-                <div class="teacher-dashboard-kpis">
+                <div class="teacher-dashboard-kpis" role="status" aria-live="polite" aria-atomic="true">
                     <article class="teacher-dashboard-kpi">
                         <strong data-class-material-count>0</strong>
                         <span data-i18n="classDetail.kpi.materials">materiais da turma</span>
@@ -130,6 +130,7 @@
                     </article>
                 </div>
 
+                <div class="class-ops-strip" data-class-ops-summary role="status" aria-live="polite" aria-atomic="true"></div>
                 <div class="utility-actions" data-class-primary-actions></div>
                 <div class="class-recent-lesson-slot" data-class-recent-lesson></div>
             </section>
@@ -143,9 +144,9 @@
                     <p data-i18n="classDetail.activities.copy">Ficam aqui apenas os materiais da turma selecionada, agrupados por formato para facilitar retomada, edicao e apresentacao.</p>
                 </div>
 
-                <div class="class-material-filters" data-class-material-filters></div>
-                <p class="class-material-filter-summary" data-class-material-filter-summary hidden></p>
-                <div class="class-activity-groups" data-saved-lessons></div>
+                <div class="class-material-filters" data-class-material-filters role="toolbar" aria-label="Filtros de materiais da turma" data-i18n-aria-label="classDetail.filters.toolbar"></div>
+                <p class="class-material-filter-summary" data-class-material-filter-summary role="status" aria-live="polite" aria-atomic="true" hidden></p>
+                <div class="class-activity-groups" data-saved-lessons aria-live="polite" aria-busy="false"></div>
             </section>
         </main>
     </div>

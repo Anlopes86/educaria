@@ -1708,6 +1708,8 @@ body.product-body.theme-editor {
         left: 14px;
         right: 14px;
         bottom: 14px;
+        width: auto;
+        transform: none;
     }
 
     .builder-floating-actions .platform-link-button {
@@ -2860,6 +2862,31 @@ body.product-body.theme-class[data-page="class-detail"] .focus-card .utility-act
     gap: 10px;
 }
 
+body.product-body.theme-class[data-page="class-detail"] .class-ops-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-ops-strip span {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.86);
+    color: #35506e;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-ops-strip strong {
+    color: #102a56;
+}
+
 body.product-body.theme-class[data-page="class-detail"] .focus-card .utility-actions .platform-link-button:first-child {
     min-height: 48px;
     padding-inline: 20px;
@@ -3221,6 +3248,37 @@ body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-car
     flex-wrap: wrap;
     gap: 10px;
     font-size: 0.92rem;
+}
+
+.lesson-status-chip {
+    font-weight: 800;
+}
+
+.lesson-status-chip--ready {
+    color: #047857;
+}
+
+.lesson-status-chip--draft {
+    color: #b45309;
+}
+
+.lesson-pedagogy-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.lesson-pedagogy-tags span {
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(20, 184, 166, 0.1);
+    color: #0f766e;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1;
 }
 
 .lesson-history-actions {
@@ -5434,16 +5492,26 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .builder-floating-actions {
     position: fixed;
-    right: 22px;
+    left: 50%;
     bottom: 22px;
+    width: min(760px, calc(100% - 32px));
+    transform: translateX(-50%);
     z-index: 20;
-    display: grid;
+    display: flex;
+    flex-wrap: wrap;
     gap: 10px;
-    justify-items: stretch;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 22px 48px -28px rgba(15, 23, 42, 0.42);
+    backdrop-filter: blur(18px);
 }
 
 .builder-floating-actions .platform-link-button {
-    min-width: 200px;
+    flex: 1 1 180px;
+    min-width: 0;
     border: 1px solid rgba(15, 23, 42, 0.18);
     box-shadow: 0 18px 32px -22px rgba(15, 23, 42, 0.3);
 }
@@ -5511,6 +5579,21 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     background: linear-gradient(135deg, #d8efff 0%, #f4fbff 100%);
     border-color: rgba(154, 205, 241, 0.72);
     box-shadow: 0 16px 28px -22px rgba(121, 184, 232, 0.42);
+}
+
+@media (max-width: 860px) {
+    .builder-floating-actions {
+        left: 14px;
+        right: 14px;
+        bottom: 14px;
+        width: auto;
+        transform: none;
+    }
+
+    .builder-floating-actions .platform-link-button {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 .presentation-shell {

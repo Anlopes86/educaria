@@ -1259,23 +1259,43 @@ function countClassMaterialsByTypes(lessons, types) {
     }).length;
 }
 
+function countClassMaterialsByStatus(lessons, status) {
+    return (Array.isArray(lessons) ? lessons : []).filter((lesson) => {
+        return normalizeLessonStatus(lesson.status) === status;
+    }).length;
+}
+
 function hydrateClassFocusPanel(classes, turma, lessons) {
     const summaryNode = document.querySelector("[data-class-focus-summary]");
     const actionsNode = document.querySelector("[data-class-primary-actions]");
     const recentNode = document.querySelector("[data-class-recent-lesson]");
+    const opsNode = document.querySelector("[data-class-ops-summary]");
     const materialCountNode = document.querySelector("[data-class-material-count]");
     const slideCountNode = document.querySelector("[data-class-slide-count]");
     const quizCountNode = document.querySelector("[data-class-quiz-count]");
     const libraryCountNode = document.querySelector("[data-class-library-count]");
-    if (!summaryNode && !actionsNode && !recentNode && !materialCountNode && !slideCountNode && !quizCountNode && !libraryCountNode) {
+    if (!summaryNode && !actionsNode && !recentNode && !opsNode && !materialCountNode && !slideCountNode && !quizCountNode && !libraryCountNode) {
         return;
     }
 
     const classLessons = Array.isArray(lessons) ? lessons : [];
     const slideLikeCount = countClassMaterialsByTypes(classLessons, ["slides", "lesson"]);
     const quizCount = countClassMaterialsByTypes(classLessons, "quiz");
+    const readyCount = countClassMaterialsByStatus(classLessons, LESSON_STATUS_READY);
+    const draftCount = countClassMaterialsByStatus(classLessons, LESSON_STATUS_DRAFT);
     const libraryCount = typeof libraryMaterials === "function" ? libraryMaterials().length : 0;
     const latestLesson = classLessons[0] || null;
+    const latestLabel = latestLesson?.updatedAt
+        ? formatLessonDate(latestLesson.updatedAt)
+        : lessonLibraryTranslate("classDetail.ops.noUpdate", "Sem atualizacao");
+
+    if (opsNode) {
+        opsNode.innerHTML = `
+            <span><strong>${readyCount}</strong> ${lessonLibraryTranslate("classDetail.ops.ready", "prontos")}</span>
+            <span><strong>${draftCount}</strong> ${lessonLibraryTranslate("classDetail.ops.drafts", "rascunhos")}</span>
+            <span><strong>${lessonLibraryTranslate("classDetail.ops.latest", "Ultima atualizacao")}</strong> ${escapeHtml(latestLabel)}</span>
+        `;
+    }
 
     const renderRecentLesson = () => {
         if (!recentNode) return;
@@ -1366,7 +1386,8 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
 
     if (actionsNode) {
         actionsNode.innerHTML = `
-            <a href="gerar-aula.html" class="platform-link-button platform-link-primary">${lessonLibraryTranslate("classDetail.actions.chooseFormat", "Escolher formato para esta turma")}</a>
+            <a href="gerar-aula.html" class="platform-link-button platform-link-primary">${lessonLibraryTranslate("classDetail.actions.createActivity", "Criar atividade")}</a>
+            <a href="#atividades-salvas" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.openClassMaterials", "Ver materiais da turma")}</a>
             <a href="slides-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")}</a>
             <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")}</a>
             <a href="criar-aula.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.buildFullLesson", "Montar aula completa (15-25 min)")}</a>
@@ -1527,6 +1548,9 @@ function hydrateClassPage() {
     const filterRoot = document.querySelector("[data-class-material-filters]");
     const filterSummaryRoot = document.querySelector("[data-class-material-filter-summary]");
     if (!listRoot && !selectRoot && !filterRoot && !filterSummaryRoot) return;
+    if (listRoot) {
+        listRoot.setAttribute("aria-busy", "true");
+    }
 
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
     const turma = selectedClassFromAvailableClasses();
@@ -1610,6 +1634,9 @@ function hydrateClassPage() {
             filterSummaryRoot.hidden = true;
             filterSummaryRoot.textContent = "";
         }
+        if (listRoot) {
+            listRoot.setAttribute("aria-busy", "false");
+        }
         markClassPageReady();
         return;
     }
@@ -1640,6 +1667,9 @@ function hydrateClassPage() {
             filterSummaryRoot.hidden = true;
             filterSummaryRoot.textContent = "";
         }
+        if (listRoot) {
+            listRoot.setAttribute("aria-busy", "false");
+        }
         markClassPageReady();
         return;
     }
@@ -1665,6 +1695,9 @@ function hydrateClassPage() {
             actionsRoot.innerHTML = "";
         }
 
+        if (listRoot) {
+            listRoot.setAttribute("aria-busy", "false");
+        }
         markClassPageReady();
         return;
     }
@@ -1687,7 +1720,7 @@ function hydrateClassPage() {
                 return `
                 <details class="editor-disclosure lesson-group-section lesson-group-disclosure">
                     <summary>
-                        <span>${materialGroupLabel(key)}</span>
+                        <span>${escapeHtml(materialGroupLabel(key))}</span>
                         <small>${count} ${lessonLibraryTranslate(count === 1 ? "dashboard.count.activity" : "dashboard.count.activities", count === 1 ? "atividade" : "atividades")}</small>
                     </summary>
                     <div class="editor-disclosure-body lesson-group-body">
@@ -1695,29 +1728,30 @@ function hydrateClassPage() {
                         <div class="lesson-history-grid class-lesson-grid">
                             ${groupItems.map((lesson) => `
                                 <article class="lesson-history-card lesson-history-card--grouped">
-                                    <span class="route-tag">${materialGroupLabel(key)}</span>
-                                    <h3>${lesson.title}</h3>
-                                    <p>${lesson.summary}</p>
+                                    <span class="route-tag">${escapeHtml(materialGroupLabel(key))}</span>
+                                    <h3>${escapeHtml(lesson.title)}</h3>
+                                    <p>${escapeHtml(lesson.summary)}</p>
                                     <div class="lesson-history-meta">
-                                        <span>${lessonLibraryTranslate("classes.latest.updatedAt", "Atualizado em")} ${formatLessonDate(lesson.updatedAt)}</span>
-                                        <span>${lesson.type}</span>
-                                        <span class="lesson-status-chip lesson-status-chip--${lesson.status || LESSON_STATUS_DRAFT}">${lessonStatusLabel(lesson.status)}</span>
+                                        <span>${lessonLibraryTranslate("classes.latest.updatedAt", "Atualizado em")} ${escapeHtml(formatLessonDate(lesson.updatedAt))}</span>
+                                        <span>${escapeHtml(lesson.type)}</span>
+                                        <span class="lesson-status-chip lesson-status-chip--${escapeHtml(lesson.status || LESSON_STATUS_DRAFT)}">${escapeHtml(lessonStatusLabel(lesson.status))}</span>
                                     </div>
+                                    ${lessonPedagogyTagsHtml(lesson)}
                                     <div class="lesson-history-actions">
-                                        <a href="${presentationPathForLesson(lesson)}" class="platform-link-button platform-link-primary" data-present-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
-                                        <a href="${editorPathForLesson(lesson)}" class="platform-link-button platform-link-secondary" data-edit-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
-                                        <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.addToLibrary", "Adicionar a biblioteca")}</button>
-                                        <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.duplicateToClass", "Duplicar para outra turma")}</button>
-                                        <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${lesson.id}">${lessonLibraryTranslate("classDetail.actions.remove", "Remover")}</button>
+                                        <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
+                                        <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.addToLibrary", "Adicionar a biblioteca")}</button>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.duplicateToClass", "Duplicar para outra turma")}</button>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.remove", "Remover")}</button>
                                     </div>
                                 </article>
                             `).join("")}
                         </div>
                         ` : `
                         <article class="lesson-history-card lesson-history-card--empty">
-                            <span class="route-tag">${materialGroupLabel(key)}</span>
+                            <span class="route-tag">${escapeHtml(materialGroupLabel(key))}</span>
                             <h3>${lessonLibraryTranslate("classDetail.empty.noSavedActivityTitle", "Nenhuma atividade salva")}</h3>
-                            <p>${materialGroupDescription(key)}</p>
+                            <p>${escapeHtml(materialGroupDescription(key))}</p>
                         </article>
                         `}
                     </div>
@@ -1744,6 +1778,9 @@ function hydrateClassPage() {
         `;
     }
 
+    if (listRoot) {
+        listRoot.setAttribute("aria-busy", "false");
+    }
     markClassPageReady();
 }
 

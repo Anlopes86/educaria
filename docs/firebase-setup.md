@@ -71,8 +71,12 @@ teachers/{uid} {
 
 Subcolecoes usadas:
 
+- `teachers/{uid}/platform/classes`
+- `teachers/{uid}/lessons/{lessonId}`
 - `teachers/{uid}/classes/{classId}/materials/{materialId}`
 - `teachers/{uid}/productAnalyticsEvents/{eventId}`
+
+`platform/classes` guarda a lista de turmas criada na barra lateral e `lessons` guarda os materiais salvos pelo professor. As regras versionadas permitem leitura/escrita somente quando `request.auth.uid` e igual ao `{uid}` do caminho.
 
 Os eventos de analytics ficam primeiro no `localStorage` e sao sincronizados automaticamente em lotes pequenos quando ha sessao Firebase ativa. A pagina de configuracoes tambem permite sincronizacao manual.
 

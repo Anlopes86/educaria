@@ -105,9 +105,9 @@
                     <p data-i18n="classes.hero.copy">Use "Ver materiais" para abrir o acervo da turma ou "Criar material" para ir direto ao painel de ferramentas ja com a turma selecionada.</p>
                 </div>
 
-                <div class="class-material-filters" data-classes-overview-filters></div>
-                <p class="class-material-filter-summary" data-classes-overview-filter-summary hidden></p>
-                <div class="class-dashboard-grid" data-classes-overview-grid></div>
+                <div class="class-material-filters" data-classes-overview-filters role="toolbar" aria-label="Filtros de turmas" data-i18n-aria-label="classes.filters.toolbar"></div>
+                <p class="class-material-filter-summary" data-classes-overview-filter-summary role="status" aria-live="polite" aria-atomic="true" hidden></p>
+                <div class="class-dashboard-grid" data-classes-overview-grid aria-live="polite" aria-busy="false"></div>
             </section>
 
 <section class="focus-card dashboard-panel">
@@ -119,7 +119,7 @@
                     <p data-i18n="classes.summary.copy">Cada card abaixo mostra o volume de materiais ja criados e oferece o proximo passo mais util para a turma.</p>
                 </div>
 
-                <div class="teacher-dashboard-kpis dashboard-overview-kpis">
+                <div class="teacher-dashboard-kpis dashboard-overview-kpis" role="status" aria-live="polite" aria-atomic="true">
                     <article class="teacher-dashboard-kpi">
                         <strong data-classes-overview-count>0</strong>
                         <span data-i18n="dashboard.kpi.classes">turmas</span>

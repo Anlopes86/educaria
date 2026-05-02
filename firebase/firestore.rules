@@ -21,6 +21,14 @@ service cloud.firestore {
         }
       }
 
+      match /lessons/{lessonId} {
+        allow read, write: if isOwner(teacherId);
+      }
+
+      match /platform/{documentId} {
+        allow read, write: if isOwner(teacherId);
+      }
+
       match /productAnalyticsEvents/{eventId} {
         allow read, write: if isOwner(teacherId);
       }

@@ -21,11 +21,31 @@ function parseNonNegativeNumber(value, fallback) {
 const app = express();
 const port = Number(process.env.PORT || 8787);
 const maxUploadMb = Number(process.env.AI_MAX_UPLOAD_MB || 5);
+const allowedUploadTypes = new Map([
+    [".txt", new Set(["text/plain", "application/octet-stream"])],
+    [".rtf", new Set(["application/rtf", "text/rtf", "text/richtext", "application/octet-stream"])],
+    [".docx", new Set(["application/vnd.openxmlformats-officedocument.wordprocessingml.document", "application/zip", "application/octet-stream"])],
+    [".pdf", new Set(["application/pdf", "application/octet-stream"])]
+]);
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: {
         fileSize: Math.max(1, maxUploadMb) * 1024 * 1024,
         files: 1
+    },
+    fileFilter(_request, file, callback) {
+        const extension = path.extname(String(file.originalname || "").toLowerCase());
+        const allowedMimes = allowedUploadTypes.get(extension);
+        const mimeType = String(file.mimetype || "").toLowerCase();
+
+        if (!allowedMimes || (mimeType && !allowedMimes.has(mimeType))) {
+            const error = new Error("unsupported_upload_type");
+            error.code = "UNSUPPORTED_UPLOAD_TYPE";
+            callback(error);
+            return;
+        }
+
+        callback(null, true);
     }
 });
 const gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
@@ -1474,6 +1494,55 @@ function normalizeLooseJson(text) {
         .trim();
 }
 
+function uploadValidationError(code) {
+    const error = new Error(code);
+    error.code = code;
+    return error;
+}
+
+function isUploadValidationError(error) {
+    return error?.code === "UNSUPPORTED_UPLOAD_TYPE" || error?.code === "INVALID_UPLOAD_SIGNATURE";
+}
+
+function hasZipSignature(buffer) {
+    return Buffer.isBuffer(buffer) && buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4b;
+}
+
+function validateUploadedFileSignature(file) {
+    if (!file) return;
+
+    const fileName = String(file.originalname || "").toLowerCase();
+    const buffer = file.buffer;
+
+    if (fileName.endsWith(".txt")) {
+        return;
+    }
+
+    if (fileName.endsWith(".rtf")) {
+        const prefix = buffer.subarray(0, 8).toString("utf8").trimStart();
+        if (!prefix.startsWith("{\\rtf")) {
+            throw uploadValidationError("INVALID_UPLOAD_SIGNATURE");
+        }
+        return;
+    }
+
+    if (fileName.endsWith(".docx")) {
+        if (!hasZipSignature(buffer)) {
+            throw uploadValidationError("INVALID_UPLOAD_SIGNATURE");
+        }
+        return;
+    }
+
+    if (fileName.endsWith(".pdf")) {
+        if (buffer.subarray(0, 4).toString("utf8") !== "%PDF") {
+            throw uploadValidationError("INVALID_UPLOAD_SIGNATURE");
+        }
+        return;
+    }
+
+    throw uploadValidationError("UNSUPPORTED_UPLOAD_TYPE");
+}
+
 /**
  * Parses JSON from a Gemini model response, handling common output artifacts.
  * First tries to extract a fenced code block or brace-bounded substring, then
@@ -1596,6 +1665,8 @@ function imagePromptForSlide({ title, subtitle, body, prompt }) {
  */
 async function extractTextFromFile(file) {
     if (!file) return "";
+
+    validateUploadedFileSignature(file);
 
     const fileName = String(file.originalname || "").toLowerCase();
 
@@ -1778,6 +1849,10 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             credits
         });
     } catch (error) {
+        if (isUploadValidationError(error)) {
+            return response.status(400).json({ error: "Arquivo nao suportado. Envie TXT, RTF, DOCX ou PDF validos." });
+        }
+
         console.error("EducarIA AI service error:", error);
         return response.status(500).json({
             error: "Falha ao gerar material com IA.",
@@ -1806,6 +1881,10 @@ app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.sing
             material
         });
     } catch (error) {
+        if (isUploadValidationError(error)) {
+            return response.status(400).json({ error: "Arquivo nao suportado. Envie um RTF valido do modelo." });
+        }
+
         console.error("EducarIA template parser error:", error);
         return response.status(500).json({
             error: error instanceof Error ? error.message : "Falha ao ler o arquivo modelo."
@@ -1872,6 +1951,10 @@ app.use((error, _request, response, next) => {
 
     if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
         return response.status(413).json({ error: `Arquivo grande demais. Envie arquivos de ate ${maxUploadMb} MB.` });
+    }
+
+    if (isUploadValidationError(error)) {
+        return response.status(400).json({ error: "Arquivo nao suportado. Envie TXT, RTF, DOCX ou PDF validos." });
     }
 
     return next(error);
