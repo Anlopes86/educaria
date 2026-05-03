@@ -867,8 +867,10 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     gap: 12px;
     padding: 22px;
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(217, 242, 242, 0.1) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 20px 34px -30px rgba(0, 0, 0, 0.34);
 }
 
 .dashboard-next-class-tag {
@@ -907,9 +909,21 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 }
 
 .dashboard-quick-field span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     color: rgba(255, 255, 255, 0.9);
     font-size: 0.82rem;
     font-weight: 700;
+}
+
+.dashboard-quick-field span::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: var(--yellow-warm);
+    box-shadow: 0 0 0 4px rgba(245, 207, 107, 0.18);
 }
 
 .dashboard-quick-field select {
@@ -951,6 +965,21 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     border: 1px solid rgba(148, 163, 184, 0.14);
     background: var(--gradient-card);
     box-shadow: var(--shadow-md);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.dashboard-tool-card:hover,
+.dashboard-tool-card:focus-visible {
+    border-color: rgba(15, 95, 102, 0.28);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+}
+
+.dashboard-tool-card:focus-visible {
+    outline: 3px solid rgba(95, 182, 196, 0.3);
+    outline-offset: 3px;
 }
 
 .dashboard-tool-visual {
@@ -979,6 +1008,43 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 .dashboard-tool-content h3,
 .dashboard-tool-content p {
     margin: 0;
+}
+
+.dashboard-tool-content p {
+    color: var(--gray-dark);
+    line-height: 1.55;
+}
+
+.dashboard-tool-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.dashboard-tool-meta span,
+.dashboard-tool-cta {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 30px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+.dashboard-tool-meta span {
+    padding: 0 10px;
+    background: rgba(217, 242, 242, 0.72);
+    color: var(--teal-deep);
+}
+
+.dashboard-tool-cta {
+    justify-self: start;
+    margin-top: 2px;
+    padding: 0 12px;
+    background: var(--navy-dark);
+    color: #ffffff;
 }
 
 .dashboard-tool-card--quiz .dashboard-tool-visual { background: #d9f2f2; }

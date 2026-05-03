@@ -58,11 +58,16 @@
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <details class="editor-disclosure">
-                    <summary>
-                        <span>Montar com IA</span>
+                <details class="editor-disclosure editor-disclosure--ai">
+                    <summary aria-expanded="false">
+                        <span class="editor-disclosure-heading">
+                            <span class="editor-disclosure-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M12 3v3"></path><path d="12 18v3"></path><path d="M5.6 5.6l2.1 2.1"></path><path d="M16.3 16.3l2.1 2.1"></path><path d="M3 12h3"></path><path d="M18 12h3"></path><path d="M5.6 18.4l2.1-2.1"></path><path d="M16.3 7.7l2.1-2.1"></path><circle cx="12" cy="12" r="3.5"></circle></svg>
+                            </span>
+                            <span>Montar com IA</span>
+                        </span>
                         <small class="ai-credits-pill" data-ai-credits>Cr&eacute;ditos de IA: carregando...</small>
-                        <small>Expandir</small>
+                        <small class="editor-disclosure-toggle" aria-hidden="true"></small>
                     </summary>
                     <div class="editor-disclosure-body">
                         <div class="platform-form-grid ai-structure-grid">
@@ -106,10 +111,15 @@
                     </div>
                 </details>
 
-                <details class="editor-disclosure">
-                    <summary>
-                        <span>Arquivo modelo</span>
-                        <small>Expandir</small>
+                <details class="editor-disclosure editor-disclosure--model">
+                    <summary aria-expanded="false">
+                        <span class="editor-disclosure-heading">
+                            <span class="editor-disclosure-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"></path><path d="M14 3v5h5"></path><path d="M9 13h6"></path><path d="M9 17h4"></path></svg>
+                            </span>
+                            <span>Arquivo modelo</span>
+                        </span>
+                        <small class="editor-disclosure-toggle" aria-hidden="true"></small>
                     </summary>
                     <div class="editor-disclosure-body">
                         <div class="platform-form-grid">
@@ -125,10 +135,15 @@
                     </div>
                 </details>
 
-                <details class="editor-disclosure" data-disclosure-default>
-                    <summary>
-                        <span>Editar manualmente (essencial)</span>
-                        <small>Expandir</small>
+                <details class="editor-disclosure editor-disclosure--manual" data-disclosure-default>
+                    <summary aria-expanded="false">
+                        <span class="editor-disclosure-heading">
+                            <span class="editor-disclosure-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24"><path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16v4z"></path><path d="M13.5 6.5l4 4"></path></svg>
+                            </span>
+                            <span>Editar manualmente (essencial)</span>
+                        </span>
+                        <small class="editor-disclosure-toggle" aria-hidden="true"></small>
                     </summary>
                     <div class="editor-disclosure-body">
                         <p class="activity-manual-guide">Preencha enunciado e tipo. Use Mais opcoes para ajustes finos.</p>

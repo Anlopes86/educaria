@@ -4,10 +4,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const focus = params.get("focus") || "";
     const shouldFocusEdit = focus === "edit";
 
+    function syncDisclosureExpandedState(disclosure) {
+        const summary = disclosure.querySelector(":scope > summary");
+        if (summary) {
+            summary.setAttribute("aria-expanded", disclosure.open ? "true" : "false");
+        }
+    }
+
     panes.forEach((pane) => {
         const disclosures = [...pane.querySelectorAll(".editor-disclosure")];
         disclosures.forEach((item) => {
             item.open = false;
+            syncDisclosureExpandedState(item);
         });
 
         if (shouldFocusEdit && disclosures.length) {
@@ -20,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const defaultDisclosure = pane.querySelector('.editor-disclosure[data-disclosure-default]');
             if (defaultDisclosure instanceof HTMLDetailsElement) {
                 defaultDisclosure.open = true;
+                syncDisclosureExpandedState(defaultDisclosure);
             }
         }
 
@@ -37,6 +46,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
+                syncDisclosureExpandedState(current);
+
                 if (!current.open) {
                     requestAnimationFrame(() => {
                         window.scrollTo({ top: savedScrollY, behavior: "auto" });
@@ -47,6 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 pane.querySelectorAll(".editor-disclosure").forEach((item) => {
                     if (item !== current) {
                         item.open = false;
+                        syncDisclosureExpandedState(item);
                     }
                 });
 
