@@ -38,18 +38,89 @@ function setDashboardReadyState(isReady) {
 
 function hydrateTeacherDashboard() {
     const classesRoot = document.querySelector("[data-dashboard-classes]");
+    const recentClassesRoot = document.querySelector("[data-dashboard-recent-classes]");
     const classCount = document.querySelector("[data-dashboard-class-count]");
     const activityCount = document.querySelector("[data-dashboard-activity-count]");
     const libraryCount = document.querySelector("[data-dashboard-library-count]");
-    if (!classesRoot && !classCount && !activityCount && !libraryCount) return;
+    if (!classesRoot && !recentClassesRoot && !classCount && !activityCount && !libraryCount) return;
 
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
     const lessons = typeof readLessonsLibrary === "function" ? readLessonsLibrary() : [];
     const libraryItems = typeof libraryMaterials === "function" ? libraryMaterials() : [];
+    const classMeta = classes.map((className) => {
+        const classLessons = typeof classMaterials === "function" ? classMaterials(className) : [];
+        const latestLesson = classLessons[0] || null;
+        return {
+            className,
+            classLessons,
+            latestLesson,
+            updatedAt: latestLesson?.updatedAt ? new Date(latestLesson.updatedAt).getTime() : 0
+        };
+    }).sort((left, right) => {
+        const diff = (right.updatedAt || 0) - (left.updatedAt || 0);
+        if (diff !== 0) return diff;
+        return left.className.localeCompare(right.className);
+    });
+    const recentClasses = classMeta.slice(0, 3);
 
     if (classCount) classCount.textContent = `${classes.length}`;
     if (activityCount) activityCount.textContent = `${lessons.length}`;
     if (libraryCount) libraryCount.textContent = `${libraryItems.length}`;
+
+    if (recentClassesRoot) {
+        if (!recentClasses.length) {
+            recentClassesRoot.innerHTML = `
+                <article class="quick-class-card quick-class-card--active">
+                    <span class="route-tag">${dashboardTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
+                    <h3>${dashboardTranslate("dashboard.empty.noClassesTitle", "Nenhuma turma criada ainda")}</h3>
+                    <p>${dashboardTranslate("dashboard.empty.noClassesCopy", "Use o botao Criar turma na lateral para comecar.")}</p>
+                </article>
+            `;
+        } else {
+            recentClassesRoot.innerHTML = recentClasses.map(({ className, classLessons, latestLesson, updatedAt }) => {
+                const latestLabel = latestLesson?.updatedAt && typeof formatLessonDate === "function"
+                    ? formatLessonDate(latestLesson.updatedAt)
+                    : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização");
+                const latestTitle = latestLesson
+                    ? escapeHtml(latestLesson.title || (typeof materialGroupLabel === "function" ? materialGroupLabel(latestLesson.materialType || "slides") : dashboardTranslate("dashboard.recent.activity", "Atividade")))
+                    : "";
+                const latestPath = latestLesson && typeof editorPathForLesson === "function"
+                    ? editorPathForLesson(latestLesson)
+                    : "turma.html#atividades-salvas";
+                const recentClassName = escapeHtml(className);
+                const classToken = encodeURIComponent(className);
+                const activityLabel = `${classLessons.length} ${classLessons.length === 1 ? dashboardTranslate("dashboard.count.activity", "atividade") : dashboardTranslate("dashboard.count.activities", "atividades")}`;
+                const lastUpdated = updatedAt
+                    ? dashboardTranslate("classes.latest.updatedAt", "Atualizada em") + ` ${escapeHtml(formatLessonDate(updatedAt))}`
+                    : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização");
+
+                return `
+                    <article class="quick-class-card quick-class-card--active dashboard-recent-card">
+                        <span class="route-tag">${activityLabel}</span>
+                        <h3>${recentClassName}</h3>
+                        <p>${dashboardTranslate("dashboard.classCard.copy", "Abra a turma para criar novas atividades ou retomar o acervo ja salvo.")}</p>
+                        <div class="lesson-history-meta">
+                            <span>${escapeHtml(lastUpdated)}</span>
+                            <span>${classLessons.length ? escapeHtml(classLessons[0]?.type || dashboardTranslate("dashboard.recent.activity", "Atividade")) : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização")}</span>
+                        </div>
+                        ${latestLesson ? `
+                        <div class="class-overview-latest">
+                            <span class="class-overview-latest-label">${dashboardTranslate("dashboard.recent.latestLabel", "Mais recente")}</span>
+                            <strong>${latestTitle}</strong>
+                            <small>${escapeHtml(latestLabel)}</small>
+                        </div>
+                        ` : ""}
+                        <div class="lesson-history-actions">
+                            <a href="turma.html" class="platform-link-button platform-link-primary" data-dashboard-class-link="${recentClassName}">${dashboardTranslate("classes.actions.viewMaterials", "Ver materiais")}</a>
+                            <a href="biblioteca.html" class="platform-link-button platform-link-secondary" data-dashboard-class-library="${classToken}">${dashboardTranslate("dashboard.actions.openLibrary", "Abrir biblioteca")}</a>
+                            ${latestLesson ? `<a href="${escapeHtml(latestPath)}" class="platform-link-button platform-link-secondary" data-dashboard-class-edit="${classToken}">${dashboardTranslate("classes.actions.continueEditing", "Continuar edicao")}</a>` : ""}
+                        </div>
+                    </article>
+                `;
+            }).join("");
+        }
+        recentClassesRoot.setAttribute("aria-busy", "false");
+    }
 
     if (!classesRoot) return;
     if (!classes.length) {
@@ -60,19 +131,38 @@ function hydrateTeacherDashboard() {
                 <p>${dashboardTranslate("dashboard.empty.noClassesCopy", "Use o botao Criar turma na lateral para comecar.")}</p>
             </article>
         `;
+        classesRoot.setAttribute("aria-busy", "false");
         return;
     }
 
-    classesRoot.innerHTML = classes.map((className) => {
-        const classActivities = typeof classMaterials === "function" ? classMaterials(className) : [];
+    classesRoot.innerHTML = classMeta.map(({ className, classLessons, latestLesson, updatedAt }) => {
+        const classActivities = classLessons;
+        const latestLabel = latestLesson?.updatedAt
+            ? (typeof formatLessonDate === "function" ? formatLessonDate(latestLesson.updatedAt) : latestLesson.updatedAt)
+            : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização");
+        const latestTitle = latestLesson
+            ? escapeHtml(latestLesson.title || (typeof materialGroupLabel === "function" ? materialGroupLabel(latestLesson.materialType || "slides") : dashboardTranslate("dashboard.recent.activity", "Atividade")))
+            : "";
         return `
             <a href="turma.html" class="quick-class-card" data-dashboard-class-link="${escapeHtml(className)}">
                 <span class="route-tag">${classActivities.length} ${classActivities.length === 1 ? dashboardTranslate("dashboard.count.activity", "atividade") : dashboardTranslate("dashboard.count.activities", "atividades")}</span>
                 <h3>${escapeHtml(className)}</h3>
                 <p>${dashboardTranslate("dashboard.classCard.copy", "Abra a turma para criar novas atividades ou retomar o acervo ja salvo.")}</p>
+                <div class="lesson-history-meta">
+                    <span>${updatedAt ? `${dashboardTranslate("classes.latest.updatedAt", "Atualizada em")} ${escapeHtml(latestLabel)}` : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização")}</span>
+                    <span>${classLessons.length ? escapeHtml(classLessons[0]?.type || dashboardTranslate("dashboard.recent.activity", "Atividade")) : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização")}</span>
+                </div>
+                ${latestLesson ? `
+                <div class="class-overview-latest">
+                    <span class="class-overview-latest-label">${dashboardTranslate("dashboard.recent.latestLabel", "Mais recente")}</span>
+                    <strong>${latestTitle}</strong>
+                    <small>${dashboardTranslate("classes.latest.recentUpdate", "Atualização recente")}</small>
+                </div>
+                ` : ""}
             </a>
         `;
     }).join("");
+    classesRoot.setAttribute("aria-busy", "false");
 }
 
 function dashboardGreeting() {

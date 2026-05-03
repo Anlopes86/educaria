@@ -1,0 +1,234 @@
+body.product-body.theme-editor {
+    margin: 0;
+    font-family: var(--font-primary);
+    color: var(--navy-dark);
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 20%),
+        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.06), transparent 24%),
+        linear-gradient(180deg, #f8fbfb 0%, #eef4f5 100%);
+}
+
+.platform-shell {
+    width: min(1360px, calc(100% - 32px));
+    margin: 0 auto;
+}
+
+.platform-flow-shell,
+.activity-editor-shell {
+    display: grid;
+    gap: 16px;
+    padding: 24px 0 132px;
+}
+
+.platform-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 20px;
+    border-radius: 28px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 16px 36px -30px rgba(15, 23, 42, 0.22);
+    backdrop-filter: blur(18px);
+}
+
+.platform-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.platform-brand-logo {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    border-radius: 16px;
+}
+
+.platform-brand span,
+.focus-eyebrow,
+.platform-section-label {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: var(--radius-full);
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--gray-dark);
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.platform-brand strong {
+    display: block;
+    margin-top: 4px;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+}
+
+.platform-top-actions,
+.activity-editor-hero-actions,
+.activity-card-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.activity-editor-shell .platform-topbar,
+.lesson-review-shell .platform-topbar {
+    padding: 14px 18px;
+    border-radius: 22px;
+    background:
+        linear-gradient(90deg, rgba(14, 165, 233, 0.12) 0%, rgba(255, 255, 255, 0.94) 26%, rgba(255, 255, 255, 0.94) 100%);
+    border: 1px solid rgba(14, 165, 233, 0.14);
+    box-shadow: 0 16px 30px -26px rgba(15, 23, 42, 0.24);
+}
+
+@media (max-width: 1024px) {
+    .platform-topbar,
+    .activity-editor-hero,
+    .activity-card-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .activity-editor-top,
+    .platform-quiz-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .activity-preview-pane {
+        position: static;
+    }
+}
+
+@media (max-width: 720px) {
+    .platform-shell {
+        width: min(100% - 20px, 100%);
+    }
+}
+
+body.product-body.theme-overview .app-shell {
+    grid-template-columns: 272px minmax(0, 1fr);
+    background:
+        linear-gradient(90deg, #0c1020 0 272px, #f7f7fd 272px 100%),
+        linear-gradient(180deg, #f7f7fd 0%, #f1f4fb 100%);
+}
+
+body.product-body.theme-overview .app-sidebar {
+    padding: 22px 16px 20px;
+    border-right: 0;
+    background:
+        linear-gradient(180deg, rgba(11, 15, 32, 0.99) 0%, rgba(16, 18, 35, 0.98) 100%);
+}
+
+body.product-body.theme-overview .app-sidebar-brand {
+    padding: 8px 10px 14px;
+}
+
+body.product-body.theme-overview .app-sidebar-brand strong {
+    opacity: 0.65;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+body.product-body.theme-overview .dashboard-sidebar-profile {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.dashboard-avatar {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    color: #ffffff;
+    font-weight: 800;
+}
+
+.dashboard-avatar--small {
+    width: 34px;
+    height: 34px;
+    font-size: 0.85rem;
+}
+
+body.product-body.theme-overview .dashboard-sidebar-nav {
+    gap: 8px;
+}
+
+body.product-body.theme-overview .sidebar-nav-link {
+    min-height: 46px;
+    border-radius: 14px;
+    font-size: 0.95rem;
+}
+
+body.product-body.theme-overview .sidebar-nav-link:hover,
+body.product-body.theme-overview .sidebar-nav-link:focus-visible,
+body.product-body.theme-overview .sidebar-nav-link.is-active {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    box-shadow: 0 14px 24px -18px rgba(37, 99, 235, 0.7);
+    transform: none;
+}
+
+body.product-body.theme-overview .sidebar-subpanel {
+    padding-left: 8px;
+}
+
+body.product-body.theme-overview .sidebar-subitem {
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.035);
+}
+
+body.product-body.theme-overview .app-content.dashboard-overview-content {
+    padding: 18px 26px 30px;
+    gap: 22px;
+}
+
+body.product-body.theme-overview[data-dashboard-ready="false"] .dashboard-quick-create,
+body.product-body.theme-overview[data-dashboard-ready="false"] #activity-toolkit,
+body.product-body.theme-overview[data-dashboard-ready="false"] .dashboard-guide-trigger {
+    visibility: hidden;
+}
+
+.dashboard-tour-card {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    width: min(360px, calc(100% - 32px));
+    z-index: 30;
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 24px 42px -30px rgba(15, 23, 42, 0.36);
+    backdrop-filter: blur(14px);
+}
+
+.dashboard-tour-card h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.08rem;
+    color: var(--navy-dark);
+}
+
+.dashboard-tour-card p {
+    margin: 0;
+    color: var(--gray-dark);
+    line-height: 1.6;
+}

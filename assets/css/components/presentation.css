@@ -1,0 +1,269 @@
+.presentation-shell {
+    --presentation-stage-height: calc(100dvh - 190px);
+    --presentation-stage-width: calc(100vw - 32px);
+    width: min(1500px, calc(100% - 16px));
+    min-height: 100vh;
+    margin: 0 auto;
+    display: grid;
+    gap: 14px;
+    padding: 12px 0 18px;
+}
+
+.presentation-shell--lesson,
+.flashcards-presentation-shell,
+.quiz-application-shell {
+    background:
+        radial-gradient(circle at top left, rgba(14, 165, 233, 0.16), transparent 24%),
+        linear-gradient(180deg, #f7faf9 0%, #eef4f2 100%);
+}
+
+.presentation-page .presentation-shell--lesson {
+    padding-top: 12px;
+}
+
+.presentation-topbar {
+    position: sticky;
+    top: 12px;
+    z-index: 20;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    min-height: 72px;
+    padding: 12px 16px;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%);
+    box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.3);
+    backdrop-filter: blur(18px);
+}
+
+.presentation-topbar .platform-top-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    border-radius: 999px;
+    background: rgba(248, 250, 252, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.presentation-brand {
+    display: inline-grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: center;
+    width: fit-content;
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(240, 249, 255, 0.9));
+    border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.presentation-brand strong,
+.presentation-brand span {
+    display: block;
+}
+
+.presentation-brand strong {
+    color: var(--navy-dark);
+}
+
+.presentation-brand span {
+    margin-top: 4px;
+    color: var(--gray-dark);
+    font-size: 0.9rem;
+}
+
+.platform-brand-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #0f766e 0%, #0891b2 100%);
+    color: #ffffff;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    box-shadow: 0 16px 28px -22px rgba(8, 145, 178, 0.8);
+}
+
+.presentation-topbar--minimal {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    min-height: 0;
+    justify-content: center;
+    grid-template-columns: minmax(0, 1fr);
+    position: relative;
+    top: auto;
+    z-index: 30;
+}
+
+.presentation-topbar--minimal .platform-top-actions {
+    justify-self: center;
+    background: rgba(255, 255, 255, 0.84);
+    box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.3);
+}
+
+.presentation-frame,
+.flashcards-stage-shell,
+.quiz-application-stage {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.34fr) minmax(0, 1fr);
+    gap: 18px;
+    align-items: stretch;
+}
+
+.presentation-frame--solo,
+.flashcards-stage-shell--guided,
+.quiz-application-stage {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.presentation-frame--solo {
+    position: relative;
+}
+
+.presentation-page .presentation-frame--solo {
+    min-height: 0;
+    grid-template-rows: minmax(0, 1fr) auto;
+    justify-items: center;
+    align-content: stretch;
+    gap: 16px;
+}
+
+.presentation-frame--solo .presentation-side-panel,
+.flashcards-stage-shell--guided .presentation-side-panel,
+.quiz-application-sidecard {
+    display: none;
+}
+
+.presentation-side-panel,
+.quiz-application-sidecard {
+    display: grid;
+    align-content: start;
+    gap: 12px;
+    padding: 24px;
+    border-radius: 28px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: 0 20px 38px -30px rgba(15, 23, 42, 0.28);
+    backdrop-filter: blur(16px);
+}
+
+.presentation-side-panel h2,
+.quiz-application-sidecard h2 {
+    margin: 0;
+    color: var(--navy-dark);
+}
+
+.presentation-side-panel p,
+.quiz-application-sidecard p {
+    margin: 0;
+    color: var(--gray-dark);
+    line-height: 1.65;
+}
+
+.preview-mini-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.preview-mini-list li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.05);
+}
+
+.preview-mini-list span {
+    color: var(--gray-dark);
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.preview-mini-list strong {
+    color: var(--navy-dark);
+    justify-self: end;
+}
+
+.presentation-slide,
+.flashcards-stage-card,
+.quiz-application-card {
+    display: grid;
+    gap: 18px;
+    padding: 28px;
+    border-radius: 32px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 26px 50px -34px rgba(15, 23, 42, 0.32);
+    backdrop-filter: blur(18px);
+}
+
+.presentation-slide,
+.flashcards-stage-card,
+.quiz-application-card {
+    width: min(100%, 1280px);
+    margin: 0 auto;
+}
+
+.presentation-slide,
+.flashcards-stage-card,
+.quiz-application-card {
+    min-height: calc(100vh - 148px);
+}
+
+.presentation-slide {
+    position: relative;
+    height: calc(100vh - 148px);
+    max-height: calc(100vh - 148px);
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: clamp(20px, 2.8vw, 30px);
+    padding: clamp(20px, 2.6vw, 30px);
+    overflow: hidden;
+    background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.9), transparent 30%),
+        linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.98));
+}
+
+.presentation-page .presentation-slide {
+    width: min(100%, var(--presentation-stage-width), calc(var(--presentation-stage-height) * 2.2));
+    min-height: 0;
+    height: var(--presentation-stage-height);
+    max-height: none;
+    aspect-ratio: auto;
+    align-self: center;
+}
+
+.presentation-inline-editing [data-inline-editable]:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow:
+        inset 0 0 0 2px rgba(14, 165, 233, 0.38),
+        0 14px 28px -22px rgba(14, 165, 233, 0.42);
+}
+
+.presentation-inline-editing [data-inline-editable][data-inline-editable-multiline="true"] {
+    white-space: pre-wrap;
+}
+
+.presentation-inline-editing .flashcards-stage-card,
+.presentation-inline-editing .memory-stage-card,
+.presentation-inline-editing .wheel-stage-card,
+.presentation-inline-editing .match-stage-card,
+.presentation-inline-editing .mind-stage-card,
+.presentation-inline-editing .quiz-application-card,
+.presentation-inline-editing .presentation-slide {
+    cursor: default;
+}

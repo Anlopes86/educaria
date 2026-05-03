@@ -1,4 +1,12 @@
 /* Shared application shell, sidebar and content layout. */
+.container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--space-lg);
+    flex-grow: 1;
+}
+
 .app-shell {
     min-height: 100vh;
     display: grid;
@@ -207,4 +215,16 @@
     display: grid;
     align-content: start;
     gap: 24px;
+}
+
+@media (max-width: 1024px) {
+    .container {
+        padding: 0 var(--space-lg);
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 var(--space-md);
+    }
 }

@@ -1,0 +1,125 @@
+.wordsearch-empty-state {
+    height: 100%;
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    padding: 22px;
+    text-align: center;
+    color: var(--gray-dark);
+}
+
+.wordsearch-empty-state strong {
+    color: var(--navy-dark);
+}
+
+.crossword-clues-empty {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.05);
+    color: var(--gray-dark);
+}
+
+.crossword-empty-state {
+    min-height: 280px;
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    padding: 22px;
+    text-align: center;
+    color: var(--gray-dark);
+}
+
+.crossword-empty-state strong {
+    color: var(--navy-dark);
+}
+
+.hangman-empty-state {
+    min-height: 140px;
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    width: 100%;
+    text-align: center;
+    color: var(--gray-dark);
+}
+
+.hangman-empty-state strong {
+    color: var(--navy-dark);
+}
+
+.lesson-sequence-source-card,
+.lesson-sequence-source-empty,
+.lesson-sequence-readiness,
+.lesson-sequence-progress-empty {
+    display: grid;
+    gap: 12px;
+    padding: 16px 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: rgba(248, 250, 252, 0.78);
+}
+
+.lesson-sequence-source-card--new {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    background:
+        radial-gradient(circle at top right, rgba(167, 243, 208, 0.2), transparent 26%),
+        linear-gradient(180deg, rgba(240, 253, 250, 0.96) 0%, rgba(248, 250, 252, 0.96) 100%);
+}
+
+.lesson-sequence-source-card strong,
+.lesson-sequence-source-empty strong,
+.lesson-sequence-readiness strong,
+.lesson-sequence-progress-empty h3,
+.lesson-sequence-progress-copy strong {
+    color: var(--navy-dark);
+}
+
+.lesson-sequence-source-card p,
+.lesson-sequence-source-empty p,
+.lesson-sequence-readiness p,
+.lesson-sequence-progress-empty p,
+.lesson-sequence-source-summary p {
+    margin: 0;
+    color: var(--gray-dark);
+}
+
+.lesson-sequence-empty {
+    padding: 22px;
+    border-radius: 24px;
+    border: 1px dashed rgba(148, 163, 184, 0.28);
+    background: rgba(248, 250, 252, 0.78);
+}
+
+.lesson-sequence-empty h3,
+.lesson-sequence-empty p {
+    margin: 0;
+}
+
+.lesson-sequence-stage-empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    justify-items: center;
+    gap: 10px;
+    padding: 32px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.96));
+}
+
+.lesson-sequence-stage-empty h2,
+.lesson-sequence-stage-empty p {
+    margin: 0;
+}
+
+.lesson-sequence-stage-empty h2 {
+    color: var(--navy-dark);
+    font-size: clamp(1.6rem, 2.4vw, 2.1rem);
+}
+
+.lesson-sequence-stage-empty p {
+    max-width: 520px;
+    color: var(--gray-dark);
+}

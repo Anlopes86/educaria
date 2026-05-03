@@ -1,0 +1,555 @@
+body.product-body.theme-class[data-page="class-detail"] .class-ops-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-ops-strip span {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.86);
+    color: #35506e;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-ops-strip strong {
+    color: #102a56;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-slot {
+    margin-top: 18px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card {
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(59, 130, 246, 0.16);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 20px 34px -28px rgba(15, 23, 42, 0.32);
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card h3,
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card p {
+    margin: 0;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card .lesson-history-meta {
+    margin-top: -2px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card .lesson-history-actions {
+    margin-top: 2px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card--empty {
+    border-style: dashed;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: none;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .lesson-group-section {
+    display: grid;
+    gap: 16px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .lesson-group-disclosure {
+    gap: 0;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .lesson-group-disclosure summary small {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #123d91;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .lesson-group-disclosure .editor-disclosure-body {
+    padding-top: 16px;
+}
+
+.class-format-shortcut {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.class-status-card ul {
+    margin: 16px 0 0;
+}
+
+.class-status-card ul {
+    margin: 16px 0 0;
+}
+
+.class-layout-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+}
+
+.class-format-list {
+    gap: 12px;
+}
+
+.class-format-card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.class-format-card {
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 24px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 18px 34px -26px rgba(15, 23, 42, 0.26);
+    color: inherit;
+    text-decoration: none;
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.class-format-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 38px -26px rgba(15, 23, 42, 0.28);
+    border-color: rgba(14, 165, 233, 0.18);
+}
+
+.class-format-card h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    color: var(--navy-dark);
+}
+
+.class-format-card p {
+    margin: 0;
+    color: var(--gray-dark);
+    line-height: 1.6;
+}
+
+.class-format-visual {
+    position: relative;
+    height: 128px;
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    overflow: hidden;
+}
+
+.class-format-visual::before,
+.class-format-visual::after {
+    content: "";
+    position: absolute;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.class-format-visual--quiz {
+    background: linear-gradient(135deg, #0f172a 0%, #0ea5e9 100%);
+}
+
+.class-format-visual--quiz::before {
+    inset: 18px 18px 58px 18px;
+}
+
+.class-format-visual--quiz::after {
+    inset: 76px 18px 18px 18px;
+}
+
+.class-format-visual--slides {
+    background: linear-gradient(135deg, #1e293b 0%, #38bdf8 100%);
+}
+
+.class-format-visual--slides::before {
+    inset: 16px 18px 22px 18px;
+}
+
+.class-format-visual--slides::after {
+    width: 32%;
+    height: 62px;
+    right: 18px;
+    bottom: 18px;
+}
+
+.class-format-visual--flashcards {
+    background: linear-gradient(135deg, #0f172a 0%, #14b8a6 100%);
+}
+
+.class-format-visual--flashcards::before {
+    width: 46%;
+    height: 72px;
+    top: 18px;
+    left: 18px;
+    transform: rotate(-6deg);
+}
+
+.class-format-visual--flashcards::after {
+    width: 46%;
+    height: 72px;
+    right: 18px;
+    bottom: 18px;
+    transform: rotate(6deg);
+}
+
+.class-format-visual--memory {
+    background: linear-gradient(135deg, #14532d 0%, #86efac 100%);
+}
+
+.class-format-visual--memory::before {
+    width: 34%;
+    height: 42px;
+    top: 22px;
+    left: 18px;
+    box-shadow: 0 54px 0 rgba(255, 255, 255, 0.72);
+}
+
+.class-format-visual--memory::after {
+    width: 34%;
+    height: 42px;
+    top: 22px;
+    right: 18px;
+    box-shadow: 0 54px 0 rgba(255, 255, 255, 0.72);
+}
+
+.class-format-visual--wheel {
+    background: linear-gradient(135deg, #0f172a 0%, #22c55e 100%);
+}
+
+.class-format-visual--wheel::before {
+    width: 86px;
+    height: 86px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at center, rgba(255, 255, 255, 0.82) 0 16%, transparent 16% 100%),
+        conic-gradient(from 0deg, rgba(255, 255, 255, 0.42) 0deg 60deg, rgba(255, 255, 255, 0.18) 60deg 120deg, rgba(255, 255, 255, 0.42) 120deg 180deg, rgba(255, 255, 255, 0.18) 180deg 240deg, rgba(255, 255, 255, 0.42) 240deg 300deg, rgba(255, 255, 255, 0.18) 300deg 360deg);
+}
+
+.class-format-visual--wheel::after {
+    width: 28px;
+    height: 28px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: #0f172a;
+}
+
+.class-format-visual--matching {
+    background: linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%);
+}
+
+.class-format-visual--matching::before {
+    inset: 18px 18px 18px 18px;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.82) 0 48%, transparent 48% 52%, rgba(255, 255, 255, 0.82) 52% 100%),
+        linear-gradient(180deg, transparent 0 47%, rgba(255, 255, 255, 0.82) 47% 53%, transparent 53% 100%);
+}
+
+.class-format-visual--matching::after {
+    width: 74px;
+    height: 74px;
+    right: 22px;
+    bottom: 22px;
+    border-radius: 24px;
+    transform: rotate(12deg);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.class-format-visual--mindmap {
+    background: linear-gradient(135deg, #7c3aed 0%, #d8b4fe 100%);
+}
+
+.class-format-visual--mindmap::before {
+    width: 76px;
+    height: 76px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.class-format-visual--mindmap::after {
+    inset: 18px 18px 18px 18px;
+    background:
+        radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.9) 0 14%, transparent 14% 100%),
+        radial-gradient(circle at 25% 28%, rgba(255, 255, 255, 0.78) 0 8%, transparent 8% 100%),
+        radial-gradient(circle at 75% 28%, rgba(255, 255, 255, 0.78) 0 8%, transparent 8% 100%),
+        radial-gradient(circle at 25% 72%, rgba(255, 255, 255, 0.78) 0 8%, transparent 8% 100%),
+        radial-gradient(circle at 75% 72%, rgba(255, 255, 255, 0.78) 0 8%, transparent 8% 100%);
+}
+
+.class-format-visual--debate {
+    background: linear-gradient(135deg, #ef4444 0%, #fb923c 100%);
+}
+
+.class-format-visual--debate::before {
+    inset: 22px 22px 22px 22px;
+    border-radius: 26px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.82) 0 48%, transparent 48% 52%, rgba(255, 255, 255, 0.82) 52% 100%);
+}
+
+.class-format-visual--debate::after {
+    width: 50px;
+    height: 50px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.class-format-visual--lesson {
+    background: linear-gradient(135deg, #111827 0%, #3f3f46 100%);
+}
+
+.class-format-visual--lesson::before {
+    inset: 18px 18px 18px 18px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.84) 0 18%, transparent 18% 100%),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.18) 0 100%);
+}
+
+.class-format-visual--lesson::after {
+    width: 36%;
+    height: 20px;
+    left: 18px;
+    bottom: 20px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.74);
+}
+
+.class-library-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.class-library-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.class-lesson-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+@media (max-width: 1024px) {
+    .class-layout-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .class-format-card-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .class-library-toolbar,
+    .class-library-actions {
+        grid-template-columns: 1fr;
+    }
+
+    .class-lesson-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .class-library-toolbar,
+    .class-library-actions {
+        gap: 10px;
+    }
+
+    .class-format-card-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .class-lesson-grid {
+        gap: 12px;
+    }
+}
+
+.class-hero {
+    grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+}
+
+.class-page-intro {
+    position: relative;
+    align-items: start;
+    gap: 14px;
+    padding: 26px 28px;
+    border-radius: 28px;
+    border: 1px solid rgba(14, 165, 233, 0.14);
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 26%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 250, 252, 0.96) 100%);
+    box-shadow: 0 18px 38px -30px rgba(15, 23, 42, 0.22);
+}
+
+.class-page-intro__content {
+    display: grid;
+    gap: 10px;
+}
+
+.theme-class[data-class-page-ready="false"] .app-content {
+    opacity: 0;
+}
+
+.theme-class[data-class-page-ready="true"] .app-content {
+    opacity: 1;
+    transition: opacity 140ms ease;
+}
+
+.class-hero-main,
+.class-status-card {
+    padding: 26px;
+}
+
+.class-hero-main {
+    color: #ffffff;
+    background:
+        radial-gradient(circle at top right, rgba(255, 255, 255, 0.18), transparent 28%),
+        radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.22), transparent 34%),
+        linear-gradient(135deg, #082f6b 0%, #0f5fc2 52%, #38bdf8 100%);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    box-shadow: 0 24px 44px -30px rgba(8, 47, 107, 0.44);
+}
+
+.class-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.class-hero-main h2 {
+    margin: 0;
+}
+
+.class-hero-main p {
+    max-width: 58ch;
+}
+
+.class-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+body.product-body.theme-class .class-dashboard-grid .quick-class-card {
+    gap: 12px;
+    min-height: 170px;
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 16px 30px -24px rgba(15, 23, 42, 0.25);
+}
+
+body.product-body.theme-class .class-dashboard-grid .quick-class-card h3 {
+    margin: 0;
+    font-size: 1.12rem;
+}
+
+body.product-body.theme-class .class-dashboard-grid .quick-class-card p {
+    color: var(--gray-dark);
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-ops-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-ops-strip span {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(255, 255, 255, 0.86);
+    color: #35506e;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-ops-strip strong {
+    color: #102a56;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-slot {
+    margin-top: 18px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card {
+    display: grid;
+    gap: 12px;
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(59, 130, 246, 0.16);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 20px 34px -28px rgba(15, 23, 42, 0.32);
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card h3,
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card p {
+    margin: 0;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card .lesson-history-meta {
+    margin-top: -2px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card .lesson-history-actions {
+    margin-top: 2px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .class-recent-lesson-card--empty {
+    border-style: dashed;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: none;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .lesson-group-section {
+    display: grid;
+    gap: 16px;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .lesson-group-disclosure {
+    gap: 0;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .lesson-group-disclosure summary small {
+    display: inline-flex;
+    align-items: center;
+    min-height: 30px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(37, 99, 235, 0.1);
+    color: #123d91;
+}
+
+body.product-body.theme-class[data-page="class-detail"] .lesson-group-disclosure .editor-disclosure-body {
+    padding-top: 16px;
+}

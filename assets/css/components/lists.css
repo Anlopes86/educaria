@@ -1,0 +1,82 @@
+.lesson-group-header {
+    display: grid;
+    gap: 8px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.lesson-group-header h3,
+.lesson-history-card h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    color: var(--navy-dark);
+}
+
+.lesson-group-header p,
+.lesson-history-card p,
+.lesson-history-meta span {
+    margin: 0;
+    color: var(--gray-dark);
+    line-height: 1.6;
+}
+
+.lesson-history-card {
+    padding: 22px;
+    border-radius: 24px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: 0 18px 34px -26px rgba(15, 23, 42, 0.26);
+    display: grid;
+    gap: 12px;
+}
+
+.lesson-history-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 22px 38px -26px rgba(15, 23, 42, 0.28);
+    border-color: rgba(14, 165, 233, 0.18);
+}
+
+.lesson-history-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 0.92rem;
+}
+
+.lesson-status-chip {
+    font-weight: 800;
+}
+
+.lesson-status-chip--ready {
+    color: #047857;
+}
+
+.lesson-status-chip--draft {
+    color: #b45309;
+}
+
+.lesson-pedagogy-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.lesson-pedagogy-tags span {
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(20, 184, 166, 0.1);
+    color: #0f766e;
+    font-size: 0.78rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.lesson-history-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+}
