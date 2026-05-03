@@ -32,10 +32,15 @@ jobs:
         env:
           FIREBASE_CONFIG_JSON: ${{ secrets.EDUCARIA_FIREBASE_CONFIG_JSON }}
         run: |
-          test -n "$FIREBASE_CONFIG_JSON"
           node - <<'NODE'
           const fs = require("node:fs");
           const raw = process.env.FIREBASE_CONFIG_JSON || "";
+
+          if (!raw.trim()) {
+              console.warn("EDUCARIA_FIREBASE_CONFIG_JSON is not configured; skipping Firebase runtime config injection.");
+              process.exit(0);
+          }
+
           const config = JSON.parse(raw);
           const content = `(function configureEducariaFirebaseRuntime() {
               if (typeof window.setEducariaFirebaseConfig !== "function") return;

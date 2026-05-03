@@ -50,6 +50,8 @@ Depois, em **Settings > Pages**, use **GitHub Actions** como origem do deploy.
 
 O workflow gera `assets/js/firebase-config.local.js` somente no artefato publicado. Os valores nao entram no commit.
 
+Se o secret nao estiver configurado, o deploy continua e mostra um aviso. Nesse caso, `assets/js/firebase-config.local.js` nao e gerado e o frontend usa apenas configuracao salva no `localStorage` ou os placeholders locais. Para login real no GitHub Pages, configure o secret.
+
 ## Checklist de seguranca
 
 - Em Firebase Authentication, autorize apenas os dominios usados pela EducarIA.
