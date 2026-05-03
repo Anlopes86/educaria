@@ -73,7 +73,7 @@ O plano pode ser resolvido por:
 - claim `plan=pro` no Firebase ID token
 - UID listado em `AI_PRO_UIDS` (fase inicial)
 
-Cada chamada bem-sucedida para `POST /api/ai/generate` desconta 1 credito.
+Cada chamada valida para `POST /api/ai/generate` reserva 1 credito imediatamente antes de chamar o provedor de IA. Se a geracao falhar, o backend devolve esse credito. Essa reserva evita que varias requisicoes simultaneas passem juntas quando resta apenas 1 credito.
 
 Por padrao, `AI_CREDIT_STORE=memory` mantem o contador no processo do `ai-service`.
 
@@ -84,7 +84,7 @@ AI_CREDIT_STORE=file
 AI_CREDIT_STORE_PATH=.data/ai-credits.json
 ```
 
-O modo `file` grava um JSON local e remove dias antigos automaticamente. Ele resolve o problema de reinicio do servico, mas ainda nao e o armazenamento ideal para varias instancias rodando ao mesmo tempo. Para controle financeiro mais rigido em producao horizontal, mova esse contador para Redis, Firestore via Admin SDK ou outro banco de servidor com incremento atomico.
+O modo `file` grava um JSON local e remove dias antigos automaticamente. Ele resolve o problema de reinicio do servico e a reserva de credito evita corrida dentro de uma unica instancia Node. Ainda nao e o armazenamento ideal para varias instancias rodando ao mesmo tempo. Para controle financeiro mais rigido em producao horizontal, mova esse contador para Redis, Firestore via Admin SDK ou outro banco de servidor com incremento atomico.
 
 No frontend, `assets/js/ai-credits.js` consulta `GET /api/ai/credits`, atualiza todos os elementos com `data-ai-credits` e expõe `ensureEducariaAiCreditsAvailable()`. Os geradores chamam essa funcao antes de enviar uma nova geracao para evitar chamadas conhecidamente sem saldo.
 

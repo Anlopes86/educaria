@@ -2,10 +2,7 @@ body.product-body.theme-editor {
     margin: 0;
     font-family: var(--font-primary);
     color: var(--navy-dark);
-    background:
-        radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 20%),
-        radial-gradient(circle at bottom right, rgba(34, 197, 94, 0.06), transparent 24%),
-        linear-gradient(180deg, #f8fbfb 0%, #eef4f5 100%);
+    background: linear-gradient(180deg, #fbfbf7 0%, #edf4f1 100%);
 }
 
 .platform-shell {
@@ -84,10 +81,9 @@ body.product-body.theme-editor {
 .lesson-review-shell .platform-topbar {
     padding: 14px 18px;
     border-radius: 22px;
-    background:
-        linear-gradient(90deg, rgba(14, 165, 233, 0.12) 0%, rgba(255, 255, 255, 0.94) 26%, rgba(255, 255, 255, 0.94) 100%);
-    border: 1px solid rgba(14, 165, 233, 0.14);
-    box-shadow: 0 16px 30px -26px rgba(15, 23, 42, 0.24);
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(95, 182, 196, 0.16);
+    box-shadow: var(--shadow-md);
 }
 
 @media (max-width: 1024px) {
@@ -155,7 +151,7 @@ body.product-body.theme-overview .dashboard-sidebar-profile {
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    background: var(--gradient-primary);
     color: #ffffff;
     font-weight: 800;
 }
@@ -179,8 +175,8 @@ body.product-body.theme-overview .sidebar-nav-link {
 body.product-body.theme-overview .sidebar-nav-link:hover,
 body.product-body.theme-overview .sidebar-nav-link:focus-visible,
 body.product-body.theme-overview .sidebar-nav-link.is-active {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    box-shadow: 0 14px 24px -18px rgba(37, 99, 235, 0.7);
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-md);
     transform: none;
 }
 

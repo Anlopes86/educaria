@@ -15,9 +15,7 @@
     gap: 20px;
     padding: 28px;
     color: #ffffff;
-    background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 28%),
-        linear-gradient(135deg, #0f172a 0%, #0f766e 56%, #67e8f9 170%);
+    background: var(--gradient-hero);
 }
 
 .activity-editor-hero h1,
@@ -42,15 +40,11 @@
 }
 
 .activity-editor-hero--memory {
-    background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 28%),
-        linear-gradient(135deg, #0f172a 0%, #166534 52%, #86efac 160%);
+    background: linear-gradient(135deg, #21435f 0%, #4f8f72 100%);
 }
 
 .activity-editor-hero--wheel {
-    background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 28%),
-        linear-gradient(135deg, #0f172a 0%, #0f766e 52%, #67e8f9 160%);
+    background: var(--gradient-hero);
 }
 
 .activity-editor-top,
@@ -100,8 +94,8 @@
     padding: 22px;
     border-radius: 22px;
     border: 1px solid rgba(148, 163, 184, 0.12);
-    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-    box-shadow: 0 16px 30px -26px rgba(15, 23, 42, 0.2);
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-md);
 }
 
 .activity-card-header {
@@ -114,6 +108,51 @@
 
 .activity-stack-actions {
     margin-top: 18px;
+}
+
+.activity-template-panel {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0 16px;
+}
+
+.activity-template-card {
+    display: grid;
+    gap: 6px;
+    min-height: 112px;
+    padding: 14px;
+    border: 1px solid rgba(20, 184, 166, 0.18);
+    border-radius: 16px;
+    background: #f8fffd;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.activity-template-card:hover,
+.activity-template-card:focus-visible {
+    border-color: rgba(14, 165, 233, 0.36);
+    box-shadow: 0 16px 28px -24px rgba(15, 23, 42, 0.28);
+    transform: translateY(-1px);
+}
+
+.activity-template-card:focus-visible {
+    outline: 3px solid rgba(14, 165, 233, 0.24);
+    outline-offset: 2px;
+}
+
+.activity-template-card strong {
+    color: var(--navy-dark);
+    font-size: 0.98rem;
+}
+
+.activity-template-card span {
+    color: var(--gray-dark);
+    font-size: 0.88rem;
+    line-height: 1.45;
 }
 
 .activity-preview-pane {
@@ -158,9 +197,7 @@
 .material-choice-main {
     padding: 28px;
     color: #ffffff;
-    background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 28%),
-        linear-gradient(135deg, #0f172a 0%, #0f766e 52%, #67e8f9 170%);
+    background: var(--gradient-hero);
 }
 
 .material-choice-main h1,
@@ -231,10 +268,8 @@
     border-radius: 32px;
     border: 1px solid rgba(148, 163, 184, 0.14);
     color: #ffffff;
-    background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 28%),
-        linear-gradient(135deg, #0f172a 0%, #0f766e 52%, #67e8f9 160%);
-    box-shadow: 0 26px 56px -40px rgba(15, 23, 42, 0.48);
+    background: var(--gradient-hero);
+    box-shadow: var(--shadow-xl);
 }
 
 .focus-hero-head {
@@ -350,9 +385,7 @@
     gap: 22px;
     padding: 28px;
     color: #ffffff;
-    background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 28%),
-        linear-gradient(135deg, #0f172a 0%, #0f766e 52%, #67e8f9 170%);
+    background: var(--gradient-hero);
 }
 
 .home-hero-copy h1,
@@ -494,6 +527,18 @@
 }
 
 @media (max-width: 1024px) {
+    .activity-template-panel {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 720px) {
+    .activity-template-card {
+        min-height: 92px;
+    }
+}
+
+@media (max-width: 1024px) {
     .focus-kpis {
         grid-template-columns: 1fr;
     }
@@ -515,8 +560,8 @@
 }
 
 .quick-class-card--active {
-    border-color: rgba(8, 145, 178, 0.28);
-    background: linear-gradient(180deg, rgba(8, 145, 178, 0.12) 0%, #ffffff 100%);
+    border-color: rgba(15, 95, 102, 0.28);
+    background: linear-gradient(180deg, rgba(217, 242, 242, 0.72) 0%, #ffffff 100%);
 }
 
 .route-tag {

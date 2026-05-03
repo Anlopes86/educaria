@@ -14,6 +14,7 @@
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/live-preview.js" defer></script>
     <script src="../assets/js/builder-actions.js" defer></script>
+    <script src="../assets/js/builder-templates.js" defer></script>
     <script src="../assets/js/local-persistence.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
@@ -105,7 +106,7 @@
                     </div>
                 </details>
 
-                <details class="editor-disclosure" open>
+                <details class="editor-disclosure">
                     <summary>
                         <span>Arquivo modelo</span>
                         <small>Expandir</small>
@@ -131,10 +132,24 @@
                     </summary>
                     <div class="editor-disclosure-body">
                         <p class="activity-manual-guide">Preencha enunciado e tipo. Use Mais opcoes para ajustes finos.</p>
+                        <div class="activity-template-panel" role="group" aria-label="Modelos rapidos de quiz">
+                            <button type="button" class="activity-template-card" data-builder-template="review" aria-label="Aplicar modelo Revisao em 5 min">
+                                <strong>Revisao em 5 min</strong>
+                                <span>Multipla escolha, V/F e pergunta aberta.</span>
+                            </button>
+                            <button type="button" class="activity-template-card" data-builder-template="diagnostic" aria-label="Aplicar modelo Diagnostico rapido">
+                                <strong>Diagnostico rapido</strong>
+                                <span>Levanta conhecimentos antes da explicacao.</span>
+                            </button>
+                            <button type="button" class="activity-template-card" data-builder-template="exit" aria-label="Aplicar modelo Ticket de saida">
+                                <strong>Ticket de saida</strong>
+                                <span>Duas perguntas abertas para fechar a aula.</span>
+                            </button>
+                        </div>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-clear-draft>Limpar conteúdo</button>
                         </div>
-                        <div class="platform-question-stack activity-card-stack" data-quiz-stack>
+                        <div class="platform-question-stack activity-card-stack" data-quiz-stack aria-live="polite" aria-busy="false">
                             <section class="platform-question-card quiz-editor-card activity-content-card" data-quiz-question>
                                 <div class="activity-card-header">
                                     <div>

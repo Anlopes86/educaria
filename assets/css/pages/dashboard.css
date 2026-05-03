@@ -16,7 +16,7 @@ body.product-body.theme-overview .dashboard-library-banner h2 {
 }
 
 body.product-body.theme-overview .dashboard-inline-link {
-    color: #2563eb;
+    color: var(--teal-deep);
     font-weight: 700;
     text-decoration: none;
 }
@@ -32,11 +32,10 @@ body.product-body.theme-overview .dashboard-toolkit-secondary {
     gap: 14px;
     margin-top: 18px;
     padding: 18px;
-    border: 1px solid rgba(245, 158, 11, 0.28);
-    border-left: 6px solid rgba(245, 158, 11, 0.88);
-    background:
-        linear-gradient(135deg, rgba(255, 247, 237, 0.98) 0%, rgba(254, 249, 195, 0.92) 100%);
-    box-shadow: 0 18px 32px -26px rgba(217, 119, 6, 0.24);
+    border: 1px solid rgba(214, 158, 46, 0.24);
+    border-left: 6px solid rgba(214, 158, 46, 0.72);
+    background: rgba(248, 242, 231, 0.94);
+    box-shadow: var(--shadow-md);
 }
 
 body.product-body.theme-overview .dashboard-toolkit-secondary strong {
@@ -84,10 +83,8 @@ body.product-body.theme-overview .dashboard-library-banner {
     padding: 28px 30px;
     border-radius: 28px;
     color: #ffffff;
-    background:
-        linear-gradient(90deg, rgba(15, 23, 42, 0.84), rgba(15, 23, 42, 0.4)),
-        linear-gradient(135deg, #111827 0%, #1e3a8a 100%);
-    box-shadow: 0 28px 40px -30px rgba(15, 23, 42, 0.45);
+    background: var(--gradient-hero);
+    box-shadow: var(--shadow-xl);
 }
 
 body.product-body.theme-overview .dashboard-library-banner__copy {
@@ -121,7 +118,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card {
     border-radius: 22px;
     background: rgba(255, 255, 255, 0.96);
     border: 1px solid rgba(226, 232, 240, 0.9);
-    box-shadow: 0 16px 30px -24px rgba(15, 23, 42, 0.25);
+    box-shadow: var(--shadow-md);
 }
 
 body.product-body.theme-overview .dashboard-class-grid .quick-class-card h3 {
@@ -287,10 +284,10 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 .dashboard-tour-highlight {
     position: fixed;
     border-radius: 24px;
-    border: 2px solid rgba(96, 165, 250, 0.95);
+    border: 2px solid rgba(95, 182, 196, 0.95);
     box-shadow:
         0 0 0 9999px rgba(12, 16, 32, 0.48),
-        0 20px 45px -28px rgba(37, 99, 235, 0.65);
+        0 20px 45px -28px rgba(15, 95, 102, 0.48);
     pointer-events: none;
     transition:
         top 180ms ease,
@@ -308,7 +305,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .dashboard-tour-progress span.is-active {
     width: 24px;
-    background: #2563eb;
+    background: var(--teal-deep);
 }
 
 .dashboard-tour-actions {
@@ -336,9 +333,9 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
 
 .dashboard-tour-button--primary {
     border-color: transparent;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: var(--gradient-primary);
     color: #ffffff;
-    box-shadow: 0 18px 28px -20px rgba(37, 99, 235, 0.6);
+    box-shadow: var(--shadow-md);
 }
 
 .dashboard-tour-button:disabled {
@@ -449,7 +446,7 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 }
 
 .dashboard-inline-link {
-    color: #2563eb;
+    color: var(--teal-deep);
     font-weight: 700;
     text-decoration: none;
 }
@@ -465,11 +462,10 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     gap: 14px;
     margin-top: 18px;
     padding: 18px;
-    border: 1px solid rgba(245, 158, 11, 0.28);
-    border-left: 6px solid rgba(245, 158, 11, 0.88);
-    background:
-        linear-gradient(135deg, rgba(255, 247, 237, 0.98) 0%, rgba(254, 249, 195, 0.92) 100%);
-    box-shadow: 0 18px 32px -26px rgba(217, 119, 6, 0.24);
+    border: 1px solid rgba(214, 158, 46, 0.24);
+    border-left: 6px solid rgba(214, 158, 46, 0.72);
+    background: rgba(248, 242, 231, 0.94);
+    box-shadow: var(--shadow-md);
 }
 
 .dashboard-toolkit-secondary strong {
@@ -517,10 +513,8 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     padding: 28px 30px;
     border-radius: 28px;
     color: #ffffff;
-    background:
-        linear-gradient(90deg, rgba(15, 23, 42, 0.84), rgba(15, 23, 42, 0.4)),
-        linear-gradient(135deg, #111827 0%, #1e3a8a 100%);
-    box-shadow: 0 28px 40px -30px rgba(15, 23, 42, 0.45);
+    background: var(--gradient-hero);
+    box-shadow: var(--shadow-xl);
 }
 
 .dashboard-library-banner__copy {
@@ -579,7 +573,7 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 
 .dashboard-tour-progress span.is-active {
     width: 24px;
-    background: #2563eb;
+    background: var(--teal-deep);
 }
 
 .dashboard-tour-actions {
@@ -607,9 +601,9 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 
 .dashboard-tour-button--primary {
     border-color: transparent;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    background: var(--gradient-primary);
     color: #ffffff;
-    box-shadow: 0 18px 28px -20px rgba(37, 99, 235, 0.6);
+    box-shadow: var(--shadow-md);
 }
 
 .dashboard-tour-button:disabled {
@@ -762,8 +756,8 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     padding: 26px 28px;
     border-radius: 28px;
     color: #ffffff;
-    background: linear-gradient(135deg, #121528 0%, #10172e 58%, #182447 100%);
-    box-shadow: 0 28px 48px -34px rgba(15, 23, 42, 0.55);
+    background: var(--gradient-hero);
+    box-shadow: var(--shadow-xl);
 }
 
 .dashboard-hero-copy {
@@ -836,9 +830,10 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 }
 
 .dashboard-hero-panel .platform-link-primary {
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    color: #ffffff;
-    box-shadow: 0 18px 28px -18px rgba(37, 99, 235, 0.55);
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--navy-dark);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
 .dashboard-hero-panel .platform-link-secondary {
@@ -954,8 +949,8 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     padding: 18px;
     border-radius: 20px;
     border: 1px solid rgba(148, 163, 184, 0.14);
-    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    box-shadow: 0 18px 34px -26px rgba(15, 23, 42, 0.24);
+    background: var(--gradient-card);
+    box-shadow: var(--shadow-md);
 }
 
 .dashboard-tool-visual {
@@ -986,18 +981,18 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     margin: 0;
 }
 
-.dashboard-tool-card--quiz .dashboard-tool-visual { background: #4676e7; }
-.dashboard-tool-card--slides .dashboard-tool-visual { background: linear-gradient(135deg, #7c3aed 0%, #c084fc 100%); }
-.dashboard-tool-card--flashcards .dashboard-tool-visual { background: linear-gradient(135deg, #0891b2 0%, #14b8a6 100%); }
-.dashboard-tool-card--memory .dashboard-tool-visual { background: linear-gradient(135deg, #f59e0b 0%, #facc15 100%); }
-.dashboard-tool-card--wheel .dashboard-tool-visual { background: linear-gradient(135deg, #ef4444 0%, #f97316 100%); }
-.dashboard-tool-card--match .dashboard-tool-visual { background: linear-gradient(135deg, #5b8ae6 0%, #7aa2ef 100%); }
-.dashboard-tool-card--mindmap .dashboard-tool-visual { background: linear-gradient(135deg, #a855f7 0%, #d8b4fe 100%); }
-.dashboard-tool-card--debate .dashboard-tool-visual { background: linear-gradient(135deg, #6366f1 0%, #a5b4fc 100%); }
-.dashboard-tool-card--wordsearch .dashboard-tool-visual { background: linear-gradient(135deg, #0f766e 0%, #34d399 100%); }
-.dashboard-tool-card--crossword .dashboard-tool-visual { background: linear-gradient(135deg, #1d4ed8 0%, #60a5fa 100%); }
-.dashboard-tool-card--reserved .dashboard-tool-visual { background: linear-gradient(135deg, #64748b 0%, #cbd5e1 100%); }
-.dashboard-tool-card--lesson .dashboard-tool-visual { background: linear-gradient(135deg, #111827 0%, #3f3f46 100%); }
+.dashboard-tool-card--quiz .dashboard-tool-visual { background: #d9f2f2; }
+.dashboard-tool-card--slides .dashboard-tool-visual { background: #e7eff0; }
+.dashboard-tool-card--flashcards .dashboard-tool-visual { background: #cfeee2; }
+.dashboard-tool-card--memory .dashboard-tool-visual { background: #f8f2e7; }
+.dashboard-tool-card--wheel .dashboard-tool-visual { background: #f5e8d6; }
+.dashboard-tool-card--match .dashboard-tool-visual { background: #e3edf4; }
+.dashboard-tool-card--mindmap .dashboard-tool-visual { background: #e8edf0; }
+.dashboard-tool-card--debate .dashboard-tool-visual { background: #f2eadf; }
+.dashboard-tool-card--wordsearch .dashboard-tool-visual { background: #dff3ec; }
+.dashboard-tool-card--crossword .dashboard-tool-visual { background: #dfeff2; }
+.dashboard-tool-card--reserved .dashboard-tool-visual { background: #e7ecea; }
+.dashboard-tool-card--lesson .dashboard-tool-visual { background: #e5e9e7; }
 
 .dashboard-tool-card--quiz .dashboard-tool-visual::before {
     inset: 20px 20px auto 20px;

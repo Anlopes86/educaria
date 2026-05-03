@@ -38,10 +38,10 @@
 }
 
 .class-material-filter.is-active {
-    border-color: rgba(37, 99, 235, 0.45);
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    border-color: rgba(15, 95, 102, 0.42);
+    background: var(--gradient-primary);
     color: #ffffff;
-    box-shadow: 0 14px 24px -18px rgba(37, 99, 235, 0.55);
+    box-shadow: var(--shadow-md);
 }
 
 .class-material-filter.is-active small {

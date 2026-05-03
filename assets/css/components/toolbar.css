@@ -14,20 +14,20 @@
 
 .activity-editor-shell .platform-top-actions .platform-link-button:nth-child(1),
 .lesson-review-shell .platform-top-actions .platform-link-button:nth-child(1) {
-    background: linear-gradient(135deg, rgba(191, 219, 254, 0.96) 0%, rgba(224, 242, 254, 0.96) 100%);
-    border-color: rgba(59, 130, 246, 0.22);
+    background: rgba(217, 242, 242, 0.96);
+    border-color: rgba(95, 182, 196, 0.24);
 }
 
 .activity-editor-shell .platform-top-actions .platform-link-button:nth-child(2),
 .lesson-review-shell .platform-top-actions .platform-link-button:nth-child(2) {
-    background: linear-gradient(135deg, rgba(220, 252, 231, 0.96) 0%, rgba(236, 253, 245, 0.96) 100%);
-    border-color: rgba(34, 197, 94, 0.2);
+    background: rgba(207, 238, 226, 0.9);
+    border-color: rgba(79, 143, 114, 0.22);
 }
 
 .activity-editor-shell .platform-top-actions .platform-link-button:nth-child(3),
 .lesson-review-shell .platform-top-actions .platform-link-button:nth-child(3) {
-    background: linear-gradient(135deg, rgba(254, 240, 138, 0.95) 0%, rgba(255, 247, 237, 0.96) 100%);
-    border-color: rgba(245, 158, 11, 0.24);
+    background: rgba(248, 242, 231, 0.96);
+    border-color: rgba(214, 158, 46, 0.2);
 }
 
 .activity-editor-shell .platform-top-actions .platform-link-button:hover,
@@ -37,17 +37,17 @@
 
 .lesson-review-shell .platform-top-actions .platform-link-button:not([data-save-target="turma.html"]) {
     color: #0f3f67;
-    background: linear-gradient(135deg, #d8efff 0%, #f4fbff 100%);
-    border-color: rgba(154, 205, 241, 0.72);
-    box-shadow: 0 14px 24px -20px rgba(121, 184, 232, 0.4);
+    background: rgba(217, 242, 242, 0.92);
+    border-color: rgba(95, 182, 196, 0.26);
+    box-shadow: var(--shadow-md);
 }
 
 .lesson-review-shell .platform-top-actions .platform-link-button[data-save-target="turma.html"] {
     position: relative;
     color: #f8fbff;
-    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-    border-color: rgba(29, 78, 216, 0.48);
-    box-shadow: 0 20px 34px -20px rgba(37, 99, 235, 0.62);
+    background: var(--gradient-primary);
+    border-color: rgba(15, 95, 102, 0.42);
+    box-shadow: var(--shadow-lg);
 }
 
 .lesson-review-shell .platform-top-actions .platform-link-button[data-save-target="turma.html"]::after {
@@ -81,7 +81,7 @@
     border: 1px solid rgba(148, 163, 184, 0.2);
     border-radius: 18px;
     background: rgba(255, 255, 255, 0.94);
-    box-shadow: 0 22px 48px -28px rgba(15, 23, 42, 0.42);
+    box-shadow: var(--shadow-xl);
     backdrop-filter: blur(18px);
 }
 
@@ -93,24 +93,24 @@
 }
 
 .builder-floating-actions .platform-link-button:nth-child(1) {
-    color: #f8fbff;
-    background: linear-gradient(135deg, #2464bf 0%, #3e8ff0 100%);
-    border-color: rgba(36, 100, 191, 0.38);
-    box-shadow: 0 18px 32px -22px rgba(36, 100, 191, 0.58);
+    color: #104066;
+    background: rgba(217, 242, 242, 0.96);
+    border-color: rgba(95, 182, 196, 0.32);
+    box-shadow: var(--shadow-md);
 }
 
 .builder-floating-actions .platform-link-button:nth-child(2) {
     color: #f5feff;
-    background: linear-gradient(135deg, #1fa7c8 0%, #39c7df 100%);
-    border-color: rgba(31, 167, 200, 0.36);
-    box-shadow: 0 18px 32px -22px rgba(31, 167, 200, 0.56);
+    background: var(--gradient-primary);
+    border-color: rgba(15, 95, 102, 0.32);
+    box-shadow: var(--shadow-lg);
 }
 
 .builder-floating-actions .platform-link-button:nth-child(3) {
     color: #0f3f67;
-    background: linear-gradient(135deg, #d8efff 0%, #f4fbff 100%);
-    border-color: rgba(154, 205, 241, 0.72);
-    box-shadow: 0 18px 32px -22px rgba(121, 184, 232, 0.46);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(95, 182, 196, 0.22);
+    box-shadow: var(--shadow-md);
 }
 
 .builder-floating-actions .platform-link-button:nth-child(3):hover {
@@ -120,9 +120,9 @@
 .builder-floating-actions .platform-link-button[data-save-target="turma.html"] {
     position: relative;
     color: #f8fbff;
-    background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
-    border-color: rgba(29, 78, 216, 0.48);
-    box-shadow: 0 20px 34px -20px rgba(37, 99, 235, 0.62);
+    background: var(--gradient-primary);
+    border-color: rgba(15, 95, 102, 0.42);
+    box-shadow: var(--shadow-lg);
 }
 
 .builder-floating-actions .platform-link-button[data-save-target="turma.html"]::after {
@@ -143,17 +143,17 @@
 
 .builder-floating-actions .platform-link-button[data-save-scope="library"] {
     color: #104066;
-    background: linear-gradient(135deg, #dff2ff 0%, #f6fbff 100%);
-    border-color: rgba(154, 205, 241, 0.72);
-    box-shadow: 0 16px 28px -22px rgba(121, 184, 232, 0.42);
+    background: rgba(217, 242, 242, 0.96);
+    border-color: rgba(95, 182, 196, 0.28);
+    box-shadow: var(--shadow-md);
 }
 
 .builder-floating-actions a.platform-link-button[href*="apresentacao"],
 .builder-floating-actions a.platform-link-button[href*="aplicacao"] {
     color: #0f3f67;
-    background: linear-gradient(135deg, #d8efff 0%, #f4fbff 100%);
-    border-color: rgba(154, 205, 241, 0.72);
-    box-shadow: 0 16px 28px -22px rgba(121, 184, 232, 0.42);
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(95, 182, 196, 0.22);
+    box-shadow: var(--shadow-md);
 }
 
 @media (max-width: 1024px) {

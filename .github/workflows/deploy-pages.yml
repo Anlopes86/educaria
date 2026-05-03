@@ -44,6 +44,16 @@ jobs:
           fs.writeFileSync("assets/js/firebase-config.local.js", content, "utf8");
           NODE
 
+      - name: Validate static project
+        run: |
+          node tools/check-i18n.mjs
+          node tools/check-assets.mjs
+          node tools/check-js-syntax.mjs
+          node --check ai-service/server.js
+          node --check tools/check-assets.mjs
+          node --check tools/check-i18n.mjs
+          node --check tools/check-js-syntax.mjs
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

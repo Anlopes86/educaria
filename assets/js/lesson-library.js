@@ -26,10 +26,16 @@ const CLASS_MATERIAL_FILTERS = [
     { id: "flashcards", label: "Flashcards", labelKey: "classDetail.filters.flashcards", types: ["flashcards"] },
     { id: "others", label: "Outros", labelKey: "classDetail.filters.others", types: ["wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"] }
 ];
+const CLASS_STATUS_FILTERS = [
+    { id: "all", label: "Todos os status", labelKey: "classDetail.statusFilters.all", status: null },
+    { id: LESSON_STATUS_READY, label: "Prontos", labelKey: "classDetail.statusFilters.ready", status: LESSON_STATUS_READY },
+    { id: LESSON_STATUS_DRAFT, label: "Rascunhos", labelKey: "classDetail.statusFilters.draft", status: LESSON_STATUS_DRAFT }
+];
 
 let lessonsSyncPromise = null;
 let lastLessonsSyncUid = "";
 let activeClassMaterialFilter = "all";
+let activeClassStatusFilter = "all";
 let activeLibraryMaterialFilter = "all";
 let activeLibraryStatusFilter = "all";
 let activeLibrarySort = "recent";
@@ -1119,6 +1125,31 @@ function classMaterialFilterApply(lessons, filterId) {
     return lessons.filter((lesson) => filter.types.includes(lesson.materialType || "slides"));
 }
 
+function classStatusFilterLabel(filter) {
+    if (!filter) return "";
+    return lessonLibraryTranslate(filter.labelKey, filter.label);
+}
+
+function classStatusFilterDefinition(filterId) {
+    return CLASS_STATUS_FILTERS.find((filter) => filter.id === filterId) || CLASS_STATUS_FILTERS[0];
+}
+
+function classStatusFilterCount(lessons, filterId) {
+    const filter = classStatusFilterDefinition(filterId);
+    if (!Array.isArray(lessons) || !lessons.length) return 0;
+    if (!filter.status) return lessons.length;
+
+    return lessons.filter((lesson) => normalizeLessonStatus(lesson.status) === filter.status).length;
+}
+
+function classStatusFilterApply(lessons, filterId) {
+    const filter = classStatusFilterDefinition(filterId);
+    if (!Array.isArray(lessons) || !lessons.length) return [];
+    if (!filter.status) return [...lessons];
+
+    return lessons.filter((lesson) => normalizeLessonStatus(lesson.status) === filter.status);
+}
+
 function normalizeSearchText(value) {
     return String(value || "")
         .normalize("NFD")
@@ -1194,20 +1225,28 @@ function lessonStatusLabel(status) {
         : lessonLibraryTranslate("classDetail.status.draft", "Rascunho");
 }
 
-function classFilterSummaryLabel(filterId, filteredCount, totalCount) {
+function classFilterSummaryLabel(filterId, statusFilterId, filteredCount, totalCount) {
     const filter = classMaterialFilterDefinition(filterId);
     const filterLabel = classMaterialFilterLabel(filter).toLowerCase();
-    if (filter.id === "all") {
+    const statusFilter = classStatusFilterDefinition(statusFilterId);
+    const statusLabel = statusFilter.id === "all" ? "" : classStatusFilterLabel(statusFilter).toLowerCase();
+    const statusSuffix = statusLabel ? ` ${lessonLibraryTranslate("classDetail.filters.withStatus", "com status")} ${statusLabel}` : "";
+
+    if (filter.id === "all" && statusFilter.id === "all") {
         const noun = lessonLibraryTranslate(totalCount === 1 ? "dashboard.count.activity" : "dashboard.count.activities", totalCount === 1 ? "atividade" : "atividades");
         return `${totalCount} ${noun} ${lessonLibraryTranslate("classDetail.filters.summaryInClass", "nesta turma.")}`;
     }
 
     if (!filteredCount) {
-        return `${lessonLibraryTranslate("classDetail.filters.summaryNone", "Sem resultados em")} ${filterLabel} ${lessonLibraryTranslate("classDetail.filters.summaryForClass", "para esta turma.")}`;
+        const filterCopy = filter.id === "all" ? lessonLibraryTranslate("classDetail.filters.allLower", "todos os formatos") : filterLabel;
+        return `${lessonLibraryTranslate("classDetail.filters.summaryNone", "Sem resultados em")} ${filterCopy}${statusSuffix} ${lessonLibraryTranslate("classDetail.filters.summaryForClass", "para esta turma.")}`;
     }
 
     const noun = lessonLibraryTranslate(filteredCount === 1 ? "dashboard.count.activity" : "dashboard.count.activities", filteredCount === 1 ? "atividade" : "atividades");
-    return `${filteredCount} ${noun} ${lessonLibraryTranslate("classes.filters.summaryIn", "em")} ${filterLabel}.`;
+    const location = filter.id === "all"
+        ? lessonLibraryTranslate("classDetail.filters.allLower", "todos os formatos")
+        : filterLabel;
+    return `${filteredCount} ${noun} ${lessonLibraryTranslate("classes.filters.summaryIn", "em")} ${location}${statusSuffix}.`;
 }
 
 function libraryFilterSummaryLabel(filterId, filteredCount, totalCount) {
@@ -1265,16 +1304,89 @@ function countClassMaterialsByStatus(lessons, status) {
     }).length;
 }
 
+function classNextStep(classes, turma, lessons) {
+    const classLessons = Array.isArray(lessons) ? lessons : [];
+    const latestDraft = classLessons.find((lesson) => normalizeLessonStatus(lesson.status) === LESSON_STATUS_DRAFT);
+    if (!classes.length) {
+        return {
+            label: lessonLibraryTranslate("classDetail.next.label", "Proximo passo"),
+            title: lessonLibraryTranslate("classDetail.next.createClassTitle", "Crie ou selecione uma turma"),
+            copy: lessonLibraryTranslate("classDetail.next.createClassCopy", "A turma vira o ponto de partida para criar, retomar e apresentar materiais."),
+            href: "index.html",
+            action: lessonLibraryTranslate("classDetail.actions.backToDashboard", "Voltar ao painel")
+        };
+    }
+
+    if (latestDraft) {
+        return {
+            label: lessonLibraryTranslate("classDetail.next.resumeDraft", "Retomar rascunho"),
+            title: latestDraft.title || materialGroupLabel(latestDraft.materialType || "slides"),
+            copy: lessonLibraryTranslate("classDetail.next.resumeDraftCopy", "Finalize este material antes de preparar uma nova atividade."),
+            href: editorPathForLesson(latestDraft),
+            action: lessonLibraryTranslate("classes.actions.continueEditing", "Continuar edicao"),
+            lessonId: latestDraft.id,
+            edit: true
+        };
+    }
+
+    const hasSlides = countClassMaterialsByTypes(classLessons, ["slides", "lesson"]) > 0;
+    const hasQuiz = countClassMaterialsByTypes(classLessons, "quiz") > 0;
+    if (!hasSlides) {
+        return {
+            label: lessonLibraryTranslate("classDetail.next.suggested", "Sugerido agora"),
+            title: lessonLibraryTranslate("classDetail.next.slidesTitle", "Prepare slides para conduzir a aula"),
+            copy: lessonLibraryTranslate("classDetail.next.slidesCopy", "Comece com uma sequencia visual curta e salve na turma para retomar depois."),
+            href: "slides-builder.html",
+            action: lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")
+        };
+    }
+
+    if (!hasQuiz) {
+        return {
+            label: lessonLibraryTranslate("classDetail.next.suggested", "Sugerido agora"),
+            title: lessonLibraryTranslate("classDetail.next.quizTitle", "Feche com um quiz de revisao"),
+            copy: lessonLibraryTranslate("classDetail.next.quizCopy", "Use 5 a 8 minutos para checar entendimento e deixar a turma pronta para a proxima aula."),
+            href: "quiz-builder.html",
+            action: lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")
+        };
+    }
+
+    return {
+        label: lessonLibraryTranslate("classDetail.next.keepGoing", "Continuar sequencia"),
+        title: lessonLibraryTranslate("classDetail.next.libraryTitle", "Reaproveite ou monte a proxima aula"),
+        copy: `${turma} ${lessonLibraryTranslate("classDetail.next.libraryCopy", "ja tem base para reaproveitar materiais ou montar uma aula completa.")}`,
+        href: "criar-aula.html",
+        action: lessonLibraryTranslate("classDetail.actions.buildFullLesson", "Montar aula completa (15-25 min)")
+    };
+}
+
+function renderClassNextStep(classes, turma, lessons) {
+    const nextStepNode = document.querySelector("[data-class-next-step]");
+    if (!nextStepNode) return;
+
+    const step = classNextStep(classes, turma, lessons);
+    const editAttribute = step.edit && step.lessonId ? ` data-edit-lesson="${escapeHtml(step.lessonId)}"` : "";
+    nextStepNode.innerHTML = `
+        <article class="class-next-step-card">
+            <span class="route-tag">${escapeHtml(step.label)}</span>
+            <h3>${escapeHtml(step.title)}</h3>
+            <p>${escapeHtml(step.copy)}</p>
+            <a href="${escapeHtml(step.href)}" class="platform-link-button platform-link-secondary"${editAttribute}>${escapeHtml(step.action)}</a>
+        </article>
+    `;
+}
+
 function hydrateClassFocusPanel(classes, turma, lessons) {
     const summaryNode = document.querySelector("[data-class-focus-summary]");
     const actionsNode = document.querySelector("[data-class-primary-actions]");
     const recentNode = document.querySelector("[data-class-recent-lesson]");
+    const nextStepNode = document.querySelector("[data-class-next-step]");
     const opsNode = document.querySelector("[data-class-ops-summary]");
     const materialCountNode = document.querySelector("[data-class-material-count]");
     const slideCountNode = document.querySelector("[data-class-slide-count]");
     const quizCountNode = document.querySelector("[data-class-quiz-count]");
     const libraryCountNode = document.querySelector("[data-class-library-count]");
-    if (!summaryNode && !actionsNode && !recentNode && !opsNode && !materialCountNode && !slideCountNode && !quizCountNode && !libraryCountNode) {
+    if (!summaryNode && !actionsNode && !recentNode && !nextStepNode && !opsNode && !materialCountNode && !slideCountNode && !quizCountNode && !libraryCountNode) {
         return;
     }
 
@@ -1326,32 +1438,47 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
             return;
         }
 
-        const safeMaterial = latestLesson.materialType || "slides";
-        const safeTitle = escapeHtml(latestLesson.title || materialGroupLabel(safeMaterial));
-        const safeSummary = escapeHtml(latestLesson.summary || materialGroupDescription(safeMaterial));
-        const safeType = escapeHtml(latestLesson.type || materialGroupLabel(safeMaterial));
-        const safeStatus = escapeHtml(lessonStatusLabel(latestLesson.status));
-        const statusClass = escapeHtml(normalizeLessonStatus(latestLesson.status));
-        const safeUpdatedAt = escapeHtml(formatLessonDate(latestLesson.updatedAt));
-        const safeId = escapeHtml(latestLesson.id || "");
-        const editorPath = escapeHtml(editorPathForLesson(latestLesson));
-        const presentationPath = escapeHtml(presentationPathForLesson(latestLesson));
+        const recentLessons = classLessons.slice(0, 3);
 
         recentNode.innerHTML = `
-            <article class="class-recent-lesson-card">
-                <span class="route-tag">${lessonLibraryTranslate("classDetail.latest.mostRecent", "Atividade mais recente")}</span>
-                <h3>${safeTitle}</h3>
-                <p>${safeSummary}</p>
-                <div class="lesson-history-meta">
-                    <span>${lessonLibraryTranslate("classes.latest.updatedAt", "Atualizado em")} ${safeUpdatedAt}</span>
-                    <span>${safeType}</span>
-                    <span class="lesson-status-chip lesson-status-chip--${statusClass}">${safeStatus}</span>
-                </div>
-                <div class="lesson-history-actions">
-                    <a href="${editorPath}" class="platform-link-button platform-link-primary" data-edit-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.continueEditing", "Continuar edicao")}</a>
-                    <a href="${presentationPath}" class="platform-link-button platform-link-secondary" data-present-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.presentNow", "Apresentar agora")}</a>
-                </div>
-            </article>
+            <div class="class-recent-header">
+                <span class="platform-section-label">${lessonLibraryTranslate("classDetail.latest.recentMaterials", "Materiais recentes")}</span>
+                <a href="#atividades-salvas">${lessonLibraryTranslate("classDetail.actions.openClassMaterials", "Ver materiais da turma")}</a>
+            </div>
+            <div class="class-recent-grid">
+                ${recentLessons.map((lesson, index) => {
+                    const safeMaterial = lesson.materialType || "slides";
+                    const safeTitle = escapeHtml(lesson.title || materialGroupLabel(safeMaterial));
+                    const safeSummary = escapeHtml(lesson.summary || materialGroupDescription(safeMaterial));
+                    const safeType = escapeHtml(lesson.type || materialGroupLabel(safeMaterial));
+                    const safeStatus = escapeHtml(lessonStatusLabel(lesson.status));
+                    const statusClass = escapeHtml(normalizeLessonStatus(lesson.status));
+                    const safeUpdatedAt = escapeHtml(formatLessonDate(lesson.updatedAt));
+                    const safeId = escapeHtml(lesson.id || "");
+                    const editorPath = escapeHtml(editorPathForLesson(lesson));
+                    const presentationPath = escapeHtml(presentationPathForLesson(lesson));
+                    const label = index === 0
+                        ? lessonLibraryTranslate("classDetail.latest.mostRecent", "Atividade mais recente")
+                        : lessonLibraryTranslate("classDetail.latest.recentItem", "Recente");
+
+                    return `
+                        <article class="class-recent-lesson-card">
+                            <span class="route-tag">${label}</span>
+                            <h3>${safeTitle}</h3>
+                            <p>${safeSummary}</p>
+                            <div class="lesson-history-meta">
+                                <span>${lessonLibraryTranslate("classes.latest.updatedAt", "Atualizado em")} ${safeUpdatedAt}</span>
+                                <span>${safeType}</span>
+                                <span class="lesson-status-chip lesson-status-chip--${statusClass}">${safeStatus}</span>
+                            </div>
+                            <div class="lesson-history-actions">
+                                <a href="${editorPath}" class="platform-link-button platform-link-primary" data-edit-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.continueEditing", "Continuar edicao")}</a>
+                                <a href="${presentationPath}" class="platform-link-button platform-link-secondary" data-present-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.presentNow", "Apresentar agora")}</a>
+                            </div>
+                        </article>
+                    `;
+                }).join("")}
+            </div>
         `;
     };
 
@@ -1359,6 +1486,7 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
     if (slideCountNode) slideCountNode.textContent = `${slideLikeCount}`;
     if (quizCountNode) quizCountNode.textContent = `${quizCount}`;
     if (libraryCountNode) libraryCountNode.textContent = `${libraryCount}`;
+    renderClassNextStep(classes, turma, classLessons);
 
     if (!classes.length) {
         if (summaryNode) {
@@ -1386,11 +1514,11 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
 
     if (actionsNode) {
         actionsNode.innerHTML = `
-            <a href="gerar-aula.html" class="platform-link-button platform-link-primary">${lessonLibraryTranslate("classDetail.actions.createActivity", "Criar atividade")}</a>
-            <a href="#atividades-salvas" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.openClassMaterials", "Ver materiais da turma")}</a>
+            <a href="gerar-aula.html" class="platform-link-button platform-link-primary class-create-activity-button">${lessonLibraryTranslate("classDetail.actions.createActivity", "Criar atividade")}</a>
             <a href="slides-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")}</a>
             <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")}</a>
             <a href="criar-aula.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.buildFullLesson", "Montar aula completa (15-25 min)")}</a>
+            <a href="#atividades-salvas" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.openClassMaterials", "Ver materiais da turma")}</a>
             <a href="biblioteca.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("dashboard.actions.openLibrary", "Abrir biblioteca")}</a>
         `;
     }
@@ -1446,6 +1574,7 @@ function bindSaveLessonAction() {
         buttons.forEach((button) => {
             button.addEventListener("click", (event) => {
                 event.preventDefault();
+                button.setAttribute("aria-busy", "true");
                 const material = button.dataset.saveMaterial || "";
                 const previousLessonsCount = readLessonsLibrary().length;
                 if (material && typeof setCurrentMaterialType === "function") {
@@ -1499,11 +1628,16 @@ function hydrateBuilderCommonActions() {
         const saveScope = button.dataset.saveScope || LESSON_SCOPE_CLASS;
         if (saveScope === LESSON_SCOPE_LIBRARY) {
             button.textContent = lessonLibraryTranslate("builder.actions.saveLibrary", "Salvar na biblioteca");
+            button.setAttribute("aria-label", lessonLibraryTranslate("builder.actions.saveLibrary", "Salvar na biblioteca"));
             return;
         }
 
         button.textContent = lessonLibraryTranslate("builder.actions.saveClass", "Salvar na turma");
         button.setAttribute("aria-label", lessonLibraryTranslate("builder.actions.saveClassPrimary", "Salvar na turma (acao principal)"));
+    });
+
+    document.querySelectorAll("[data-clear-draft]").forEach((button) => {
+        button.setAttribute("aria-label", lessonLibraryTranslate("builder.actions.clearDraft", "Limpar conteudo deste rascunho"));
     });
 
     document.querySelectorAll(".builder-floating-actions a").forEach((link) => {
@@ -1546,8 +1680,9 @@ function hydrateClassPage() {
     const selectRoot = document.querySelector("[data-saved-lessons-select]");
     const actionsRoot = document.querySelector("[data-saved-lessons-actions]");
     const filterRoot = document.querySelector("[data-class-material-filters]");
+    const statusFilterRoot = document.querySelector("[data-class-status-filters]");
     const filterSummaryRoot = document.querySelector("[data-class-material-filter-summary]");
-    if (!listRoot && !selectRoot && !filterRoot && !filterSummaryRoot) return;
+    if (!listRoot && !selectRoot && !filterRoot && !statusFilterRoot && !filterSummaryRoot) return;
     if (listRoot) {
         listRoot.setAttribute("aria-busy", "true");
     }
@@ -1570,10 +1705,20 @@ function hydrateClassPage() {
         activeClassMaterialFilter = "all";
     }
 
-    let filteredLessons = classMaterialFilterApply(allLessons, activeClassMaterialFilter);
+    const statusFilterExists = CLASS_STATUS_FILTERS.some((filter) => filter.id === activeClassStatusFilter);
+    if (!statusFilterExists) {
+        activeClassStatusFilter = "all";
+    }
+
+    const statusFilteredLessons = classStatusFilterApply(allLessons, activeClassStatusFilter);
+    let filteredLessons = classMaterialFilterApply(statusFilteredLessons, activeClassMaterialFilter);
+    if (allLessons.length && !statusFilteredLessons.length && activeClassStatusFilter !== "all") {
+        activeClassStatusFilter = "all";
+        filteredLessons = classMaterialFilterApply(allLessons, activeClassMaterialFilter);
+    }
     if (allLessons.length && !filteredLessons.length && activeClassMaterialFilter !== "all") {
         activeClassMaterialFilter = "all";
-        filteredLessons = [...allLessons];
+        filteredLessons = classStatusFilterApply(allLessons, activeClassStatusFilter);
     }
 
     if (filterRoot) {
@@ -1581,7 +1726,8 @@ function hydrateClassPage() {
             filterRoot.innerHTML = "";
         } else {
             filterRoot.innerHTML = CLASS_MATERIAL_FILTERS.map((filter) => {
-                const count = classMaterialFilterCount(allLessons, filter.id);
+                const baseLessons = classStatusFilterApply(allLessons, activeClassStatusFilter);
+                const count = classMaterialFilterCount(baseLessons, filter.id);
                 const isActive = filter.id === activeClassMaterialFilter;
                 return `
                     <button
@@ -1598,13 +1744,36 @@ function hydrateClassPage() {
             }).join("");
         }
     }
+    if (statusFilterRoot) {
+        if (!classes.length || !allLessons.length) {
+            statusFilterRoot.innerHTML = "";
+        } else {
+            statusFilterRoot.innerHTML = CLASS_STATUS_FILTERS.map((filter) => {
+                const baseLessons = classMaterialFilterApply(allLessons, activeClassMaterialFilter);
+                const count = classStatusFilterCount(baseLessons, filter.id);
+                const isActive = filter.id === activeClassStatusFilter;
+                return `
+                    <button
+                        type="button"
+                        class="class-material-filter class-status-filter${isActive ? " is-active" : ""}"
+                        data-class-status-filter="${filter.id}"
+                        aria-pressed="${isActive ? "true" : "false"}"
+                        ${count === 0 && !isActive ? "disabled" : ""}
+                    >
+                        <span>${classStatusFilterLabel(filter)}</span>
+                        <small>${count}</small>
+                    </button>
+                `;
+            }).join("");
+        }
+    }
     if (filterSummaryRoot) {
         if (!classes.length || !allLessons.length) {
             filterSummaryRoot.hidden = true;
             filterSummaryRoot.textContent = "";
         } else {
             filterSummaryRoot.hidden = false;
-            filterSummaryRoot.textContent = classFilterSummaryLabel(activeClassMaterialFilter, filteredLessons.length, allLessons.length);
+            filterSummaryRoot.textContent = classFilterSummaryLabel(activeClassMaterialFilter, activeClassStatusFilter, filteredLessons.length, allLessons.length);
         }
     }
 
@@ -1629,6 +1798,9 @@ function hydrateClassPage() {
         }
         if (filterRoot) {
             filterRoot.innerHTML = "";
+        }
+        if (statusFilterRoot) {
+            statusFilterRoot.innerHTML = "";
         }
         if (filterSummaryRoot) {
             filterSummaryRoot.hidden = true;
@@ -1662,6 +1834,9 @@ function hydrateClassPage() {
         }
         if (filterRoot) {
             filterRoot.innerHTML = "";
+        }
+        if (statusFilterRoot) {
+            statusFilterRoot.innerHTML = "";
         }
         if (filterSummaryRoot) {
             filterSummaryRoot.hidden = true;
@@ -1810,6 +1985,22 @@ function bindLessonActivationLinks() {
                 activeClassMaterialFilter = nextFilter;
                 if (typeof educariaTrack === "function") {
                     educariaTrack("class_material_filter_changed", {
+                        filter: nextFilter
+                    });
+                }
+            }
+            hydrateClassPage();
+            return;
+        }
+
+        const classStatusFilterTrigger = event.target.closest("[data-class-status-filter]");
+        if (classStatusFilterTrigger) {
+            event.preventDefault();
+            const nextFilter = classStatusFilterTrigger.dataset.classStatusFilter || "all";
+            if (nextFilter !== activeClassStatusFilter) {
+                activeClassStatusFilter = nextFilter;
+                if (typeof educariaTrack === "function") {
+                    educariaTrack("class_status_filter_changed", {
                         filter: nextFilter
                     });
                 }

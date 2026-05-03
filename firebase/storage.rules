@@ -9,8 +9,16 @@ service firebase.storage {
       return signedIn() && request.auth.uid == teacherId;
     }
 
+    function allowedTeacherUpload() {
+      return request.resource != null
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|application/pdf|text/plain|application/vnd.openxmlformats-officedocument.wordprocessingml.document|application/rtf|text/rtf');
+    }
+
     match /teachers/{teacherId}/{allPaths=**} {
-      allow read, write: if isOwner(teacherId);
+      allow read: if isOwner(teacherId);
+      allow create, update: if isOwner(teacherId) && allowedTeacherUpload();
+      allow delete: if isOwner(teacherId);
     }
 
     match /{allPaths=**} {

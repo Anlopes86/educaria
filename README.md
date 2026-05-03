@@ -12,6 +12,7 @@ Plataforma para professores criarem e organizarem materiais didaticos com apoio 
 
 - Firebase e regras de seguranca: `docs/firebase-setup.md`
 - Deploy Firebase sem config no GitHub: `docs/deploy-firebase-config.md`
+- Build e validacao estatica: `docs/build-and-validation.md`
 - Servico de IA e creditos: `docs/ia-materials-setup.md`
 - Organizacao gradual do CSS: `docs/css-architecture.md`
 - Internacionalizacao: `docs/i18n.md`
@@ -22,3 +23,12 @@ Plataforma para professores criarem e organizarem materiais didaticos com apoio 
 ## Plano Pro
 
 A pagina de configuracoes mostra o link de pagamento quando `window.EDUCARIA_BILLING_CHECKOUT_URL` ou `localStorage["educaria:billing:checkout-url"]` estiver definido. A confirmacao do pagamento ainda deve ser feita por backend/webhook antes de alterar `plan` para `pro`.
+
+## Validacao rapida
+
+```bash
+node tools/check-i18n.mjs
+node tools/check-assets.mjs
+node tools/check-js-syntax.mjs
+node --check ai-service/server.js
+```

@@ -73,3 +73,9 @@ assets/css/
 2. `components/badges.css`: estados pequenos, etiquetas e marcadores de status.
 3. `components/debate.css`: controles e ajustes especificos do debate.
 Ao extrair, mantenha `estilo-premium.css` como agregador ate existir um build CSS dedicado. Isso evita editar todos os HTMLs a cada etapa.
+
+## Validacao relacionada
+
+Use `node tools/check-assets.mjs` depois de mover arquivos CSS, imagens ou scripts. O check percorre HTML/CSS e aponta referencias locais quebradas antes do deploy.
+
+Enquanto nao houver bundler, mantenha a importacao centralizada em `estilo-premium.css`. A migracao futura deve gerar bundles por pagina a partir dos modulos atuais e preservar a ordem de importacao documentada acima.

@@ -17,6 +17,8 @@ O arquivo versionado `assets/js/firebase-config.js` usa apenas placeholders por 
 
 Para desenvolvimento local, prefira `assets/js/firebase-config.local.js`. Esse arquivo e carregado automaticamente e esta no `.gitignore`.
 
+Tambem ficam ignorados arquivos `.env`, `.env.*`, `*.local` e variantes `assets/js/*firebase*local*.js`. Antes de abrir PR, rode uma busca por `apiKey`, `AIza`, `private_key`, `secret` e `token` para confirmar que apenas placeholders ou documentacao de exemplo aparecem.
+
 No browser (uma vez por ambiente), rode:
 
 ```js
@@ -88,3 +90,5 @@ O controle real de seguranca vem de:
 1. Regras de Firestore/Storage
 2. Auth obrigatorio
 3. Limites e monitoramento de uso
+
+As regras de Storage versionadas restringem uploads ao caminho do proprio professor e limitam tamanho/tipos permitidos. Se novos formatos forem adicionados, atualize `firebase/storage.rules` junto com o frontend/backend que consome esses arquivos.

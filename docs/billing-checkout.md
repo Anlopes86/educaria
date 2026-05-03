@@ -20,6 +20,8 @@ POST /api/billing/checkout
 
 O backend exige Firebase ID token, cria uma `external_reference` no formato `educaria:{uid}:{assinatura}` e devolve a URL do checkout com `teacher_uid`, `external_reference` e `email` nos query params.
 
+Por seguranca, `BILLING_WEBHOOK_SECRET` tambem precisa estar configurado para iniciar checkout. Assim, toda referencia assinada usa o mesmo segredo que valida o retorno do provedor.
+
 ## Webhook
 
 Configure o provedor para chamar:
@@ -33,6 +35,8 @@ Inclua o header:
 ```txt
 X-Educaria-Webhook-Secret: troque_por_um_token_longo
 ```
+
+Nao envie o segredo em query string. O backend aceita apenas header para evitar vazamento em historico, logs ou ferramentas de analytics.
 
 Payload minimo aceito:
 
@@ -66,4 +70,5 @@ Ao receber pagamento confirmado, o backend grava o UID em `BILLING_STORE_PATH` e
 - O backend de IA aceita plano via custom claim (`plan`, `educaria_plan`, `subscription_plan` ou `https://educaria.app/plan`) e via allowlist `AI_PRO_UIDS`.
 - O backend tambem aceita UIDs promovidos pelo webhook em `BILLING_STORE_PATH`.
 - O frontend mostra saldo e limites retornados por `GET /api/ai/credits`.
+- O backend reserva credito antes de chamar a IA e devolve a reserva quando a geracao falha.
 - A solicitacao manual de upgrade ainda grava `billingIntent` no Firestore.

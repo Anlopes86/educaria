@@ -484,7 +484,7 @@ function billingReferenceForUser(user) {
     if (!uid) return "";
 
     const signature = crypto
-        .createHmac("sha256", billingWebhookSecret || firebaseProjectId || "educaria-billing")
+        .createHmac("sha256", billingWebhookSecret || firebaseProjectId || "educaria-billing-dev")
         .update(uid)
         .digest("hex")
         .slice(0, 16);
@@ -508,12 +508,11 @@ function billingCheckoutUrlForUser(user) {
 }
 
 function verifyBillingWebhook(request) {
-    if (!billingWebhookSecret) return true;
+    if (!billingWebhookSecret) return false;
 
     const provided = String(
         request.get("x-educaria-webhook-secret") ||
         request.get("x-webhook-secret") ||
-        request.query.secret ||
         ""
     ).trim();
 
@@ -561,6 +560,10 @@ async function aiDailyCreditsFor(request) {
     const day = dailyCreditDateKey();
     const plan = aiPlanForRequest(request);
     const key = aiCreditBucketKey(request, day);
+    return aiDailyCreditsSnapshot(day, plan, key);
+}
+
+function aiDailyCreditsSnapshot(day, plan, key) {
     const used = aiDailyCreditBuckets.get(key) || 0;
     const limit = aiDailyCreditLimitForPlan(plan);
     return {
@@ -575,24 +578,51 @@ async function aiDailyCreditsFor(request) {
     };
 }
 
-async function hasAiDailyCredit(request) {
-    const credits = await aiDailyCreditsFor(request);
-    return credits.remaining > 0;
+/**
+ * Reserves one daily credit before the provider call so concurrent requests
+ * cannot all pass the last-credit check. Refund the reservation if generation fails.
+ * @param {import('express').Request} request
+ * @returns {Promise<{ reserved: boolean, credits: { day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }, reservation: object | null }>}
+ */
+async function reserveAiDailyCredit(request) {
+    await loadAiCreditFileStore();
+    await loadBillingStore();
+    const day = dailyCreditDateKey();
+    const plan = aiPlanForRequest(request);
+    const key = aiCreditBucketKey(request, day);
+    const credits = aiDailyCreditsSnapshot(day, plan, key);
+
+    if (credits.remaining <= 0) {
+        return {
+            reserved: false,
+            credits,
+            reservation: null
+        };
+    }
+
+    aiDailyCreditBuckets.set(key, credits.used + 1);
+    await persistAiCreditFileStore();
+    return {
+        reserved: true,
+        credits: aiDailyCreditsSnapshot(day, plan, key),
+        reservation: { day, plan, key }
+    };
 }
 
-/**
- * Increments the daily credit counter for the request's user and returns the updated stats.
- * Call this only after a successful AI generation — not before.
- * @param {import('express').Request} request
- * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }>}
- */
-async function consumeAiDailyCredit(request) {
-    await loadAiCreditFileStore();
-    const day = dailyCreditDateKey();
-    const key = aiCreditBucketKey(request, day);
-    aiDailyCreditBuckets.set(key, (aiDailyCreditBuckets.get(key) || 0) + 1);
+async function refundAiDailyCredit(reservation) {
+    if (!reservation?.key) {
+        return null;
+    }
+
+    const used = aiDailyCreditBuckets.get(reservation.key) || 0;
+    if (used <= 1) {
+        aiDailyCreditBuckets.delete(reservation.key);
+    } else {
+        aiDailyCreditBuckets.set(reservation.key, used - 1);
+    }
+
     await persistAiCreditFileStore();
-    return aiDailyCreditsFor(request);
+    return aiDailyCreditsSnapshot(reservation.day, reservation.plan, reservation.key);
 }
 
 /**
@@ -1715,6 +1745,13 @@ app.get("/api/health", (_request, response) => {
 
 app.post("/api/billing/checkout", aiRateLimit, requireAiAuth, async (request, response) => {
     try {
+        if (!billingWebhookSecret) {
+            return response.status(503).json({
+                error: "Webhook de cobranca nao configurado no backend.",
+                code: "billing_webhook_secret_not_configured"
+            });
+        }
+
         const user = request.educariaUser || {};
         const uid = String(user.uid || user.sub || "").trim();
 
@@ -1804,17 +1841,6 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(400).json({ error: "Objetivo do professor muito longo (max 500 caracteres)." });
         }
 
-        if (!(await hasAiDailyCredit(request))) {
-            const credits = await aiDailyCreditsFor(request);
-            const upgradeHint = credits.plan === "free" && credits.limits.pro > credits.limit
-                ? " Faca upgrade para o plano Pro para liberar mais geracoes por dia."
-                : "";
-            return response.status(429).json({
-                error: `Seus creditos diarios de IA acabaram.${upgradeHint} Eles voltam amanha.`,
-                credits
-            });
-        }
-
         const fileText = await extractTextFromFile(request.file);
         const sourceText = [request.body.sourceText, fileText]
             .filter(Boolean)
@@ -1834,19 +1860,34 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
         }
 
-        // Credit is consumed only after a successful generation to avoid charging on errors.
-        // The file store is persistent across restarts, but multi-instance deployments
-        // should move this counter to an atomic database/queue.
-        const rawMaterial = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
+        const creditReservation = await reserveAiDailyCredit(request);
+        if (!creditReservation.reserved) {
+            const credits = creditReservation.credits;
+            const upgradeHint = credits.plan === "free" && credits.limits.pro > credits.limit
+                ? " Faca upgrade para o plano Pro para liberar mais geracoes por dia."
+                : "";
+            return response.status(429).json({
+                error: `Seus creditos diarios de IA acabaram.${upgradeHint} Eles voltam amanha.`,
+                credits
+            });
+        }
+
+        let rawMaterial;
+        try {
+            rawMaterial = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
+        } catch (error) {
+            await refundAiDailyCredit(creditReservation.reservation);
+            throw error;
+        }
+
         const material = materialType === "slides"
             ? normalizeSlidesMaterial(rawMaterial)
             : rawMaterial;
-        const credits = await consumeAiDailyCredit(request);
         return response.json({
             ok: true,
             materialType,
             material,
-            credits
+            credits: creditReservation.credits
         });
     } catch (error) {
         if (isUploadValidationError(error)) {

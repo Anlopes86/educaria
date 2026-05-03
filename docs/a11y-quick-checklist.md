@@ -2,6 +2,8 @@
 
 Data de referencia: 24/04/2026
 
+Atualizacao: 03/05/2026
+
 ## Escopo validado
 
 1. `login.html`
@@ -18,6 +20,11 @@ Data de referencia: 24/04/2026
 3. `nav` lateral com `aria-label="Navegacao principal"`.
 4. Melhorias de contraste em sidebar e hero do dashboard.
 5. Melhor foco visivel global e suporte a `prefers-reduced-motion`.
+6. Foco visivel alinhado aos tokens atuais (`--blue-accent`) e helper `.sr-only` compartilhado.
+7. Builders principais com modelos rapidos agrupados por `role="group"` e botoes com `aria-label` explicito.
+8. Pilhas de quiz, slides e flashcards com `aria-live="polite"` e `aria-busy` durante aplicacao de modelos.
+9. Feedback invisivel com `role="status"` para anunciar quando um modelo rapido e aplicado.
+10. Botoes de salvar/limpar rascunho com labels descritivos e `aria-busy` ao salvar.
 
 ## Checklist manual de regressao
 
@@ -36,3 +43,4 @@ Data de referencia: 24/04/2026
 1. Auditoria automatica com Lighthouse + axe nas telas de builder.
 2. Revisao de contraste por token para padronizar cores sem depender de ajustes locais.
 3. Revisao de semantica de icones e botoes sem texto visivel (aria-label explicito).
+4. Validacao manual de leitores de tela nos fluxos de modelos rapidos dos builders.
