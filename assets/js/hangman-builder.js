@@ -115,7 +115,7 @@ function parseHangmanTemplateText(sourceText) {
         .filter((entry) => entry.answer);
 
     if (entries.length < 2) {
-        throw new Error("Preencha pelo menos duas palavras no modelo da forca.");
+        throw new Error("Preencha pelo menos duas palavras no modelo da força.");
     }
 
     return { title, subtitle, entries };
@@ -140,8 +140,8 @@ function applyHangmanTemplateData(payload) {
 
     renumberHangmanEntries();
     renderHangmanPreview();
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -150,7 +150,7 @@ async function loadHangmanModelFile(button) {
     const file = fileField?.files?.[0] || null;
 
     if (!file) {
-        window.alert("Selecione um arquivo de apoio da forca antes de gerar.");
+        window.alert("Selecione um arquivo de apoio da força antes de gerar.");
         return;
     }
 
@@ -161,16 +161,16 @@ async function loadHangmanModelFile(button) {
     try {
         const fileText = await readHangmanModelFile(file);
         if (!fileText) {
-            throw new Error("Use o arquivo modelo da forca em formato RTF ou TXT.");
+            throw new Error("Use o arquivo modelo da força em formato RTF ou TXT.");
         }
 
         const payload = parseHangmanTemplateText(fileText);
         if (!applyHangmanTemplateData(payload)) {
-            throw new Error("O arquivo modelo da forca não trouxe dados suficientes.");
+            throw new Error("O arquivo modelo da força não trouxe dados suficientes.");
         }
     } catch (error) {
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
-        window.alert(`Não foi possível montar a forca com o arquivo modelo.\n\nDetalhe: ${detail}`);
+        window.alert(`Não foi possível montar a força com o arquivo modelo.\n\nDetalhe: ${detail}`);
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;
@@ -200,7 +200,7 @@ function addHangmanEntry() {
     stack.insertAdjacentHTML("beforeend", hangmanEntryTemplate(count));
     renumberHangmanEntries();
     renderHangmanPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function removeHangmanEntry(trigger) {
@@ -213,7 +213,7 @@ function removeHangmanEntry(trigger) {
     card.remove();
     renumberHangmanEntries();
     renderHangmanPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function renderHangmanPreview() {
@@ -222,7 +222,7 @@ function renderHangmanPreview() {
 
     renumberHangmanEntries();
 
-    const title = document.getElementById("forca-titulo")?.value.trim() || "Jogo da Forca";
+    const title = document.getElementById("forca-titulo")?.value.trim() || "Jogo da Força";
     const subtitle = document.getElementById("forca-subtitulo")?.value.trim() || "Descubra as palavras usando as dicas.";
     const maxErrors = Number(document.getElementById("forca-tentativas")?.value || 6);
     const entries = api.sanitizeEntries(collectHangmanEntries());
@@ -280,7 +280,7 @@ function renderHangmanPreview() {
             wordRoot.innerHTML = `
                 <div class="hangman-empty-state">
                     <strong>Adicione pelo menos 2 palavras v&aacute;lidas</strong>
-                    <span>O preview da for&ccedil;a aparece aqui assim que houver conte&uacute;do suficiente.</span>
+                    <span>A pr&eacute;via da for&ccedil;a aparece aqui assim que houver conte&uacute;do suficiente.</span>
                 </div>
             `;
         }
@@ -302,7 +302,7 @@ function renderHangmanPreview() {
     if (noteRoot) {
         const message = entries.length < 2
             ? "Cadastre pelo menos duas palavras para montar uma rodada completa."
-            : "O preview mostra a primeira palavra da sequ&ecirc;ncia.";
+            : "A prévia mostra a primeira palavra da sequência.";
         noteRoot.hidden = false;
         noteRoot.textContent = message;
     }

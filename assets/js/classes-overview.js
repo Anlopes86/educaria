@@ -185,7 +185,7 @@ function hydrateClassesOverviewPage() {
             <article class="lesson-history-card">
                 <span class="route-tag">${classesTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
                 <h3>${classesTranslate("dashboard.empty.noClassesTitle", "Nenhuma turma criada ainda")}</h3>
-                <p>${classesTranslate("classes.empty.noClassesCopy", "Use o botao Criar turma na lateral para comecar e organizar suas atividades por turma.")}</p>
+                <p>${classesTranslate("classes.empty.noClassesCopy", "Use o botão Criar turma na lateral para começar e organizar suas atividades por turma.")}</p>
             </article>
         `;
         root.setAttribute("aria-busy", "false");
@@ -238,13 +238,13 @@ function hydrateClassesOverviewPage() {
                 <div class="class-overview-latest">
                     <span class="class-overview-latest-label">${classesTranslate("classes.latest.label", "Atividade recente")}</span>
                     <strong>${latestLessonTitle}</strong>
-                    <small>${safe(latestLessonUpdated ? `${classesTranslate("classes.latest.updatedAt", "Atualizada em")} ${latestLessonUpdated}` : classesTranslate("classes.latest.recentUpdate", "Atualizacao recente"))}</small>
+                    <small>${safe(latestLessonUpdated ? `${classesTranslate("classes.latest.updatedAt", "Atualizada em")} ${latestLessonUpdated}` : classesTranslate("classes.latest.recentUpdate", "Atualização recente"))}</small>
                 </div>
                 ` : ""}
                 <div class="lesson-history-actions">
                     <a href="turma.html#atividades-salvas" class="platform-link-button platform-link-primary" data-class-open-materials="${classToken}">${classesTranslate("classes.actions.viewMaterials", "Ver materiais")}</a>
                     <a href="index.html#activity-toolkit" class="platform-link-button platform-link-secondary" data-class-create-material="${classToken}">${classesTranslate("classes.actions.createMaterial", "Criar material")}</a>
-                    ${latestLesson ? `<a href="${latestLessonEditorPath}" class="platform-link-button platform-link-secondary" data-class-open-editor="${classToken}" data-lesson-id="${latestLessonId}">${classesTranslate("classes.actions.continueEditing", "Continuar edicao")}</a>` : ""}
+                    ${latestLesson ? `<a href="${latestLessonEditorPath}" class="platform-link-button platform-link-secondary" data-class-open-editor="${classToken}" data-lesson-id="${latestLessonId}">${classesTranslate("classes.actions.continueEditing", "Continuar edição")}</a>` : ""}
                     ${latestLesson ? `<a href="${latestLessonPresentationPath}" class="platform-link-button platform-link-secondary" data-class-open-presentation="${classToken}" data-lesson-id="${latestLessonId}">${classesTranslate("classes.actions.presentNow", "Apresentar agora")}</a>` : ""}
                 </div>
             </article>

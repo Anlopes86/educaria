@@ -1,3 +1,14 @@
+/* Keep offline support centralized for every public and authenticated screen that uses auth-flow. */
+(function loadEducariaOfflineRuntime() {
+    const authScriptUrl = document.currentScript?.src || "";
+    if (!authScriptUrl || document.querySelector("script[data-educaria-offline-runtime]")) return;
+    const script = document.createElement("script");
+    script.src = new URL("offline-runtime.js", authScriptUrl).href;
+    script.defer = true;
+    script.dataset.educariaOfflineRuntime = "";
+    document.head.appendChild(script);
+})();
+
 const EDUCARIA_SESSION_KEY = "educaria:auth:session";
 const EDUCARIA_TEACHER_CACHE_KEY = "educaria:auth:teacher-cache";
 const EDUCARIA_ANALYTICS_EVENTS_KEY = "educaria:analytics:events";
@@ -492,7 +503,7 @@ function showFirebaseConfigMessageIfNeeded() {
     if (firebaseConfigReady()) return false;
 
     if (document.body?.dataset.authPage === "true") {
-        updateAuthFeedback(authTranslate("auth.feedback.unavailable", "A autenticacao esta temporariamente indisponivel. Tente novamente em instantes."), "error");
+        updateAuthFeedback(authTranslate("auth.feedback.unavailable", "A autenticação está temporariamente indisponível. Tente novamente em instantes."), "error");
     }
     return true;
 }
@@ -517,13 +528,13 @@ function redirectAuthenticatedFromAuthPages() {
 
 function mapFirebaseError(error) {
     const code = error?.code || "";
-    if (code === "auth/email-already-in-use") return authTranslate("auth.errors.emailInUse", "Ja existe uma conta com esse email.");
-    if (code === "auth/invalid-email") return authTranslate("auth.errors.invalidEmail", "Digite um email valido.");
+    if (code === "auth/email-already-in-use") return authTranslate("auth.errors.emailInUse", "Já existe uma conta com esse email.");
+    if (code === "auth/invalid-email") return authTranslate("auth.errors.invalidEmail", "Digite um email válido.");
     if (code === "auth/weak-password") return authTranslate("auth.errors.weakPassword", "A senha precisa ser mais forte.");
     if (code === "auth/user-not-found") return authTranslate("auth.errors.userNotFound", "Nenhuma conta encontrada com esse email.");
     if (code === "auth/wrong-password") return authTranslate("auth.errors.wrongPassword", "Senha incorreta.");
     if (code === "auth/invalid-credential") return authTranslate("auth.errors.invalidCredential", "Email ou senha incorretos.");
-    return authTranslate("auth.errors.generic", "Nao foi possivel concluir a autenticacao agora.");
+    return authTranslate("auth.errors.generic", "Não foi possível concluir a autenticação agora.");
 }
 
 function readTeacherProfileFromFirebase(user) {
@@ -559,7 +570,7 @@ function bindLoginForm() {
         const password = String(form.querySelector('input[name="password"]')?.value || "").trim();
 
         if (!services) {
-            updateAuthFeedback(authTranslate("auth.feedback.connectUnavailable", "Nao foi possivel conectar ao servico de autenticacao. Tente novamente em instantes."), "error");
+            updateAuthFeedback(authTranslate("auth.feedback.connectUnavailable", "Não foi possível conectar ao serviço de autenticação. Tente novamente em instantes."), "error");
             return;
         }
 
@@ -588,6 +599,49 @@ function bindLoginForm() {
     });
 }
 
+function showAuthOutcomeMessage() {
+    if (document.body?.dataset.authPage !== "true") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("accountDeleted") === "1") {
+        updateAuthFeedback("Conta e dados excluídos com sucesso.", "success");
+    }
+}
+
+function bindPasswordReset() {
+    const button = document.querySelector("[data-password-reset]");
+    const form = document.querySelector("[data-login-form]");
+    if (!button || !form) return;
+
+    button.addEventListener("click", async () => {
+        clearAuthFeedback();
+        const services = firebaseServices();
+        const emailField = form.querySelector('input[name="email"]');
+        const email = normalizeEmail(emailField?.value);
+
+        if (!services) {
+            updateAuthFeedback(authTranslate("auth.feedback.connectUnavailable", "Não foi possível conectar ao serviço de autenticação. Tente novamente em instantes."), "error");
+            return;
+        }
+
+        if (!email || !emailField?.checkValidity()) {
+            updateAuthFeedback(authTranslate("auth.feedback.resetEmail", "Digite seu email para receber o link de recuperação."), "error");
+            emailField?.focus();
+            return;
+        }
+
+        try {
+            await services.auth.sendPasswordResetEmail(email);
+            updateAuthFeedback(authTranslate("auth.feedback.resetSent", "Se o email estiver cadastrado, enviaremos um link para redefinir sua senha."), "success");
+        } catch (error) {
+            if (error?.code === "auth/user-not-found") {
+                updateAuthFeedback(authTranslate("auth.feedback.resetSent", "Se o email estiver cadastrado, enviaremos um link para redefinir sua senha."), "success");
+                return;
+            }
+            updateAuthFeedback(mapFirebaseError(error), "error");
+        }
+    });
+}
+
 function bindRegisterForm() {
     const form = document.querySelector("[data-register-form]");
     if (!form) return;
@@ -604,7 +658,7 @@ function bindRegisterForm() {
         const passwordConfirm = String(form.querySelector('input[name="password_confirm"]')?.value || "").trim();
 
         if (!services) {
-            updateAuthFeedback(authTranslate("auth.feedback.connectUnavailable", "Nao foi possivel conectar ao servico de autenticacao. Tente novamente em instantes."), "error");
+            updateAuthFeedback(authTranslate("auth.feedback.connectUnavailable", "Não foi possível conectar ao serviço de autenticação. Tente novamente em instantes."), "error");
             return;
         }
 
@@ -619,7 +673,7 @@ function bindRegisterForm() {
         }
 
         if (password !== passwordConfirm) {
-            updateAuthFeedback(authTranslate("auth.feedback.passwordMismatch", "As senhas nao coincidem. Confira e tente novamente."), "error");
+            updateAuthFeedback(authTranslate("auth.feedback.passwordMismatch", "As senhas não coincidem. Confira e tente novamente."), "error");
             return;
         }
 
@@ -704,9 +758,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     educariaTrack("page_view", { screen: analyticsPageName() });
     scheduleEducariaAnalyticsAutoFlush();
     showFirebaseConfigMessageIfNeeded();
+    showAuthOutcomeMessage();
     redirectAuthenticatedFromAuthPages();
     enforceAuth();
     bindLoginForm();
+    bindPasswordReset();
     bindRegisterForm();
     bindLogout();
     syncAuthStateWithFirebase();

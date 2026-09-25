@@ -58,9 +58,15 @@ jobs:
           node tools/check-assets.mjs
           node tools/check-js-syntax.mjs
           node --check ai-service/server.js
+          node --check service-worker.js
           node --check tools/check-assets.mjs
           node --check tools/check-i18n.mjs
           node --check tools/check-js-syntax.mjs
+          npm test --prefix ai-service
+          npm audit --prefix ai-service --omit=dev --audit-level=moderate
+          CHROME_PATH=/usr/bin/google-chrome node tools/check-responsive-layout.mjs
+          CHROME_PATH=/usr/bin/google-chrome node tools/check-responsive-layout.mjs 'auth:plataforma/quiz-builder.html?new=1' 'auth:plataforma/slides-builder.html?new=1' 'auth:plataforma/flashcards-builder.html?new=1' 'auth:plataforma/jogo-memoria-builder.html?new=1' 'auth:plataforma/forca-builder.html?new=1' 'auth:plataforma/roleta-builder.html?new=1' 'auth:plataforma/ligar-pontos-builder.html?new=1'
+          CHROME_PATH=/usr/bin/google-chrome node tools/check-responsive-layout.mjs plataforma/apresentacao.html plataforma/quiz-aplicacao.html plataforma/flashcards-apresentacao.html plataforma/jogo-memoria-apresentacao.html plataforma/roleta-apresentacao.html plataforma/ligar-pontos-apresentacao.html plataforma/mapa-mental-apresentacao.html plataforma/debate-guiado-apresentacao.html plataforma/caca-palavras-apresentacao.html plataforma/palavras-cruzadas-apresentacao.html plataforma/forca-apresentacao.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

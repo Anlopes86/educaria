@@ -254,7 +254,7 @@ function createClassFromForm() {
     if (feedback) {
         feedback.hidden = false;
         feedback.textContent = alreadyExists
-            ? `A turma ${turma} ja estava na lista e foi selecionada.`
+            ? `A turma ${turma} já estava na lista e foi selecionada.`
             : `Turma ${turma} criada e pronta para usar.`;
     }
 }

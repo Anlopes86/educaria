@@ -110,7 +110,7 @@ function addDebateStep() {
     stack.insertAdjacentHTML("beforeend", debateStepTemplate(count));
     setDebateStepSelect(count + 1);
     renderDebatePreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function removeDebateStep(trigger) {
@@ -123,7 +123,7 @@ function removeDebateStep(trigger) {
     step.remove();
     setDebateStepSelect(steps.length - 1);
     renderDebatePreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function renderDebatePreview() {

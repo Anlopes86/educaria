@@ -33,8 +33,8 @@
         return `${assetPrefix}/i18n/${language}.json`;
     }
 
-    function translate(key) {
-        return currentDictionary[key] || "";
+    function translate(key, fallback = "") {
+        return currentDictionary[key] || fallback || "";
     }
 
     function applyTextTranslations(root = document) {

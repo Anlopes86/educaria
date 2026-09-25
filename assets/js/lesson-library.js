@@ -149,10 +149,10 @@ function normalizeLessonRecord(lesson) {
     const updatedAt = isoTimestampOrEmpty(lesson.updatedAt) || new Date().toISOString();
     const createdAt = isoTimestampOrEmpty(lesson.createdAt) || updatedAt;
     const normalizedType = materialType === "hangman"
-        ? "Forca"
+        ? "Força"
         : (String(lesson.type || materialGroupLabel(materialType)).trim() || materialGroupLabel(materialType));
     const baseRecord = {
-        title: String(lesson.title || "").trim() || "Material sem titulo",
+        title: String(lesson.title || "").trim() || "Material sem título",
         summary: String(lesson.summary || "").trim() || "Material salvo sem resumo definido.",
         type: normalizedType,
         materialType
@@ -179,6 +179,9 @@ function normalizeLessonRecord(lesson) {
         lastPresentedAt: isoTimestampOrEmpty(lesson.lastPresentedAt),
         lastUsedAt: isoTimestampOrEmpty(lesson.lastUsedAt),
         usageCount: Number.isFinite(Number(lesson.usageCount)) ? Math.max(0, Number(lesson.usageCount)) : 0,
+        subject: String(lesson.subject || "").trim().slice(0, 120),
+        grade: String(lesson.grade || "").trim().slice(0, 80),
+        sourceMode: ["topic", "file", "manual", "mixed"].includes(lesson.sourceMode) ? lesson.sourceMode : "manual",
         draft: typeof lesson.draft === "string" ? lesson.draft : ""
     };
 }
@@ -469,6 +472,23 @@ async function syncLessonsWithFirebase() {
     return lessonsSyncPromise;
 }
 
+async function syncLessonRecordWithFirebase(record) {
+    const normalized = normalizeLessonRecord(record);
+    const collection = firebaseLessonsCollection();
+    if (!normalized || !collection || navigator.onLine === false) {
+        return { record: normalized, synced: false };
+    }
+
+    try {
+        await collection.doc(normalized.id).set(normalized, { merge: true });
+        clearDeletedLessonId(normalized.id);
+        return { record: normalized, synced: true };
+    } catch (error) {
+        console.warn("EducarIA lesson autosave unavailable:", error);
+        return { record: normalized, synced: false, error };
+    }
+}
+
 function ensureLibraryToast() {
     let toast = document.querySelector("[data-library-toast]");
     if (toast) return toast;
@@ -659,18 +679,18 @@ function summarizeWheelDraft(rawDraft) {
 
 function summarizeHangmanDraft(rawDraft) {
     if (!rawDraft) {
-        return { title: "Forca sem título", summary: "Material salvo sem resumo definido.", type: "Forca", materialType: "hangman" };
+        return { title: "Força sem título", summary: "Material salvo sem resumo definido.", type: "Força", materialType: "hangman" };
     }
 
     const { parsed, doc } = parseDraftHtml(rawDraft);
-    const title = parsed.controls?.["forca-titulo"] || "Forca";
+    const title = parsed.controls?.["forca-titulo"] || "Força";
     const words = [...doc.querySelectorAll("[data-hangman-entry]")].map((card) => {
         return card.querySelector("[data-hangman-answer]")?.value?.trim()
             || card.querySelector('[data-field="answer"]')?.value?.trim()
             || "";
     }).filter(Boolean);
     const firstWord = words[0] || "Sem palavra inicial";
-    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Forca", materialType: "hangman" };
+    return { title, summary: `${words.length} palavras - ${firstWord}`, type: "Força", materialType: "hangman" };
 }
 
 function summarizeCrosswordDraft(rawDraft) {
@@ -874,7 +894,7 @@ function openDuplicateModal(lessonId) {
     }
 
     select.innerHTML = classes.length
-        ? classes.map((className) => `<option value="${className}">${className}</option>`).join("")
+        ? classes.map((className) => `<option value="${escapeHtml(className)}">${escapeHtml(className)}</option>`).join("")
         : `<option value="">Nenhuma outra turma disponível</option>`;
     select.disabled = !classes.length;
     modal.hidden = false;
@@ -907,6 +927,83 @@ function confirmDuplicateModal() {
     closeDuplicateModal();
 }
 
+function renameModalTemplate() {
+    return `
+        <div class="platform-modal-backdrop" data-rename-modal hidden>
+            <div class="platform-modal-card" role="dialog" aria-modal="true" aria-labelledby="rename-lesson-title">
+                <div class="page-section-title page-section-title--compact">
+                    <div>
+                        <span class="platform-section-label">Renomear atividade</span>
+                        <h2 id="rename-lesson-title">Defina um nome fácil de encontrar</h2>
+                    </div>
+                </div>
+                <div class="platform-field">
+                    <label for="rename-lesson-name">Nome da atividade</label>
+                    <input id="rename-lesson-name" type="text" maxlength="160" data-rename-modal-input>
+                </div>
+                <p class="sidebar-feedback" data-rename-modal-feedback hidden></p>
+                <div class="utility-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-rename-modal-cancel>Cancelar</button>
+                    <button type="button" class="platform-link-button platform-link-primary" data-rename-modal-confirm>Salvar nome</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function ensureRenameModal() {
+    let modal = document.querySelector("[data-rename-modal]");
+    if (modal) return modal;
+    document.body.insertAdjacentHTML("beforeend", renameModalTemplate());
+    return document.querySelector("[data-rename-modal]");
+}
+
+function openRenameModal(lessonId) {
+    const lesson = readLessonsLibrary().find((item) => item.id === lessonId);
+    const modal = ensureRenameModal();
+    const input = modal?.querySelector("[data-rename-modal-input]");
+    const feedback = modal?.querySelector("[data-rename-modal-feedback]");
+    if (!lesson || !modal || !input) return;
+
+    modal.dataset.renameLessonId = lesson.id;
+    input.value = lesson.title || "";
+    if (feedback) feedback.hidden = true;
+    modal.hidden = false;
+    window.setTimeout(() => input.select(), 0);
+}
+
+function closeRenameModal() {
+    const modal = document.querySelector("[data-rename-modal]");
+    if (!modal) return;
+    modal.hidden = true;
+    modal.dataset.renameLessonId = "";
+}
+
+function confirmRenameModal() {
+    const modal = document.querySelector("[data-rename-modal]");
+    const input = modal?.querySelector("[data-rename-modal-input]");
+    const feedback = modal?.querySelector("[data-rename-modal-feedback]");
+    if (!modal || !input) return;
+
+    const lesson = renameLesson(modal.dataset.renameLessonId || "", input.value);
+    if (!lesson) {
+        if (feedback) {
+            feedback.textContent = "Digite um nome para continuar.";
+            feedback.hidden = false;
+        }
+        input.focus();
+        return;
+    }
+
+    if (typeof educariaTrack === "function") {
+        educariaTrack("lesson_renamed", { lessonId: lesson.id, materialType: lesson.materialType || "" });
+    }
+    closeRenameModal();
+    hydrateLibraryPage();
+    hydrateClassPage();
+    showLibraryToast("Nome atualizado com sucesso.");
+}
+
 function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
     const turma = currentClassName() || "Turma";
     if (preferredType && typeof setCurrentMaterialType === "function") {
@@ -918,6 +1015,24 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
     }
 
     const { rawDraft, summary, materialType } = summarizeCurrentDraft(preferredType);
+    let draftControls = {};
+    try {
+        draftControls = JSON.parse(rawDraft || "{}").controls || {};
+    } catch (error) {
+        draftControls = {};
+    }
+    const metadataControlsByType = {
+        quiz: { subject: "quiz-disciplina", grade: "quiz-ano", source: "quiz-fonte-texto", file: "quiz-arquivo" },
+        slides: { subject: "slides-disciplina", grade: "slides-publico", source: "slides-fonte-texto", file: "slides-arquivo" },
+        flashcards: { subject: "cards-disciplina", grade: "cards-ano", source: "cards-fonte-texto", file: "cards-arquivo" },
+        memory: { subject: "memoria-disciplina", grade: "memoria-ano", source: "memoria-fonte-texto", file: "memoria-arquivo" },
+        hangman: { subject: "forca-disciplina", grade: "forca-ano", source: "forca-fonte-texto", file: "forca-arquivo" },
+        wheel: { subject: "roleta-disciplina", grade: "roleta-ano", source: "roleta-fonte-texto", file: "roleta-arquivo" },
+        match: { subject: "ligar-disciplina", grade: "ligar-ano", source: "ligar-fonte-texto", file: "ligar-arquivo" }
+    };
+    const metadataControls = metadataControlsByType[materialType] || metadataControlsByType.quiz;
+    const sourceText = String(draftControls[metadataControls.source] || "").trim();
+    const hasSourceFile = Boolean(document.getElementById(metadataControls.file)?.files?.length);
     const lessons = readLessonsLibrary();
     const activeId = readActiveLessonId();
     const existing = lessons.find((lesson) => lesson.id === activeId);
@@ -959,11 +1074,16 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
         lastPresentedAt: existing?.lastPresentedAt || "",
         lastUsedAt: existing?.lastUsedAt || "",
         usageCount: Number(existing?.usageCount || 0),
+        subject: String(draftControls[metadataControls.subject] || existing?.subject || "").trim(),
+        grade: String(draftControls[metadataControls.grade] || existing?.grade || "").trim(),
+        sourceMode: hasSourceFile
+            ? (sourceText ? "mixed" : "file")
+            : (sourceText ? "topic" : (existing?.sourceMode || "manual")),
         draft: rawDraft
     };
 }
 
-function persistLessonRecord(record) {
+function persistLessonRecord(record, options = {}) {
     const lessons = readLessonsLibrary();
     const normalizedRecord = normalizeLessonRecord(record);
     if (!normalizedRecord) return null;
@@ -971,7 +1091,7 @@ function persistLessonRecord(record) {
     const nextLessons = lessons.filter((lesson) => lesson.id !== normalizedRecord.id);
     nextLessons.unshift(normalizedRecord);
     clearDeletedLessonId(normalizedRecord.id);
-    writeLessonsLibrary(nextLessons);
+    writeLessonsLibrary(nextLessons, options);
     writeActiveLessonId(normalizedRecord.id);
     if (normalizedRecord.className) {
         updateCurrentClass(normalizedRecord.className);
@@ -982,14 +1102,37 @@ function persistLessonRecord(record) {
     return normalizedRecord;
 }
 
-function saveCurrentLessonToClass(preferredType = "") {
-    const record = buildLessonRecord(preferredType, LESSON_SCOPE_CLASS);
-    return persistLessonRecord(record);
+async function autosaveCurrentLesson(preferredType = "quiz") {
+    const activeLesson = readLessonsLibrary().find((lesson) => lesson.id === readActiveLessonId());
+    const selectedClass = currentClassName();
+    const scope = activeLesson
+        ? normalizeLessonScope(activeLesson)
+        : (selectedClass ? LESSON_SCOPE_CLASS : LESSON_SCOPE_LIBRARY);
+    const record = buildLessonRecord(preferredType, scope);
+    const savedRecord = persistLessonRecord(record, { skipSync: true, source: "autosave" });
+    const remote = await syncLessonRecordWithFirebase(savedRecord);
+    return { record: savedRecord, synced: remote.synced, error: remote.error || null };
 }
 
-function saveCurrentLessonToLibrary(preferredType = "") {
+function renameLesson(id, title) {
+    const normalizedTitle = String(title || "").trim().slice(0, 160);
+    if (!normalizedTitle) return null;
+
+    return updateLessonRecordById(id, (lesson) => ({
+        ...lesson,
+        title: normalizedTitle,
+        updatedAt: new Date().toISOString()
+    }), { source: "rename" });
+}
+
+function saveCurrentLessonToClass(preferredType = "", options = {}) {
+    const record = buildLessonRecord(preferredType, LESSON_SCOPE_CLASS);
+    return persistLessonRecord(record, options);
+}
+
+function saveCurrentLessonToLibrary(preferredType = "", options = {}) {
     const record = buildLessonRecord(preferredType, LESSON_SCOPE_LIBRARY);
-    return persistLessonRecord(record);
+    return persistLessonRecord(record, options);
 }
 
 function libraryMaterials() {
@@ -1075,7 +1218,7 @@ function materialGroupLabel(type) {
     if (type === "quiz") return "Quiz";
     if (type === "flashcards") return "Flashcards";
     if (type === "wheel") return "Roleta";
-    if (type === "hangman") return "Forca";
+    if (type === "hangman") return "Força";
     if (type === "crossword") return "Palavras cruzadas";
     if (type === "wordsearch") return "Caça-palavras";
     if (type === "memory") return "Jogo da memória";
@@ -1169,6 +1312,8 @@ function lessonMatchesLibrarySearch(lesson, query) {
         lesson.materialType,
         materialGroupLabel(lesson.materialType || "slides"),
         lessonStatusLabel(lesson.status),
+        lesson.subject,
+        lesson.grade,
         ...(lesson.bnccCodes || []),
         ...(lesson.tags || [])
     ].join(" "));
@@ -1206,14 +1351,16 @@ function applyLibraryFilters(lessons) {
 
 function lessonPedagogyTagsHtml(lesson) {
     const chips = [
+        lesson.subject,
+        lesson.grade,
         ...(lesson.bnccCodes || []),
         ...(lesson.tags || [])
-    ].slice(0, 5);
+    ].filter(Boolean).slice(0, 5);
 
     if (!chips.length) return "";
 
     return `
-        <div class="lesson-pedagogy-tags" aria-label="Metadados pedagogicos">
+        <div class="lesson-pedagogy-tags" aria-label="Metadados pedagógicos">
             ${chips.map((chip) => `<span>${escapeHtml(chip)}</span>`).join("")}
         </div>
     `;
@@ -1309,7 +1456,7 @@ function classNextStep(classes, turma, lessons) {
     const latestDraft = classLessons.find((lesson) => normalizeLessonStatus(lesson.status) === LESSON_STATUS_DRAFT);
     if (!classes.length) {
         return {
-            label: lessonLibraryTranslate("classDetail.next.label", "Proximo passo"),
+            label: lessonLibraryTranslate("classDetail.next.label", "Próximo passo"),
             title: lessonLibraryTranslate("classDetail.next.createClassTitle", "Crie ou selecione uma turma"),
             copy: lessonLibraryTranslate("classDetail.next.createClassCopy", "A turma vira o ponto de partida para criar, retomar e apresentar materiais."),
             href: "index.html",
@@ -1323,7 +1470,7 @@ function classNextStep(classes, turma, lessons) {
             title: latestDraft.title || materialGroupLabel(latestDraft.materialType || "slides"),
             copy: lessonLibraryTranslate("classDetail.next.resumeDraftCopy", "Finalize este material antes de preparar uma nova atividade."),
             href: editorPathForLesson(latestDraft),
-            action: lessonLibraryTranslate("classes.actions.continueEditing", "Continuar edicao"),
+            action: lessonLibraryTranslate("classes.actions.continueEditing", "Continuar edição"),
             lessonId: latestDraft.id,
             edit: true
         };
@@ -1335,8 +1482,8 @@ function classNextStep(classes, turma, lessons) {
         return {
             label: lessonLibraryTranslate("classDetail.next.suggested", "Sugerido agora"),
             title: lessonLibraryTranslate("classDetail.next.slidesTitle", "Prepare slides para conduzir a aula"),
-            copy: lessonLibraryTranslate("classDetail.next.slidesCopy", "Comece com uma sequencia visual curta e salve na turma para retomar depois."),
-            href: "slides-builder.html",
+            copy: lessonLibraryTranslate("classDetail.next.slidesCopy", "Comece com uma sequência visual curta e salve na turma para retomar depois."),
+            href: "slides-builder.html?new=1",
             action: lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")
         };
     }
@@ -1344,17 +1491,17 @@ function classNextStep(classes, turma, lessons) {
     if (!hasQuiz) {
         return {
             label: lessonLibraryTranslate("classDetail.next.suggested", "Sugerido agora"),
-            title: lessonLibraryTranslate("classDetail.next.quizTitle", "Feche com um quiz de revisao"),
-            copy: lessonLibraryTranslate("classDetail.next.quizCopy", "Use 5 a 8 minutos para checar entendimento e deixar a turma pronta para a proxima aula."),
-            href: "quiz-builder.html",
+            title: lessonLibraryTranslate("classDetail.next.quizTitle", "Feche com um quiz de revisão"),
+            copy: lessonLibraryTranslate("classDetail.next.quizCopy", "Use 5 a 8 minutos para checar entendimento e deixar a turma pronta para a próxima aula."),
+            href: "quiz-builder.html?new=1",
             action: lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")
         };
     }
 
     return {
-        label: lessonLibraryTranslate("classDetail.next.keepGoing", "Continuar sequencia"),
-        title: lessonLibraryTranslate("classDetail.next.libraryTitle", "Reaproveite ou monte a proxima aula"),
-        copy: `${turma} ${lessonLibraryTranslate("classDetail.next.libraryCopy", "ja tem base para reaproveitar materiais ou montar uma aula completa.")}`,
+        label: lessonLibraryTranslate("classDetail.next.keepGoing", "Continuar sequência"),
+        title: lessonLibraryTranslate("classDetail.next.libraryTitle", "Reaproveite ou monte a próxima aula"),
+        copy: `${turma} ${lessonLibraryTranslate("classDetail.next.libraryCopy", "já tem base para reaproveitar materiais ou montar uma aula completa.")}`,
         href: "criar-aula.html",
         action: lessonLibraryTranslate("classDetail.actions.buildFullLesson", "Montar aula completa (15-25 min)")
     };
@@ -1399,13 +1546,13 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
     const latestLesson = classLessons[0] || null;
     const latestLabel = latestLesson?.updatedAt
         ? formatLessonDate(latestLesson.updatedAt)
-        : lessonLibraryTranslate("classDetail.ops.noUpdate", "Sem atualizacao");
+        : lessonLibraryTranslate("classDetail.ops.noUpdate", "Sem atualização");
 
     if (opsNode) {
         opsNode.innerHTML = `
             <span><strong>${readyCount}</strong> ${lessonLibraryTranslate("classDetail.ops.ready", "prontos")}</span>
             <span><strong>${draftCount}</strong> ${lessonLibraryTranslate("classDetail.ops.drafts", "rascunhos")}</span>
-            <span><strong>${lessonLibraryTranslate("classDetail.ops.latest", "Ultima atualizacao")}</strong> ${escapeHtml(latestLabel)}</span>
+            <span><strong>${lessonLibraryTranslate("classDetail.ops.latest", "Última atualização")}</strong> ${escapeHtml(latestLabel)}</span>
         `;
     }
 
@@ -1417,7 +1564,7 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
                 <article class="class-recent-lesson-card class-recent-lesson-card--empty">
                     <span class="route-tag">${lessonLibraryTranslate("classDetail.empty.noSelectedClass", "Sem turma selecionada")}</span>
                     <h3>${lessonLibraryTranslate("classDetail.empty.selectClassTitle", "Crie ou selecione uma turma para continuar")}</h3>
-                    <p>${lessonLibraryTranslate("classDetail.empty.selectClassCopy", "Depois disso, as atividades mais recentes desta turma aparecem aqui com acoes rapidas.")}</p>
+                    <p>${lessonLibraryTranslate("classDetail.empty.selectClassCopy", "Depois disso, as atividades mais recentes desta turma aparecem aqui com ações rápidas.")}</p>
                 </article>
             `;
             return;
@@ -1430,8 +1577,8 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
                     <h3>${escapeHtml(turma)} ainda não tem atividade salva</h3>
                     <p>${lessonLibraryTranslate("classDetail.empty.startWithSlides", "Comece com Slides para conduzir a aula e finalize com Quiz para revisar em poucos minutos.")}</p>
                     <div class="lesson-history-actions">
-                        <a href="slides-builder.html" class="platform-link-button platform-link-primary">${lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")}</a>
-                        <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")}</a>
+                        <a href="slides-builder.html?new=1" class="platform-link-button platform-link-primary">${lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")}</a>
+                        <a href="quiz-builder.html?new=1" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")}</a>
                     </div>
                 </article>
             `;
@@ -1472,7 +1619,7 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
                                 <span class="lesson-status-chip lesson-status-chip--${statusClass}">${safeStatus}</span>
                             </div>
                             <div class="lesson-history-actions">
-                                <a href="${editorPath}" class="platform-link-button platform-link-primary" data-edit-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.continueEditing", "Continuar edicao")}</a>
+                                <a href="${editorPath}" class="platform-link-button platform-link-primary" data-edit-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.continueEditing", "Continuar edição")}</a>
                                 <a href="${presentationPath}" class="platform-link-button platform-link-secondary" data-present-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.presentNow", "Apresentar agora")}</a>
                             </div>
                         </article>
@@ -1505,18 +1652,18 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
 
     if (summaryNode) {
         if (!classLessons.length) {
-            summaryNode.textContent = `${turma} ${lessonLibraryTranslate("classDetail.flow.noMaterialsSummary", "ainda nao tem materiais salvos. Sugestao: comece com Slides (10-15 min), feche com Quiz (5-8 min) e salve na Biblioteca.")}`;
+            summaryNode.textContent = `${turma} ${lessonLibraryTranslate("classDetail.flow.noMaterialsSummary", "ainda não tem materiais salvos. Sugestão: comece com Slides (10-15 min), feche com Quiz (5-8 min) e salve na Biblioteca.")}`;
         } else {
             const latestLabel = classLessons[0]?.updatedAt ? formatLessonDate(classLessons[0].updatedAt) : lessonLibraryTranslate("classDetail.time.now", "agora");
-            summaryNode.textContent = `${turma} ${lessonLibraryTranslate("classDetail.flow.hasMaterialsPrefix", "tem")} ${classLessons.length} ${lessonLibraryTranslate("classDetail.flow.hasMaterialsSuffix", "materiais salvos. Ultima atualizacao:")} ${latestLabel}. ${lessonLibraryTranslate("classDetail.flow.recommended", "Fluxo recomendado: Slides -> Quiz -> Biblioteca.")}`;
+            summaryNode.textContent = `${turma} ${lessonLibraryTranslate("classDetail.flow.hasMaterialsPrefix", "tem")} ${classLessons.length} ${lessonLibraryTranslate("classDetail.flow.hasMaterialsSuffix", "materiais salvos. Última atualização:")} ${latestLabel}. ${lessonLibraryTranslate("classDetail.flow.recommended", "Fluxo recomendado: Slides -> Quiz -> Biblioteca.")}`;
         }
     }
 
     if (actionsNode) {
         actionsNode.innerHTML = `
             <a href="gerar-aula.html" class="platform-link-button platform-link-primary class-create-activity-button">${lessonLibraryTranslate("classDetail.actions.createActivity", "Criar atividade")}</a>
-            <a href="slides-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")}</a>
-            <a href="quiz-builder.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")}</a>
+            <a href="slides-builder.html?new=1" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createSlides", "Criar slides (10-15 min)")}</a>
+            <a href="quiz-builder.html?new=1" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.createQuiz", "Criar quiz (5-8 min)")}</a>
             <a href="criar-aula.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.buildFullLesson", "Montar aula completa (15-25 min)")}</a>
             <a href="#atividades-salvas" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("classDetail.actions.openClassMaterials", "Ver materiais da turma")}</a>
             <a href="biblioteca.html" class="platform-link-button platform-link-secondary">${lessonLibraryTranslate("dashboard.actions.openLibrary", "Abrir biblioteca")}</a>
@@ -1541,7 +1688,7 @@ function hydrateClassCards() {
             <article class="quick-class-card quick-class-card--active">
                 <span class="route-tag">${lessonLibraryTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
                 <h3>${lessonLibraryTranslate("dashboard.empty.noClassesTitle", "Nenhuma turma criada ainda")}</h3>
-                <p>${lessonLibraryTranslate("classDetail.empty.noClassesCardCopy", "Use o botao Criar turma na lateral para montar a primeira turma e comecar a salvar atividades.")}</p>
+                <p>${lessonLibraryTranslate("classDetail.empty.noClassesCardCopy", "Use o botão Criar turma na lateral para montar a primeira turma e começar a salvar atividades.")}</p>
             </article>
         `;
         return;
@@ -1572,7 +1719,7 @@ function bindSaveLessonAction() {
     if (!buttons.length) return;
 
         buttons.forEach((button) => {
-            button.addEventListener("click", (event) => {
+            button.addEventListener("click", async (event) => {
                 event.preventDefault();
                 button.setAttribute("aria-busy", "true");
                 const material = button.dataset.saveMaterial || "";
@@ -1593,13 +1740,21 @@ function bindSaveLessonAction() {
                 }
                 const saveMode = button.dataset.saveScope || LESSON_SCOPE_CLASS;
                 const savedRecord = saveMode === LESSON_SCOPE_LIBRARY
-                    ? saveCurrentLessonToLibrary(material)
-                    : saveCurrentLessonToClass(material);
+                    ? saveCurrentLessonToLibrary(material, { skipSync: true, source: "explicit-save" })
+                    : saveCurrentLessonToClass(material, { skipSync: true, source: "explicit-save" });
+                const finalizedRecord = savedRecord
+                    ? updateLessonRecordById(savedRecord.id, (lesson) => ({
+                        ...lesson,
+                        status: LESSON_STATUS_READY
+                    }), { skipSync: true, source: "explicit-save" })
+                    : null;
+                const remoteSave = await syncLessonRecordWithFirebase(finalizedRecord || savedRecord);
                 if (typeof educariaTrack === "function") {
                     educariaTrack("lesson_saved", {
-                        materialType: savedRecord?.materialType || material || "slides",
+                        materialType: finalizedRecord?.materialType || savedRecord?.materialType || material || "slides",
                         scope: saveMode,
-                        target: button.dataset.saveTarget || ""
+                        target: button.dataset.saveTarget || "",
+                        synced: remoteSave.synced
                     });
                 }
 
@@ -1633,11 +1788,11 @@ function hydrateBuilderCommonActions() {
         }
 
         button.textContent = lessonLibraryTranslate("builder.actions.saveClass", "Salvar na turma");
-        button.setAttribute("aria-label", lessonLibraryTranslate("builder.actions.saveClassPrimary", "Salvar na turma (acao principal)"));
+        button.setAttribute("aria-label", lessonLibraryTranslate("builder.actions.saveClassPrimary", "Salvar na turma (ação principal)"));
     });
 
     document.querySelectorAll("[data-clear-draft]").forEach((button) => {
-        button.setAttribute("aria-label", lessonLibraryTranslate("builder.actions.clearDraft", "Limpar conteudo deste rascunho"));
+        button.setAttribute("aria-label", lessonLibraryTranslate("builder.actions.clearDraft", "Limpar conteúdo deste rascunho"));
     });
 
     document.querySelectorAll(".builder-floating-actions a").forEach((link) => {
@@ -1782,7 +1937,7 @@ function hydrateClassPage() {
             listRoot.innerHTML = `
                 <article class="lesson-history-card">
                     <span class="route-tag">${lessonLibraryTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
-                    <h3>${lessonLibraryTranslate("classDetail.empty.createFirstClassTitle", "Crie a primeira turma para comecar")}</h3>
+                    <h3>${lessonLibraryTranslate("classDetail.empty.createFirstClassTitle", "Crie a primeira turma para começar")}</h3>
                     <p>${lessonLibraryTranslate("classDetail.empty.createFirstClassCopy", "Depois de criar a turma, as atividades salvas vao aparecer organizadas aqui.")}</p>
                 </article>
             `;
@@ -1917,6 +2072,7 @@ function hydrateClassPage() {
                                         <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
                                         <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.addToLibrary", "Adicionar a biblioteca")}</button>
                                         <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.duplicateToClass", "Duplicar para outra turma")}</button>
+                                        <button type="button" class="platform-link-button platform-link-secondary" data-rename-lesson="${escapeHtml(lesson.id)}">Renomear</button>
                                         <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.remove", "Remover")}</button>
                                     </div>
                                 </article>
@@ -1949,6 +2105,7 @@ function hydrateClassPage() {
             <a href="${escapeHtml(editorPathForLesson(activeLesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="edit">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
             <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="library">${lessonLibraryTranslate("classDetail.actions.addToLibrary", "Adicionar a biblioteca")}</button>
             <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="duplicate">${lessonLibraryTranslate("classDetail.actions.duplicateToClass", "Duplicar para outra turma")}</button>
+            <button type="button" class="platform-link-button platform-link-secondary" data-rename-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="rename">Renomear</button>
             <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="delete">${lessonLibraryTranslate("classDetail.actions.remove", "Remover")}</button>
         `;
     }
@@ -2044,6 +2201,13 @@ function bindLessonActivationLinks() {
             return;
         }
 
+        const renameTrigger = event.target.closest("[data-rename-lesson]");
+        if (renameTrigger) {
+            event.preventDefault();
+            openRenameModal(renameTrigger.dataset.renameLesson || "");
+            return;
+        }
+
         const trigger = event.target.closest("[data-edit-lesson], [data-present-lesson]");
         if (!trigger) return;
 
@@ -2088,6 +2252,7 @@ function bindLessonActivationLinks() {
             const present = actionsRoot.querySelector('[data-lesson-action="present"]');
             const library = actionsRoot.querySelector('[data-lesson-action="library"]');
             const duplicate = actionsRoot.querySelector('[data-lesson-action="duplicate"]');
+            const rename = actionsRoot.querySelector('[data-lesson-action="rename"]');
             const remove = actionsRoot.querySelector('[data-lesson-action="delete"]');
 
             if (edit) {
@@ -2100,6 +2265,7 @@ function bindLessonActivationLinks() {
             }
             if (library) library.dataset.libraryLesson = lessonId;
             if (duplicate) duplicate.dataset.duplicateLesson = lessonId;
+            if (rename) rename.dataset.renameLesson = lessonId;
             if (remove) remove.dataset.deleteLesson = lessonId;
         });
     }
@@ -2117,6 +2283,21 @@ function bindLessonActivationLinks() {
 
         if (event.target.matches("[data-duplicate-modal]")) {
             closeDuplicateModal();
+            return;
+        }
+
+        if (event.target.closest("[data-rename-modal-cancel]")) {
+            closeRenameModal();
+            return;
+        }
+
+        if (event.target.closest("[data-rename-modal-confirm]")) {
+            confirmRenameModal();
+            return;
+        }
+
+        if (event.target.matches("[data-rename-modal]")) {
+            closeRenameModal();
         }
     });
 }
@@ -2136,7 +2317,8 @@ function bindClassPageRefresh() {
 
 function bindLibraryFilterControls() {
     document.addEventListener("input", (event) => {
-        const searchInput = event.target.closest("[data-library-search]");
+        const target = event.target instanceof Element ? event.target : null;
+        const searchInput = target?.closest("[data-library-search]");
         if (!searchInput) return;
 
         librarySearchQuery = searchInput.value || "";
@@ -2144,14 +2326,15 @@ function bindLibraryFilterControls() {
     });
 
     document.addEventListener("change", (event) => {
-        const statusFilter = event.target.closest("[data-library-status-filter]");
+        const target = event.target instanceof Element ? event.target : null;
+        const statusFilter = target?.closest("[data-library-status-filter]");
         if (statusFilter) {
             activeLibraryStatusFilter = statusFilter.value || "all";
             hydrateLibraryPage();
             return;
         }
 
-        const sortSelect = event.target.closest("[data-library-sort]");
+        const sortSelect = target?.closest("[data-library-sort]");
         if (sortSelect) {
             activeLibrarySort = sortSelect.value || "recent";
             hydrateLibraryPage();
@@ -2246,7 +2429,7 @@ function hydrateLibraryPage() {
             <article class="lesson-history-card">
                 <span class="route-tag">${lessonLibraryTranslate("library.empty.label", "Biblioteca vazia")}</span>
                 <h3>${lessonLibraryTranslate("library.empty.title", "Nenhum material salvo na biblioteca ainda")}</h3>
-                <p>${lessonLibraryTranslate("library.empty.copy", "Use Salvar na biblioteca em qualquer atividade para montar seu acervo reutilizavel.")}</p>
+                <p>${lessonLibraryTranslate("library.empty.copy", "Use Salvar na biblioteca em qualquer atividade para montar seu acervo reutilizável.")}</p>
             </article>
         `;
         root.setAttribute("aria-busy", "false");
@@ -2262,7 +2445,7 @@ function hydrateLibraryPage() {
         const message = hasSearch
             ? lessonLibraryTranslate("library.empty.searchCopy", "Revise a busca ou limpe os filtros para ver mais materiais.")
             : activeLibraryStatusFilter !== "all"
-                ? `${lessonLibraryTranslate("library.empty.noStatusPrefix", "Nao ha materiais")} ${statusLabel} ${lessonLibraryTranslate("library.empty.noStatusSuffix", "com estes filtros.")}`
+                ? `${lessonLibraryTranslate("library.empty.noStatusPrefix", "Não há materiais")} ${statusLabel} ${lessonLibraryTranslate("library.empty.noStatusSuffix", "com estes filtros.")}`
                 : lessonLibraryTranslate("library.empty.noFilterCopy", "Troque o filtro para visualizar outros formatos salvos na biblioteca.");
         root.innerHTML = `
             <article class="lesson-history-card">
@@ -2289,7 +2472,7 @@ function hydrateLibraryPage() {
         const count = groupItems.length;
 
         return `
-            <details class="editor-disclosure lesson-group-section lesson-group-disclosure">
+            <details class="editor-disclosure lesson-group-section lesson-group-disclosure" open>
                 <summary>
                     <span>${materialGroupLabel(key)}</span>
                     <small>${count} ${lessonLibraryTranslate(count === 1 ? "library.count.material" : "library.count.materials", count === 1 ? "material" : "materiais")}</small>
@@ -2312,6 +2495,7 @@ function hydrateLibraryPage() {
                                     <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
                                     <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-present-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
                                     <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("library.actions.addToClass", "Adicionar a turma")}</button>
+                                    <button type="button" class="platform-link-button platform-link-secondary" data-rename-lesson="${escapeHtml(lesson.id)}">Renomear</button>
                                     <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("library.actions.delete", "Excluir")}</button>
                                 </div>
                             </article>

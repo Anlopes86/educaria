@@ -87,9 +87,9 @@ function renderMatchApplication() {
     const controls = { ...(draft.controls || {}) };
     const pairs = parseMatchPairs(draft.stackHtml || "");
     const safePairs = (pairs.length ? pairs : [
-        { left: "Brasil", right: "Brasilia", color: "#22c55e" },
+        { left: "Brasil", right: "Brasília", color: "#22c55e" },
         { left: "Franca", right: "Paris", color: "#0ea5e9" },
-        { left: "Japao", right: "Toquio", color: "#f59e0b" },
+        { left: "Japão", right: "Tóquio", color: "#f59e0b" },
         { left: "Argentina", right: "Buenos Aires", color: "#ec4899" }
     ]).map((pair, index) => ({ ...pair, index }));
 

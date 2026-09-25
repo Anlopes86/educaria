@@ -106,6 +106,31 @@
     background: rgba(239, 68, 68, 0.12);
 }
 
+.settings-feedback[data-state="warning"] {
+    color: #854d0e;
+    background: #fef3c7;
+}
+
+.settings-danger-card {
+    border-color: rgba(220, 38, 38, 0.3);
+    background: linear-gradient(180deg, #ffffff 0%, #fff7f7 100%);
+}
+
+.settings-danger-card .platform-section-label {
+    color: #b91c1c;
+    background: rgba(220, 38, 38, 0.1);
+}
+
+.settings-danger-button {
+    border: 1px solid #b91c1c;
+    background: #b91c1c;
+    color: #ffffff;
+}
+
+.settings-danger-button:hover:not(:disabled) {
+    background: #991b1b;
+}
+
 @media (max-width: 1180px) {
     .settings-plan-usage {
         grid-template-columns: 1fr;

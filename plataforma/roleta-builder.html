@@ -20,10 +20,11 @@
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/builder-journey.js" defer></script>
     <script src="../assets/js/wheel-builder.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="wheel" data-requires-auth="true">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
     <main id="main-content" class="platform-shell platform-flow-shell activity-editor-shell" tabindex="-1">
         <header class="platform-topbar">
             <a href="index.html" class="platform-brand">
@@ -39,16 +40,20 @@
                 <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
-        <div class="builder-floating-actions" role="toolbar" aria-label="Acoes da roleta">
+        <div class="builder-floating-actions" role="toolbar" aria-label="Ações da roleta">
+            <p class="builder-save-status" data-builder-save-status role="status" aria-live="polite" aria-atomic="true">
+                <span class="builder-save-status-dot" aria-hidden="true"></span>
+                <span data-builder-save-status-label>Rascunho local</span>
+            </p>
             <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="wheel" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="wheel" data-save-target="turma.html" aria-label="Salvar na turma (acao principal)">Salvar na turma</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="wheel" data-save-target="turma.html" aria-label="Salvar na turma (ação principal)">Salvar na turma</button>
             <a href="roleta-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
         </div>
 
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de roleta</span>
-                <h1>Defina os espaços e acompanhe a leitura no preview.</h1>
+                <h1>Defina os espaços e acompanhe o resultado na prévia.</h1>
                 <p>Monte rápido. Ajuste pelo olho.</p>
             </div>
         </section>
@@ -63,6 +68,20 @@
                     </summary>
                     <div class="editor-disclosure-body">
                         <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field">
+                                <label for="roleta-turma">Turma</label>
+                                <select id="roleta-turma" data-builder-class-context>
+                                    <option value="">Biblioteca pessoal</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="roleta-disciplina">Disciplina</label>
+                                <input id="roleta-disciplina" type="text" placeholder="Ex.: Hist&oacute;ria">
+                            </div>
+                            <div class="platform-field">
+                                <label for="roleta-ano">Ano ou p&uacute;blico</label>
+                                <input id="roleta-ano" type="text" placeholder="Ex.: 8&ordm; ano">
+                            </div>
                             <div class="platform-field platform-field-wide">
                                 <label for="roleta-fonte-texto">Lista de temas, perguntas ou desafios</label>
                                 <textarea id="roleta-fonte-texto" rows="6" placeholder="Escreva um tópico e deixe a IA montar a apresentação ou adicione um arquivo pessoal (Word ou PDF)."></textarea>
@@ -87,7 +106,7 @@
 
                 <details class="editor-disclosure">
                     <summary>
-                        <span>Mais opcoes da atividade</span>
+                        <span>Mais opções da atividade</span>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
@@ -127,7 +146,7 @@
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-clear-draft>Limpar conteúdo</button>
                         </div>
-                        <p class="activity-manual-guide">Preencha titulo e textos dos espacos. Use Mais opcoes da atividade para ajustes gerais.</p>
+                        <p class="activity-manual-guide">Preencha título e textos dos espaços. Use Mais opções da atividade para ajustes gerais.</p>
 
                 <div class="platform-question-stack activity-card-stack" data-wheel-segments>
                     <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
@@ -314,7 +333,7 @@
             </article>
 
             <aside class="platform-builder-card activity-preview-pane wheel-preview-pane">
-                <span class="platform-section-label">Preview</span>
+                <span class="platform-section-label">Prévia</span>
                 <h2>Veja a roleta pronta</h2>
                 <div class="live-preview-stack">
                     <section class="live-preview-card live-preview-card--teal">

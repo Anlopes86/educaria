@@ -31,4 +31,13 @@ node tools/check-i18n.mjs
 node tools/check-assets.mjs
 node tools/check-js-syntax.mjs
 node --check ai-service/server.js
+npm test --prefix ai-service
 ```
+
+Com o Google Chrome instalado, valide tambem as telas publicas e o shell autenticado em viewport movel real:
+
+```bash
+node tools/check-responsive-layout.mjs
+```
+
+Defina `CHROME_PATH` quando o executavel nao estiver no caminho padrao do Windows.

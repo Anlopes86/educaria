@@ -107,7 +107,7 @@ function addMemoryPair() {
     stack.insertAdjacentHTML("beforeend", memoryPairTemplate(count, "", "", memoryPalette[count % memoryPalette.length]));
     setMemoryCountSelect(count + 1);
     renderMemoryPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function removeMemoryPair(trigger) {
@@ -120,7 +120,7 @@ function removeMemoryPair(trigger) {
     pair.remove();
     setMemoryCountSelect(pairs.length - 1);
     renderMemoryPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function buildMemoryCards(pairs) {

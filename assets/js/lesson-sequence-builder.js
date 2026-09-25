@@ -15,7 +15,7 @@ const LESSON_SEQUENCE_TYPES = [
     { value: "wheel", label: "Roleta" },
     { value: "mindmap", label: "Mapa mental" },
     { value: "debate", label: "Debate guiado" },
-    { value: "hangman", label: "Forca" },
+    { value: "hangman", label: "Força" },
     { value: "crossword", label: "Palavras cruzadas" },
     { value: "wordsearch", label: "Caça-palavras" }
 ];
@@ -27,10 +27,10 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
         emptyPayload: () => ({ slides: [{ title: "", subtitle: "", body: "" }] }),
         controls: [],
         fields: [
-            { selector: '[data-field="slide-title"]', label: "Titulo" },
-            { selector: '[data-field="slide-subtitle"]', label: "Subtitulo" },
-            { selector: '[data-field="slide-body"]', label: "Conteudo", kind: "textarea", wide: true },
-            { selector: '[data-field="slide-image-prompt"]', label: "Descricao da imagem", kind: "textarea", wide: true },
+            { selector: '[data-field="slide-title"]', label: "Título" },
+            { selector: '[data-field="slide-subtitle"]', label: "Subtítulo" },
+            { selector: '[data-field="slide-body"]', label: "Conteúdo", kind: "textarea", wide: true },
+            { selector: '[data-field="slide-image-prompt"]', label: "Descrição da imagem", kind: "textarea", wide: true },
             { selector: '[data-field="slide-image-url"]', label: "URL da imagem", wide: true },
             {
                 selector: '[data-field="slide-image-url"]',
@@ -55,7 +55,7 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
     },
     quiz: {
         itemSelector: "[data-quiz-question]",
-        itemLabel: "Questao",
+        itemLabel: "Questão",
         emptyPayload: () => ({
             title: "Quiz",
             questions: [{
@@ -72,14 +72,14 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
             { selector: '[data-field="prompt"]', label: "Pergunta", kind: "textarea", wide: true },
             { selector: "[data-option]", label: "Alternativa", multiple: true },
             { selector: '[data-field="correct"]', label: "Resposta correta" },
-            { selector: '[data-field="explanation"]', label: "Explicacao", kind: "textarea", wide: true }
+            { selector: '[data-field="explanation"]', label: "Explicação", kind: "textarea", wide: true }
         ]
     },
     memory: {
         itemSelector: "[data-memory-pair]",
         itemLabel: "Par",
-        emptyPayload: () => ({ title: "Jogo da memoria", pairs: [{ front: "", back: "" }, { front: "", back: "" }] }),
-        controls: [{ key: "memoria-titulo", label: "Titulo do jogo" }],
+        emptyPayload: () => ({ title: "Jogo da memória", pairs: [{ front: "", back: "" }, { front: "", back: "" }] }),
+        controls: [{ key: "memoria-titulo", label: "Título do jogo" }],
         fields: [
             { selector: "[data-memory-front]", label: "Frente" },
             { selector: "[data-memory-back]", label: "Verso" }
@@ -96,7 +96,7 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
             pairs: [{ left: "", right: "" }, { left: "", right: "" }]
         }),
         controls: [
-            { key: "ligar-titulo", label: "Titulo do bloco" },
+            { key: "ligar-titulo", label: "Título do bloco" },
             { key: "ligar-coluna-a", label: "Nome da coluna A" },
             { key: "ligar-coluna-b", label: "Nome da coluna B" },
             {
@@ -104,12 +104,12 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
                 label: "Cores dos pares",
                 kind: "select",
                 options: [
-                    { value: "manual", label: "Selecao manual" },
+                    { value: "manual", label: "Seleção manual" },
                     { value: "same", label: "Todos com a mesma cor" },
                     { value: "shuffle", label: "Embaralhar cores" }
                 ]
             },
-            { key: "ligar-cor-unica", label: "Cor unica", kind: "color" }
+            { key: "ligar-cor-unica", label: "Cor única", kind: "color" }
         ],
         fields: [
             { selector: "[data-match-left]", label: "Lado esquerdo" },
@@ -120,20 +120,20 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
         itemSelector: "[data-wheel-segment]",
         itemLabel: "Segmento",
         emptyPayload: () => ({ title: "Roleta", segments: [{ text: "" }, { text: "" }, { text: "" }, { text: "" }] }),
-        controls: [{ key: "roleta-titulo", label: "Titulo da roleta" }],
+        controls: [{ key: "roleta-titulo", label: "Título da roleta" }],
         fields: [{ selector: "[data-wheel-text]", label: "Texto do segmento", wide: true }]
     },
     wordsearch: {
         itemSelector: "[data-wordsearch-word]",
         itemLabel: "Termo",
         emptyPayload: () => ({
-            title: "Caca-palavras",
-            subtitle: "Encontre os termos principais do conteudo.",
+            title: "Caça-palavras",
+            subtitle: "Encontre os termos principais do conteúdo.",
             words: [{ term: "", clue: "" }, { term: "", clue: "" }, { term: "", clue: "" }, { term: "", clue: "" }]
         }),
         controls: [
-            { key: "caca-titulo", label: "Titulo do bloco" },
-            { key: "caca-subtitulo", label: "Subtitulo", kind: "textarea", wide: true }
+            { key: "caca-titulo", label: "Título do bloco" },
+            { key: "caca-subtitulo", label: "Subtítulo", kind: "textarea", wide: true }
         ],
         fields: [
             { selector: "[data-wordsearch-term]", label: "Palavra" },
@@ -150,11 +150,11 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
         }),
         controls: [
             { key: "mapa-centro", label: "Tema central" },
-            { key: "mapa-subtitulo", label: "Subtitulo", kind: "textarea", wide: true }
+            { key: "mapa-subtitulo", label: "Subtítulo", kind: "textarea", wide: true }
         ],
         fields: [
-            { selector: "[data-mind-title]", label: "Titulo" },
-            { selector: "[data-mind-subtitle]", label: "Subtitulo" },
+            { selector: "[data-mind-title]", label: "Título" },
+            { selector: "[data-mind-subtitle]", label: "Subtítulo" },
             { selector: "[data-mind-detail]", label: "Detalhe", kind: "textarea", wide: true }
         ]
     },
@@ -169,16 +169,16 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
             steps: [{ title: "", time: "", question: "", guidance: "" }, { title: "", time: "", question: "", guidance: "" }]
         }),
         controls: [
-            { key: "debate-titulo", label: "Titulo do debate" },
+            { key: "debate-titulo", label: "Título do debate" },
             { key: "debate-pergunta", label: "Pergunta central", kind: "textarea", wide: true },
             { key: "debate-lado-a", label: "Lado A" },
             { key: "debate-lado-b", label: "Lado B" }
         ],
         fields: [
-            { selector: "[data-debate-title]", label: "Titulo da etapa" },
+            { selector: "[data-debate-title]", label: "Título da etapa" },
             { selector: "[data-debate-time]", label: "Tempo" },
             { selector: "[data-debate-question]", label: "Pergunta" },
-            { selector: "[data-debate-guidance]", label: "Orientacao", kind: "textarea", wide: true }
+            { selector: "[data-debate-guidance]", label: "Orientação", kind: "textarea", wide: true }
         ]
     },
     crossword: {
@@ -190,8 +190,8 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
             entries: [{ answer: "", clue: "" }, { answer: "", clue: "" }, { answer: "", clue: "" }, { answer: "", clue: "" }]
         }),
         controls: [
-            { key: "cruzada-titulo", label: "Titulo do bloco" },
-            { key: "cruzada-subtitulo", label: "Subtitulo", kind: "textarea", wide: true }
+            { key: "cruzada-titulo", label: "Título do bloco" },
+            { key: "cruzada-subtitulo", label: "Subtítulo", kind: "textarea", wide: true }
         ],
         fields: [
             { selector: "[data-crossword-answer]", label: "Resposta" },
@@ -202,14 +202,14 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
         itemSelector: "[data-hangman-entry]",
         itemLabel: "Palavra",
         emptyPayload: () => ({
-            title: "Jogo da Forca",
+            title: "Jogo da Força",
             subtitle: "Descubra as palavras usando as dicas.",
             max_errors: 6,
             entries: [{ answer: "", clue: "", category: "" }, { answer: "", clue: "", category: "" }]
         }),
         controls: [
-            { key: "forca-titulo", label: "Titulo do bloco" },
-            { key: "forca-subtitulo", label: "Subtitulo", kind: "textarea", wide: true },
+            { key: "forca-titulo", label: "Título do bloco" },
+            { key: "forca-subtitulo", label: "Subtítulo", kind: "textarea", wide: true },
             { key: "forca-tentativas", label: "Tentativas" }
         ],
         fields: [
@@ -281,7 +281,7 @@ function updateBlockDraftSnapshot(block, rawDraft) {
     const summary = buildDraftSummary(block.materialType || "slides", rawDraft);
     block.lessonDraft = rawDraft;
     block.lessonTitle = summary.title || block.lessonTitle || materialGroupLabel(block.materialType || "slides");
-    block.lessonSummary = summary.summary || block.lessonSummary || "Conteudo ainda em edicao.";
+    block.lessonSummary = summary.summary || block.lessonSummary || "Conteúdo ainda em edição.";
     if ((block.materialType || "slides") === "slides"
         && block.id
         && block.id === selectedBlockId
@@ -432,10 +432,10 @@ function renderInlineEditor(block) {
         <section class="lesson-sequence-inline-editor">
             <div class="lesson-sequence-inline-editor-copy">
                 <div>
-                    <span class="platform-section-label">Edicao rapida</span>
+                    <span class="platform-section-label">Edição rápida</span>
                     <h4>Editar este bloco sem sair da aula</h4>
                 </div>
-                <p>Essas alteracoes valem para este bloco dentro da aula pronta. O builder individual continua disponivel para ajustes avancados.</p>
+                <p>Essas alterações valem para este bloco dentro da aula pronta. O editor individual continua disponível para ajustes avançados.</p>
             </div>
             ${controlsMarkup}
             <div class="lesson-sequence-inline-editor-list">
@@ -533,6 +533,35 @@ function withLessonEditorContext(path) {
     const base = String(path || "").trim();
     if (!base) return "criar-aula.html?editor=lesson";
     return `${base}${base.includes("?") ? "&" : "?"}editor=lesson`;
+}
+
+function lessonBlockMaterialType(block, fallbackLesson = null) {
+    const rawType = block?.materialType || fallbackLesson?.materialType || block?.type || "slides";
+    return typeof normalizeMaterialType === "function"
+        ? normalizeMaterialType(rawType)
+        : String(rawType || "slides").trim() || "slides";
+}
+
+function withLessonBlockMaterialContext(path, materialType) {
+    const base = String(path || "").trim();
+    if (!base) return "";
+
+    const hashIndex = base.indexOf("#");
+    const pathWithoutHash = hashIndex >= 0 ? base.slice(0, hashIndex) : base;
+    const hash = hashIndex >= 0 ? base.slice(hashIndex) : "";
+    const queryIndex = pathWithoutHash.indexOf("?");
+    const pagePath = queryIndex >= 0 ? pathWithoutHash.slice(0, queryIndex) : pathWithoutHash;
+    const query = queryIndex >= 0 ? pathWithoutHash.slice(queryIndex + 1) : "";
+    const params = new URLSearchParams(query);
+    params.set("material", materialType);
+
+    return `${pagePath}?${params.toString()}${hash}`;
+}
+
+function presentationPathForLessonBlock(block, lesson) {
+    const materialType = lessonBlockMaterialType(block, lesson);
+    const lessonForPath = lesson ? { ...lesson, materialType } : { materialType };
+    return withLessonEditorContext(withLessonBlockMaterialContext(presentationPathForLesson(lessonForPath), materialType));
 }
 
 function withLessonEditorFocus(path, focusKey = "edit") {
@@ -785,7 +814,7 @@ async function requestLessonAiMaterial(materialType, sourceText, action) {
     if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
         const hasCredits = await window.ensureEducariaAiCreditsAvailable({ alert: false });
         if (!hasCredits) {
-            throw new Error("Seus creditos diarios de IA acabaram por hoje.");
+            throw new Error("Seus créditos diários de IA acabaram por hoje.");
         }
     }
 
@@ -812,7 +841,7 @@ async function requestLessonAiMaterial(materialType, sourceText, action) {
             }));
         }
         const detailParts = [errorPayload?.error, errorPayload?.detail].filter(Boolean);
-        throw new Error(detailParts.join(" | ") || `Nao foi possivel gerar o material (status ${response.status}).`);
+        throw new Error(detailParts.join(" | ") || `Não foi possível gerar o material (status ${response.status}).`);
     }
 
     const payload = await response.json().catch(() => ({}));
@@ -851,15 +880,15 @@ function selectedLessonSequenceContext() {
 
 function blockSpecificGenerationHint(materialType) {
     if (materialType === "slides") return "Crie slides com abertura, desenvolvimento e fechamento.";
-    if (materialType === "flashcards") return "Crie flashcards curtos e claros para revisao rapida.";
-    if (materialType === "quiz") return "Crie um quiz de verificacao alinhado ao que veio antes.";
-    if (materialType === "memory") return "Crie pares simples e pedagogicos para associacao.";
-    if (materialType === "match") return "Crie pares de ligacao claros entre conceito e correspondente.";
+    if (materialType === "flashcards") return "Crie flashcards curtos e claros para revisão rápida.";
+    if (materialType === "quiz") return "Crie um quiz de verificação alinhado ao que veio antes.";
+    if (materialType === "memory") return "Crie pares simples e pedagógicos para associação.";
+    if (materialType === "match") return "Crie pares de ligação claros entre conceito e correspondente.";
     if (materialType === "wheel") return "Crie itens curtos e variados para sorteio em sala.";
-    if (materialType === "wordsearch") return "Crie termos curtos e pistas objetivas para caca-palavras.";
-    if (materialType === "mindmap") return "Crie topicos organizados com boa hierarquia visual.";
-    if (materialType === "debate") return "Crie etapas de debate com pergunta orientadora e mediacao.";
-    if (materialType === "crossword") return "Crie entradas curtas com pistas diretas e didaticas.";
+    if (materialType === "wordsearch") return "Crie termos curtos e pistas objetivas para caça-palavras.";
+    if (materialType === "mindmap") return "Crie tópicos organizados com boa hierarquia visual.";
+    if (materialType === "debate") return "Crie etapas de debate com pergunta orientadora e mediação.";
+    if (materialType === "crossword") return "Crie entradas curtas com pistas diretas e didáticas.";
     return "Crie um material claro, direto e pronto para uso em sala.";
 }
 
@@ -1069,7 +1098,7 @@ function fallbackHangmanPayload(sourceText, blockLabel) {
         .filter((entry) => entry.answer.length >= 2);
 
     return {
-        title: blockLabel || "Jogo da Forca",
+        title: blockLabel || "Jogo da Força",
         subtitle: "Descubra as palavras usando as dicas.",
         max_errors: 6,
         entries: entries.length ? entries : [
@@ -1159,7 +1188,7 @@ function controlStateForDraft(materialType, payload) {
     }
     if (materialType === "hangman") {
         return {
-            "forca-titulo": payload.title || "Jogo da Forca",
+            "forca-titulo": payload.title || "Jogo da Força",
             "forca-subtitulo": payload.subtitle || "Descubra as palavras usando as dicas.",
             "forca-tentativas": String(payload.max_errors || 6)
         };
@@ -1190,7 +1219,7 @@ function buildDraftStackHtml(materialType, payload) {
     if (materialType === "quiz") {
         return (Array.isArray(payload.questions) ? payload.questions : []).map((question, index) => `
             <section data-quiz-question>
-                <input data-field="type" type="text" value="${escapeAttr(question.type === "short_answer" ? "Resposta curta" : question.type === "true_false" ? "Verdadeiro ou falso" : "Multipla escolha")}">
+                <input data-field="type" type="text" value="${escapeAttr(question.type === "short_answer" ? "Resposta curta" : question.type === "true_false" ? "Verdadeiro ou falso" : "Múltipla escolha")}">
                 <input data-field="prompt" type="text" value="${escapeAttr(question.prompt || `Questão ${index + 1}`)}">
                 ${(Array.isArray(question.options) ? question.options : []).map((option, optionIndex) => `
                     <input data-option data-option-key="Alternativa ${String.fromCharCode(65 + optionIndex)}" value="${escapeAttr(option.value || option)}">
@@ -1323,7 +1352,7 @@ async function generatePayloadForBlock(block, index, sourceText) {
     const sequenceContext = selectedLessonSequenceContext();
     const generationInstructions = [
         lessonGenerationHint(block, index, sourceText),
-        sequenceContext ? `Sequencia atual da aula: ${sequenceContext}.` : "",
+        sequenceContext ? `Sequência atual da aula: ${sequenceContext}.` : "",
         blockSpecificGenerationHint(materialType)
     ].filter(Boolean).join(" ");
 
@@ -1850,7 +1879,7 @@ async function generateWholeLessonSequence(button) {
                 .slice(0, 2)
                 .join("\n- ");
             const detailSuffix = detail ? `\n\nDetalhes:\n- ${detail}` : "";
-            window.alert(`A sequência foi gerada. ${fallbackCount} bloco(s) usaram fallback local para nao interromper o fluxo.${detailSuffix}`);
+            window.alert(`A sequência foi gerada. ${fallbackCount} bloco(s) usaram fallback local para não interromper o fluxo.${detailSuffix}`);
         }
     } finally {
         lessonSequenceGenerating = false;
@@ -1996,7 +2025,7 @@ function renderPreview() {
     editLink.href = editorPathForLesson(lesson || { materialType: block.materialType });
     editLink.textContent = source === "new" ? "Criar material" : "Editar material";
     editLink.dataset.lessonPreviewEdit = block.id;
-    presentLink.href = withLessonEditorContext(presentationPathForLesson(lesson || { materialType: block.materialType }));
+    presentLink.href = presentationPathForLessonBlock(block, lesson);
     presentLink.dataset.lessonPreviewPresent = block.id;
 }
 
@@ -2060,7 +2089,7 @@ function renderReadinessPanel() {
     const markup = blocks.map((block, index) => {
         const lesson = effectiveLessonForBlock(block);
         const source = effectiveSourceForBlock(block, lesson);
-        const previewLink = withLessonEditorContext(presentationPathForLesson(lesson || { materialType: block.materialType || "slides" }));
+        const previewLink = presentationPathForLessonBlock(block, lesson);
         const statusText = blockStatusText(block);
         const statusMarkup = statusText === "Novo"
             ? ""
@@ -2215,7 +2244,7 @@ function renderBlockCard(block, index) {
                 <button type="button" class="platform-link-button platform-link-secondary" data-move-lesson-block="${block.id}" data-direction="up" ${index === 0 ? "disabled" : ""}>Subir</button>
                 <button type="button" class="platform-link-button platform-link-secondary" data-move-lesson-block="${block.id}" data-direction="down" ${index === lessonSequenceState.blocks.length - 1 ? "disabled" : ""}>Descer</button>
                 <a href="${editorPathForLesson(lesson || { materialType: block.materialType || "slides" })}" class="platform-link-button platform-link-secondary" data-open-lesson-block-editor="${block.id}">${escapeHtml(editorLabel)}</a>
-                <a href="${withLessonEditorContext(presentationPathForLesson(lesson || { materialType: block.materialType || "slides" }))}" class="platform-link-button platform-link-primary" data-open-lesson-block-preview="${block.id}">Testar bloco</a>
+                <a href="${presentationPathForLessonBlock(block, lesson)}" class="platform-link-button platform-link-primary" data-open-lesson-block-preview="${block.id}">Testar bloco</a>
                 <button type="button" class="platform-link-button platform-link-secondary" data-remove-lesson-block="${block.id}">Remover</button>
             </div>
         </article>
@@ -2231,7 +2260,7 @@ function renderSourceOptions(block) {
             <div class="lesson-sequence-source-card lesson-sequence-source-card--new">
                 <div>
                     <strong>${escapeHtml(block.lessonTitle || `Novo ${materialGroupLabel(block.materialType || "slides")}`)}</strong>
-                    <p>${escapeHtml(block.lessonSummary || "Voce pode editar este conteudo logo abaixo ou abrir o builder completo se quiser mais recursos.")}</p>
+                    <p>${escapeHtml(block.lessonSummary || "Você pode editar este conteúdo logo abaixo ou abrir o editor completo se quiser mais recursos.")}</p>
                 </div>
                 <a href="${editorPathForLesson({ materialType: block.materialType || "slides" })}" class="platform-link-button platform-link-secondary" data-open-lesson-block-editor="${block.id}">Builder avancado</a>
             </div>
@@ -2254,7 +2283,7 @@ function renderSourceOptions(block) {
     return `
         <div class="lesson-sequence-source-card">
             <div class="platform-field platform-field-wide">
-                <label>${source === "class" ? "Conteudo salvo na turma" : "Conteudo salvo na biblioteca"}</label>
+                <label>${source === "class" ? "Conteúdo salvo na turma" : "Conteúdo salvo na biblioteca"}</label>
                 <select data-block-select-material="${block.id}">
                     ${lessons.map((item) => `
                         <option value="${item.id}" ${item.id === block.lessonRefId ? "selected" : ""}>${escapeHtml(item.title)}</option>
@@ -2296,7 +2325,7 @@ function renderBlockCard(block, index) {
             </summary>
 
             <div class="lesson-sequence-item-body">
-                <div class="lesson-sequence-source-switch" role="tablist" aria-label="Origem do conteudo">
+                <div class="lesson-sequence-source-switch" role="tablist" aria-label="Origem do conteúdo">
                     <button type="button" class="lesson-sequence-source-pill ${source === "class" ? "is-active" : ""}" data-set-block-source="${block.id}" data-source-scope="class">Turma</button>
                     <button type="button" class="lesson-sequence-source-pill ${source === "library" ? "is-active" : ""}" data-set-block-source="${block.id}" data-source-scope="library">Biblioteca</button>
                     <button type="button" class="lesson-sequence-source-pill ${source === "new" ? "is-active" : ""}" data-set-block-source="${block.id}" data-source-scope="new">Criar novo</button>
@@ -2306,7 +2335,7 @@ function renderBlockCard(block, index) {
 
                 <div class="lesson-sequence-item-fields lesson-sequence-item-fields--expanded">
                     <div class="platform-field">
-                        <label>Nome deste bloco na sequencia</label>
+                        <label>Nome deste bloco na sequência</label>
                         <input type="text" value="${escapeAttr(block.label || title)}" data-block-field="label" data-block-id="${block.id}">
                     </div>
                     <div class="platform-field">
@@ -2314,7 +2343,7 @@ function renderBlockCard(block, index) {
                         <input type="number" min="1" step="1" value="${Math.max(1, Number(block.duration || 1))}" data-block-field="duration" data-block-id="${block.id}">
                     </div>
                     <div class="platform-field platform-field-wide">
-                        <label>Observacao do professor</label>
+                        <label>Observação do professor</label>
                         <input type="text" value="${escapeAttr(block.note || "")}" placeholder="Ex.: retomar a resposta da turma antes de avancar" data-block-field="note" data-block-id="${block.id}">
                     </div>
                 </div>
@@ -2325,7 +2354,7 @@ function renderBlockCard(block, index) {
                     <button type="button" class="platform-link-button platform-link-secondary" data-move-lesson-block="${block.id}" data-direction="up" ${index === 0 ? "disabled" : ""}>Subir</button>
                     <button type="button" class="platform-link-button platform-link-secondary" data-move-lesson-block="${block.id}" data-direction="down" ${index === lessonSequenceState.blocks.length - 1 ? "disabled" : ""}>Descer</button>
                     <a href="${editorPathForLesson(lesson || { materialType: block.materialType || "slides" })}" class="platform-link-button platform-link-secondary" data-open-lesson-block-editor="${block.id}">${escapeHtml(editorLabel)}</a>
-                    <a href="${withLessonEditorContext(presentationPathForLesson(lesson || { materialType: block.materialType || "slides" }))}" class="platform-link-button platform-link-primary" data-open-lesson-block-preview="${block.id}">Testar bloco</a>
+                    <a href="${presentationPathForLessonBlock(block, lesson)}" class="platform-link-button platform-link-primary" data-open-lesson-block-preview="${block.id}">Testar bloco</a>
                     <button type="button" class="platform-link-button platform-link-secondary" data-remove-lesson-block="${block.id}">Remover</button>
                 </div>
             </div>
@@ -2541,7 +2570,7 @@ function bindLessonSequenceEvents() {
                 if (blockId) {
                     const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
                     if (block?.lessonDraft && typeof writeCurrentDraftByType === "function") {
-                        writeCurrentDraftByType("slides", block.lessonDraft);
+                        writeCurrentDraftByType(lessonBlockMaterialType(block), block.lessonDraft);
                     }
                 }
             };

@@ -68,31 +68,31 @@ function generatePairs(topic, count) {
             ["upload", "enviar arquivo", "Please upload your project today."],
             ["folder", "pasta", "Save the image in the folder."],
             ["printer", "impressora", "The printer is next to the teacher."],
-            ["camera", "camera", "The camera records the presentation."]
+            ["camera", "câmera", "The camera records the presentation."]
         ],
         solar: [
-            ["Mercurio", "Planeta rochoso", "Mercurio e o planeta mais proximo do Sol."],
-            ["Venus", "Atmosfera muito densa", "Venus tem temperaturas extremamente altas."],
-            ["Terra", "Planeta com agua liquida", "A Terra abriga diferentes formas de vida."],
+            ["Mercúrio", "Planeta rochoso", "Mercúrio é o planeta mais próximo do Sol."],
+            ["Vênus", "Atmosfera muito densa", "Vênus tem temperaturas extremamente altas."],
+            ["Terra", "Planeta com água líquida", "A Terra abriga diferentes formas de vida."],
             ["Marte", "Planeta vermelho", "Marte tem solo rico em ferro."],
-            ["Jupiter", "Maior planeta do sistema solar", "Jupiter possui uma grande mancha vermelha."],
-            ["Saturno", "Planeta com aneis", "Saturno e conhecido por seus aneis visiveis."],
+            ["Júpiter", "Maior planeta do sistema solar", "Júpiter possui uma grande mancha vermelha."],
+            ["Saturno", "Planeta com anéis", "Saturno é conhecido por seus anéis visíveis."],
             ["Urano", "Gigante gelado", "Urano gira com o eixo muito inclinado."],
             ["Netuno", "Ventos intensos", "Netuno fica muito distante do Sol."],
-            ["Asteroides", "Corpos rochosos", "Muitos asteroides ficam entre Marte e Jupiter."],
+            ["Asteroides", "Corpos rochosos", "Muitos asteroides ficam entre Marte e Júpiter."],
             ["Cometas", "Corpos com gelo e poeira", "Cometas formam caudas ao se aproximarem do Sol."]
         ],
         fractions: [
-            ["1/2", "metade", "Dois pedacos iguais formam uma metade."],
-            ["1/3", "um terco", "Divida o inteiro em tres partes iguais."],
+            ["1/2", "metade", "Dois pedaços iguais formam uma metade."],
+            ["1/3", "um terço", "Divida o inteiro em três partes iguais."],
             ["1/4", "um quarto", "Um quarto corresponde a uma de quatro partes."],
-            ["Numerador", "parte de cima da fracao", "O numerador mostra quantas partes foram consideradas."],
-            ["Denominador", "parte de baixo da fracao", "O denominador mostra em quantas partes o inteiro foi dividido."],
-            ["Fracoes equivalentes", "mesmo valor com escrita diferente", "1/2 e 2/4 sao equivalentes."],
-            ["Fracao propria", "menor que 1", "3/5 e um exemplo de fracao propria."],
-            ["Fracao impropria", "maior ou igual a 1", "5/4 e uma fracao impropria."],
-            ["Simplificar", "reduzir a fracao", "4/8 pode ser simplificada para 1/2."],
-            ["Comparar fracoes", "ver qual e maior ou menor", "Use o mesmo denominador para comparar."]
+            ["Numerador", "parte de cima da fração", "O numerador mostra quantas partes foram consideradas."],
+            ["Denominador", "parte de baixo da fração", "O denominador mostra em quantas partes o inteiro foi dividido."],
+            ["Frações equivalentes", "mesmo valor com escrita diferente", "1/2 e 2/4 são equivalentes."],
+            ["Fração própria", "menor que 1", "3/5 é um exemplo de fração própria."],
+            ["Fração imprópria", "maior ou igual a 1", "5/4 é uma fração imprópria."],
+            ["Simplificar", "reduzir a fração", "4/8 pode ser simplificada para 1/2."],
+            ["Comparar frações", "ver qual é maior ou menor", "Use o mesmo denominador para comparar."]
         ]
     };
 
@@ -139,8 +139,8 @@ function applyGeneratedFlashcards() {
         stack.appendChild(card);
     });
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
 }
 
 document.addEventListener("DOMContentLoaded", () => {

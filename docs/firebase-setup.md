@@ -82,6 +82,8 @@ Subcolecoes usadas:
 
 Os eventos de analytics ficam primeiro no `localStorage` e sao sincronizados automaticamente em lotes pequenos quando ha sessao Firebase ativa. A pagina de configuracoes tambem permite sincronizacao manual.
 
+A pagina de configuracoes oferece backup da conta e exclusao autenticada. A exclusao remove os caminhos conhecidos do professor no Firestore, arquivos em `teachers/{uid}` no Storage, estado de creditos/cobranca do servico de IA e, por ultimo, o usuario do Firebase Auth. Novas colecoes ou caminhos de Storage devem ser adicionados ao fluxo de exclusao no mesmo ciclo em que forem criados.
+
 ## Nota importante
 
 No Firebase Web SDK, o `apiKey` nao e segredo isoladamente.

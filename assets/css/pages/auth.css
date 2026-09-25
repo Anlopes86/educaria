@@ -20,6 +20,7 @@ body.product-body.theme-auth {
 }
 
 .auth-panel {
+    min-width: 0;
     border-radius: 34px;
     border: 1px solid rgba(191, 208, 234, 0.72);
     box-shadow: 0 28px 56px -38px rgba(20, 66, 137, 0.24);
@@ -194,6 +195,41 @@ body[data-auth-screen="login"] .auth-login-headline span,
     margin-top: 2px;
 }
 
+.auth-text-action {
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--blue-accent);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.auth-consent {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    color: var(--gray-dark);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.auth-consent input {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+}
+
+.auth-consent a {
+    color: var(--blue-accent);
+    font-weight: 700;
+    text-decoration: underline;
+}
+
 @media (max-width: 1024px) {
     .auth-shell {
         grid-template-columns: 1fr;
@@ -207,6 +243,7 @@ body[data-auth-screen="login"] .auth-login-headline span,
 
     .auth-panel h1 {
         max-width: 16ch;
+        margin-top: -36px;
     }
 
     .auth-hero-copy,
@@ -225,11 +262,37 @@ body[data-auth-screen="login"] .auth-login-headline span,
 
     .auth-panel--brand,
     .auth-panel--form {
-        padding: 24px;
+        padding: 22px;
     }
 
     .auth-brand-logo-large {
         width: min(380px, 100%);
+    }
+
+    .auth-panel h1,
+    body[data-auth-screen="login"] .auth-login-headline {
+        width: 100%;
+        max-width: 100%;
+        margin-top: -22px;
+        font-size: clamp(2rem, 10vw, 2.75rem);
+        line-height: 1.02;
+        overflow-wrap: anywhere;
+    }
+
+    body[data-auth-screen="login"] .auth-login-headline span,
+    .auth-register-headline span {
+        display: inline;
+        white-space: normal;
+    }
+
+    .auth-panel--form,
+    .auth-panel--form .page-section-title,
+    .auth-form,
+    .auth-helper-card,
+    .platform-field,
+    .platform-field input {
+        min-width: 0;
+        max-width: 100%;
     }
 
     .auth-hero-stats {

@@ -395,7 +395,7 @@
                         return `
                             <label class="${classes.join(" ")}" data-crossword-cell="${key}">
                                 ${number}
-                                <input type="text" maxlength="1" autocomplete="off" spellcheck="false" inputmode="latin" value="${escapeHtml(inputValue)}" data-crossword-input="${key}" aria-label="Celula ${rowIndex + 1}, ${colIndex + 1}">
+                                <input type="text" maxlength="1" autocomplete="off" spellcheck="false" inputmode="latin" value="${escapeHtml(inputValue)}" data-crossword-input="${key}" aria-label="Célula ${rowIndex + 1}, ${colIndex + 1}">
                             </label>
                         `;
                     }

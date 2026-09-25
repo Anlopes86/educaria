@@ -7,6 +7,15 @@ let lessonPlayerState = {
 let lessonPlayerIndex = 0;
 const ACTIVE_LESSON_SEQUENCE_KEY = "educaria:activeLessonSequenceId";
 
+function escapeLessonPlayerHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
 }
@@ -15,6 +24,29 @@ function withLessonEditorContext(path) {
     const base = String(path || "").trim();
     if (!base) return "criar-aula.html?editor=lesson";
     return `${base}${base.includes("?") ? "&" : "?"}editor=lesson`;
+}
+
+function lessonPlayerMaterialType(block, fallbackLesson = null) {
+    const rawType = block?.materialType || fallbackLesson?.materialType || block?.type || "slides";
+    return typeof normalizeMaterialType === "function"
+        ? normalizeMaterialType(rawType)
+        : String(rawType || "slides").trim() || "slides";
+}
+
+function withMaterialContext(path, materialType) {
+    const base = String(path || "").trim();
+    if (!base) return "";
+
+    const hashIndex = base.indexOf("#");
+    const pathWithoutHash = hashIndex >= 0 ? base.slice(0, hashIndex) : base;
+    const hash = hashIndex >= 0 ? base.slice(hashIndex) : "";
+    const queryIndex = pathWithoutHash.indexOf("?");
+    const pagePath = queryIndex >= 0 ? pathWithoutHash.slice(0, queryIndex) : pathWithoutHash;
+    const query = queryIndex >= 0 ? pathWithoutHash.slice(queryIndex + 1) : "";
+    const params = new URLSearchParams(query);
+    params.set("material", materialType);
+
+    return `${pagePath}?${params.toString()}${hash}`;
 }
 
 function readActiveLessonSequenceRecord() {
@@ -65,18 +97,21 @@ function lessonForPlayerBlock(block) {
 function hydrateBlockDraft(block, fallbackLesson = null) {
     if (!block) return;
 
+    const materialType = lessonPlayerMaterialType(block, fallbackLesson);
     const draft = block.lessonDraft || fallbackLesson?.draft || "";
     if (draft && typeof writeCurrentDraftByType === "function") {
-        writeCurrentDraftByType(block.materialType || "slides", draft);
+        writeCurrentDraftByType(materialType, draft);
     }
 
     if (typeof setCurrentMaterialType === "function") {
-        setCurrentMaterialType(block.materialType || fallbackLesson?.materialType || "slides");
+        setCurrentMaterialType(materialType);
     }
 }
 
 function blockPresentationPath(block, lesson) {
-    return withLessonEditorContext(presentationPathForLesson(lesson || { materialType: block?.materialType || "slides" }));
+    const materialType = lessonPlayerMaterialType(block, lesson);
+    const lessonForPath = lesson ? { ...lesson, materialType } : { materialType };
+    return withLessonEditorContext(withMaterialContext(presentationPathForLesson(lessonForPath), materialType));
 }
 
 function renderLessonPlayerList() {
@@ -88,8 +123,8 @@ function renderLessonPlayerList() {
         <button type="button" class="lesson-sequence-player-item ${index === lessonPlayerIndex ? "is-active" : ""}" data-lesson-player-select="${index}">
             <span class="lesson-sequence-player-order">${index + 1}</span>
             <span>
-                <strong>${block.label || block.lessonTitle || "Bloco"}</strong>
-                <small>${materialGroupLabel(block.materialType || "slides")} - ${block.duration || 0} min</small>
+                <strong>${escapeLessonPlayerHtml(block.label || block.lessonTitle || "Bloco")}</strong>
+                <small>${escapeLessonPlayerHtml(materialGroupLabel(lessonPlayerMaterialType(block)))} - ${Math.max(0, Number(block.duration) || 0)} min</small>
             </span>
         </button>
     `).join("");
@@ -191,11 +226,16 @@ function bindLessonPlayerEvents() {
     });
 
     document.addEventListener("keydown", (event) => {
+        if (event.defaultPrevented) return;
+        if (event.target?.closest?.("input, textarea, select, [contenteditable='true'], [data-inline-editable]")) return;
+
         if (event.key === "ArrowLeft") {
+            event.preventDefault();
             selectLessonPlayerIndex(lessonPlayerIndex - 1);
         }
 
         if (event.key === "ArrowRight") {
+            event.preventDefault();
             selectLessonPlayerIndex(lessonPlayerIndex + 1);
         }
     });

@@ -1,0 +1,44 @@
+.educaria-connectivity-status {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 1000;
+    max-width: min(390px, calc(100vw - 36px));
+    padding: 11px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    background: #7c2d12;
+    color: #ffffff;
+    box-shadow: 0 18px 42px -20px rgba(15, 23, 42, 0.6);
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.35;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px);
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.educaria-connectivity-status.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.educaria-connectivity-status.is-online {
+    background: #166534;
+}
+
+@media (max-width: 640px) {
+    .educaria-connectivity-status {
+        right: 12px;
+        bottom: 12px;
+        max-width: calc(100vw - 24px);
+        border-radius: 18px;
+    }
+}
+
+@media print {
+    .educaria-connectivity-status {
+        display: none !important;
+    }
+}

@@ -8,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-storage-compat.js"></script>
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/firebase-config.js"></script>
     <script src="../assets/js/auth-flow.js" defer></script>
@@ -18,7 +19,7 @@
     <script src="../assets/js/settings-page.js" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="../index.html" class="platform-brand app-sidebar-brand">
@@ -34,7 +35,7 @@
                 <span data-sidebar-institution>Conta educacional</span>
             </div>
 
-            <nav class="app-sidebar-nav" aria-label="Navegacao principal" data-i18n-aria-label="settings.nav.main">
+            <nav class="app-sidebar-nav" aria-label="Navegação principal" data-i18n-aria-label="settings.nav.main">
                 <a href="index.html" class="sidebar-nav-link" data-i18n="settings.nav.dashboard">Painel</a>
 
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false" data-i18n="settings.nav.classes">Turmas</button>
@@ -71,17 +72,17 @@
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false" data-i18n="settings.nav.createActivity">Criar atividade</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
                     <div class="sidebar-subitems">
-                        <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
-                        <a href="slides-builder.html" class="sidebar-subitem">Slides</a>
-                        <a href="flashcards-builder.html" class="sidebar-subitem">Flashcards</a>
-                        <a href="jogo-memoria-builder.html" class="sidebar-subitem">Jogo da memória</a>
-                        <a href="roleta-builder.html" class="sidebar-subitem">Roleta</a>
-                        <a href="ligar-pontos-builder.html" class="sidebar-subitem">Ligar pontos</a>
-                        <a href="mapa-mental-builder.html" class="sidebar-subitem">Mapa mental</a>
-                        <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
-                        <a href="caca-palavras-builder.html" class="sidebar-subitem">Caça-palavras</a>
-                        <a href="palavras-cruzadas-builder.html" class="sidebar-subitem">Palavras cruzadas</a>
-                        <a href="forca-builder.html" class="sidebar-subitem">Forca</a>
+                        <a href="quiz-builder.html?new=1" class="sidebar-subitem">Quiz</a>
+                        <a href="slides-builder.html?new=1" class="sidebar-subitem">Slides</a>
+                        <a href="flashcards-builder.html?new=1" class="sidebar-subitem">Flashcards</a>
+                        <a href="jogo-memoria-builder.html?new=1" class="sidebar-subitem">Jogo da memória</a>
+                        <a href="roleta-builder.html?new=1" class="sidebar-subitem">Roleta</a>
+                        <a href="ligar-pontos-builder.html?new=1" class="sidebar-subitem">Ligar pontos</a>
+                        <a href="mapa-mental-builder.html?new=1" class="sidebar-subitem">Mapa mental</a>
+                        <a href="debate-guiado-builder.html?new=1" class="sidebar-subitem">Debate guiado</a>
+                        <a href="caca-palavras-builder.html?new=1" class="sidebar-subitem">Caça-palavras</a>
+                        <a href="palavras-cruzadas-builder.html?new=1" class="sidebar-subitem">Palavras cruzadas</a>
+                        <a href="forca-builder.html?new=1" class="sidebar-subitem">Força</a>
                         <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
                     </div>
                 </div>
@@ -142,7 +143,7 @@
 
                             <div class="platform-field">
                                 <label for="settings-email" data-i18n="settings.fields.email">Email</label>
-                                <input id="settings-email" name="email" type="email" placeholder="voce@escola.com" data-i18n-placeholder="settings.fields.email.placeholder">
+                                <input id="settings-email" name="email" type="email" placeholder="professor@escola.com" data-i18n-placeholder="settings.fields.email.placeholder">
                             </div>
 
                             <div class="platform-field">
@@ -166,7 +167,7 @@
                             <span class="platform-section-label" data-i18n="settings.security.label">Segurança</span>
                             <h2 data-i18n="settings.security.title">Alterar senha</h2>
                         </div>
-                        <p data-i18n="settings.security.copy">Para sua seguranca, confirme a senha atual antes de definir uma nova.</p>
+                        <p data-i18n="settings.security.copy">Para sua segurança, confirme a senha atual antes de definir uma nova.</p>
                     </div>
 
                     <form class="settings-form" data-settings-password-form>
@@ -260,6 +261,46 @@
                         <button type="button" class="platform-link-button platform-link-secondary" data-settings-sync-analytics data-i18n="settings.actions.syncNow">Sincronizar agora</button>
                     </div>
                     <p class="settings-feedback" data-settings-pilot-feedback hidden></p>
+                </article>
+
+                <article class="focus-card">
+                    <div class="page-section-title">
+                        <div>
+                            <span class="platform-section-label" data-i18n="settings.data.label">Seus dados</span>
+                            <h2 data-i18n="settings.data.title">Backup e portabilidade</h2>
+                        </div>
+                        <p data-i18n="settings.data.copy">Baixe uma cópia em JSON com seu perfil, turmas, materiais, rascunhos e eventos de uso disponíveis.</p>
+                    </div>
+                    <div class="platform-form-actions">
+                        <button type="button" class="platform-link-button platform-link-primary" data-settings-export-account data-i18n="settings.actions.exportAccount">Baixar backup da conta</button>
+                    </div>
+                    <p class="settings-feedback" data-settings-account-feedback hidden></p>
+                </article>
+
+                <article class="focus-card settings-danger-card">
+                    <div class="page-section-title">
+                        <div>
+                            <span class="platform-section-label" data-i18n="settings.delete.label">Zona de risco</span>
+                            <h2 data-i18n="settings.delete.title">Excluir conta e dados</h2>
+                        </div>
+                        <p data-i18n="settings.delete.copy">Esta ação remove permanentemente perfil, turmas, materiais, rascunhos, eventos, arquivos e acesso à conta.</p>
+                    </div>
+                    <form class="settings-form" data-settings-delete-form>
+                        <div class="platform-form-grid">
+                            <div class="platform-field">
+                                <label for="settings-delete-password" data-i18n="settings.delete.password">Confirme sua senha</label>
+                                <input id="settings-delete-password" name="delete_password" type="password" autocomplete="current-password" required>
+                            </div>
+                            <div class="platform-field">
+                                <label for="settings-delete-confirmation" data-i18n="settings.delete.confirmation">Digite EXCLUIR</label>
+                                <input id="settings-delete-confirmation" name="delete_confirmation" type="text" autocomplete="off" required placeholder="EXCLUIR">
+                            </div>
+                        </div>
+                        <div class="platform-form-actions">
+                            <button type="submit" class="platform-link-button settings-danger-button" data-i18n="settings.delete.action">Excluir minha conta permanentemente</button>
+                        </div>
+                        <p class="settings-feedback" data-settings-delete-feedback hidden></p>
+                    </form>
                 </article>
             </section>
         </main>

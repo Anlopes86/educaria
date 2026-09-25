@@ -54,7 +54,7 @@ function collectMindBranches() {
         index,
         title: branch.querySelector("[data-mind-title]")?.value.trim() || `Tópico ${index + 1}`,
         subtitle: branch.querySelector("[data-mind-subtitle]")?.value.trim() || "Ideia-chave deste tópico",
-        detail: branch.querySelector("[data-mind-detail]")?.value.trim() || "Explique aqui o ponto principal deste topico.",
+        detail: branch.querySelector("[data-mind-detail]")?.value.trim() || "Explique aqui o ponto principal deste tópico.",
         color: branch.querySelector("[data-mind-color]")?.value || mindPalette[index % mindPalette.length]
     }));
 }
@@ -112,7 +112,7 @@ function addMindBranch() {
     stack.insertAdjacentHTML("beforeend", mindBranchTemplate(count, "", "", "", mindPalette[count % mindPalette.length]));
     setMindCountSelect(count + 1);
     renderMindPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function removeMindBranch(trigger) {
@@ -125,7 +125,7 @@ function removeMindBranch(trigger) {
     branch.remove();
     setMindCountSelect(branches.length - 1);
     renderMindPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function renderMindPreview() {

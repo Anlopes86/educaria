@@ -20,9 +20,8 @@
 
 .presentation-slide h1 {
     font-family: var(--font-display);
-    font-size: clamp(2.9rem, 5.3vw, 5.4rem);
+    font-size: clamp(3rem, 5.8vw, 6rem);
     line-height: 0.98;
-    letter-spacing: -0.03em;
     max-width: 100%;
     overflow-wrap: break-word;
 }
@@ -37,16 +36,16 @@
 }
 
 .presentation-slide p {
-    font-size: clamp(1.5rem, 2.1vw, 2.1rem);
-    max-width: 78ch;
+    font-size: clamp(1.45rem, 2vw, 2.25rem);
+    max-width: 68ch;
 }
 
 .presentation-slide-body {
     display: grid;
     gap: 14px;
-    font-size: clamp(1.5rem, 2.1vw, 2.1rem);
+    font-size: clamp(1.45rem, 2vw, 2.25rem);
     line-height: 1.6;
-    max-width: 78ch;
+    max-width: 68ch;
     width: 100%;
     min-height: 0;
     overflow: hidden;
@@ -129,7 +128,7 @@
 }
 
 .presentation-slide--split {
-    grid-template-columns: var(--split-columns, minmax(0, 0.9fr) minmax(420px, 1.1fr));
+    grid-template-columns: var(--split-columns, minmax(0, 1fr) minmax(360px, 0.82fr));
     grid-template-rows: minmax(0, 1fr);
     align-items: stretch;
 }
@@ -177,15 +176,15 @@
     min-height: 0;
     align-self: stretch;
     padding: 0;
-    margin-top: -150px;
+    margin-top: clamp(-90px, -8vh, -28px);
 }
 
 .presentation-slide--stack .presentation-media img,
 .presentation-slide--stack .presentation-media-placeholder {
     width: 100%;
     max-width: 100%;
-    max-height: none;
-    min-height: clamp(620px, 90vh, 1180px);
+    max-height: min(72vh, 900px);
+    min-height: min(46vh, 580px);
 }
 
 .presentation-slide--stack .presentation-media img {
@@ -374,27 +373,57 @@
 .presentation-controls--floating {
     position: absolute;
     inset: 0;
-    z-index: 12;
+    z-index: 32;
     pointer-events: none;
+    transition: opacity 180ms ease, transform 180ms ease;
 }
 
+body.presentation-runtime-page .presentation-controls--floating,
 .presentation-page .presentation-controls--floating {
-    position: static;
-    inset: auto;
-    z-index: auto;
+    position: fixed;
+    top: auto;
+    left: 50%;
+    right: auto;
+    bottom: 14px;
+    transform: translateX(-50%);
+    z-index: 42;
     width: fit-content;
     max-width: 100%;
     display: grid;
-    grid-template-columns: auto auto auto;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 10px 14px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.84);
-    box-shadow: 0 18px 34px -26px rgba(15, 23, 42, 0.34);
-    backdrop-filter: blur(16px);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
     pointer-events: auto;
+}
+
+body.presentation-controls-idle .presentation-controls--floating,
+body.presentation-controls-idle .quiz-application-actions {
+    opacity: 0.12;
+    transform: translateX(-50%) translateY(8px);
+}
+
+body.presentation-controls-idle .quiz-application-actions {
+    transform: translateY(8px);
+}
+
+body.presentation-controls-idle .presentation-controls--floating:hover,
+body.presentation-controls-idle .presentation-controls--floating:focus-within,
+body.presentation-controls-idle .quiz-application-actions:hover,
+body.presentation-controls-idle .quiz-application-actions:focus-within {
+    opacity: 1;
+    transform: translateX(-50%);
+}
+
+body.presentation-controls-idle .quiz-application-actions:hover,
+body.presentation-controls-idle .quiz-application-actions:focus-within {
+    transform: none;
 }
 
 .presentation-controls--floating .presentation-counter {
@@ -407,6 +436,7 @@
     backdrop-filter: blur(14px);
 }
 
+body.presentation-runtime-page .presentation-controls--floating .presentation-counter,
 .presentation-page .presentation-controls--floating .presentation-counter {
     position: static;
     top: auto;
@@ -414,20 +444,27 @@
     min-width: 98px;
     box-shadow: none;
     backdrop-filter: none;
-    background: rgba(15, 23, 42, 0.06);
+    background: rgba(15, 23, 42, 0.08);
 }
 
 .presentation-nav-button {
+    appearance: none;
+    -webkit-appearance: none;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     width: 60px;
     height: 60px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
     border: 1px solid rgba(148, 163, 184, 0.2);
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.92);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.82));
     color: var(--navy-dark);
     font-size: 0;
+    line-height: 0;
     box-shadow: 0 22px 36px -26px rgba(15, 23, 42, 0.38);
     backdrop-filter: blur(18px);
     cursor: pointer;
@@ -435,12 +472,17 @@
     transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease, opacity 180ms ease;
 }
 
+body.presentation-runtime-page .presentation-controls--floating .presentation-nav-button,
 .presentation-page .presentation-controls--floating .presentation-nav-button {
     position: static;
     top: auto;
     left: auto;
     right: auto;
     transform: none;
+    width: 48px;
+    height: 48px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.76));
 }
 
 .presentation-nav-button::before {
@@ -471,10 +513,18 @@
 
 .presentation-nav-button:hover:not(:disabled) {
     transform: translateY(-50%) scale(1.04);
-    background: rgba(255, 255, 255, 0.98);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(217, 242, 242, 0.88));
+    border-color: rgba(15, 95, 102, 0.28);
     box-shadow: 0 28px 42px -28px rgba(15, 23, 42, 0.45);
 }
 
+.presentation-nav-button:focus-visible {
+    outline: 3px solid rgba(95, 182, 196, 0.32);
+    outline-offset: 3px;
+}
+
+body.presentation-runtime-page .presentation-controls--floating .presentation-nav-button:hover:not(:disabled),
 .presentation-page .presentation-controls--floating .presentation-nav-button:hover:not(:disabled) {
     transform: translateY(-1px) scale(1.02);
 }
@@ -514,9 +564,9 @@
 }
 
 .quiz-application-card {
-    width: min(100%, 1160px);
-    min-height: calc(100vh - 156px);
-    max-height: calc(100vh - 156px);
+    width: min(100%, 1420px);
+    min-height: var(--presentation-stage-height, calc(100vh - 140px));
+    max-height: var(--presentation-stage-height, calc(100vh - 140px));
     grid-template-columns: minmax(260px, 0.88fr) minmax(460px, 1.12fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     gap: 14px;
@@ -633,21 +683,53 @@
 }
 
 .quiz-application-options .option-btn {
+    display: flex;
     width: 100%;
     min-height: 68px;
     padding: 14px 16px;
     align-items: flex-start;
+    border: 2px solid rgba(100, 116, 139, 0.2);
     font-size: clamp(0.94rem, 1.02vw, 1.04rem);
+    font-family: inherit;
+    font-weight: 700;
+    color: var(--navy-dark);
+    background: rgba(255, 255, 255, 0.96);
     border-width: 2px;
     border-radius: 22px;
     box-shadow: 0 16px 30px -28px rgba(15, 23, 42, 0.22);
+    cursor: pointer;
+    transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.quiz-application-options .option-btn:hover,
+.quiz-application-options .option-btn:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(14, 116, 144, 0.5);
+    background: #ffffff;
+    box-shadow: 0 20px 34px -26px rgba(14, 116, 144, 0.42);
+}
+
+.quiz-application-options .option-btn:focus-visible {
+    outline: 4px solid rgba(14, 165, 233, 0.2);
+    outline-offset: 3px;
+}
+
+.quiz-application-options .option-btn:disabled {
+    cursor: default;
 }
 
 .quiz-application-options .option-letter {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
     width: 38px;
     height: 38px;
     margin-right: 14px;
+    border-radius: 12px;
+    background: rgba(14, 165, 233, 0.12);
+    color: #075985;
     font-size: 0.98rem;
+    font-weight: 900;
 }
 
 .quiz-application-options .option-text {
@@ -660,6 +742,44 @@
 .quiz-application-actions .review-btn,
 .quiz-application-actions .restart-btn {
     min-width: 164px;
+    min-height: 48px;
+    padding: 0 20px;
+    border: 1px solid rgba(15, 23, 42, 0.14);
+    border-radius: 999px;
+    color: var(--navy-dark);
+    background: rgba(255, 255, 255, 0.96);
+    font: inherit;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 16px 28px -24px rgba(15, 23, 42, 0.4);
+    transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.quiz-application-actions .restart-btn {
+    color: #ffffff;
+    border-color: rgba(15, 95, 102, 0.34);
+    background: var(--gradient-primary);
+}
+
+.quiz-application-actions .review-btn:hover:not(:disabled),
+.quiz-application-actions .restart-btn:hover:not(:disabled),
+.quiz-application-actions .review-btn:focus-visible,
+.quiz-application-actions .restart-btn:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 20px 34px -24px rgba(15, 23, 42, 0.48);
+}
+
+.quiz-application-actions .review-btn:focus-visible,
+.quiz-application-actions .restart-btn:focus-visible {
+    outline: 4px solid rgba(14, 165, 233, 0.2);
+    outline-offset: 3px;
+}
+
+.quiz-application-actions .review-btn:disabled,
+.quiz-application-actions .restart-btn:disabled {
+    opacity: 0.42;
+    cursor: not-allowed;
+    box-shadow: none;
 }
 
 .quiz-application-explanation-box {
@@ -730,6 +850,17 @@
 .quiz-application-actions {
     grid-column: 1 / -1;
     grid-row: 3;
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+@media (min-width: 1800px) {
+    .presentation-slide--split {
+        grid-template-columns: var(--split-columns, minmax(0, 1.18fr) minmax(420px, 0.82fr));
+    }
+
+    .presentation-slide--text-only .presentation-slide-copy {
+        max-width: 1120px;
+    }
 }
 
 @media (max-width: 1024px) {
@@ -793,6 +924,12 @@
 
     .presentation-nav-button:hover:not(:disabled) {
         transform: translateY(-1px);
+    }
+
+    body.presentation-controls-idle .presentation-controls--floating,
+    body.presentation-controls-idle .presentation-controls--floating:hover,
+    body.presentation-controls-idle .presentation-controls--floating:focus-within {
+        transform: none;
     }
 }
 

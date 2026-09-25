@@ -132,7 +132,7 @@ function bindBuilderActions() {
             renumberCards("[data-slide-card]", "Slide");
         }
 
-        document.dispatchEvent(new Event("input"));
+        dispatchBuilderContentChange("input");
     });
 }
 

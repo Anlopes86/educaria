@@ -1058,6 +1058,39 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 .dashboard-tool-card--wordsearch .dashboard-tool-visual { background: #dff3ec; }
 .dashboard-tool-card--crossword .dashboard-tool-visual { background: #dfeff2; }
 .dashboard-tool-card--reserved .dashboard-tool-visual { background: #e7ecea; }
+
+/* Desktop-first dashboard: keep creation choices visible in the first viewport. */
+@media (min-width: 1181px) {
+    .dashboard-hero-panel {
+        grid-template-columns: minmax(360px, 0.85fr) minmax(480px, 1.15fr);
+        align-items: center;
+        padding: 22px 24px;
+    }
+
+    .dashboard-hero-copy h1 {
+        font-size: clamp(2rem, 3vw, 2.75rem);
+    }
+
+    .dashboard-quick-create {
+        padding: 18px 20px;
+    }
+
+    .dashboard-quick-create-form {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr) auto;
+        align-items: end;
+        gap: 10px;
+    }
+
+    .dashboard-quick-create-form .platform-link-button {
+        width: auto;
+        min-width: 104px;
+    }
+
+    body.product-body.theme-overview .dashboard-toolkit-grid,
+    .dashboard-toolkit-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
 .dashboard-tool-card--lesson .dashboard-tool-visual { background: #e5e9e7; }
 
 .dashboard-tool-card--quiz .dashboard-tool-visual::before {

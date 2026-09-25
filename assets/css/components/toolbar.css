@@ -70,7 +70,7 @@
     position: fixed;
     left: 50%;
     bottom: 22px;
-    width: min(760px, calc(100% - 32px));
+    width: min(1040px, calc(100% - 40px));
     transform: translateX(-50%);
     z-index: 20;
     display: flex;
@@ -86,7 +86,7 @@
 }
 
 .builder-floating-actions .platform-link-button {
-    flex: 1 1 180px;
+    flex: 1 1 170px;
     min-width: 0;
     border: 1px solid rgba(15, 23, 42, 0.18);
     box-shadow: 0 18px 32px -22px rgba(15, 23, 42, 0.3);
@@ -168,5 +168,74 @@
     .builder-floating-actions .platform-link-button {
         width: 100%;
         min-width: 0;
+    }
+}
+.builder-save-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 38px;
+    margin: 0 auto 0 0;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(248, 250, 252, 0.92);
+    color: #475569;
+    font-size: 0.84rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.builder-save-status-dot {
+    width: 8px;
+    height: 8px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.builder-save-status[data-state="saving"] .builder-save-status-dot {
+    background: #0284c7;
+    animation: builder-save-pulse 900ms ease-in-out infinite alternate;
+}
+
+.builder-save-status[data-state="saved"] {
+    color: #166534;
+}
+
+.builder-save-status[data-state="saved"] .builder-save-status-dot {
+    background: #22c55e;
+}
+
+.builder-save-status[data-state="local"] {
+    color: #92400e;
+}
+
+.builder-save-status[data-state="local"] .builder-save-status-dot {
+    background: #f59e0b;
+}
+
+.builder-save-status[data-state="error"] {
+    color: #b91c1c;
+}
+
+.builder-save-status[data-state="error"] .builder-save-status-dot {
+    background: #ef4444;
+}
+
+@keyframes builder-save-pulse {
+    to { opacity: 0.35; }
+}
+
+@media (max-width: 720px) {
+    .builder-save-status {
+        width: 100%;
+        justify-content: center;
+        order: -1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .builder-save-status[data-state="saving"] .builder-save-status-dot {
+        animation: none;
     }
 }

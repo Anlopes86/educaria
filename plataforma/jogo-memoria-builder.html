@@ -20,10 +20,11 @@
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/builder-journey.js" defer></script>
     <script src="../assets/js/memory-builder.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="memory" data-requires-auth="true">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
     <main id="main-content" class="platform-shell platform-flow-shell activity-editor-shell" tabindex="-1">
         <header class="platform-topbar">
             <a href="index.html" class="platform-brand">
@@ -39,16 +40,20 @@
                 <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
-        <div class="builder-floating-actions" role="toolbar" aria-label="Acoes do jogo da memoria">
+        <div class="builder-floating-actions" role="toolbar" aria-label="Ações do jogo da memória">
+            <p class="builder-save-status" data-builder-save-status role="status" aria-live="polite" aria-atomic="true">
+                <span class="builder-save-status-dot" aria-hidden="true"></span>
+                <span data-builder-save-status-label>Rascunho local</span>
+            </p>
             <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="memory" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="memory" data-save-target="turma.html" aria-label="Salvar na turma (acao principal)">Salvar na turma</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="memory" data-save-target="turma.html" aria-label="Salvar na turma (ação principal)">Salvar na turma</button>
             <a href="jogo-memoria-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
         </div>
 
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de jogo da memória</span>
-                <h1>Monte os pares e confira a grade no preview.</h1>
+                <h1>Monte os pares e confira a grade na prévia.</h1>
                 <p>Textos curtos. Leitura rápida.</p>
             </div>
         </section>
@@ -63,6 +68,20 @@
                     </summary>
                     <div class="editor-disclosure-body">
                         <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field">
+                                <label for="memoria-turma">Turma</label>
+                                <select id="memoria-turma" data-builder-class-context>
+                                    <option value="">Biblioteca pessoal</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="memoria-disciplina">Disciplina</label>
+                                <input id="memoria-disciplina" type="text" placeholder="Ex.: Ci&ecirc;ncias">
+                            </div>
+                            <div class="platform-field">
+                                <label for="memoria-ano">Ano ou p&uacute;blico</label>
+                                <input id="memoria-ano" type="text" placeholder="Ex.: 7&ordm; ano">
+                            </div>
                             <div class="platform-field platform-field-wide">
                                 <label for="memoria-fonte-texto">Texto, conceitos ou pares de estudo</label>
                                 <textarea id="memoria-fonte-texto" rows="6" placeholder="Escreva um tópico e deixe a IA montar a apresentação ou adicione um arquivo pessoal (Word ou PDF)."></textarea>
@@ -84,7 +103,7 @@
 
                 <details class="editor-disclosure">
                     <summary>
-                        <span>Mais opcoes da atividade</span>
+                        <span>Mais opções da atividade</span>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
@@ -115,7 +134,7 @@
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-clear-draft>Limpar conteúdo</button>
                         </div>
-                        <p class="activity-manual-guide">Preencha frente e verso dos pares. Use Mais opcoes da atividade para quantidade.</p>
+                        <p class="activity-manual-guide">Preencha frente e verso dos pares. Use Mais opções da atividade para quantidade.</p>
 
                 <div class="platform-question-stack activity-card-stack" data-memory-pairs>
                     <section class="platform-question-card activity-content-card memory-pair-card" data-memory-pair>
@@ -231,7 +250,7 @@
             </article>
 
             <aside class="platform-builder-card activity-preview-pane memory-preview-pane">
-                <span class="platform-section-label">Preview</span>
+                <span class="platform-section-label">Prévia</span>
                 <h2>Veja a grade do jogo</h2>
                 <p>Veja como a atividade vai ficar.</p>
                 <div class="live-preview-stack">

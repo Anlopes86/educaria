@@ -19,6 +19,7 @@ function parseNonNegativeNumber(value, fallback) {
 }
 
 const app = express();
+app.disable("x-powered-by");
 const port = Number(process.env.PORT || 8787);
 const maxUploadMb = Number(process.env.AI_MAX_UPLOAD_MB || 5);
 const allowedUploadTypes = new Map([
@@ -49,7 +50,7 @@ const upload = multer({
     }
 });
 const gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
-const aiAuthRequired = String(process.env.AI_AUTH_REQUIRED || "").trim().toLowerCase() === "true";
+const aiAuthRequired = String(process.env.AI_AUTH_REQUIRED ?? "true").trim().toLowerCase() !== "false";
 const firebaseProjectId = String(
     process.env.FIREBASE_PROJECT_ID ||
     process.env.GCLOUD_PROJECT ||
@@ -112,6 +113,21 @@ const defaultOrigins = [
 
 const allowedOrigins = configuredOrigins.length ? configuredOrigins : defaultOrigins;
 
+if (process.env.NODE_ENV === "production") {
+    if (!aiAuthRequired) {
+        throw new Error("AI_AUTH_REQUIRED cannot be disabled in production.");
+    }
+    if (!firebaseProjectId) {
+        throw new Error("FIREBASE_PROJECT_ID is required in production.");
+    }
+    if (!configuredOrigins.length || allowedOrigins.includes("*") || allowedOrigins.includes("null")) {
+        throw new Error("Set an explicit ALLOWED_ORIGIN for production.");
+    }
+    if (billingCheckoutUrl && !billingWebhookSecret) {
+        throw new Error("BILLING_WEBHOOK_SECRET is required when billing checkout is enabled.");
+    }
+}
+
 app.use(cors({
     origin(origin, callback) {
         if (!origin) {
@@ -127,6 +143,14 @@ app.use(cors({
         callback(new Error(`Origin not allowed by CORS: ${origin}`));
     }
 }));
+app.use((_request, response, next) => {
+    response.setHeader("X-Content-Type-Options", "nosniff");
+    response.setHeader("X-Frame-Options", "DENY");
+    response.setHeader("Referrer-Policy", "no-referrer");
+    response.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    response.setHeader("Cache-Control", "no-store");
+    next();
+});
 app.use(express.json({ limit: process.env.AI_JSON_LIMIT || "2mb" }));
 
 function base64UrlDecode(value) {
@@ -415,8 +439,7 @@ function normalizeBillingRecord(record) {
         provider: String(record.provider || "manual").trim() || "manual",
         reference: String(record.reference || record.externalReference || "").trim(),
         email: String(record.email || "").trim(),
-        updatedAt: isoTimestampOrEmpty(record.updatedAt) || new Date().toISOString(),
-        raw: record.raw || null
+        updatedAt: isoTimestampOrEmpty(record.updatedAt) || new Date().toISOString()
     };
 }
 
@@ -492,6 +515,18 @@ function billingReferenceForUser(user) {
     return `educaria:${uid}:${signature}`;
 }
 
+function validBillingReference(uid, reference) {
+    const normalizedUid = String(uid || "").trim();
+    const provided = String(reference || "").trim();
+    if (!normalizedUid || !provided || !billingWebhookSecret) return false;
+
+    const expected = billingReferenceForUser({ uid: normalizedUid });
+    const expectedBuffer = Buffer.from(expected);
+    const providedBuffer = Buffer.from(provided);
+    return expectedBuffer.length === providedBuffer.length
+        && crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+}
+
 function billingCheckoutUrlForUser(user) {
     if (!billingCheckoutUrl) return "";
 
@@ -542,8 +577,7 @@ function billingRecordFromWebhook(payload) {
         provider: data?.provider || payload?.provider || "webhook",
         reference,
         email: data?.email || data?.customer_email || "",
-        updatedAt: new Date().toISOString(),
-        raw: payload
+        updatedAt: new Date().toISOString()
     });
 }
 
@@ -639,7 +673,7 @@ async function requireAiAuth(request, response, next) {
 
     const idToken = tokenFromAuthorizationHeader(request);
     if (!idToken) {
-        return response.status(401).json({ error: "Login necessario para usar a IA." });
+        return response.status(401).json({ error: "Login necessário para usar a IA." });
     }
 
     try {
@@ -647,7 +681,7 @@ async function requireAiAuth(request, response, next) {
         next();
     } catch (error) {
         console.warn("EducarIA AI auth rejected:", error instanceof Error ? error.message : error);
-        return response.status(401).json({ error: "Sessao invalida ou expirada. Entre novamente para usar a IA." });
+        return response.status(401).json({ error: "Sessão inválida ou expirada. Entre novamente para usar a IA." });
     }
 }
 
@@ -780,6 +814,30 @@ const memorySchema = {
                     front: { type: "string" },
                     back: { type: "string" },
                     color: { type: "string" }
+                }
+            }
+        }
+    }
+};
+
+const hangmanSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["title", "subtitle", "entries"],
+    properties: {
+        title: { type: "string" },
+        subtitle: { type: "string" },
+        entries: {
+            type: "array",
+            minItems: 2,
+            items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["answer", "clue", "category"],
+                properties: {
+                    answer: { type: "string" },
+                    clue: { type: "string" },
+                    category: { type: "string" }
                 }
             }
         }
@@ -936,7 +994,7 @@ const crosswordSchema = {
 
 /**
  * Returns the Gemini responseJsonSchema config for a given activity type.
- * @param {string} materialType - One of: quiz, slides, flashcards, memory, match,
+ * @param {string} materialType - One of: quiz, slides, flashcards, memory, hangman, match,
  *   wheel, wordsearch, mindmap, debate, crossword
  * @returns {{ name: string, description: string, schema: object } | null}
  *   Schema config, or null if the type is not recognised
@@ -969,8 +1027,16 @@ function schemaFor(materialType) {
     if (materialType === "memory") {
         return {
             name: "educaria_memory",
-            description: "Jogo da memoria estruturado para o builder da EducarIA",
+            description: "Jogo da memória estruturado para o editor da EducarIA",
             schema: memorySchema
+        };
+    }
+
+    if (materialType === "hangman") {
+        return {
+            name: "educaria_hangman",
+            description: "Jogo da força estruturado para o editor da EducarIA",
+            schema: hangmanSchema
         };
     }
 
@@ -993,7 +1059,7 @@ function schemaFor(materialType) {
     if (materialType === "wordsearch") {
         return {
             name: "educaria_wordsearch",
-            description: "Caca-palavras estruturado para o builder da EducarIA",
+            description: "Caça-palavras estruturado para o editor da EducarIA",
             schema: wordsearchSchema
         };
     }
@@ -1085,7 +1151,7 @@ function parseWheelTemplateText(sourceText) {
     }
 
     if (finalSegments.length < 2) {
-        throw new Error("O arquivo modelo precisa ter pelo menos dois espacos preenchidos.");
+        throw new Error("O arquivo modelo precisa ter pelo menos dois espaços preenchidos.");
     }
 
     return {
@@ -1107,23 +1173,23 @@ function parseWheelTemplateText(sourceText) {
 function promptFor(materialType, action, sourceText) {
     if (materialType === "quiz") {
         return [
-            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-            "Responda apenas em JSON compativel com o schema fornecido.",
-            "O material deve ficar pronto para revisao rapida do professor, sem texto fora do JSON.",
-            "Escreva em portugues do Brasil, com linguagem escolar clara, objetiva e natural.",
-            "Se o texto ja trouxer perguntas, normalize a estrutura e complete apenas o que estiver faltando.",
-            "Se o texto for expositivo, gere um quiz fiel ao conteudo enviado, sem inventar fatos desnecessarios.",
-            "Prefira perguntas que verifiquem compreensao, relacao entre ideias e identificacao de conceitos centrais.",
-            "Evite enunciados vagos, alternativas ambiguas e distracoes absurdas.",
-            "Em multipla escolha, use 4 alternativas plausiveis e apenas uma correta.",
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
+            "O material deve ficar pronto para revisão rápida do professor, sem texto fora do JSON.",
+            "Escreva em português do Brasil, com linguagem escolar clara, objetiva e natural.",
+            "Se o texto já trouxer perguntas, normalize a estrutura e complete apenas o que estiver faltando.",
+            "Se o texto for expositivo, gere um quiz fiel ao conteúdo enviado, sem inventar fatos desnecessários.",
+            "Prefira perguntas que verifiquem compreensão, relação entre ideias e identificação de conceitos centrais.",
+            "Evite enunciados vagos, alternativas ambíguas e distrações absurdas.",
+            "Em múltipla escolha, use 4 alternativas plausíveis e apenas uma correta.",
             "Em verdadeiro ou falso, escreva afirmacoes objetivas e verificaveis.",
-            "Em pergunta aberta, produza criterio curto e resposta-modelo enxuta.",
-            "A explicacao deve ajudar o professor a corrigir ou retomar o conteudo.",
+            "Em pergunta aberta, produza critério curto e resposta-modelo enxuta.",
+            "A explicação deve ajudar o professor a corrigir ou retomar o conteúdo.",
             `Objetivo do professor: ${action || "Estruturar quiz a partir do material enviado."}`,
             "Regras adicionais:",
             "- Priorize clareza e aderencia ao texto-base.",
-            "- Nao use tom publicitario nem linguagem excessivamente rebuscada.",
-            "- Se o conteudo estiver incompleto, faca a melhor estrutura possivel sem sair do tema.",
+            "- Não use tom publicitário nem linguagem excessivamente rebuscada.",
+            "- Se o conteúdo estiver incompleto, faça a melhor estrutura possível sem sair do tema.",
             "- Respeite explicitamente a quantidade e o formato pedidos pelo professor quando isso for informado.",
             "Material de origem:",
             sourceText
@@ -1132,25 +1198,25 @@ function promptFor(materialType, action, sourceText) {
 
     if (materialType === "flashcards") {
         return [
-            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-            "Responda apenas em JSON compativel com o schema fornecido.",
-            "Monte flashcards claros, curtos e uteis para memorizacao e revisao em sala.",
-            "Escreva em portugues do Brasil, com linguagem escolar natural.",
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
+            "Monte flashcards claros, curtos e úteis para memorização e revisão em sala.",
+            "Escreva em português do Brasil, com linguagem escolar natural.",
             "Cada frente deve ser curta: termo, conceito, pergunta curta ou palavra-chave.",
-            "Cada verso deve trazer resposta, definicao, traducao ou explicacao curta.",
-            "Use example apenas quando realmente ajudar a fixacao.",
-            "Evite textos longos, redundancia e exemplos genericos.",
-            "Respeite rigorosamente os limites do card para caber bem na apresentacao.",
-            "Limite da frente: ate 56 caracteres ou 8 palavras, o que vier primeiro.",
-            "Limite do verso: ate 120 caracteres ou 18 palavras, o que vier primeiro.",
-            "Limite do example: ate 140 caracteres ou 20 palavras, o que vier primeiro.",
-            "Nao use frases truncadas, reticencias nem cortes artificiais.",
-            "Se o professor enviar conteudo teorico, transforme em pares de estudo fieis ao texto-base.",
+            "Cada verso deve trazer resposta, definição, tradução ou explicação curta.",
+            "Use example apenas quando realmente ajudar a fixação.",
+            "Evite textos longos, redundância e exemplos genéricos.",
+            "Respeite rigorosamente os limites do card para caber bem na apresentação.",
+            "Limite da frente: até 56 caracteres ou 8 palavras, o que vier primeiro.",
+            "Limite do verso: até 120 caracteres ou 18 palavras, o que vier primeiro.",
+            "Limite do example: até 140 caracteres ou 20 palavras, o que vier primeiro.",
+            "Não use frases truncadas, reticências nem cortes artificiais.",
+            "Se o professor enviar conteúdo teórico, transforme em pares de estudo fiéis ao texto-base.",
             `Objetivo do professor: ${action || "Estruturar flashcards a partir do material enviado."}`,
             "Regras adicionais:",
             "- Respeite a quantidade de cards pedida quando ela for informada.",
-            "- Prefira variedade de conceitos centrais, nao repeticoes.",
-            "- Nao invente fatos fora do tema.",
+            "- Prefira variedade de conceitos centrais, não repetições.",
+            "- Não invente fatos fora do tema.",
             "Material de origem:",
             sourceText
         ].join("\n\n");
@@ -1158,20 +1224,40 @@ function promptFor(materialType, action, sourceText) {
 
     if (materialType === "memory") {
         return [
-            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-            "Responda apenas em JSON compativel com o schema fornecido.",
-            "Monte um jogo da memoria claro, rapido de jogar e fiel ao texto-base.",
-            "Crie pares curtos, legiveis e bons para memorizacao em sala.",
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
+            "Monte um jogo da memória claro, rápido de jogar e fiel ao texto-base.",
+            "Crie pares curtos, legíveis e bons para memorização em sala.",
             "Cada front deve ser breve: termo, pergunta curta, data, palavra-chave ou conceito.",
-            "Cada back deve trazer a resposta correspondente, definicao curta ou associacao correta.",
-            "Evite frases longas, pares redundantes ou conteudos vagos.",
-            "Prefira conceitos centrais, datas importantes, relacoes diretas e vocabulario util.",
-            "Se o texto-base trouxer listas ja associadas, preserve essa logica.",
-            `Objetivo do professor: ${action || "Estruturar jogo da memoria a partir do material enviado."}`,
+            "Cada back deve trazer a resposta correspondente, definição curta ou associação correta.",
+            "Evite frases longas, pares redundantes ou conteúdos vagos.",
+            "Prefira conceitos centrais, datas importantes, relações diretas e vocabulário útil.",
+            "Se o texto-base trouxer listas já associadas, preserve essa lógica.",
+            `Objetivo do professor: ${action || "Estruturar jogo da memória a partir do material enviado."}`,
             "Regras adicionais:",
             "- Respeite a quantidade de pares pedida quando ela for informada.",
             "- Cada lado do par deve caber bem em um card curto.",
-            "- Nao invente fatos fora do tema.",
+            "- Não invente fatos fora do tema.",
+            "Material de origem:",
+            sourceText
+        ].join("\n\n");
+    }
+
+    if (materialType === "hangman") {
+        return [
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
+            "Monte um jogo da força claro, pedagógico e fiel ao texto-base.",
+            "Escolha respostas relevantes para revisão de vocabulário, ortografia ou conceitos-chave.",
+            "Cada answer deve ser uma palavra ou expressão curta, sem artigo desnecessário.",
+            "Cada clue deve orientar sem revelar diretamente a resposta.",
+            "Use category para agrupar palavras quando houver uma categoria útil; caso contrário, use string vazia.",
+            "Evite respostas ambíguas, repetidas, excessivamente longas ou dependentes de grafia não apresentada.",
+            `Objetivo do professor: ${action || "Estruturar jogo da força a partir do material enviado."}`,
+            "Regras adicionais:",
+            "- Respeite a quantidade de palavras pedida quando ela for informada.",
+            "- Escreva em português do Brasil e adapte a dificuldade ao ano ou público informado.",
+            "- Não invente fatos fora do tema.",
             "Material de origem:",
             sourceText
         ].join("\n\n");
@@ -1179,19 +1265,19 @@ function promptFor(materialType, action, sourceText) {
 
     if (materialType === "match") {
         return [
-            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-            "Responda apenas em JSON compativel com o schema fornecido.",
-            "Monte uma atividade de ligar pontos clara, curta e facil de aplicar em sala.",
-            "Organize pares entre coluna A e coluna B com associacoes objetivas e corretas.",
-            "Cada item deve ser curto e legivel em poucas palavras.",
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
+            "Monte uma atividade de ligar pontos clara, curta e fácil de aplicar em sala.",
+            "Organize pares entre coluna A e coluna B com associações objetivas e corretas.",
+            "Cada item deve ser curto e legível em poucas palavras.",
             "Evite frases longas, ambiguidades ou pares muito parecidos entre si.",
-            "Prefira conceito-definicao, evento-data, autor-obra, pais-capital ou relacoes equivalentes ao texto-base.",
+            "Prefira conceito-definição, evento-data, autor-obra, país-capital ou relações equivalentes ao texto-base.",
             "Defina left_label e right_label de forma clara para o professor.",
             `Objetivo do professor: ${action || "Estruturar ligar pontos a partir do material enviado."}`,
             "Regras adicionais:",
             "- Respeite a quantidade de pares pedida quando ela for informada.",
             "- Use shuffle_right true quando fizer sentido para a atividade.",
-            "- Nao invente fatos fora do tema.",
+            "- Não invente fatos fora do tema.",
             "Material de origem:",
             sourceText
         ].join("\n\n");
@@ -1199,18 +1285,18 @@ function promptFor(materialType, action, sourceText) {
 
     if (materialType === "wheel") {
         return [
-            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
             "Monte uma roleta editavel com itens curtos, claros e bons para sorteio em sala.",
-            "Cada segmento deve ter um texto enxuto, facil de ler dentro da roleta.",
-            "Prefira perguntas curtas, desafios rapidos, temas de revisao ou comandos objetivos.",
-            "Evite segmentos longos, frases com varias ideias ou instrucoes vagas.",
-            "Se o texto-base for teorico, transforme em itens de revisao ou provocacoes curtas.",
+            "Cada segmento deve ter um texto enxuto, fácil de ler dentro da roleta.",
+            "Prefira perguntas curtas, desafios rápidos, temas de revisão ou comandos objetivos.",
+            "Evite segmentos longos, frases com várias ideias ou instruções vagas.",
+            "Se o texto-base for teórico, transforme em itens de revisão ou provocações curtas.",
             `Objetivo do professor: ${action || "Estruturar roleta a partir do material enviado."}`,
             "Regras adicionais:",
-            "- Respeite a quantidade de espacos pedida quando ela for informada.",
+            "- Respeite a quantidade de espaços pedida quando ela for informada.",
             "- Cada segmento deve caber bem em uma fatia da roleta.",
-            "- Nao invente fatos fora do tema.",
+            "- Não invente fatos fora do tema.",
             "Material de origem:",
             sourceText
         ].join("\n\n");
@@ -1218,20 +1304,20 @@ function promptFor(materialType, action, sourceText) {
 
     if (materialType === "wordsearch") {
         return [
-            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-            "Responda apenas em JSON compativel com o schema fornecido.",
-            "Monte um caca-palavras didatico, claro e facil de usar em sala.",
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
+            "Monte um caça-palavras didático, claro e fácil de usar em sala.",
             "Selecione palavras-chave realmente importantes do tema enviado.",
             "Cada term deve ser curto o bastante para caber bem na grade.",
             "Prefira palavras entre 3 e 12 caracteres, sem frases longas.",
-            "Use clue apenas quando ajudar a revisao; ela deve ser curta e objetiva.",
-            "Evite termos redundantes, genericos demais ou longos demais.",
-            "Se o texto-base for teorico, transforme em um banco de palavras de revisao fiel ao tema.",
-            `Objetivo do professor: ${action || "Estruturar caca-palavras a partir do material enviado."}`,
+            "Use clue apenas quando ajudar a revisão; ela deve ser curta e objetiva.",
+            "Evite termos redundantes, genéricos demais ou longos demais.",
+            "Se o texto-base for teórico, transforme em um banco de palavras de revisão fiel ao tema.",
+            `Objetivo do professor: ${action || "Estruturar caça-palavras a partir do material enviado."}`,
             "Regras adicionais:",
             "- Respeite a quantidade de palavras pedida quando ela for informada.",
-            "- Nao invente fatos fora do tema.",
-            "- Prefira palavras variadas, nao repeticoes do mesmo conceito.",
+            "- Não invente fatos fora do tema.",
+            "- Prefira palavras variadas, não repetições do mesmo conceito.",
             "Material de origem:",
             sourceText
         ].join("\n\n");
@@ -1245,8 +1331,8 @@ function promptFor(materialType, action, sourceText) {
 
         const approachInstructions = normalizedAction.includes("conceitos em topicos")
             ? [
-                "Modo selecionado pelo professor: organizar conceitos em topicos.",
-                "Priorize estrutura conceitual e hierarquica.",
+                "Modo selecionado pelo professor: organizar conceitos em tópicos.",
+                "Priorize estrutura conceitual e hierárquica.",
                 "Cada branch deve representar um conceito central do tema.",
                 "O subtitle deve nomear a ideia-chave do conceito.",
                 "O detail deve explicar o conceito e trazer 2 a 4 bullets curtos quando isso ajudar."
@@ -1254,16 +1340,16 @@ function promptFor(materialType, action, sourceText) {
             : normalizedAction.includes("resumir um tema")
                 ? [
                     "Modo selecionado pelo professor: resumir um tema em mapa mental.",
-                    "Priorize sintese e panorama geral.",
+                    "Priorize síntese e panorama geral.",
                     "Use menos detalhes e mais clareza global do assunto.",
                     "Cada branch deve resumir um eixo importante do tema.",
                     "O detail deve ser enxuto, sem excesso de aprofundamento."
                 ]
                 : normalizedAction.includes("revisao visual")
                     ? [
-                        "Modo selecionado pelo professor: estruturar revisao visual.",
-                        "Priorize memorizacao, revisao rapida e linguagem projetavel.",
-                        "Cada branch deve funcionar bem como ponto de revisao.",
+                        "Modo selecionado pelo professor: estruturar revisão visual.",
+                        "Priorize memorização, revisão rápida e linguagem projetável.",
+                        "Cada branch deve funcionar bem como ponto de revisão.",
                         "No detail, prefira bullets curtos, diretos e faceis de reler.",
                         "Destaque palavras-chave, etapas, causas, exemplos ou classificacoes."
                     ]
@@ -1276,26 +1362,26 @@ function promptFor(materialType, action, sourceText) {
             ]
             : normalizedAction.includes("leitura desejada: topicos")
                 ? [
-                    "Leitura desejada: topicos.",
-                    "Crie progressao mais linear, com detalhes que funcionem bem como lista e revisao sequencial."
+                    "Leitura desejada: tópicos.",
+                    "Crie progressão mais linear, com detalhes que funcionem bem como lista e revisão sequencial."
                 ]
                 : [];
 
         return [
-            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-            "Responda apenas em JSON compativel com o schema fornecido.",
-            "Monte um mapa mental didatico, claro e facil de revisar em tela.",
-            "Crie um tema central, um subtitulo curto e topicos bem distribuidos.",
-            "Cada branch deve ter titulo, subtitulo e um detail com uma explicacao breve e organizada.",
-            "No detail, voce pode usar um pequeno paragrafo e bullets curtos separados por \\n quando isso ajudar.",
-            "Evite topicos redundantes, vagos ou amplos demais.",
-            "Prefira conceitos centrais, relacoes entre ideias e organizacao hierarquica simples.",
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
+            "Monte um mapa mental didático, claro e fácil de revisar em tela.",
+            "Crie um tema central, um subtítulo curto e tópicos bem distribuídos.",
+            "Cada branch deve ter título, subtítulo e um detail com uma explicação breve e organizada.",
+            "No detail, você pode usar um pequeno parágrafo e bullets curtos separados por \\n quando isso ajudar.",
+            "Evite tópicos redundantes, vagos ou amplos demais.",
+            "Prefira conceitos centrais, relações entre ideias e organização hierárquica simples.",
             ...approachInstructions,
             ...layoutInstructions,
             `Objetivo do professor: ${action || "Estruturar mapa mental a partir do material enviado."}`,
             "Regras adicionais:",
-            "- Respeite a quantidade de topicos pedida quando for informada.",
-            "- O subtitulo de cada branch deve resumir a ideia-chave.",
+            "- Respeite a quantidade de tópicos pedida quando for informada.",
+            "- O subtítulo de cada branch deve resumir a ideia-chave.",
             "- O detail deve ser curto o bastante para caber bem no builder.",
             "Material de origem:",
             sourceText
@@ -1312,12 +1398,12 @@ function promptFor(materialType, action, sourceText) {
             ? [
                 "Formato desejado: roda guiada.",
                 "Evite organizar o debate como confronto fixo entre dois lados.",
-                "Priorize escuta, participacao coletiva, aprofundamento e mediacao do professor."
+                "Priorize escuta, participação coletiva, aprofundamento e mediação do professor."
             ]
             : normalizedAction.includes("formato desejado: grupos com mediacao")
                 ? [
-                    "Formato desejado: grupos com mediacao.",
-                    "Estruture o debate para trabalho entre grupos, com comparacao de argumentos e mediacao docente."
+                    "Formato desejado: grupos com mediação.",
+                    "Estruture o debate para trabalho entre grupos, com comparação de argumentos e mediação docente."
                 ]
                 : [
                     "Formato desejado: dois lados.",
@@ -1327,33 +1413,33 @@ function promptFor(materialType, action, sourceText) {
         const assistanceInstructions = normalizedAction.includes("criar pergunta central e etapas")
             ? [
                 "Modo de ajuda selecionado: criar pergunta central e etapas.",
-                "Priorize uma pergunta principal forte, debatível e um roteiro muito claro de progressao."
+                "Priorize uma pergunta principal forte, debatível e um roteiro muito claro de progressão."
             ]
             : normalizedAction.includes("transformar texto em discussao guiada")
                 ? [
-                    "Modo de ajuda selecionado: transformar texto em discussao guiada.",
-                    "Priorize conducao do professor, retomada do texto-base e aprofundamento progressivo."
+                    "Modo de ajuda selecionado: transformar texto em discussão guiada.",
+                    "Priorize condução do professor, retomada do texto-base e aprofundamento progressivo."
                 ]
                 : [
                     "Modo de ajuda selecionado: organizar roteiro de debate.",
-                    "Busque equilibrio entre estrutura, pergunta central e mediacao."
+                    "Busque equilíbrio entre estrutura, pergunta central e mediação."
                 ];
         return [
-            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-            "Responda apenas em JSON compativel com o schema fornecido.",
-            "Monte um debate guiado pronto para mediacao de professor.",
-            "Crie um titulo, uma pergunta central forte, dois lados claros e um roteiro por etapas.",
-            "As etapas devem ter titulo, tempo sugerido, pergunta da etapa e guidance curto.",
-            "O guidance deve ajudar o professor a conduzir a discussao, nao repetir a pergunta.",
-            "Evite polarizacoes artificiais ou formulacoes agressivas.",
-            "Prefira perguntas debatíveis, adequadas ao ambiente escolar e ligadas ao conteudo-base.",
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
+            "Monte um debate guiado pronto para mediação de professor.",
+            "Crie um título, uma pergunta central forte, dois lados claros e um roteiro por etapas.",
+            "As etapas devem ter título, tempo sugerido, pergunta da etapa e guidance curto.",
+            "O guidance deve ajudar o professor a conduzir a discussão, não repetir a pergunta.",
+            "Evite polarizações artificiais ou formulações agressivas.",
+            "Prefira perguntas debatíveis, adequadas ao ambiente escolar e ligadas ao conteúdo-base.",
             ...formatInstructions,
             ...assistanceInstructions,
             `Objetivo do professor: ${action || "Estruturar debate guiado a partir do material enviado."}`,
             "Regras adicionais:",
-            "- Respeite o numero de etapas e o formato pedidos pelo professor quando forem informados.",
-            "- Os lados devem ser formulados de modo claro e compreensivel.",
-            "- Cada etapa deve ter progressao logica: aquecimento, confronto de ideias, fechamento.",
+            "- Respeite o número de etapas e o formato pedidos pelo professor quando forem informados.",
+            "- Os lados devem ser formulados de modo claro e compreensível.",
+            "- Cada etapa deve ter progressão lógica: aquecimento, confronto de ideias, fechamento.",
             "Material de origem:",
             sourceText
         ].join("\n\n");
@@ -1361,17 +1447,17 @@ function promptFor(materialType, action, sourceText) {
 
     if (materialType === "crossword") {
         return [
-            "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-            "Responda apenas em JSON compativel com o schema fornecido.",
+            "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+            "Responda apenas em JSON compatível com o schema fornecido.",
             "Monte uma atividade de palavras cruzadas pronta para uso em sala.",
-            "Cada answer deve ser uma palavra ou termo curto, sem espacos.",
+            "Cada answer deve ser uma palavra ou termo curto, sem espaços.",
             "Cada clue deve ser uma pista direta, clara e fiel ao texto-base.",
-            "Evite respostas longas, frases completas ou termos ambiguos.",
-            "Prefira conceitos centrais, vocabulario-chave e exemplos do conteudo.",
+            "Evite respostas longas, frases completas ou termos ambíguos.",
+            "Prefira conceitos centrais, vocabulário-chave e exemplos do conteúdo.",
             `Objetivo do professor: ${action || "Estruturar palavras cruzadas a partir do material enviado."}`,
             "Regras adicionais:",
             "- Respeite a quantidade de entradas pedida quando ela for informada.",
-            "- Nao invente fatos fora do tema.",
+            "- Não invente fatos fora do tema.",
             "- Varie o tamanho das respostas para equilibrar a cruzadinha.",
             "Material de origem:",
             sourceText
@@ -1379,36 +1465,36 @@ function promptFor(materialType, action, sourceText) {
     }
 
     return [
-        "Voce e um assistente pedagogico de uma plataforma educacional brasileira.",
-        "Responda apenas em JSON compativel com o schema fornecido.",
-        "Monte slides em portugues do Brasil, prontos para uma aula real e para edicao rapida pelo professor.",
-        "Quebre o conteudo em uma sequencia logica, didatica e enxuta.",
-        "O texto visivel no slide deve ser curto, projetavel e facil de ler pela turma.",
-        "Evite paragrafos longos, frases de efeito, cliches e tom generico de apresentacao corporativa.",
-        "Prefira titulos claros, subtitulos uteis e corpo em topicos curtos.",
+        "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
+        "Responda apenas em JSON compatível com o schema fornecido.",
+        "Monte slides em português do Brasil, prontos para uma aula real e para edição rápida pelo professor.",
+        "Quebre o conteúdo em uma sequência lógica, didática e enxuta.",
+        "O texto visível no slide deve ser curto, projetável e fácil de ler pela turma.",
+        "Evite parágrafos longos, frases de efeito, clichês e tom genérico de apresentação corporativa.",
+        "Prefira títulos claros, subtítulos úteis e corpo em tópicos curtos.",
         "Regra forte de formatacao do body:",
         "- Escreva o body em 2 a 5 linhas curtas.",
         "- Quebre linhas com \\n.",
         "- Quando listar ideias, comece cada linha com '- '.",
-        "- Cada linha deve ter uma unica ideia, de preferencia com ate 10 palavras.",
-        "- Nao escreva paragrafos corridos no body.",
-        "- Nao repita o titulo no body.",
+        "- Cada linha deve ter uma única ideia, de preferência com até 10 palavras.",
+        "- Não escreva parágrafos corridos no body.",
+        "- Não repita o título no body.",
         "Regra forte de composicao:",
         "- Slide de capa: 1 a 2 linhas no body.",
-        "- Slides de conteudo: priorize bullets curtos.",
-        "- Slide final: fechamento, sintese ou pergunta de revisao.",
-        "Use teacher_notes para orientar a mediacao do professor sem repetir o que ja esta visivel no slide.",
+        "- Slides de conteúdo: priorize bullets curtos.",
+        "- Slide final: fechamento, síntese ou pergunta de revisão.",
+        "Use teacher_notes para orientar a mediação do professor sem repetir o que já está visível no slide.",
         "Mantenha teacher_notes em 1 ou 2 frases curtas.",
-        "Sugira image_prompt apenas quando a imagem realmente ajudar a compreensao do conteudo.",
-        "Quando sugerir image_prompt, prefira descricoes visuais educativas, neutras e adequadas ao contexto escolar brasileiro.",
-        "Organize a sequencia com comeco, desenvolvimento e fechamento.",
+        "Sugira image_prompt apenas quando a imagem realmente ajudar a compreensão do conteúdo.",
+        "Quando sugerir image_prompt, prefira descrições visuais educativas, neutras e adequadas ao contexto escolar brasileiro.",
+        "Organize a sequência com começo, desenvolvimento e fechamento.",
         `Objetivo do professor: ${action || "Estruturar slides a partir do material enviado."}`,
         "Regras adicionais:",
-        "- Nao invente dados especificos que nao estejam sustentados pelo texto-base.",
-        "- Se o conteudo estiver extenso, priorize as ideias centrais.",
+        "- Não invente dados específicos que não estejam sustentados pelo texto-base.",
+        "- Se o conteúdo estiver extenso, priorize as ideias centrais.",
         "- Se o texto estiver raso, mantenha a estrutura simples e honesta.",
-        "- Evite excesso de slides; prefira concisao com progressao clara.",
-        "- Respeite explicitamente quantidade de slides, nivel de detalhamento e preferencia de imagens quando o professor informar.",
+        "- Evite excesso de slides; prefira concisão com progressão clara.",
+        "- Respeite explicitamente quantidade de slides, nível de detalhamento e preferência de imagens quando o professor informar.",
         "Material de origem:",
         sourceText
     ].join("\n\n");
@@ -1435,7 +1521,7 @@ function trimWords(text, maxWords = 12) {
 function normalizeSlideBody(body, slideType) {
     const raw = String(body || "").trim();
     if (!raw) {
-        return slideType === "cover" ? "Visao geral da aula" : "Conteudo principal";
+        return slideType === "cover" ? "Visão geral da aula" : "Conteúdo principal";
     }
 
     const lines = raw
@@ -1605,9 +1691,9 @@ function parseGeneratedJson(text) {
 
 function fallbackJsonPrompt(schemaConfig) {
     return [
-        "Responda somente com JSON valido.",
+        "Responda somente com JSON válido.",
         `Formato esperado: ${schemaConfig.description}.`,
-        "Nao use markdown, crases ou texto antes/depois do JSON."
+        "Não use markdown, crases ou texto antes/depois do JSON."
     ].join(" ");
 }
 
@@ -1673,15 +1759,15 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
  */
 function imagePromptForSlide({ title, subtitle, body, prompt }) {
     return [
-        "Voce cria ilustracoes educativas para slides de professores no Brasil.",
-        "Gere uma unica imagem horizontal, clara, ilustrativa e apropriada para contexto escolar.",
+        "Você cria ilustrações educativas para slides de professores no Brasil.",
+        "Gere uma única imagem horizontal, clara, ilustrativa e apropriada para contexto escolar.",
         "Evite texto dentro da imagem, marcas, interfaces, colagens confusas ou excesso de elementos.",
-        "A imagem deve ajudar a explicar o conteudo do slide rapidamente.",
-        "Prefira composicao limpa, foco evidente e visual didatico.",
+        "A imagem deve ajudar a explicar o conteúdo do slide rapidamente.",
+        "Prefira composição limpa, foco evidente e visual didático.",
         prompt ? `Pedido direto do professor/IA: ${prompt}` : "",
-        title ? `Titulo do slide: ${title}` : "",
-        subtitle ? `Subtitulo do slide: ${subtitle}` : "",
-        body ? `Conteudo do slide: ${body}` : "",
+        title ? `Título do slide: ${title}` : "",
+        subtitle ? `Subtítulo do slide: ${subtitle}` : "",
+        body ? `Conteúdo do slide: ${body}` : "",
         "Entregue apenas a imagem."
     ].filter(Boolean).join("\n\n");
 }
@@ -1724,6 +1810,11 @@ async function extractTextFromFile(file) {
 app.get("/api/health", (_request, response) => {
     loadBillingStore();
 
+    if (process.env.NODE_ENV === "production") {
+        response.json({ ok: true, service: "educaria-ai" });
+        return;
+    }
+
     response.json({
         ok: true,
         geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
@@ -1747,7 +1838,7 @@ app.post("/api/billing/checkout", aiRateLimit, requireAiAuth, async (request, re
     try {
         if (!billingWebhookSecret) {
             return response.status(503).json({
-                error: "Webhook de cobranca nao configurado no backend.",
+                error: "Webhook de cobrança não configurado no backend.",
                 code: "billing_webhook_secret_not_configured"
             });
         }
@@ -1756,7 +1847,7 @@ app.post("/api/billing/checkout", aiRateLimit, requireAiAuth, async (request, re
         const uid = String(user.uid || user.sub || "").trim();
 
         if (!uid) {
-            return response.status(401).json({ error: "Login necessario para iniciar o checkout." });
+            return response.status(401).json({ error: "Login necessário para iniciar o checkout." });
         }
 
         await loadBillingStore();
@@ -1772,7 +1863,7 @@ app.post("/api/billing/checkout", aiRateLimit, requireAiAuth, async (request, re
         const checkoutUrl = billingCheckoutUrlForUser(user);
         if (!checkoutUrl) {
             return response.status(503).json({
-                error: "Checkout nao configurado no backend.",
+                error: "Checkout não configurado no backend.",
                 code: "billing_checkout_not_configured"
             });
         }
@@ -1785,7 +1876,7 @@ app.post("/api/billing/checkout", aiRateLimit, requireAiAuth, async (request, re
     } catch (error) {
         console.error("EducarIA billing checkout error:", error);
         return response.status(500).json({
-            error: "Nao foi possivel iniciar o checkout."
+            error: "Não foi possível iniciar o checkout."
         });
     }
 });
@@ -1804,12 +1895,16 @@ app.get("/api/billing/status", aiRateLimit, requireAiAuth, async (request, respo
 
 app.post("/api/billing/webhook", async (request, response) => {
     if (!verifyBillingWebhook(request)) {
-        return response.status(401).json({ error: "Webhook nao autorizado." });
+        return response.status(401).json({ error: "Webhook não autorizado." });
     }
 
     const record = billingRecordFromWebhook(request.body || {});
     if (!record) {
         return response.json({ ok: true, ignored: true });
+    }
+
+    if (!validBillingReference(record.uid, record.reference)) {
+        return response.status(400).json({ error: "Referência de cobrança inválida." });
     }
 
     const saved = await markBillingPlan(record);
@@ -1827,6 +1922,27 @@ app.get("/api/ai/credits", aiRateLimit, requireAiAuth, async (request, response)
     });
 });
 
+app.delete("/api/account", aiRateLimit, requireAiAuth, async (request, response) => {
+    const uid = String(request.educariaUser?.uid || request.educariaUser?.sub || "").trim();
+    if (!uid) {
+        return response.status(401).json({ error: "Login necessário para excluir a conta." });
+    }
+
+    await loadAiCreditFileStore();
+    await loadBillingStore();
+    billingRecords.delete(uid);
+    aiProUidAllowList.delete(uid);
+
+    for (const key of [...aiDailyCreditBuckets.keys()]) {
+        if (key.startsWith(`${uid}:`)) {
+            aiDailyCreditBuckets.delete(key);
+        }
+    }
+
+    await Promise.all([persistBillingStore(), persistAiCreditFileStore()]);
+    return response.json({ ok: true });
+});
+
 app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), async (request, response) => {
     try {
         const materialType = String(request.body.materialType || "").trim();
@@ -1834,7 +1950,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
         const schemaConfig = schemaFor(materialType);
 
         if (!schemaConfig) {
-            return response.status(400).json({ error: "Tipo de material nao suportado." });
+            return response.status(400).json({ error: "Tipo de material não suportado." });
         }
 
         if (action.length > 500) {
@@ -1857,7 +1973,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
         }
 
         if (!gemini) {
-            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
+            return response.status(503).json({ error: "GEMINI_API_KEY não configurada no backend." });
         }
 
         const creditReservation = await reserveAiDailyCredit(request);
@@ -1867,7 +1983,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
                 ? " Faca upgrade para o plano Pro para liberar mais geracoes por dia."
                 : "";
             return response.status(429).json({
-                error: `Seus creditos diarios de IA acabaram.${upgradeHint} Eles voltam amanha.`,
+                error: `Seus créditos diários de IA acabaram.${upgradeHint} Eles voltam amanhã.`,
                 credits
             });
         }
@@ -1891,7 +2007,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
         });
     } catch (error) {
         if (isUploadValidationError(error)) {
-            return response.status(400).json({ error: "Arquivo nao suportado. Envie TXT, RTF, DOCX ou PDF validos." });
+            return response.status(400).json({ error: "Arquivo não suportado. Envie TXT, RTF, DOCX ou PDF válidos." });
         }
 
         console.error("EducarIA AI service error:", error);
@@ -1907,7 +2023,7 @@ app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.sing
         const materialType = String(request.body.materialType || "").trim();
 
         if (materialType !== "wheel") {
-            return response.status(400).json({ error: "Tipo de material ainda nao suportado para arquivo modelo." });
+            return response.status(400).json({ error: "Tipo de material ainda não suportado para arquivo modelo." });
         }
 
         const sourceText = await extractTextFromFile(request.file);
@@ -1923,7 +2039,7 @@ app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.sing
         });
     } catch (error) {
         if (isUploadValidationError(error)) {
-            return response.status(400).json({ error: "Arquivo nao suportado. Envie um RTF valido do modelo." });
+            return response.status(400).json({ error: "Arquivo não suportado. Envie um RTF válido do modelo." });
         }
 
         console.error("EducarIA template parser error:", error);
@@ -1934,6 +2050,7 @@ app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.sing
 });
 
 app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, response) => {
+    let creditReservation = null;
     try {
         const title = String(request.body.title || "").trim();
         const subtitle = String(request.body.subtitle || "").trim();
@@ -1945,15 +2062,23 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
         }
 
         if ((title + subtitle + body + prompt).length > 2_000) {
-            return response.status(400).json({ error: "Contexto da imagem muito longo (max 2 000 caracteres no total)." });
+            return response.status(400).json({ error: "Contexto da imagem muito longo (máximo de 2.000 caracteres no total)." });
         }
 
         if (!aiImageGenerationEnabled) {
-            return response.status(403).json({ error: "Geracao de imagem por IA desativada no Free Tier." });
+            return response.status(403).json({ error: "Geração de imagem por IA desativada no Free Tier." });
         }
 
         if (!gemini) {
-            return response.status(503).json({ error: "GEMINI_API_KEY nao configurada no backend." });
+            return response.status(503).json({ error: "GEMINI_API_KEY não configurada no backend." });
+        }
+
+        creditReservation = await reserveAiDailyCredit(request);
+        if (!creditReservation.reserved) {
+            return response.status(429).json({
+                error: "Seus créditos diários de IA acabaram por hoje.",
+                credits: creditReservation.credits
+            });
         }
 
         const result = await gemini.models.generateContent({
@@ -1965,17 +2090,23 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
         const imagePart = parts.find((part) => part.inlineData?.data);
 
         if (!imagePart?.inlineData?.data) {
+            await refundAiDailyCredit(creditReservation.reservation);
+            creditReservation = null;
             return response.status(502).json({
-                error: "O Gemini nao retornou imagem para este slide."
+                error: "O Gemini não retornou imagem para este slide."
             });
         }
 
         return response.json({
             ok: true,
             mimeType: imagePart.inlineData.mimeType || "image/png",
-            imageBase64: imagePart.inlineData.data
+            imageBase64: imagePart.inlineData.data,
+            credits: creditReservation.credits
         });
     } catch (error) {
+        if (creditReservation?.reserved) {
+            await refundAiDailyCredit(creditReservation.reservation);
+        }
         console.error("EducarIA image generation error:", error);
         return response.status(500).json({
             error: "Falha ao gerar imagem com IA.",
@@ -1991,11 +2122,11 @@ app.use((error, _request, response, next) => {
     }
 
     if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {
-        return response.status(413).json({ error: `Arquivo grande demais. Envie arquivos de ate ${maxUploadMb} MB.` });
+        return response.status(413).json({ error: `Arquivo grande demais. Envie arquivos de até ${maxUploadMb} MB.` });
     }
 
     if (isUploadValidationError(error)) {
-        return response.status(400).json({ error: "Arquivo nao suportado. Envie TXT, RTF, DOCX ou PDF validos." });
+        return response.status(400).json({ error: "Arquivo não suportado. Envie TXT, RTF, DOCX ou PDF válidos." });
     }
 
     return next(error);

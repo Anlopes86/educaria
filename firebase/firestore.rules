@@ -9,9 +9,25 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == teacherId;
     }
 
+    function validNewTeacher() {
+      return request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 120
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 320
+        && request.resource.data.role == "teacher"
+        && request.resource.data.plan == "free";
+    }
+
+    function protectedTeacherFieldsUnchanged() {
+      return request.resource.data.role == resource.data.role
+        && request.resource.data.plan == resource.data.plan;
+    }
+
     match /teachers/{teacherId} {
-      allow create: if isOwner(teacherId);
-      allow read, update, delete: if isOwner(teacherId);
+      allow create: if isOwner(teacherId) && validNewTeacher();
+      allow read, delete: if isOwner(teacherId);
+      allow update: if isOwner(teacherId) && protectedTeacherFieldsUnchanged();
 
       match /classes/{classId} {
         allow read, write: if isOwner(teacherId);

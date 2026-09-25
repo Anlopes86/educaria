@@ -24,9 +24,10 @@
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/builder-journey.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="quiz" data-requires-auth="true">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
     <main id="main-content" class="platform-shell platform-flow-shell activity-editor-shell" tabindex="-1">
         <header class="platform-topbar">
             <a href="index.html" class="platform-brand">
@@ -42,17 +43,21 @@
                 <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
-        <div class="builder-floating-actions" role="toolbar" aria-label="Acoes do quiz">
+        <div class="builder-floating-actions" role="toolbar" aria-label="Ações do quiz">
+            <p class="builder-save-status" data-builder-save-status data-quiz-save-status role="status" aria-live="polite" aria-atomic="true">
+                <span class="builder-save-status-dot" aria-hidden="true"></span>
+                <span data-builder-save-status-label data-quiz-save-status-label>Rascunho local</span>
+            </p>
             <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="quiz" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="quiz" data-save-target="turma.html" aria-label="Salvar na turma (acao principal)">Salvar na turma</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="quiz" data-save-target="turma.html" aria-label="Salvar na turma (ação principal)">Salvar na turma</button>
             <a href="quiz-aplicacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
         </div>
 
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de quiz</span>
-                <h1>Monte as perguntas e valide no preview.</h1>
-                <p>Comece pelo essencial. Abra Mais opcoes so se precisar.</p>
+                <h1>Monte as perguntas e valide tudo na prévia.</h1>
+                <p>Comece pelo essencial. Abra Mais opções só se precisar.</p>
             </div>
         </section>
 
@@ -62,7 +67,7 @@
                     <summary aria-expanded="false">
                         <span class="editor-disclosure-heading">
                             <span class="editor-disclosure-icon" aria-hidden="true">
-                                <svg viewBox="0 0 24 24"><path d="M12 3v3"></path><path d="12 18v3"></path><path d="M5.6 5.6l2.1 2.1"></path><path d="M16.3 16.3l2.1 2.1"></path><path d="M3 12h3"></path><path d="M18 12h3"></path><path d="M5.6 18.4l2.1-2.1"></path><path d="M16.3 7.7l2.1-2.1"></path><circle cx="12" cy="12" r="3.5"></circle></svg>
+                                <svg viewBox="0 0 24 24"><path d="M12 3v3"></path><path d="M12 18v3"></path><path d="M5.6 5.6l2.1 2.1"></path><path d="M16.3 16.3l2.1 2.1"></path><path d="M3 12h3"></path><path d="M18 12h3"></path><path d="M5.6 18.4l2.1-2.1"></path><path d="M16.3 7.7l2.1-2.1"></path><circle cx="12" cy="12" r="3.5"></circle></svg>
                             </span>
                             <span>Montar com IA</span>
                         </span>
@@ -71,9 +76,23 @@
                     </summary>
                     <div class="editor-disclosure-body">
                         <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field">
+                                <label for="quiz-turma">Turma</label>
+                                <select id="quiz-turma" data-quiz-class-context>
+                                    <option value="">Biblioteca pessoal</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="quiz-disciplina">Disciplina</label>
+                                <input id="quiz-disciplina" type="text" placeholder="Ex.: Ciências">
+                            </div>
+                            <div class="platform-field">
+                                <label for="quiz-ano">Ano ou público</label>
+                                <input id="quiz-ano" type="text" placeholder="Ex.: 7º ano">
+                            </div>
                             <div class="platform-field platform-field-wide">
                                 <label for="quiz-fonte-texto">Texto ou perguntas do professor</label>
-                                <textarea id="quiz-fonte-texto" rows="6" placeholder="Escreva um tópico e deixe a IA montar a apresentação ou adicione um arquivo pessoal (Word ou PDF)."></textarea>
+                                <textarea id="quiz-fonte-texto" rows="6" placeholder="Digite um tópico, cole um conteúdo ou envie um arquivo para a IA montar o quiz."></textarea>
                             </div>
                             <div class="platform-field">
                                 <label for="quiz-arquivo">Arquivo de apoio</label>
@@ -146,18 +165,18 @@
                         <small class="editor-disclosure-toggle" aria-hidden="true"></small>
                     </summary>
                     <div class="editor-disclosure-body">
-                        <p class="activity-manual-guide">Preencha enunciado e tipo. Use Mais opcoes para ajustes finos.</p>
-                        <div class="activity-template-panel" role="group" aria-label="Modelos rapidos de quiz">
-                            <button type="button" class="activity-template-card" data-builder-template="review" aria-label="Aplicar modelo Revisao em 5 min">
-                                <strong>Revisao em 5 min</strong>
-                                <span>Multipla escolha, V/F e pergunta aberta.</span>
+                        <p class="activity-manual-guide">Preencha enunciado e tipo. Use Mais opções para ajustes finos.</p>
+                        <div class="activity-template-panel" role="group" aria-label="Modelos rápidos de quiz">
+                            <button type="button" class="activity-template-card" data-builder-template="review" aria-label="Aplicar modelo Revisão em 5 min">
+                                <strong>Revisão em 5 min</strong>
+                                <span>Múltipla escolha, V/F e pergunta aberta.</span>
                             </button>
-                            <button type="button" class="activity-template-card" data-builder-template="diagnostic" aria-label="Aplicar modelo Diagnostico rapido">
-                                <strong>Diagnostico rapido</strong>
-                                <span>Levanta conhecimentos antes da explicacao.</span>
+                            <button type="button" class="activity-template-card" data-builder-template="diagnostic" aria-label="Aplicar modelo Diagnóstico rápido">
+                                <strong>Diagnóstico rápido</strong>
+                                <span>Levanta conhecimentos antes da explicação.</span>
                             </button>
-                            <button type="button" class="activity-template-card" data-builder-template="exit" aria-label="Aplicar modelo Ticket de saida">
-                                <strong>Ticket de saida</strong>
+                            <button type="button" class="activity-template-card" data-builder-template="exit" aria-label="Aplicar modelo Ticket de saída">
+                                <strong>Ticket de saída</strong>
                                 <span>Duas perguntas abertas para fechar a aula.</span>
                             </button>
                         </div>
@@ -200,7 +219,7 @@
                                     </div>
                                 </div>
                                 <details class="activity-optional-disclosure">
-                                    <summary>Mais opcoes: alternativas e apoio</summary>
+                                    <summary>Mais opções: alternativas e apoio</summary>
                                 <div class="activity-optional-block">
                                     <span class="route-tag">Alternativas e apoio</span>
                                     <div class="platform-question-stack">
@@ -255,7 +274,7 @@
                                     </div>
                                 </div>
                                 <details class="activity-optional-disclosure">
-                                    <summary>Mais opcoes: criterio e explicacao</summary>
+                                    <summary>Mais opções: critério e explicação</summary>
                                 <div class="activity-optional-block">
                                     <span class="route-tag">Apoio para pergunta aberta</span>
                                     <div class="platform-form-grid">
@@ -285,7 +304,7 @@
             </article>
 
             <aside class="platform-builder-card quiz-preview-card activity-preview-pane">
-                <span class="platform-section-label">Preview</span>
+                <span class="platform-section-label">Prévia</span>
                 <h2>Veja o quiz antes de aplicar</h2>
                 <p>Confira como a atividade vai ficar.</p>
                 <div class="live-preview-stack" data-quiz-preview></div>

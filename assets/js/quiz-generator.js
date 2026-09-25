@@ -229,7 +229,7 @@ function parseQuizTemplateText(sourceText) {
         .filter((question) => question.prompt);
 
     if (!questions.length) {
-        throw new Error("Preencha pelo menos uma questao no modelo do quiz.");
+        throw new Error("Preencha pelo menos uma questão no modelo do quiz.");
     }
 
     return {
@@ -322,8 +322,8 @@ function applyQuizTemplateData(payload) {
     if (formatField && payload.format) setQuizSelectByText(formatField, payload.format);
     if (countField) countField.value = String(questions.length);
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -453,8 +453,8 @@ function applyGeneratedQuiz() {
         stack.appendChild(card);
     });
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
 }
 
 document.addEventListener("DOMContentLoaded", () => {

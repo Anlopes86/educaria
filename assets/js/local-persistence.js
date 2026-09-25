@@ -32,6 +32,15 @@ function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
 }
 
+function dispatchBuilderContentChange(type = "input", target = null) {
+    const editorRoot = target instanceof Element
+        ? target
+        : document.querySelector(".activity-editor-shell") || document.body;
+
+    if (!editorRoot) return;
+    editorRoot.dispatchEvent(new Event(type, { bubbles: true }));
+}
+
 function restoreControls(values) {
     if (!values) return;
 
@@ -67,7 +76,7 @@ function builderConfig() {
             key: scopedStorageKey("educaria:builder:quiz"),
             stackSelector: "[data-quiz-stack]",
             cardSelector: "[data-quiz-question]",
-            labelPrefix: "Questao",
+            labelPrefix: "Questão",
             labelSelector: "[data-card-label]"
         };
     }
@@ -315,8 +324,8 @@ function restoreBuilderState(config) {
             renumberRestoredCards(config.cardSelector, config.labelPrefix, config.labelSelector);
         }
 
-        document.dispatchEvent(new Event("input"));
-        document.dispatchEvent(new Event("change"));
+        dispatchBuilderContentChange("input", stack);
+        dispatchBuilderContentChange("change", stack);
     } catch (error) {
         console.warn("EducarIA local restore unavailable:", error);
     }

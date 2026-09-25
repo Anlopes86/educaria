@@ -72,3 +72,4 @@ Ao receber pagamento confirmado, o backend grava o UID em `BILLING_STORE_PATH` e
 - O frontend mostra saldo e limites retornados por `GET /api/ai/credits`.
 - O backend reserva credito antes de chamar a IA e devolve a reserva quando a geracao falha.
 - A solicitacao manual de upgrade ainda grava `billingIntent` no Firestore.
+- `DELETE /api/account`, autenticado por Firebase ID token, remove do servico os registros locais de cobranca e creditos associados ao UID durante a exclusao da conta.

@@ -60,7 +60,7 @@ function renderWordsearchApplication() {
         { term: "RIO", clue: "Curso de agua" },
         { term: "SERRA", clue: "Relevo elevado" },
         { term: "PLANALTO", clue: "Forma de relevo" },
-        { term: "CLIMA", clue: "Condicao atmosferica" }
+        { term: "CLIMA", clue: "Condição atmosférica" }
     ];
     const title = String(controls["caca-titulo"] || "").trim() || "Caça-palavras";
     const subtitle = String(controls["caca-subtitulo"] || "").trim() || "Encontre os termos escondidos na grade.";

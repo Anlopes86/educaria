@@ -30,7 +30,8 @@ function settingsServices() {
 
     return {
         auth: firebase.auth(),
-        db: firebase.firestore()
+        db: firebase.firestore(),
+        storage: typeof firebase.storage === "function" ? firebase.storage() : null
     };
 }
 
@@ -269,7 +270,7 @@ async function handleSettingsProfileSubmit(event) {
     const services = settingsServices();
     const feedback = document.querySelector("[data-settings-profile-feedback]");
     if (!services) {
-        updateSettingsFeedback(feedback, "Servico de autenticacao indisponivel no momento. Tente novamente em instantes.", "error");
+        updateSettingsFeedback(feedback, "Serviço de autenticação indisponível no momento. Tente novamente em instantes.", "error");
         return;
     }
 
@@ -349,7 +350,7 @@ async function handleSettingsPasswordSubmit(event) {
     const services = settingsServices();
     const feedback = document.querySelector("[data-settings-password-feedback]");
     if (!services) {
-        updateSettingsFeedback(feedback, "Servico de autenticacao indisponivel no momento. Tente novamente em instantes.", "error");
+        updateSettingsFeedback(feedback, "Serviço de autenticação indisponível no momento. Tente novamente em instantes.", "error");
         return;
     }
 
@@ -400,14 +401,139 @@ async function handleSettingsPasswordSubmit(event) {
     }
 }
 
+async function deleteSettingsCollection(collectionRef, beforeDelete = null) {
+    while (true) {
+        const snapshot = await collectionRef.limit(400).get();
+        if (snapshot.empty) return;
+
+        if (beforeDelete) {
+            for (const document of snapshot.docs) {
+                await beforeDelete(document);
+            }
+        }
+
+        const batch = collectionRef.firestore.batch();
+        snapshot.docs.forEach((document) => batch.delete(document.ref));
+        await batch.commit();
+        if (snapshot.size < 400) return;
+    }
+}
+
+async function deleteSettingsStorageTree(reference) {
+    const contents = await reference.listAll();
+    await Promise.all(contents.items.map((item) => item.delete()));
+    for (const prefix of contents.prefixes) {
+        await deleteSettingsStorageTree(prefix);
+    }
+}
+
+async function deleteSettingsRemoteData(services, uid) {
+    if (services.storage) {
+        await deleteSettingsStorageTree(services.storage.ref(`teachers/${uid}`));
+    }
+
+    const teacherRef = services.db.collection("teachers").doc(uid);
+    await deleteSettingsCollection(teacherRef.collection("classes"), async (classDocument) => {
+        await deleteSettingsCollection(classDocument.ref.collection("materials"));
+    });
+    await deleteSettingsCollection(teacherRef.collection("lessons"));
+    await deleteSettingsCollection(teacherRef.collection("platform"));
+    await deleteSettingsCollection(teacherRef.collection("productAnalyticsEvents"));
+    await teacherRef.delete();
+}
+
+async function deleteSettingsBackendState() {
+    const endpoint = typeof window.educariaAiEndpoint === "function"
+        ? window.educariaAiEndpoint("/api/account")
+        : "";
+    if (!endpoint) throw new Error("account_endpoint_unavailable");
+
+    const response = await fetch(endpoint, {
+        method: "DELETE",
+        headers: typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {}
+    });
+    if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || "account_backend_delete_failed");
+    }
+}
+
+function clearSettingsLocalAccountData() {
+    const preservedKeys = new Set(["educaria:firebase:config", "educaria:i18n:language"]);
+    const keys = [];
+    for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (key?.startsWith("educaria:") && !preservedKeys.has(key)) keys.push(key);
+    }
+    keys.forEach((key) => localStorage.removeItem(key));
+}
+
+async function handleSettingsDeleteSubmit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const feedback = document.querySelector("[data-settings-delete-feedback]");
+    const submitButton = form.querySelector('button[type="submit"]');
+    const password = String(form.querySelector('input[name="delete_password"]')?.value || "");
+    const confirmation = String(form.querySelector('input[name="delete_confirmation"]')?.value || "").trim();
+    const services = settingsServices();
+    const user = services?.auth?.currentUser;
+
+    if (!services || !user?.email) {
+        updateSettingsFeedback(feedback, "Sua sessão expirou. Entre novamente para excluir a conta.", "error");
+        return;
+    }
+
+    if (!password || confirmation !== "EXCLUIR") {
+        updateSettingsFeedback(feedback, "Confirme sua senha e digite EXCLUIR exatamente como indicado.", "error");
+        return;
+    }
+
+    const confirmed = window.confirm("Esta ação é permanente. Perfil, turmas, materiais, arquivos e acesso serão excluídos. Deseja continuar?");
+    if (!confirmed) return;
+
+    submitButton.disabled = true;
+    [...form.elements].forEach((element) => {
+        element.disabled = true;
+    });
+
+    try {
+        updateSettingsFeedback(feedback, "Confirmando identidade...", "warning");
+        const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
+        await user.reauthenticateWithCredential(credential);
+
+        updateSettingsFeedback(feedback, "Excluindo arquivos e materiais... Não feche esta página.", "warning");
+        await deleteSettingsRemoteData(services, user.uid);
+        await deleteSettingsBackendState();
+        await user.reauthenticateWithCredential(credential);
+        await user.delete();
+        clearSettingsLocalAccountData();
+        window.location.replace("../login.html?accountDeleted=1");
+    } catch (error) {
+        console.warn("EducarIA account deletion unavailable:", error);
+        let message = "Não foi possível concluir a exclusão. Nenhuma nova tentativa será feita automaticamente.";
+        if (error?.code === "auth/wrong-password" || error?.code === "auth/invalid-credential") {
+            message = "A senha informada está incorreta.";
+        } else if (error?.code === "auth/too-many-requests") {
+            message = "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+        }
+        updateSettingsFeedback(feedback, message, "error");
+        [...form.elements].forEach((element) => {
+            element.disabled = false;
+        });
+        submitButton.disabled = false;
+    }
+}
+
 function bindSettingsForms() {
     const profileForm = document.querySelector("[data-settings-profile-form]");
     const passwordForm = document.querySelector("[data-settings-password-form]");
     const upgradeForm = document.querySelector("[data-settings-upgrade-form]");
+    const deleteForm = document.querySelector("[data-settings-delete-form]");
 
     profileForm?.addEventListener("submit", handleSettingsProfileSubmit);
     passwordForm?.addEventListener("submit", handleSettingsPasswordSubmit);
     upgradeForm?.addEventListener("submit", handleSettingsUpgradeSubmit);
+    deleteForm?.addEventListener("submit", handleSettingsDeleteSubmit);
 }
 
 async function openSettingsCheckout(event) {
@@ -421,7 +547,7 @@ async function openSettingsCheckout(event) {
     const feedback = document.querySelector("[data-settings-upgrade-feedback]");
     const endpoint = settingsCheckoutEndpoint();
     if (!endpoint) {
-        updateSettingsFeedback(feedback, "Checkout nao configurado no momento.", "error");
+        updateSettingsFeedback(feedback, "Checkout não configurado no momento.", "error");
         return;
     }
 
@@ -433,7 +559,7 @@ async function openSettingsCheckout(event) {
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok || !payload?.checkoutUrl) {
-            throw new Error(payload?.error || "Checkout indisponivel.");
+            throw new Error(payload?.error || "Checkout indisponível.");
         }
 
         if (typeof educariaTrack === "function") {
@@ -444,7 +570,7 @@ async function openSettingsCheckout(event) {
         }
         window.location.href = payload.checkoutUrl;
     } catch (error) {
-        updateSettingsFeedback(feedback, error instanceof Error ? error.message : "Checkout indisponivel no momento.", "error");
+        updateSettingsFeedback(feedback, error instanceof Error ? error.message : "Checkout indisponível no momento.", "error");
     }
 }
 
@@ -454,7 +580,7 @@ async function handleSettingsUpgradeSubmit(event) {
     const services = settingsServices();
     const feedback = document.querySelector("[data-settings-upgrade-feedback]");
     if (!services) {
-        updateSettingsFeedback(feedback, "Servico de autenticacao indisponivel no momento. Tente novamente em instantes.", "error");
+        updateSettingsFeedback(feedback, "Serviço de autenticação indisponível no momento. Tente novamente em instantes.", "error");
         return;
     }
 
@@ -508,6 +634,105 @@ async function handleSettingsUpgradeSubmit(event) {
     }
 }
 
+function settingsParseStoredValue(value) {
+    try {
+        return JSON.parse(value);
+    } catch {
+        return value;
+    }
+}
+
+function settingsLocalAccountData() {
+    const scope = typeof educariaCurrentUserScope === "function" ? educariaCurrentUserScope() : "guest";
+    const teacher = settingsCurrentTeacher();
+    const actorId = String(teacher?.uid || teacher?.email || "").trim().toLowerCase();
+    const allowedSharedKeys = new Set(["educaria:analytics:events", "educaria:i18n:language"]);
+    const values = {};
+
+    for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (!key || !key.startsWith("educaria:")) continue;
+
+        const belongsToScope = key.endsWith(`:${scope}`);
+        const isActorMilestone = actorId && key.startsWith(`educaria:milestone:${actorId}:`);
+        if (!belongsToScope && !isActorMilestone && !allowedSharedKeys.has(key)) continue;
+
+        values[key] = settingsParseStoredValue(localStorage.getItem(key));
+    }
+
+    return { scope, values };
+}
+
+function settingsSnapshotDocuments(snapshot) {
+    const documents = [];
+    snapshot?.forEach((document) => {
+        documents.push({ id: document.id, ...document.data() });
+    });
+    return documents;
+}
+
+async function settingsRemoteAccountData(teacher) {
+    const services = settingsServices();
+    if (!services?.db || !teacher?.uid) return null;
+
+    const teacherRef = services.db.collection("teachers").doc(teacher.uid);
+    const [profile, lessons, classes, analytics] = await Promise.all([
+        teacherRef.get(),
+        teacherRef.collection("lessons").get(),
+        teacherRef.collection("platform").doc("classes").get(),
+        teacherRef.collection("productAnalyticsEvents").get()
+    ]);
+
+    return {
+        profile: profile.exists ? profile.data() : null,
+        lessons: settingsSnapshotDocuments(lessons),
+        classes: classes.exists ? classes.data() : null,
+        analytics: settingsSnapshotDocuments(analytics)
+    };
+}
+
+async function buildSettingsAccountExport() {
+    const teacher = settingsCurrentTeacher();
+    let remote = null;
+    let remoteWarning = "";
+
+    try {
+        remote = await settingsRemoteAccountData(teacher);
+    } catch (error) {
+        remoteWarning = "Os dados locais foram exportados, mas a cópia remota não estava disponível.";
+        console.warn("EducarIA remote account export unavailable:", error);
+    }
+
+    return {
+        schema: "educaria-account-export/v1",
+        exportedAt: new Date().toISOString(),
+        teacher: teacher ? {
+            uid: teacher.uid || "",
+            name: teacher.name || "",
+            email: teacher.email || "",
+            institution: teacher.institution || "",
+            institutionId: teacher.institutionId || "",
+            role: teacher.role || "teacher",
+            plan: teacher.plan || "free"
+        } : null,
+        local: settingsLocalAccountData(),
+        remote,
+        warnings: remoteWarning ? [remoteWarning] : []
+    };
+}
+
+function downloadSettingsJson(payload, fileName) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+}
+
 function bindPilotActions() {
     const feedback = document.querySelector("[data-settings-pilot-feedback]");
 
@@ -521,38 +746,53 @@ function bindPilotActions() {
             await navigator.clipboard.writeText(pilotId);
             updateSettingsFeedback(feedback, "ID do piloto copiado.", "success");
         } catch (error) {
-            updateSettingsFeedback(feedback, "Nao foi possivel copiar o ID agora.", "error");
+            updateSettingsFeedback(feedback, "Não foi possível copiar o ID agora.", "error");
         }
     });
 
     document.querySelector("[data-settings-export-analytics]")?.addEventListener("click", () => {
         if (typeof exportEducariaAnalytics !== "function") {
-            updateSettingsFeedback(feedback, "Exportacao indisponivel nesta sessao.", "error");
+            updateSettingsFeedback(feedback, "Exportação indisponível nesta sessão.", "error");
             return;
         }
 
-        const blob = new Blob([exportEducariaAnalytics()], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `educaria-piloto-${Date.now()}.json`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
+        downloadSettingsJson(JSON.parse(exportEducariaAnalytics()), `educaria-piloto-${Date.now()}.json`);
         updateSettingsFeedback(feedback, "Eventos exportados com sucesso.", "success");
+    });
+
+    document.querySelector("[data-settings-export-account]")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        const accountFeedback = document.querySelector("[data-settings-account-feedback]");
+        button.disabled = true;
+        updateSettingsFeedback(accountFeedback, "Preparando backup da conta...", "success");
+
+        try {
+            const payload = await buildSettingsAccountExport();
+            const date = new Date().toISOString().slice(0, 10);
+            downloadSettingsJson(payload, `educaria-backup-${date}.json`);
+            const suffix = payload.warnings.length ? ` ${payload.warnings[0]}` : "";
+            updateSettingsFeedback(accountFeedback, `Backup baixado com sucesso.${suffix}`, payload.warnings.length ? "warning" : "success");
+            if (typeof educariaTrack === "function") {
+                educariaTrack("account_backup_exported", { section: "settings", remoteIncluded: Boolean(payload.remote) });
+            }
+        } catch (error) {
+            console.warn("EducarIA account export unavailable:", error);
+            updateSettingsFeedback(accountFeedback, "Não foi possível preparar o backup agora.", "error");
+        } finally {
+            button.disabled = false;
+        }
     });
 
     document.querySelector("[data-settings-sync-analytics]")?.addEventListener("click", async () => {
         if (typeof flushEducariaAnalytics !== "function") {
-            updateSettingsFeedback(feedback, "Sincronizacao indisponivel nesta sessao.", "error");
+            updateSettingsFeedback(feedback, "Sincronização indisponível nesta sessão.", "error");
             return;
         }
 
         updateSettingsFeedback(feedback, "Sincronizando eventos...", "success");
         await flushEducariaAnalytics();
         hydrateSettingsPage();
-        updateSettingsFeedback(feedback, "Sincronizacao concluida.", "success");
+        updateSettingsFeedback(feedback, "Sincronização concluída.", "success");
     });
 }
 

@@ -89,18 +89,59 @@ function readCurrentMaterialType() {
     }
 }
 
+function normalizeMaterialType(type) {
+    const value = String(type || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[_\s]+/g, "-");
+
+    if (value === "aula-completa" || value === "lesson-sequence") return "lesson";
+    if (value === "aula-com-slides" || value === "slide" || value === "slides-builder") return "slides";
+    if (value === "quiz-builder" || value === "quiz-aplicacao") return "quiz";
+    if (value === "flashcard" || value === "flashcards-builder") return "flashcards";
+    if (value === "roleta") return "wheel";
+    if (value === "forca") return "hangman";
+    if (value === "palavras-cruzadas") return "crossword";
+    if (value === "caca-palavras" || value === "caça-palavras") return "wordsearch";
+    if (value === "jogo-da-memoria" || value === "jogo-memoria") return "memory";
+    if (value === "ligar-pontos") return "match";
+    if (value === "mapa-mental") return "mindmap";
+    if (value === "debate-guiado") return "debate";
+    return value || "slides";
+}
+
+function materialTypeFromPath(pathname = window.location.pathname) {
+    const fileName = String(pathname || "").split("/").pop() || "";
+    if (fileName === "aula-completa-apresentacao.html") return "lesson";
+    if (fileName === "quiz-aplicacao.html") return "quiz";
+    if (fileName === "flashcards-apresentacao.html") return "flashcards";
+    if (fileName === "roleta-apresentacao.html") return "wheel";
+    if (fileName === "forca-apresentacao.html") return "hangman";
+    if (fileName === "palavras-cruzadas-apresentacao.html") return "crossword";
+    if (fileName === "caca-palavras-apresentacao.html") return "wordsearch";
+    if (fileName === "jogo-memoria-apresentacao.html") return "memory";
+    if (fileName === "ligar-pontos-apresentacao.html") return "match";
+    if (fileName === "mapa-mental-apresentacao.html") return "mindmap";
+    if (fileName === "debate-guiado-apresentacao.html") return "debate";
+    if (fileName === "apresentacao.html") return "slides";
+    return "";
+}
+
 function presentationPathForMaterial(type) {
-    if (type === "lesson") return "aula-completa-apresentacao.html";
-    if (type === "quiz") return "quiz-aplicacao.html";
-    if (type === "flashcards") return "flashcards-apresentacao.html";
-    if (type === "wheel") return "roleta-apresentacao.html";
-    if (type === "hangman") return "forca-apresentacao.html";
-    if (type === "crossword") return "palavras-cruzadas-apresentacao.html";
-    if (type === "wordsearch") return "caca-palavras-apresentacao.html";
-    if (type === "memory") return "jogo-memoria-apresentacao.html";
-    if (type === "match") return "ligar-pontos-apresentacao.html";
-    if (type === "mindmap") return "mapa-mental-apresentacao.html";
-    if (type === "debate") return "debate-guiado-apresentacao.html";
+    const normalizedType = normalizeMaterialType(type);
+    if (normalizedType === "lesson") return "aula-completa-apresentacao.html";
+    if (normalizedType === "quiz") return "quiz-aplicacao.html";
+    if (normalizedType === "flashcards") return "flashcards-apresentacao.html";
+    if (normalizedType === "wheel") return "roleta-apresentacao.html";
+    if (normalizedType === "hangman") return "forca-apresentacao.html";
+    if (normalizedType === "crossword") return "palavras-cruzadas-apresentacao.html";
+    if (normalizedType === "wordsearch") return "caca-palavras-apresentacao.html";
+    if (normalizedType === "memory") return "jogo-memoria-apresentacao.html";
+    if (normalizedType === "match") return "ligar-pontos-apresentacao.html";
+    if (normalizedType === "mindmap") return "mapa-mental-apresentacao.html";
+    if (normalizedType === "debate") return "debate-guiado-apresentacao.html";
     return "apresentacao.html";
 }
 
@@ -109,7 +150,7 @@ function presentationLabelForMaterial(type) {
     if (type === "flashcards") return "Flashcards";
     if (type === "quiz") return "Quiz";
     if (type === "wheel") return "Roleta";
-    if (type === "hangman") return "Forca";
+    if (type === "hangman") return "Força";
     if (type === "crossword") return "Palavras cruzadas";
     if (type === "wordsearch") return "Caça-palavras";
     if (type === "memory") return "Jogo da memória";
@@ -172,7 +213,11 @@ function bindEditorReturnTargets() {
 }
 
 function hydratePresentationLinks() {
-    const type = readCurrentMaterialType();
+    const activeLessonId = lessonIdFromUrl();
+    const activeLesson = activeLessonId
+        ? readStoredLessonsCache().find((item) => String(item?.id || "") === activeLessonId)
+        : null;
+    const type = normalizeMaterialType(activeLesson?.materialType || document.body.dataset.materialType || materialTypeFromUrl() || readCurrentMaterialType());
     const path = presentationPathForMaterial(type);
 
     document.querySelectorAll("[data-presentation-link]").forEach((link) => {
@@ -183,6 +228,17 @@ function hydratePresentationLinks() {
     if (summaryType) {
         summaryType.textContent = presentationLabelForMaterial(type);
     }
+}
+
+function redirectGenericPresentationIfNeeded() {
+    const currentPath = String(window.location.pathname || "").split("/").pop() || "";
+    if (currentPath !== "apresentacao.html") return;
+
+    const type = normalizeMaterialType(materialTypeFromUrl() || readCurrentMaterialType());
+    const targetPath = presentationPathForMaterial(type);
+    if (!targetPath || targetPath === currentPath) return;
+
+    window.location.replace(`${targetPath}${window.location.search || ""}${window.location.hash || ""}`);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -196,5 +252,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     hydrateEditorReturnLinks();
     hydratePresentationLinks();
+    redirectGenericPresentationIfNeeded();
     bindEditorReturnTargets();
 });

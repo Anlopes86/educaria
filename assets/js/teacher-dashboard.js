@@ -5,20 +5,20 @@
 const DASHBOARD_TOUR_STORAGE_PREFIX = "educaria:dashboard-tour:";
 const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
 const DASHBOARD_CORE_FORMATS = [
-    { href: "slides-builder.html", label: "Slides (10-15 min)" },
-    { href: "quiz-builder.html", label: "Quiz (5-8 min)" },
+    { href: "slides-builder.html?new=1", label: "Slides (10-15 min)" },
+    { href: "quiz-builder.html?new=1", label: "Quiz (5-8 min)" },
     { href: "criar-aula.html", label: "Aula completa (15-25 min)" }
 ];
 const DASHBOARD_EXTRA_FORMATS = [
-    { href: "flashcards-builder.html", label: "Flashcards" },
-    { href: "jogo-memoria-builder.html", label: "Jogo da memória" },
-    { href: "roleta-builder.html", label: "Roleta" },
-    { href: "ligar-pontos-builder.html", label: "Ligar pontos" },
-    { href: "mapa-mental-builder.html", label: "Mapa mental" },
-    { href: "debate-guiado-builder.html", label: "Debate guiado" },
-    { href: "caca-palavras-builder.html", label: "Caça-palavras" },
-    { href: "palavras-cruzadas-builder.html", label: "Palavras cruzadas" },
-    { href: "forca-builder.html", label: "Forca" }
+    { href: "flashcards-builder.html?new=1", label: "Flashcards" },
+    { href: "jogo-memoria-builder.html?new=1", label: "Jogo da memória" },
+    { href: "roleta-builder.html?new=1", label: "Roleta" },
+    { href: "ligar-pontos-builder.html?new=1", label: "Ligar pontos" },
+    { href: "mapa-mental-builder.html?new=1", label: "Mapa mental" },
+    { href: "debate-guiado-builder.html?new=1", label: "Debate guiado" },
+    { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras" },
+    { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas" },
+    { href: "forca-builder.html?new=1", label: "Força" }
 ];
 const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_EXTRA_FORMATS];
 const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
@@ -68,15 +68,12 @@ function hydrateTeacherDashboard() {
     if (libraryCount) libraryCount.textContent = `${libraryItems.length}`;
 
     if (recentClassesRoot) {
+        const recentClassesSection = recentClassesRoot.closest("[data-dashboard-recent-section]");
         if (!recentClasses.length) {
-            recentClassesRoot.innerHTML = `
-                <article class="quick-class-card quick-class-card--active">
-                    <span class="route-tag">${dashboardTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
-                    <h3>${dashboardTranslate("dashboard.empty.noClassesTitle", "Nenhuma turma criada ainda")}</h3>
-                    <p>${dashboardTranslate("dashboard.empty.noClassesCopy", "Use o botao Criar turma na lateral para comecar.")}</p>
-                </article>
-            `;
+            recentClassesRoot.replaceChildren();
+            if (recentClassesSection) recentClassesSection.hidden = true;
         } else {
+            if (recentClassesSection) recentClassesSection.hidden = false;
             recentClassesRoot.innerHTML = recentClasses.map(({ className, classLessons, latestLesson, updatedAt }) => {
                 const latestLabel = latestLesson?.updatedAt && typeof formatLessonDate === "function"
                     ? formatLessonDate(latestLesson.updatedAt)
@@ -98,7 +95,7 @@ function hydrateTeacherDashboard() {
                     <article class="quick-class-card quick-class-card--active dashboard-recent-card">
                         <span class="route-tag">${activityLabel}</span>
                         <h3>${recentClassName}</h3>
-                        <p>${dashboardTranslate("dashboard.classCard.copy", "Abra a turma para criar novas atividades ou retomar o acervo ja salvo.")}</p>
+                        <p>${dashboardTranslate("dashboard.classCard.copy", "Abra a turma para criar novas atividades ou retomar o acervo já salvo.")}</p>
                         <div class="lesson-history-meta">
                             <span>${escapeHtml(lastUpdated)}</span>
                             <span>${classLessons.length ? escapeHtml(classLessons[0]?.type || dashboardTranslate("dashboard.recent.activity", "Atividade")) : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização")}</span>
@@ -113,7 +110,7 @@ function hydrateTeacherDashboard() {
                         <div class="lesson-history-actions">
                             <a href="turma.html" class="platform-link-button platform-link-primary" data-dashboard-class-link="${recentClassName}">${dashboardTranslate("classes.actions.viewMaterials", "Ver materiais")}</a>
                             <a href="biblioteca.html" class="platform-link-button platform-link-secondary" data-dashboard-class-library="${classToken}">${dashboardTranslate("dashboard.actions.openLibrary", "Abrir biblioteca")}</a>
-                            ${latestLesson ? `<a href="${escapeHtml(latestPath)}" class="platform-link-button platform-link-secondary" data-dashboard-class-edit="${classToken}">${dashboardTranslate("classes.actions.continueEditing", "Continuar edicao")}</a>` : ""}
+                            ${latestLesson ? `<a href="${escapeHtml(latestPath)}" class="platform-link-button platform-link-secondary" data-dashboard-class-edit="${classToken}">${dashboardTranslate("classes.actions.continueEditing", "Continuar edição")}</a>` : ""}
                         </div>
                     </article>
                 `;
@@ -128,7 +125,7 @@ function hydrateTeacherDashboard() {
             <article class="quick-class-card quick-class-card--active">
                 <span class="route-tag">${dashboardTranslate("dashboard.empty.noClasses", "Sem turmas")}</span>
                 <h3>${dashboardTranslate("dashboard.empty.noClassesTitle", "Nenhuma turma criada ainda")}</h3>
-                <p>${dashboardTranslate("dashboard.empty.noClassesCopy", "Use o botao Criar turma na lateral para comecar.")}</p>
+                <p>${dashboardTranslate("dashboard.empty.noClassesCopy", "Você já pode criar atividades na biblioteca pessoal. Crie uma turma quando quiser organizar os materiais por grupo.")}</p>
             </article>
         `;
         classesRoot.setAttribute("aria-busy", "false");
@@ -147,7 +144,7 @@ function hydrateTeacherDashboard() {
             <a href="turma.html" class="quick-class-card" data-dashboard-class-link="${escapeHtml(className)}">
                 <span class="route-tag">${classActivities.length} ${classActivities.length === 1 ? dashboardTranslate("dashboard.count.activity", "atividade") : dashboardTranslate("dashboard.count.activities", "atividades")}</span>
                 <h3>${escapeHtml(className)}</h3>
-                <p>${dashboardTranslate("dashboard.classCard.copy", "Abra a turma para criar novas atividades ou retomar o acervo ja salvo.")}</p>
+                <p>${dashboardTranslate("dashboard.classCard.copy", "Abra a turma para criar novas atividades ou retomar o acervo já salvo.")}</p>
                 <div class="lesson-history-meta">
                     <span>${updatedAt ? `${dashboardTranslate("classes.latest.updatedAt", "Atualizada em")} ${escapeHtml(latestLabel)}` : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização")}</span>
                     <span>${classLessons.length ? escapeHtml(classLessons[0]?.type || dashboardTranslate("dashboard.recent.activity", "Atividade")) : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização")}</span>
@@ -179,8 +176,8 @@ function hydrateDashboardGreeting() {
 }
 
 function quickCreateActionLabel(target) {
-    if (target === "slides-builder.html") return dashboardTranslate("dashboard.actions.openSlides", "Abrir slides");
-    if (target === "quiz-builder.html") return dashboardTranslate("dashboard.actions.openQuiz", "Abrir quiz");
+    if (target.split("?")[0] === "slides-builder.html") return dashboardTranslate("dashboard.actions.openSlides", "Abrir slides");
+    if (target.split("?")[0] === "quiz-builder.html") return dashboardTranslate("dashboard.actions.openQuiz", "Abrir quiz");
     if (target === "criar-aula.html") return dashboardTranslate("dashboard.actions.buildLesson", "Montar aula");
     return dashboardTranslate("dashboard.actions.openTool", "Abrir ferramenta");
 }
@@ -188,7 +185,7 @@ function quickCreateActionLabel(target) {
 function syncDashboardFormatHierarchy() {
     const quickCopy = document.querySelector("[data-dashboard-quick-copy]");
     if (quickCopy) {
-        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Escolha a turma, use um formato principal e entre direto no editor. Sugestao rapida: Slides (10-15 min), Quiz (5-8 min), Aula completa (15-25 min).");
+        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Escolha uma atividade e entre direto no editor. A turma é opcional e pode ser definida agora ou depois.");
     }
 
     const toolkitSection = document.getElementById("activity-toolkit");
@@ -217,13 +214,13 @@ function syncDashboardFormatHierarchy() {
     const slidesCard = grid.querySelector('.dashboard-tool-card--slides .dashboard-tool-content p');
     const lessonCard = grid.querySelector('.dashboard-tool-card--lesson .dashboard-tool-content p');
     if (slidesCard) {
-        slidesCard.textContent = dashboardTranslate("dashboard.toolkit.slides.copy", "Quando usar: conduzir explicacao e organizar a sequencia da aula. Tempo estimado: 10 a 15 min.");
+        slidesCard.textContent = dashboardTranslate("dashboard.toolkit.slides.copy", "Quando usar: conduzir explicação e organizar a sequência da aula. Tempo estimado: 10 a 15 min.");
     }
     if (quizCard) {
-        quizCard.textContent = dashboardTranslate("dashboard.toolkit.quiz.copy", "Quando usar: revisar conteudo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.");
+        quizCard.textContent = dashboardTranslate("dashboard.toolkit.quiz.copy", "Quando usar: revisar conteúdo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.");
     }
     if (lessonCard) {
-        lessonCard.textContent = dashboardTranslate("dashboard.toolkit.lesson.copy", "Quando usar: planejar bloco completo com inicio, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.");
+        lessonCard.textContent = dashboardTranslate("dashboard.toolkit.lesson.copy", "Quando usar: planejar bloco completo com início, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.");
     }
 
     let secondary = toolkitSection.querySelector(".dashboard-toolkit-secondary");
@@ -237,7 +234,7 @@ function syncDashboardFormatHierarchy() {
     secondary.innerHTML = `
         <div>
             <strong>${dashboardTranslate("dashboard.toolkit.moreFormats", "Mais formatos")}</strong>
-            <p>${dashboardTranslate("dashboard.toolkit.moreFormats.copy", "Use formatos extras para momentos especificos da aula: retomada curta, dinamica rapida ou fechamento leve.")}</p>
+            <p>${dashboardTranslate("dashboard.toolkit.moreFormats.copy", "Use formatos extras para momentos específicos da aula: retomada curta, dinâmica rápida ou fechamento leve.")}</p>
         </div>
         <div class="dashboard-toolkit-links">
             ${DASHBOARD_EXTRA_FORMATS.map((format) => `
@@ -256,15 +253,6 @@ function hydrateQuickCreateForm() {
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
     const current = typeof readSelectedClass === "function" ? readSelectedClass() : "";
 
-    if (!classes.length) {
-        classSelect.innerHTML = `<option value="">${dashboardTranslate("dashboard.quick.createClassFirst", "Crie uma turma primeiro")}</option>`;
-        classSelect.disabled = true;
-        formatSelect.disabled = true;
-        openButton.disabled = true;
-        openButton.textContent = dashboardTranslate("dashboard.actions.create", "Criar");
-        return;
-    }
-
     classSelect.disabled = false;
     formatSelect.disabled = false;
     openButton.disabled = false;
@@ -273,14 +261,15 @@ function hydrateQuickCreateForm() {
         return `<option value="${format.href}">${format.label}</option>`;
     }).join("");
 
-    classSelect.innerHTML = classes.map((className) => {
-        const selected = className === current ? " selected" : "";
-        return `<option value="${escapeHtml(className)}"${selected}>${escapeHtml(className)}</option>`;
-    }).join("");
+    classSelect.innerHTML = [
+        `<option value="">${dashboardTranslate("dashboard.quick.personalLibrary", "Biblioteca pessoal (sem turma)")}</option>`,
+        ...classes.map((className) => {
+            const selected = className === current ? " selected" : "";
+            return `<option value="${escapeHtml(className)}"${selected}>${escapeHtml(className)}</option>`;
+        })
+    ].join("");
 
-    if (!classSelect.value && classes[0]) {
-        classSelect.value = classes[0];
-    }
+    classSelect.value = classes.includes(current) ? current : "";
 
     openButton.textContent = quickCreateActionLabel(formatSelect.value);
 }
@@ -314,7 +303,7 @@ function bindQuickCreateForm() {
         const formatSelect = document.querySelector("[data-dashboard-quick-format]");
         const className = classSelect?.value || "";
         const target = formatSelect?.value || "";
-        if (!className || !target) return;
+        if (!target) return;
 
         if (typeof saveSelectedClass === "function") {
             saveSelectedClass(className);
@@ -323,6 +312,7 @@ function bindQuickCreateForm() {
         if (typeof educariaTrack === "function") {
             educariaTrack("quick_create_opened", {
                 className,
+                scope: className ? "class" : "library",
                 target,
                 label: quickCreateActionLabel(target)
             });
@@ -453,25 +443,30 @@ function setDashboardTourSidebarPanel(key) {
 function dashboardTourSteps() {
     return [
         {
-            selector: '[data-dashboard-tour-anchor="create-class-form"]',
-            panel: "create-class",
-            title: "Comece pela turma",
-            description: "Crie sua primeira turma com nome e mat\u00e9ria. Isso organiza os materiais e libera o fluxo de cria\u00e7\u00e3o r\u00e1pida."
+            selector: '[data-dashboard-tour-anchor="hero-action"]',
+            title: "Comece criando uma atividade",
+            description: "Escolha o formato que combina com a aula. No editor, você pode informar um tema, enviar um arquivo ou montar o conteúdo manualmente."
         },
         {
             selector: '[data-dashboard-tour-anchor="quick-create"]',
-            title: "Entre direto no editor",
-            description: "Depois de escolher uma turma, use a cria\u00e7\u00e3o r\u00e1pida para entrar direto em um dos formatos principais."
+            title: "Turma é opcional",
+            description: "Entre direto no editor usando a biblioteca pessoal. Se quiser, selecione uma turma agora para deixar o material organizado por grupo."
         },
         {
             selector: '[data-dashboard-tour-anchor="toolkit"]',
-            title: "Comece pelos principais",
-            description: "Aqui ficam os tres formatos principais da plataforma. Os extras continuam disponiveis logo abaixo quando voce precisar variar a dinamica."
+            title: "Escolha o formato da atividade",
+            description: "Aqui ficam os formatos principais. Os extras continuam disponíveis logo abaixo para variar a dinâmica da aula."
         },
         {
             selector: '[data-dashboard-tour-anchor="library"]',
             title: "Guarde seu próprio acervo",
             description: "A biblioteca concentra os materiais que você salvou nos builders, para revisar, editar e reutilizar depois."
+        },
+        {
+            selector: '[data-dashboard-tour-anchor="create-class-form"]',
+            panel: "create-class",
+            title: "Organize por turma quando quiser",
+            description: "Criar uma turma não é obrigatório para começar. Use este recurso quando quiser agrupar materiais e facilitar o uso com cada classe."
         }
     ];
 }

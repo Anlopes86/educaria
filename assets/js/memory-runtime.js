@@ -118,7 +118,7 @@ function renderMemoryApplication() {
     const pairs = parseMemoryPairs(draft.stackHtml || "");
     const safePairs = (pairs.length ? pairs : [
         { front: "Planeta", back: "Terra", color: "#22c55e" },
-        { front: "Capital", back: "Brasilia", color: "#0ea5e9" }
+        { front: "Capital", back: "Brasília", color: "#0ea5e9" }
     ]).map((pair, index) => ({ ...pair, index }));
 
     const state = {

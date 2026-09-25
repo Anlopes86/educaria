@@ -62,15 +62,22 @@ function parseSlideCards(stackHtml) {
             return "stack";
         };
 
+        const title = fieldValue("slide-title");
+        const subtitle = fieldValue("slide-subtitle");
+        const body = fieldValue("slide-body");
         const imageUrl = fieldValue("slide-image-url");
         const imagePrompt = fieldValue("slide-image-prompt");
         const hasImage = Boolean(imageUrl || imagePrompt);
 
+        if (![title, subtitle, body, imageUrl, imagePrompt].some(Boolean)) {
+            return null;
+        }
+
         return {
             index,
-            title: fieldValue("slide-title") || `Slide ${index + 1}`,
-            subtitle: fieldValue("slide-subtitle"),
-            body: fieldValue("slide-body") || "Sem conteúdo definido.",
+            title: title || `Slide ${index + 1}`,
+            subtitle,
+            body,
             layoutMode: normalizeLayout(fieldLabel("slide-layout"), hasImage),
             imageMode: fieldLabel("slide-image-mode") || "Sem imagem",
             imageUrl,
@@ -80,24 +87,7 @@ function parseSlideCards(stackHtml) {
             slideColor: fieldValue("slide-color") || "#d7f5f6",
             textColor: fieldValue("slide-text-color") || "#0f172a"
         };
-    });
-}
-
-function buildFallbackSlides() {
-    return [{
-        index: 0,
-        title: "Has technology changed education?",
-        subtitle: "Observe a transformação da sala de aula",
-        body: "Observe as imagens e pense no que mudou na sala de aula ao longo dos anos.",
-        layoutMode: "stack",
-        imageMode: "Sem imagem",
-        imageUrl: "",
-        imagePrompt: "",
-        fontChoice: "Destaque moderno",
-        accentColor: "#0ea5e9",
-        slideColor: "#d7f5f6",
-        textColor: "#0f172a"
-    }];
+    }).filter(Boolean).map((slide, index) => ({ ...slide, index }));
 }
 
 function serializeSlideCards(slides) {
@@ -476,7 +466,8 @@ function renderPresentation(slides, draft = {}) {
         const shellGap = shellStyles ? parseFloat(shellStyles.rowGap || shellStyles.gap || 0) : 0;
         const frameGap = frameStyles ? parseFloat(frameStyles.rowGap || frameStyles.gap || 0) : 0;
         const topbarHeight = topbar?.offsetHeight || 0;
-        const controlsHeight = controls?.offsetHeight || 0;
+        const controlsPosition = controls ? getComputedStyle(controls).position : "";
+        const controlsHeight = controlsPosition === "fixed" ? 0 : controls?.offsetHeight || 0;
         const frameWidth = frame?.clientWidth || window.innerWidth;
         const stageHeight = Math.max(320, window.innerHeight - shellPadding - shellGap - topbarHeight - frameGap - controlsHeight - 20);
         const stageWidth = Math.max(320, frameWidth - 8);
@@ -640,6 +631,7 @@ function renderPresentation(slides, draft = {}) {
     });
 
     document.addEventListener("keydown", (event) => {
+        if (event.defaultPrevented) return;
         if (event.key === "ArrowLeft") {
             event.preventDefault();
             if (currentIndex === 0) return;
@@ -671,8 +663,36 @@ function renderPresentation(slides, draft = {}) {
     });
 }
 
+function renderPresentationEmptyState() {
+    const slideRoot = document.querySelector("[data-presentation-slide]");
+    const classLabel = document.querySelector("[data-presentation-class]");
+    const controls = document.querySelector("[data-presentation-controls]");
+    const inlineEditToggle = document.querySelector("[data-inline-edit-toggle]");
+
+    if (!slideRoot) return;
+    if (classLabel) classLabel.textContent = "Apresentação ainda sem conteúdo";
+    if (controls) controls.hidden = true;
+    if (inlineEditToggle) inlineEditToggle.hidden = true;
+
+    slideRoot.className = "presentation-slide presentation-slide--empty";
+    slideRoot.removeAttribute("style");
+    slideRoot.innerHTML = `
+        <div class="presentation-empty-state" role="status">
+            <span class="presentation-empty-state__icon" aria-hidden="true">+</span>
+            <span class="platform-section-label">Material não finalizado</span>
+            <h1>Esta apresentação ainda está vazia</h1>
+            <p>Volte ao editor para escrever ou gerar os slides antes de projetar para a turma.</p>
+            <a href="slides-builder.html" class="platform-link-button platform-link-primary" data-return-to-editor>Voltar ao editor</a>
+        </div>
+    `;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const draft = readSlidesDraft();
     const slides = draft ? parseSlideCards(draft.stackHtml) : [];
-    renderPresentation(slides.length ? slides : buildFallbackSlides(), draft || {});
+    if (!slides.length) {
+        renderPresentationEmptyState();
+        return;
+    }
+    renderPresentation(slides, draft || {});
 });

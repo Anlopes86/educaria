@@ -142,7 +142,7 @@ function syncPanelMode(card) {
 function applySelectedImage(card, prompt, url) {
     updateImagePrompt(card, prompt);
     updateImageUrl(card, url);
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function handleLocalUpload(card, file) {
@@ -165,7 +165,7 @@ function bindSlideImageTools() {
             if (modeSelect.value === "Sem imagem") {
                 clearImageSelection(card);
                 panel.hidden = true;
-                document.dispatchEvent(new Event("input"));
+                dispatchBuilderContentChange("input");
                 return;
             }
 

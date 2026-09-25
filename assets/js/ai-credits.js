@@ -36,14 +36,14 @@ function renderEducariaAiCredits(credits) {
         }
 
         if (!credits) {
-            element.textContent = "Creditos de IA: indisponiveis";
+            element.textContent = "Créditos de IA: indisponíveis";
             element.dataset.state = "unavailable";
             return;
         }
 
         const plan = aiPlanLabel(credits.plan);
         const resetLabel = aiCreditsResetLabel(credits.resetAt);
-        element.textContent = `Plano ${plan}: ${credits.remaining} de ${credits.limit} creditos de IA hoje${resetLabel}`;
+        element.textContent = `Plano ${plan}: ${credits.remaining} de ${credits.limit} créditos de IA hoje${resetLabel}`;
         element.dataset.state = credits.remaining > 0 ? "available" : "empty";
     });
 }
@@ -54,10 +54,10 @@ function educariaAiCreditsEmptyMessage(credits) {
     const currentLimit = Number(credits?.limit || 0);
 
     if (plan === "free" && proLimit > currentLimit) {
-        return "Seus creditos diarios de IA acabaram. O plano Pro libera mais geracoes por dia.";
+        return "Seus créditos diários de IA acabaram. O plano Pro libera mais gerações por dia.";
     }
 
-    return "Seus creditos diarios de IA acabaram por hoje. Tente novamente apos o reset.";
+    return "Seus créditos diários de IA acabaram por hoje. Tente novamente após o reset.";
 }
 
 async function hydrateEducariaAiCredits() {

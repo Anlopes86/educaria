@@ -23,7 +23,7 @@
     <script src="../assets/js/teacher-dashboard.js" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
-    <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
             <a href="../index.html" class="platform-brand app-sidebar-brand">
@@ -42,7 +42,7 @@
                 </div>
             </div>
 
-            <nav class="app-sidebar-nav dashboard-sidebar-nav" aria-label="Navegacao principal" data-i18n-aria-label="dashboard.nav.main">
+            <nav class="app-sidebar-nav dashboard-sidebar-nav" aria-label="Navegação principal" data-i18n-aria-label="dashboard.nav.main">
                 <a href="index.html" class="sidebar-nav-link is-active" data-i18n="dashboard.nav.dashboard">Painel</a>
 
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="create-class" aria-expanded="false" data-i18n="dashboard.nav.createClass">Criar turma</button>
@@ -74,17 +74,17 @@
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false" data-i18n="dashboard.nav.createActivity">Criar atividade</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
                     <div class="sidebar-subitems">
-                        <a href="quiz-builder.html" class="sidebar-subitem">Quiz</a>
-                        <a href="slides-builder.html" class="sidebar-subitem">Slides</a>
-                        <a href="flashcards-builder.html" class="sidebar-subitem">Flashcards</a>
-                        <a href="jogo-memoria-builder.html" class="sidebar-subitem">Jogo da memória</a>
-                        <a href="roleta-builder.html" class="sidebar-subitem">Roleta</a>
-                        <a href="ligar-pontos-builder.html" class="sidebar-subitem">Ligar pontos</a>
-                        <a href="mapa-mental-builder.html" class="sidebar-subitem">Mapa mental</a>
-                        <a href="debate-guiado-builder.html" class="sidebar-subitem">Debate guiado</a>
-                        <a href="caca-palavras-builder.html" class="sidebar-subitem">Caça-palavras</a>
-                        <a href="palavras-cruzadas-builder.html" class="sidebar-subitem">Palavras cruzadas</a>
-                        <a href="forca-builder.html" class="sidebar-subitem">Forca</a>
+                        <a href="quiz-builder.html?new=1" class="sidebar-subitem">Quiz</a>
+                        <a href="slides-builder.html?new=1" class="sidebar-subitem">Slides</a>
+                        <a href="flashcards-builder.html?new=1" class="sidebar-subitem">Flashcards</a>
+                        <a href="jogo-memoria-builder.html?new=1" class="sidebar-subitem">Jogo da memória</a>
+                        <a href="roleta-builder.html?new=1" class="sidebar-subitem">Roleta</a>
+                        <a href="ligar-pontos-builder.html?new=1" class="sidebar-subitem">Ligar pontos</a>
+                        <a href="mapa-mental-builder.html?new=1" class="sidebar-subitem">Mapa mental</a>
+                        <a href="debate-guiado-builder.html?new=1" class="sidebar-subitem">Debate guiado</a>
+                        <a href="caca-palavras-builder.html?new=1" class="sidebar-subitem">Caça-palavras</a>
+                        <a href="palavras-cruzadas-builder.html?new=1" class="sidebar-subitem">Palavras cruzadas</a>
+                        <a href="forca-builder.html?new=1" class="sidebar-subitem">Força</a>
                         <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
                     </div>
                 </div>
@@ -121,49 +121,37 @@
                 <aside class="dashboard-quick-create" data-dashboard-tour-anchor="quick-create">
                     <span class="dashboard-next-class-tag" data-i18n="dashboard.quick.tag">Criação rápida</span>
                     <strong data-i18n="dashboard.quick.title">Crie uma atividade em poucos cliques</strong>
-                    <p data-dashboard-quick-copy data-i18n="dashboard.quick.copy">Escolha a turma, use um formato principal e entre direto no editor. Sugestao rapida: Slides (10-15 min), Quiz (5-8 min), Aula completa (15-25 min).</p>
+                    <p data-dashboard-quick-copy data-i18n="dashboard.quick.copy">Escolha uma atividade e entre direto no editor. A turma é opcional e pode ser definida agora ou depois.</p>
 
                     <div class="dashboard-quick-create-form">
                         <label class="dashboard-quick-field">
-                            <span data-i18n="dashboard.quick.class">Turma</span>
+                            <span data-i18n="dashboard.quick.class">Turma (opcional)</span>
                             <select data-dashboard-quick-class>
-                                <option value="" data-i18n="dashboard.quick.selectClass">Selecione uma turma</option>
+                                <option value="" data-i18n="dashboard.quick.personalLibrary">Biblioteca pessoal (sem turma)</option>
                             </select>
                         </label>
 
                         <label class="dashboard-quick-field">
                             <span data-i18n="dashboard.quick.activity">Atividade</span>
                             <select data-dashboard-quick-format>
-                                <option value="slides-builder.html">Slides (10-15 min)</option>
-                                <option value="quiz-builder.html">Quiz (5-8 min)</option>
+                                <option value="slides-builder.html?new=1">Slides (10-15 min)</option>
+                                <option value="quiz-builder.html?new=1">Quiz (5-8 min)</option>
                                 <option value="criar-aula.html">Aula completa (15-25 min)</option>
-                                <option value="flashcards-builder.html">Flashcards</option>
-                                <option value="jogo-memoria-builder.html">Jogo da memória</option>
-                                <option value="roleta-builder.html">Roleta</option>
-                                <option value="ligar-pontos-builder.html">Ligar pontos</option>
-                                <option value="mapa-mental-builder.html">Mapa mental</option>
-                                <option value="debate-guiado-builder.html">Debate guiado</option>
-                                <option value="caca-palavras-builder.html">Caça-palavras</option>
-                                <option value="palavras-cruzadas-builder.html">Palavras cruzadas</option>
-                                <option value="forca-builder.html">Forca</option>
+                                <option value="flashcards-builder.html?new=1">Flashcards</option>
+                                <option value="jogo-memoria-builder.html?new=1">Jogo da memória</option>
+                                <option value="roleta-builder.html?new=1">Roleta</option>
+                                <option value="ligar-pontos-builder.html?new=1">Ligar pontos</option>
+                                <option value="mapa-mental-builder.html?new=1">Mapa mental</option>
+                                <option value="debate-guiado-builder.html?new=1">Debate guiado</option>
+                                <option value="caca-palavras-builder.html?new=1">Caça-palavras</option>
+                                <option value="palavras-cruzadas-builder.html?new=1">Palavras cruzadas</option>
+                                <option value="forca-builder.html?new=1">Força</option>
                             </select>
                         </label>
 
                         <button type="button" class="platform-link-button platform-link-primary" data-dashboard-quick-open data-i18n="dashboard.actions.create">Criar</button>
                     </div>
                 </aside>
-            </section>
-
-            <section class="dashboard-section dashboard-recent-section">
-                <div class="dashboard-section-head">
-                    <div>
-                        <span class="platform-section-label" data-i18n="dashboard.recent.label">Turmas recentes</span>
-                        <h2 data-i18n="dashboard.recent.title">Abra de novo o que você usou por último</h2>
-                    </div>
-                    <p data-i18n="dashboard.recent.copy">As três turmas mais recentes aparecem aqui com acesso direto para retomar a aula, editar materiais ou abrir a biblioteca da turma.</p>
-                </div>
-
-                <div class="quick-class-grid dashboard-quick-grid dashboard-class-grid dashboard-recent-grid" data-dashboard-recent-classes aria-live="polite" aria-busy="false"></div>
             </section>
 
             <section class="dashboard-section" id="activity-toolkit">
@@ -176,7 +164,7 @@
                 </div>
 
                 <div class="dashboard-toolkit-grid" data-dashboard-tour-anchor="toolkit">
-                    <a href="slides-builder.html" class="dashboard-tool-card dashboard-tool-card--slides">
+                    <a href="slides-builder.html?new=1" class="dashboard-tool-card dashboard-tool-card--slides">
                         <div class="dashboard-tool-visual" aria-hidden="true">
                             <svg viewBox="0 0 32 32" aria-hidden="true">
                                 <rect x="10" y="8.5" width="12" height="9" rx="1.6"></rect>
@@ -186,16 +174,16 @@
                         </div>
                         <div class="dashboard-tool-content">
                             <h3 data-i18n="dashboard.formats.slides">Slides</h3>
-                            <p data-i18n="dashboard.toolkit.slides.copy">Quando usar: conduzir explicacao e organizar a sequencia da aula. Tempo estimado: 10 a 15 min.</p>
+                            <p data-i18n="dashboard.toolkit.slides.copy">Quando usar: conduzir explicação e organizar a sequência da aula. Tempo estimado: 10 a 15 min.</p>
                             <div class="dashboard-tool-meta">
                                 <span data-i18n="dashboard.toolkit.slides.duration">10-15 min</span>
-                                <span data-i18n="dashboard.toolkit.slides.level">Roteiro rapido</span>
+                                <span data-i18n="dashboard.toolkit.slides.level">Roteiro rápido</span>
                             </div>
-                            <span class="dashboard-tool-cta" data-i18n="dashboard.toolkit.cta">Comecar</span>
+                            <span class="dashboard-tool-cta" data-i18n="dashboard.toolkit.cta">Começar</span>
                         </div>
                     </a>
 
-                    <a href="quiz-builder.html" class="dashboard-tool-card dashboard-tool-card--quiz">
+                    <a href="quiz-builder.html?new=1" class="dashboard-tool-card dashboard-tool-card--quiz">
                         <div class="dashboard-tool-visual" aria-hidden="true">
                             <svg viewBox="0 0 32 32" aria-hidden="true">
                                 <path d="M10 11v10h10"></path>
@@ -206,12 +194,12 @@
                         </div>
                         <div class="dashboard-tool-content">
                             <h3 data-i18n="dashboard.formats.quiz">Quiz</h3>
-                            <p data-i18n="dashboard.toolkit.quiz.copy">Quando usar: revisar conteudo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.</p>
+                            <p data-i18n="dashboard.toolkit.quiz.copy">Quando usar: revisar conteúdo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.</p>
                             <div class="dashboard-tool-meta">
                                 <span data-i18n="dashboard.toolkit.quiz.duration">5-8 min</span>
-                                <span data-i18n="dashboard.toolkit.quiz.level">Revisao curta</span>
+                                <span data-i18n="dashboard.toolkit.quiz.level">Revisão curta</span>
                             </div>
-                            <span class="dashboard-tool-cta" data-i18n="dashboard.toolkit.cta">Comecar</span>
+                            <span class="dashboard-tool-cta" data-i18n="dashboard.toolkit.cta">Começar</span>
                         </div>
                     </a>
 
@@ -225,12 +213,12 @@
                         </div>
                         <div class="dashboard-tool-content">
                             <h3 data-i18n="dashboard.formats.lesson">Aula completa</h3>
-                            <p data-i18n="dashboard.toolkit.lesson.copy">Quando usar: planejar bloco completo com inicio, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.</p>
+                            <p data-i18n="dashboard.toolkit.lesson.copy">Quando usar: planejar bloco completo com início, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.</p>
                             <div class="dashboard-tool-meta">
                                 <span data-i18n="dashboard.toolkit.lesson.duration">15-25 min</span>
                                 <span data-i18n="dashboard.toolkit.lesson.level">Plano completo</span>
                             </div>
-                            <span class="dashboard-tool-cta" data-i18n="dashboard.toolkit.cta">Comecar</span>
+                            <span class="dashboard-tool-cta" data-i18n="dashboard.toolkit.cta">Começar</span>
                         </div>
                     </a>
                 </div>
@@ -238,20 +226,32 @@
                 <div class="dashboard-toolkit-secondary" id="extra-formats">
                     <div>
                         <strong data-i18n="dashboard.toolkit.moreFormats">Mais formatos</strong>
-                        <p data-i18n="dashboard.toolkit.moreFormats.copy">Use formatos extras para momentos especificos da aula: retomada curta, dinamica rapida ou fechamento leve.</p>
+                        <p data-i18n="dashboard.toolkit.moreFormats.copy">Use formatos extras para momentos específicos da aula: retomada curta, dinâmica rápida ou fechamento leve.</p>
                     </div>
                     <div class="dashboard-toolkit-links">
-                        <a href="flashcards-builder.html" class="dashboard-toolkit-link">Flashcards</a>
-                        <a href="jogo-memoria-builder.html" class="dashboard-toolkit-link">Jogo da memória</a>
-                        <a href="roleta-builder.html" class="dashboard-toolkit-link">Roleta</a>
-                        <a href="ligar-pontos-builder.html" class="dashboard-toolkit-link">Ligar pontos</a>
-                        <a href="mapa-mental-builder.html" class="dashboard-toolkit-link">Mapa mental</a>
-                        <a href="debate-guiado-builder.html" class="dashboard-toolkit-link">Debate guiado</a>
-                        <a href="caca-palavras-builder.html" class="dashboard-toolkit-link">Caça-palavras</a>
-                        <a href="palavras-cruzadas-builder.html" class="dashboard-toolkit-link">Palavras cruzadas</a>
-                        <a href="forca-builder.html" class="dashboard-toolkit-link">Forca</a>
+                        <a href="flashcards-builder.html?new=1" class="dashboard-toolkit-link">Flashcards</a>
+                        <a href="jogo-memoria-builder.html?new=1" class="dashboard-toolkit-link">Jogo da memória</a>
+                        <a href="roleta-builder.html?new=1" class="dashboard-toolkit-link">Roleta</a>
+                        <a href="ligar-pontos-builder.html?new=1" class="dashboard-toolkit-link">Ligar pontos</a>
+                        <a href="mapa-mental-builder.html?new=1" class="dashboard-toolkit-link">Mapa mental</a>
+                        <a href="debate-guiado-builder.html?new=1" class="dashboard-toolkit-link">Debate guiado</a>
+                        <a href="caca-palavras-builder.html?new=1" class="dashboard-toolkit-link">Caça-palavras</a>
+                        <a href="palavras-cruzadas-builder.html?new=1" class="dashboard-toolkit-link">Palavras cruzadas</a>
+                        <a href="forca-builder.html?new=1" class="dashboard-toolkit-link">Força</a>
                     </div>
                 </div>
+            </section>
+
+            <section class="dashboard-section dashboard-recent-section" data-dashboard-recent-section>
+                <div class="dashboard-section-head">
+                    <div>
+                        <span class="platform-section-label" data-i18n="dashboard.recent.label">Turmas recentes</span>
+                        <h2 data-i18n="dashboard.recent.title">Abra de novo o que você usou por último</h2>
+                    </div>
+                    <p data-i18n="dashboard.recent.copy">As três turmas mais recentes aparecem aqui com acesso direto para retomar a aula, editar materiais ou abrir a biblioteca da turma.</p>
+                </div>
+
+                <div class="quick-class-grid dashboard-quick-grid dashboard-class-grid dashboard-recent-grid" data-dashboard-recent-classes aria-live="polite" aria-busy="false"></div>
             </section>
 
             <section class="dashboard-section">
@@ -285,7 +285,7 @@
                     <article class="quick-class-card quick-class-card--active">
                         <span class="route-tag" data-i18n="dashboard.empty.noClasses">Sem turmas</span>
                         <h3 data-i18n="dashboard.empty.noClassesTitle">Nenhuma turma criada ainda</h3>
-                        <p data-i18n="dashboard.empty.noClassesCopy">Use o botão Criar turma na lateral para começar.</p>
+                        <p data-i18n="dashboard.empty.noClassesCopy">Você já pode criar atividades na biblioteca pessoal. Crie uma turma quando quiser organizar os materiais por grupo.</p>
                     </article>
                 </div>
             </section>

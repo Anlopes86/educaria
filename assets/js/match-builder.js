@@ -144,7 +144,7 @@ function addMatchPair() {
     stack.insertAdjacentHTML("beforeend", matchPairTemplate(count, "", "", matchPalette[count % matchPalette.length]));
     setMatchCountSelect(count + 1);
     renderMatchPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function removeMatchPair(trigger) {
@@ -157,7 +157,7 @@ function removeMatchPair(trigger) {
     pair.remove();
     setMatchCountSelect(pairs.length - 1);
     renderMatchPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function renderMatchPreview() {

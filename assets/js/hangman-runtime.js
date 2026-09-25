@@ -42,12 +42,12 @@ function renderHangmanApplication() {
     const controls = draft?.controls || {};
     const fallbackEntries = [
         { answer: "PLANETA", clue: "Corpo celeste que orbita uma estrela", category: "Astronomia" },
-        { answer: "MAPA", clue: "Representacao visual de um territorio", category: "Geografia" },
-        { answer: "FRASE", clue: "Conjunto organizado de palavras", category: "Lingua portuguesa" }
+        { answer: "MAPA", clue: "Representação visual de um território", category: "Geografia" },
+        { answer: "FRASE", clue: "Conjunto organizado de palavras", category: "Língua portuguesa" }
     ];
     const entries = api.sanitizeEntries(parseHangmanEntries(draft?.stackHtml || ""));
     const rounds = entries.length ? entries : api.sanitizeEntries(fallbackEntries);
-    const title = String(controls["forca-titulo"] || "").trim() || "Jogo da Forca";
+    const title = String(controls["forca-titulo"] || "").trim() || "Jogo da Força";
     const subtitle = String(controls["forca-subtitulo"] || "").trim() || "Descubra as palavras usando as dicas.";
     const maxErrors = Math.max(4, Math.min(8, Number(controls["forca-tentativas"] || 6)));
     const titleRoot = document.querySelector("[data-hangman-stage-title]");

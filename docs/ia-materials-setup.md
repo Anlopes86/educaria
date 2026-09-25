@@ -62,7 +62,7 @@ PORT=8787
 ALLOWED_ORIGIN=http://127.0.0.1:5500
 ```
 
-Com `AI_AUTH_REQUIRED=true`, o backend aceita chamadas de IA somente com um Firebase ID token valido no header `Authorization: Bearer ...`. O frontend dos builders ja envia esse token a partir do usuario logado.
+O backend exige autenticacao por padrao e aceita chamadas de IA somente com um Firebase ID token valido no header `Authorization: Bearer ...`. O frontend dos builders ja envia esse token a partir do usuario logado. Em producao, o servico interrompe a inicializacao se a autenticacao estiver desativada, se `FIREBASE_PROJECT_ID` estiver ausente ou se `ALLOWED_ORIGIN` for permissivo.
 
 `AI_DAILY_CREDIT_LIMIT` funciona como fallback.
 

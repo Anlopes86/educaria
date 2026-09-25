@@ -128,8 +128,8 @@ function applyWordsearchTemplateData(payload) {
 
     renumberWordsearchCards();
     renderWordsearchPreview();
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -187,7 +187,7 @@ function addWordsearchCard() {
     stack.insertAdjacentHTML("beforeend", wordsearchCardTemplate(count));
     renumberWordsearchCards();
     renderWordsearchPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function removeWordsearchCard(trigger) {
@@ -200,7 +200,7 @@ function removeWordsearchCard(trigger) {
     card.remove();
     renumberWordsearchCards();
     renderWordsearchPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function buildWordsearchBankMarkup(entries) {
@@ -282,7 +282,7 @@ function renderWordsearchPreview() {
         let message = "";
 
         if (puzzle.entries.length < 2) {
-            message = "O preview completo aparece quando houver pelo menos duas palavras válidas.";
+            message = "A prévia completa aparece quando houver pelo menos duas palavras válidas.";
         } else if (puzzle.omittedEntries.length) {
             message = `${puzzle.omittedEntries.length} ${puzzle.omittedEntries.length === 1 ? "palavra não entrou" : "palavras não entraram"} na grade atual. Tente aumentar o tamanho ou reduzir a lista.`;
         } else if (puzzle.sizeAdjusted) {

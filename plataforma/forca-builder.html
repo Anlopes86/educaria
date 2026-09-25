@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Forca | EducarIA</title>
+    <title>Força | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/local-persistence.js" defer></script>
@@ -12,18 +17,22 @@
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/editor-disclosure.js" defer></script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/ai-credits.js" defer></script>
+    <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/builder-journey.js" defer></script>
     <script src="../assets/js/hangman-core.js" defer></script>
     <script src="../assets/js/hangman-builder.js" defer></script>
 </head>
-<body class="product-body theme-editor" data-material-type="hangman">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+<body class="product-body theme-editor" data-material-type="hangman" data-requires-auth="true">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
     <main id="main-content" class="platform-shell platform-flow-shell activity-editor-shell" tabindex="-1">
         <header class="platform-topbar">
             <a href="index.html" class="platform-brand">
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Forca</strong>
+                    <strong>Força</strong>
                 </div>
             </a>
             <div class="platform-top-actions">
@@ -32,16 +41,20 @@
                 <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
-        <div class="builder-floating-actions" role="toolbar" aria-label="Acoes da forca">
+        <div class="builder-floating-actions" role="toolbar" aria-label="Ações da força">
+            <p class="builder-save-status" data-builder-save-status role="status" aria-live="polite" aria-atomic="true">
+                <span class="builder-save-status-dot" aria-hidden="true"></span>
+                <span data-builder-save-status-label>Rascunho local</span>
+            </p>
             <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="hangman" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="hangman" data-save-target="turma.html" aria-label="Salvar na turma (acao principal)">Salvar na turma</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="hangman" data-save-target="turma.html" aria-label="Salvar na turma (ação principal)">Salvar na turma</button>
             <a href="forca-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
         </div>
 
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de for&ccedil;a</span>
-                <h1>Monte palavras, dicas e acompanhe a rodada no preview.</h1>
+                <h1>Monte palavras, dicas e acompanhe a rodada na prévia.</h1>
                 <p>Ideal para revisar vocabul&aacute;rio, ortografia e conceitos-chave de forma r&aacute;pida.</p>
                 <p>Para criar sem utilizar a IA, baixe o modelo com os campos prontos, preencha os espa&ccedil;os, salve o arquivo e selecione em 'arquivo de apoio' logo acima.</p>
             </div>
@@ -49,6 +62,47 @@
 
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
+                <details class="editor-disclosure">
+                    <summary>
+                        <span>Montar com IA</span>
+                        <small class="ai-credits-pill" data-ai-credits>Cr&eacute;ditos de IA: carregando...</small>
+                        <small>Expandir</small>
+                    </summary>
+                    <div class="editor-disclosure-body">
+                        <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field">
+                                <label for="forca-turma">Turma</label>
+                                <select id="forca-turma" data-builder-class-context>
+                                    <option value="">Biblioteca pessoal</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="forca-disciplina">Disciplina</label>
+                                <input id="forca-disciplina" type="text" placeholder="Ex.: L&iacute;ngua Portuguesa">
+                            </div>
+                            <div class="platform-field">
+                                <label for="forca-ano">Ano ou p&uacute;blico</label>
+                                <input id="forca-ano" type="text" placeholder="Ex.: 5&ordm; ano">
+                            </div>
+                            <div class="platform-field platform-field-wide">
+                                <label for="forca-fonte-texto">Tema, texto ou vocabul&aacute;rio</label>
+                                <textarea id="forca-fonte-texto" rows="6" placeholder="Digite um t&oacute;pico, cole o conte&uacute;do da aula ou envie um arquivo para a IA criar palavras e dicas."></textarea>
+                            </div>
+                            <div class="platform-field">
+                                <label for="forca-arquivo">Arquivo de apoio</label>
+                                <input id="forca-arquivo" type="file" accept=".txt,.docx,.pdf,.rtf">
+                            </div>
+                            <div class="platform-field">
+                                <label for="forca-quantidade-livre">Quantidade de palavras</label>
+                                <input id="forca-quantidade-livre" type="number" min="2" max="20" step="1" value="6">
+                            </div>
+                        </div>
+                        <div class="utility-actions">
+                            <button type="button" class="platform-link-button platform-link-primary" data-generate-material="hangman">Gerar força com IA</button>
+                        </div>
+                    </div>
+                </details>
+
                 <details class="editor-disclosure">
                     <summary>
                         <span>Arquivo modelo</span>
@@ -70,7 +124,7 @@
 
                 <details class="editor-disclosure">
                     <summary>
-                        <span>Mais opcoes da atividade</span>
+                        <span>Mais opções da atividade</span>
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
@@ -105,7 +159,7 @@
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-clear-draft>Limpar conteúdo</button>
                         </div>
-                        <p class="activity-manual-guide">Preencha palavra e dica. Use Mais opcoes da atividade para tentativas e contexto.</p>
+                        <p class="activity-manual-guide">Preencha palavra e dica. Use Mais opções da atividade para tentativas e contexto.</p>
                         <div class="platform-question-stack activity-card-stack" data-hangman-entries>
                             <section class="platform-question-card activity-content-card hangman-entry-card" data-hangman-entry>
                                 <div class="activity-card-header">
@@ -220,13 +274,13 @@
             </article>
 
             <aside class="platform-builder-card activity-preview-pane hangman-preview-pane">
-                <span class="platform-section-label">Preview</span>
-                <h2>Veja a forca pronta</h2>
+                <span class="platform-section-label">Prévia</span>
+                <h2>Veja a força pronta</h2>
                 <p>Confira a primeira rodada antes de apresentar para a turma.</p>
                 <div class="live-preview-stack">
                     <section class="live-preview-card live-preview-card--teal">
                         <span class="platform-section-label">Resumo</span>
-                        <h3 data-hangman-preview-title>Jogo da Forca</h3>
+                        <h3 data-hangman-preview-title>Jogo da Força</h3>
                         <p data-hangman-preview-subtitle>Descubra as palavras usando as dicas.</p>
                         <div class="preview-chip-row">
                             <span class="preview-chip" data-hangman-preview-count>0 palavras</span>

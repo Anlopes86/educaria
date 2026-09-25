@@ -72,12 +72,12 @@ function builderTemplateHasContent(stack) {
 
 function builderTemplateConfirmReplace(stack) {
     if (!builderTemplateHasContent(stack)) return true;
-    return window.confirm("Substituir o conteudo atual por este modelo?");
+    return window.confirm("Substituir o conteúdo atual por este modelo?");
 }
 
 function builderTemplateDispatch() {
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
 }
 
 function builderTemplateStatusNode() {
@@ -114,14 +114,14 @@ function builderTemplateApplyQuiz(templateId) {
 
     const payloads = {
         review: {
-            title: "Revisao em 5 min",
+            title: "Revisão em 5 min",
             format: "Misto",
             questions: [
                 {
-                    type: "Multipla escolha",
+                    type: "Múltipla escolha",
                     prompt: "Qual ideia principal da aula de hoje precisa ficar clara?",
                     correct: "Alternativa B",
-                    options: ["Um detalhe secundario", "O conceito central", "Uma curiosidade", "Uma excecao"],
+                    options: ["Um detalhe secundário", "O conceito central", "Uma curiosidade", "Uma exceção"],
                     explanation: "A pergunta revisa o objetivo central antes de avancar."
                 },
                 {
@@ -133,34 +133,34 @@ function builderTemplateApplyQuiz(templateId) {
                 },
                 {
                     type: "Pergunta aberta",
-                    prompt: "Escreva um exemplo que mostre que voce entendeu o tema.",
+                    prompt: "Escreva um exemplo que mostre que você entendeu o tema.",
                     criteria: "Exemplo coerente com o conceito",
-                    model: "Resposta com exemplo proprio e justificativa curta.",
+                    model: "Resposta com exemplo próprio e justificativa curta.",
                     explanation: "Valorize respostas que conectem conceito e exemplo."
                 }
             ]
         },
         diagnostic: {
-            title: "Diagnostico rapido",
+            title: "Diagnóstico rápido",
             format: "Misto",
             questions: [
                 {
-                    type: "Multipla escolha",
-                    prompt: "Antes de comecar, o que voce ja sabe sobre este tema?",
+                    type: "Múltipla escolha",
+                    prompt: "Antes de começar, o que você já sabe sobre este tema?",
                     correct: "Alternativa A",
-                    options: ["Tenho uma ideia inicial", "Nunca ouvi falar", "Sei aplicar sozinho", "Nao tenho certeza"],
-                    explanation: "Use a distribuicao de respostas para calibrar a aula."
+                    options: ["Tenho uma ideia inicial", "Nunca ouvi falar", "Sei aplicar sozinho", "Não tenho certeza"],
+                    explanation: "Use a distribuição de respostas para calibrar a aula."
                 },
                 {
                     type: "Pergunta aberta",
-                    prompt: "Qual pergunta voce gostaria de responder ao final da aula?",
-                    criteria: "Duvida relacionada ao tema",
+                    prompt: "Qual pergunta você gostaria de responder ao final da aula?",
+                    criteria: "Dúvida relacionada ao tema",
                     model: "Pergunta clara sobre conceito, uso ou exemplo.",
-                    explanation: "As respostas ajudam a ajustar a explicacao."
+                    explanation: "As respostas ajudam a ajustar a explicação."
                 },
                 {
                     type: "Verdadeiro ou falso",
-                    prompt: "Este tema aparece em situacoes do dia a dia.",
+                    prompt: "Este tema aparece em situações do dia a dia.",
                     correct: "Alternativa A",
                     options: ["Verdadeiro", "Falso"],
                     explanation: "Abra uma conversa curta com exemplos dos alunos."
@@ -168,20 +168,20 @@ function builderTemplateApplyQuiz(templateId) {
             ]
         },
         exit: {
-            title: "Ticket de saida",
+            title: "Ticket de saída",
             format: "Perguntas abertas",
             questions: [
                 {
                     type: "Pergunta aberta",
-                    prompt: "O que ficou mais claro para voce hoje?",
-                    criteria: "Referencia a uma aprendizagem da aula",
+                    prompt: "O que ficou mais claro para você hoje?",
+                    criteria: "Referência a uma aprendizagem da aula",
                     model: "Hoje entendi que...",
                     explanation: "Cheque se o aluno nomeia uma aprendizagem concreta."
                 },
                 {
                     type: "Pergunta aberta",
-                    prompt: "Que parte ainda precisa de revisao?",
-                    criteria: "Duvida ou ponto de inseguranca",
+                    prompt: "Que parte ainda precisa de revisão?",
+                    criteria: "Dúvida ou ponto de insegurança",
                     model: "Ainda preciso rever...",
                     explanation: "Use as respostas para planejar retomada."
                 }
@@ -195,7 +195,7 @@ function builderTemplateApplyQuiz(templateId) {
     payload.questions.forEach((question, index) => {
         const desiredType = builderTemplateNormalize(question.type).includes("aberta") ? "pergunta aberta" : "multipla escolha";
         const source = templates.find((card) => builderTemplateNormalize(card.querySelector('[data-field="type"]')?.value) === desiredType) || templates[0];
-        const card = builderTemplateCloneCard(source, "Questao", index);
+        const card = builderTemplateCloneCard(source, "Questão", index);
         const prompt = card.querySelector('[data-field="prompt"]');
         const type = card.querySelector('[data-field="type"]');
         const correct = card.querySelector('[data-field="correct"]');
@@ -233,19 +233,19 @@ function builderTemplateApplySlides(templateId) {
 
     const payloads = {
         opener: [
-            ["Abertura da aula", "Tema, objetivo e combinados", "Hoje vamos entender a ideia principal, observar um exemplo e fechar com uma pergunta de revisao."],
-            ["Por que isso importa?", "Conexao com a turma", "Mostre uma situacao real em que este conteudo aparece e convide os alunos a antecipar respostas."],
-            ["Pergunta-guia", "Foco da investigacao", "Ao final, cada aluno deve conseguir responder: como eu reconheco e aplico este conceito?"]
+            ["Abertura da aula", "Tema, objetivo e combinados", "Hoje vamos entender a ideia principal, observar um exemplo e fechar com uma pergunta de revisão."],
+            ["Por que isso importa?", "Conexão com a turma", "Mostre uma situação real em que este conteúdo aparece e convide os alunos a antecipar respostas."],
+            ["Pergunta-guia", "Foco da investigação", "Ao final, cada aluno deve conseguir responder: como eu reconheço e aplico este conceito?"]
         ],
         concept: [
-            ["Conceito central", "Definicao curta", "Apresente a definicao em linguagem simples e destaque as palavras essenciais."],
-            ["Exemplo resolvido", "Passo a passo", "Mostre um exemplo completo, explicando uma decisao por vez."],
-            ["Agora tente", "Aplicacao guiada", "Proponha uma variacao curta para a turma resolver junto antes da atividade individual."]
+            ["Conceito central", "Definição curta", "Apresente a definição em linguagem simples e destaque as palavras essenciais."],
+            ["Exemplo resolvido", "Passo a passo", "Mostre um exemplo completo, explicando uma decisão por vez."],
+            ["Agora tente", "Aplicação guiada", "Proponha uma variação curta para a turma resolver junto antes da atividade individual."]
         ],
         closing: [
-            ["Retomada final", "Tres ideias para guardar", "Liste os pontos que nao podem ficar de fora da aula."],
-            ["Cheque rapido", "Pergunta de saida", "Peca uma resposta curta que mostre se o objetivo foi alcancado."],
-            ["Proxima aula", "Gancho", "Indique como o tema vai continuar e qual material pode ser revisado."]
+            ["Retomada final", "Três ideias para guardar", "Liste os pontos que não podem ficar de fora da aula."],
+            ["Cheque rápido", "Pergunta de saída", "Peça uma resposta curta que mostre se o objetivo foi alcançado."],
+            ["Próxima aula", "Gancho", "Indique como o tema vai continuar e qual material pode ser revisado."]
         ]
     };
 
@@ -276,22 +276,22 @@ function builderTemplateApplyFlashcards(templateId) {
 
     const payloads = {
         vocab: [
-            ["Conceito-chave", "Definicao curta", "Use um exemplo oral antes de virar o card."],
-            ["Exemplo", "Situacao que mostra o conceito", "Peca aos alunos outro exemplo."],
-            ["Contraexemplo", "Situacao parecida, mas incorreta", "Ajuda a evitar confusoes comuns."],
-            ["Aplicacao", "Quando usar esta ideia", "Feche com uma pergunta rapida."]
+            ["Conceito-chave", "Definição curta", "Use um exemplo oral antes de virar o card."],
+            ["Exemplo", "Situação que mostra o conceito", "Peça aos alunos outro exemplo."],
+            ["Contraexemplo", "Situação parecida, mas incorreta", "Ajuda a evitar confusões comuns."],
+            ["Aplicação", "Quando usar esta ideia", "Feche com uma pergunta rápida."]
         ],
         fractions: [
-            ["Numerador", "Parte de cima da fracao", "Mostra quantas partes foram consideradas."],
-            ["Denominador", "Parte de baixo da fracao", "Mostra em quantas partes o inteiro foi dividido."],
-            ["Fracao equivalente", "Representa a mesma quantidade", "Ex.: 1/2 e 2/4."],
-            ["Simplificar", "Escrever a fracao em forma menor", "Divida numerador e denominador pelo mesmo numero."]
+            ["Numerador", "Parte de cima da fração", "Mostra quantas partes foram consideradas."],
+            ["Denominador", "Parte de baixo da fração", "Mostra em quantas partes o inteiro foi dividido."],
+            ["Fração equivalente", "Representa a mesma quantidade", "Ex.: 1/2 e 2/4."],
+            ["Simplificar", "Escrever a fração em forma menor", "Divida numerador e denominador pelo mesmo número."]
         ],
         language: [
             ["Main idea", "Ideia principal", "Use para identificar o foco do texto."],
-            ["Evidence", "Evidencia", "Trecho que sustenta uma resposta."],
-            ["Inference", "Inferencia", "Conclusao feita com pistas do texto."],
-            ["Context", "Contexto", "Informacoes ao redor que ajudam a entender."]
+            ["Evidence", "Evidência", "Trecho que sustenta uma resposta."],
+            ["Inference", "Inferência", "Conclusão feita com pistas do texto."],
+            ["Context", "Contexto", "Informações ao redor que ajudam a entender."]
         ]
     };
 

@@ -11,10 +11,12 @@
 @import url('./components/lists.css');
 @import url('./components/modals.css');
 @import url('./components/feedback.css');
+@import url('./components/offline-status.css');
 @import url('./components/navigation.css');
 @import url('./components/presentation.css');
 @import url('./components/presentation-stages.css');
 @import url('./components/debate.css');
+@import url('./components/presentation-activities.css');
 @import url('./components/previews.css');
 @import url('./components/toolbar.css');
 @import url('./layouts/app-shell.css');
@@ -25,4 +27,5 @@
 @import url('./pages/auth.css');
 @import url('./pages/settings.css');
 @import url('./pages/library.css');
+@import url('./pages/legal.css');
 

@@ -24,10 +24,11 @@
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/builder-journey.js" defer></script>
     <script src="../assets/js/flashcards-theme-controls.js" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="flashcards" data-requires-auth="true">
-    <a class="skip-link" href="#main-content">Pular para o conteudo principal</a>
+    <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
     <main id="main-content" class="platform-shell platform-flow-shell activity-editor-shell" tabindex="-1">
         <header class="platform-topbar">
             <a href="index.html" class="platform-brand">
@@ -43,17 +44,21 @@
                 <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
-        <div class="builder-floating-actions" role="toolbar" aria-label="Acoes dos flashcards">
+        <div class="builder-floating-actions" role="toolbar" aria-label="Ações dos flashcards">
+            <p class="builder-save-status" data-builder-save-status role="status" aria-live="polite" aria-atomic="true">
+                <span class="builder-save-status-dot" aria-hidden="true"></span>
+                <span data-builder-save-status-label>Rascunho local</span>
+            </p>
             <button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="flashcards" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button>
-            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="flashcards" data-save-target="turma.html" aria-label="Salvar na turma (acao principal)">Salvar na turma</button>
+            <button type="button" class="platform-link-button platform-link-primary" data-save-lesson data-save-material="flashcards" data-save-target="turma.html" aria-label="Salvar na turma (ação principal)">Salvar na turma</button>
             <a href="flashcards-apresentacao.html" class="platform-link-button platform-link-secondary">Apresentar</a>
         </div>
 
         <section class="activity-editor-context">
             <div>
                 <span class="focus-eyebrow">Editor de flashcards</span>
-                <h1>Edite frente e verso com o preview ao lado.</h1>
-                <p>Comece por frente e verso. Abra Mais opcoes para ajustes visuais.</p>
+                <h1>Edite frente e verso com a prévia ao lado.</h1>
+                <p>Comece por frente e verso. Abra Mais opções para ajustes visuais.</p>
             </div>
         </section>
 
@@ -67,9 +72,23 @@
                     </summary>
                     <div class="editor-disclosure-body">
                         <div class="platform-form-grid ai-structure-grid">
+                            <div class="platform-field">
+                                <label for="cards-turma">Turma</label>
+                                <select id="cards-turma" data-builder-class-context>
+                                    <option value="">Biblioteca pessoal</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="cards-disciplina">Disciplina</label>
+                                <input id="cards-disciplina" type="text" placeholder="Ex.: Inglês">
+                            </div>
+                            <div class="platform-field">
+                                <label for="cards-ano">Ano ou público</label>
+                                <input id="cards-ano" type="text" placeholder="Ex.: 6º ano">
+                            </div>
                             <div class="platform-field platform-field-wide">
                                 <label for="cards-fonte-texto">Texto ou lista de termos</label>
-                                <textarea id="cards-fonte-texto" rows="6" placeholder="Escreva um tópico e deixe a IA montar a apresentação ou adicione um arquivo pessoal (Word ou PDF)."></textarea>
+                                <textarea id="cards-fonte-texto" rows="6" placeholder="Digite um tópico, cole uma lista de termos ou envie um arquivo para a IA montar os cards."></textarea>
                             </div>
                             <div class="platform-field">
                                 <label for="cards-arquivo">Arquivo de apoio</label>
@@ -80,7 +99,7 @@
                                 <input id="cards-quantidade-livre" type="number" min="2" max="30" step="1" value="12">
                             </div>
                             <div class="platform-field">
-                                <label for="cards-exemplo">Anotações no preview</label>
+                                <label for="cards-exemplo">Anotações na prévia</label>
                                 <select id="cards-exemplo">
                                     <option>Sim</option>
                                     <option>N&atilde;o</option>
@@ -139,19 +158,19 @@
                         <small>Expandir</small>
                     </summary>
                     <div class="editor-disclosure-body">
-                        <p class="activity-manual-guide">Preencha frente e verso primeiro. Use Mais opcoes para anotacoes e aparencia.</p>
-                        <div class="activity-template-panel" role="group" aria-label="Modelos rapidos de flashcards">
+                        <p class="activity-manual-guide">Preencha frente e verso primeiro. Use Mais opções para anotações e aparência.</p>
+                        <div class="activity-template-panel" role="group" aria-label="Modelos rápidos de flashcards">
                             <button type="button" class="activity-template-card" data-builder-template="vocab" aria-label="Aplicar modelo Conceito e exemplo">
                                 <strong>Conceito e exemplo</strong>
                                 <span>Conceito, exemplo, contraexemplo e uso.</span>
                             </button>
-                            <button type="button" class="activity-template-card" data-builder-template="fractions" aria-label="Aplicar modelo Revisar fracoes">
-                                <strong>Revisar fracoes</strong>
-                                <span>Termos basicos prontos para adaptar.</span>
+                            <button type="button" class="activity-template-card" data-builder-template="fractions" aria-label="Aplicar modelo Revisar frações">
+                                <strong>Revisar frações</strong>
+                                <span>Termos básicos prontos para adaptar.</span>
                             </button>
-                            <button type="button" class="activity-template-card" data-builder-template="language" aria-label="Aplicar modelo Leitura em ingles">
-                                <strong>Leitura em ingles</strong>
-                                <span>Ideia principal, evidencias e inferencia.</span>
+                            <button type="button" class="activity-template-card" data-builder-template="language" aria-label="Aplicar modelo Leitura em inglês">
+                                <strong>Leitura em inglês</strong>
+                                <span>Ideia principal, evidências e inferência.</span>
                             </button>
                         </div>
                         <div class="utility-actions">
@@ -186,7 +205,7 @@
                                 </div>
 
                                 <details class="activity-optional-disclosure">
-                                    <summary>Mais opcoes: aparencia</summary>
+                                    <summary>Mais opções: aparência</summary>
                                 <div class="activity-optional-block">
                                     <span class="route-tag">Aparência opcional</span>
                                     <div class="platform-form-grid activity-style-grid">
@@ -235,7 +254,7 @@
                                 </div>
 
                                 <details class="activity-optional-disclosure">
-                                    <summary>Mais opcoes: aparencia</summary>
+                                    <summary>Mais opções: aparência</summary>
                                 <div class="activity-optional-block">
                                     <span class="route-tag">Aparência opcional</span>
                                     <div class="platform-form-grid activity-style-grid">
@@ -265,7 +284,7 @@
             </article>
 
             <aside class="platform-builder-card flashcards-preview-card activity-preview-pane">
-                <span class="platform-section-label">Preview</span>
+                <span class="platform-section-label">Prévia</span>
                 <h2>Como os cards vão aparecer</h2>
                 <p>Veja se a sequência está clara.</p>
                 <div class="live-preview-stack" data-flashcards-preview></div>

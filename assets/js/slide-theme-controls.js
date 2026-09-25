@@ -77,8 +77,8 @@ function applyThemeToAllSlides() {
         if (text && fields.text) text.value = fields.text.value;
     });
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
 }
 
 function bindSlideThemeControls() {

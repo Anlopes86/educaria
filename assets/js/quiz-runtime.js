@@ -46,20 +46,31 @@ function parseQuizQuestions(stackHtml) {
             return field.options[field.selectedIndex]?.text?.trim() || "";
         };
 
+        const prompt = fieldValue("prompt");
+        const explanation = fieldValue("explanation");
+        const criteria = fieldValue("criteria");
+        const model = fieldValue("model");
+        const options = [...card.querySelectorAll("[data-option]")].map((field) => ({
+            key: field.dataset.optionKey || "",
+            value: field.value.trim()
+        })).filter((option) => option.value);
+
+        if (![prompt, explanation, criteria, model, ...options.map((option) => option.value)].some(Boolean)) {
+            return null;
+        }
+
         return {
             index,
-            type: fieldLabel("type") || "Multipla escolha",
-            prompt: fieldValue("prompt") || `Questao ${index + 1}`,
+            type: fieldLabel("type") || "Múltipla escolha",
+            prompt: prompt || `Questão ${index + 1}`,
             correct: fieldLabel("correct"),
-            explanation: fieldValue("explanation"),
-            criteria: fieldValue("criteria"),
-            model: fieldValue("model"),
-            options: [...card.querySelectorAll("[data-option]")].map((field) => ({
-                key: field.dataset.optionKey || "",
-                value: field.value.trim()
-            })).filter((option) => option.value)
+            explanation,
+            criteria,
+            model,
+            options
         };
-    }).map((question) => {
+    }).filter(Boolean).map((question, index) => {
+        question.index = index;
         if (question.type === "Verdadeiro ou falso" && question.options.length < 2) {
             return {
                 ...question,
@@ -85,7 +96,7 @@ function serializeQuizQuestions(questions) {
                 <div class="platform-field">
                     <label>Tipo</label>
                     <select data-field="type">
-                        <option selected>${escapeHtml(question.type || "Multipla escolha")}</option>
+                        <option selected>${escapeHtml(question.type || "Múltipla escolha")}</option>
                     </select>
                 </div>
                 <div class="platform-field">
@@ -115,22 +126,6 @@ function serializeQuizQuestions(questions) {
             </div>
         </section>
     `).join("");
-}
-
-function buildFallbackQuiz() {
-    return [{
-        index: 0,
-        type: "Multipla escolha",
-        prompt: "Which sentence uses the present perfect correctly?",
-        correct: "Alternativa B",
-        explanation: "Use 'have seen' because the structure is subject + have/has + past participle.",
-        options: [
-            { key: "Alternativa A", value: "I have saw this movie before." },
-            { key: "Alternativa B", value: "I have seen this movie before." },
-            { key: "Alternativa C", value: "I seen this movie yesterday." },
-            { key: "Alternativa D", value: "I has seen this movie before." }
-        ]
-    }];
 }
 
 function renderQuizApplication(questions, controls = {}) {
@@ -337,6 +332,7 @@ function renderQuizApplication(questions, controls = {}) {
     });
 
     document.addEventListener("keydown", (event) => {
+        if (event.defaultPrevented) return;
         if (event.key === "ArrowLeft") {
             event.preventDefault();
             if (currentIndex === 0) return;
@@ -356,8 +352,35 @@ function renderQuizApplication(questions, controls = {}) {
     paint();
 }
 
+function renderQuizEmptyState() {
+    const cardRoot = document.querySelector(".quiz-application-card");
+    const classLabel = document.querySelector("[data-quiz-application-class]");
+    const topMeta = document.querySelector(".quiz-application-top-meta");
+    const inlineEditToggle = document.querySelector("[data-inline-edit-toggle]");
+
+    if (!cardRoot) return;
+    if (classLabel) classLabel.textContent = "Quiz ainda sem perguntas";
+    if (topMeta) topMeta.hidden = true;
+    if (inlineEditToggle) inlineEditToggle.hidden = true;
+
+    cardRoot.className = "question-card quiz-application-card quiz-application-card--empty";
+    cardRoot.innerHTML = `
+        <div class="presentation-empty-state" role="status">
+            <span class="presentation-empty-state__icon" aria-hidden="true">?</span>
+            <span class="platform-section-label">Material não finalizado</span>
+            <h1>Este quiz ainda está vazio</h1>
+            <p>Volte ao editor para escrever ou gerar as perguntas antes de aplicar a atividade.</p>
+            <a href="quiz-builder.html" class="platform-link-button platform-link-primary" data-return-to-editor>Voltar ao editor</a>
+        </div>
+    `;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const draft = readQuizDraft();
     const questions = draft ? parseQuizQuestions(draft.stackHtml) : [];
-    renderQuizApplication(questions.length ? questions : buildFallbackQuiz(), draft?.controls || {});
+    if (!questions.length) {
+        renderQuizEmptyState();
+        return;
+    }
+    renderQuizApplication(questions, draft?.controls || {});
 });

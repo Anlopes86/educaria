@@ -44,21 +44,28 @@ function escapeAttr(value) {
 function aiReadyModalTemplate() {
     return `
         <div class="platform-modal-backdrop" data-ai-ready-modal hidden>
-            <div class="platform-modal-card" role="dialog" aria-modal="true" aria-labelledby="ai-ready-modal-title">
+            <div class="platform-modal-card" role="dialog" aria-modal="true" aria-labelledby="ai-ready-modal-title" aria-describedby="ai-ready-modal-description">
                 <div class="page-section-title page-section-title--compact">
                     <div>
-                        <span class="platform-section-label">Montar com IA</span>
-                        <h2 id="ai-ready-modal-title">Apresentação pronta!</h2>
+                        <span class="platform-section-label">Rascunho criado com IA</span>
+                        <h2 id="ai-ready-modal-title">Atividade criada. Agora revise.</h2>
                     </div>
-                    <p>Apresentação pronta! Confira as informações em 'editar manualmente' antes de utilizar.</p>
+                    <p id="ai-ready-modal-description">Confira o conteúdo, ajuste o que quiser e veja o resultado na prévia antes de apresentar.</p>
                 </div>
+                <ul class="ai-ready-checklist" aria-label="Próximos passos">
+                    <li>Revise textos e respostas</li>
+                    <li>Confira a visualização da atividade</li>
+                    <li>Salve e abra em modo de apresentação</li>
+                </ul>
                 <div class="utility-actions">
-                    <button type="button" class="platform-link-button platform-link-primary" data-ai-ready-modal-close>Entendi</button>
+                    <button type="button" class="platform-link-button platform-link-primary" data-ai-ready-review>Revisar atividade</button>
                 </div>
             </div>
         </div>
     `;
 }
+
+let aiReadyReturnFocus = null;
 
 function ensureAiReadyModal() {
     let modal = document.querySelector("[data-ai-ready-modal]");
@@ -68,16 +75,70 @@ function ensureAiReadyModal() {
     return document.querySelector("[data-ai-ready-modal]");
 }
 
-function closeAiReadyModal() {
+function closeAiReadyModal(restoreFocus = true) {
     const modal = document.querySelector("[data-ai-ready-modal]");
     if (!modal) return;
     modal.hidden = true;
+
+    if (restoreFocus && aiReadyReturnFocus instanceof HTMLElement) {
+        aiReadyReturnFocus.focus();
+    }
 }
 
-function openAiReadyModal() {
+function openAiReadyModal(materialType = "") {
     const modal = ensureAiReadyModal();
     if (!modal) return;
+    aiReadyReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    modal.dataset.materialType = materialType;
     modal.hidden = false;
+    requestAnimationFrame(() => modal.querySelector("[data-ai-ready-review]")?.focus());
+}
+
+function reviewGeneratedMaterial(materialType = "") {
+    closeAiReadyModal(false);
+
+    const manualDisclosure = [...document.querySelectorAll(".editor-disclosure")]
+        .find((item) => {
+            const label = String(item.querySelector(":scope > summary")?.textContent || "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase();
+            return item.classList.contains("editor-disclosure--manual") || label.includes("editar manualmente");
+        });
+
+    if (!(manualDisclosure instanceof HTMLDetailsElement)) return;
+
+    document.querySelectorAll(".editor-disclosure").forEach((item) => {
+        item.open = item === manualDisclosure;
+        item.querySelector(":scope > summary")?.setAttribute("aria-expanded", item.open ? "true" : "false");
+    });
+
+    const body = manualDisclosure.querySelector(".editor-disclosure-body");
+    if (body && !body.querySelector("[data-ai-review-banner]")) {
+        body.insertAdjacentHTML(
+            "afterbegin",
+            `<div class="ai-review-banner" data-ai-review-banner role="status">
+                <strong>Rascunho da IA pronto para revisão</strong>
+                <span>Você pode alterar qualquer texto, resposta, imagem ou configuração sem gastar novos créditos.</span>
+            </div>`
+        );
+    }
+
+    document.dispatchEvent(new CustomEvent("educaria-material-generated", {
+        detail: { materialType }
+    }));
+
+    manualDisclosure.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start"
+    });
+
+    window.setTimeout(() => {
+        const firstEditable = manualDisclosure.querySelector(
+            'input:not([type="hidden"]):not([disabled]), textarea:not([disabled]), select:not([disabled])'
+        );
+        firstEditable?.focus();
+    }, 240);
 }
 
 function normalizeLines(text) {
@@ -439,8 +500,8 @@ function applyQuizFromStructuredData(payload) {
     }
 
     renumberGeneratedCards("[data-quiz-question]", "Questão");
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -485,8 +546,8 @@ function applySlidesFromStructuredData(payload) {
     });
 
     renumberGeneratedCards("[data-slide-card]", "Slide");
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -537,8 +598,8 @@ function applyFlashcardsFromStructuredData(payload) {
     }
 
     renumberGeneratedCards("[data-flashcard]", "Card");
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -582,9 +643,26 @@ function applyMemoryFromStructuredData(payload) {
         renderMemoryPreview();
     }
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
+}
+
+function applyHangmanFromStructuredData(payload) {
+    const entries = Array.isArray(payload?.entries)
+        ? payload.entries.filter((entry) => String(entry?.answer || "").trim())
+        : [];
+    if (entries.length < 2 || typeof applyHangmanTemplateData !== "function") return false;
+
+    return applyHangmanTemplateData({
+        title: payload.title || "Jogo da Força",
+        subtitle: payload.subtitle || "Descubra as palavras usando as dicas.",
+        entries: entries.map((entry) => ({
+            answer: String(entry.answer || "").trim(),
+            clue: String(entry.clue || "").trim(),
+            category: String(entry.category || "").trim()
+        }))
+    });
 }
 
 function applyMatchFromStructuredData(payload) {
@@ -630,8 +708,8 @@ function applyMatchFromStructuredData(payload) {
         renderMatchPreview();
     }
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -704,8 +782,8 @@ function applyCrosswordFromStructuredData(payload) {
         renderCrosswordPreview();
     }
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -744,8 +822,8 @@ function applyWheelFromStructuredData(payload) {
         renderWheelPreview();
     }
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -798,8 +876,8 @@ function applyWordsearchFromStructuredData(payload) {
         renderWordsearchPreview();
     }
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -849,8 +927,8 @@ function applyMindmapFromStructuredData(payload) {
         renderMindPreview();
     }
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -904,8 +982,8 @@ function applyDebateFromStructuredData(payload) {
         renderDebatePreview();
     }
 
-    document.dispatchEvent(new Event("input"));
-    document.dispatchEvent(new Event("change"));
+    dispatchBuilderContentChange("input");
+    dispatchBuilderContentChange("change");
     return true;
 }
 
@@ -1045,6 +1123,24 @@ function buildFallbackMemory(sourceText, requestedCount) {
     return {
         title: "Jogo da memória estruturado",
         pairs
+    };
+}
+
+function buildFallbackHangman(sourceText, requestedCount) {
+    const lines = normalizeLines(sourceText);
+    const entries = lines.map((line, index) => {
+        const parts = line.split(/\s*[-:]\s*/).filter(Boolean);
+        return {
+            answer: summarizeBlock(parts[0] || `Palavra ${index + 1}`, `Palavra ${index + 1}`),
+            clue: summarizeBlock(parts.slice(1).join(" - ") || line, "Dica"),
+            category: ""
+        };
+    }).slice(0, requestedCount || 6);
+
+    return {
+        title: "Jogo da Força",
+        subtitle: "Descubra as palavras usando as dicas.",
+        entries
     };
 }
 
@@ -1233,7 +1329,7 @@ function resolveTemplateEndpoint() {
 
 class EducariaAiRequestError extends Error {
     constructor(message, options = {}) {
-        super(String(message || "Nao foi possivel gerar o material com IA."));
+        super(String(message || "Não foi possível gerar o material com IA."));
         this.name = "EducariaAiRequestError";
         this.status = Number(options.status || 0);
         this.code = String(options.code || "").trim();
@@ -1269,20 +1365,20 @@ function aiErrorToUserMessage(error) {
 
     if (isQuotaError) {
         if (credits?.plan === "free" && Number(credits?.limits?.pro || 0) > Number(credits?.limit || 0)) {
-            return "Seus creditos diarios acabaram. Faca upgrade para o plano Pro para liberar mais geracoes por dia.";
+            return "Seus créditos diários acabaram. Faça upgrade para o plano Pro para liberar mais gerações por dia.";
         }
-        return "Seus creditos diarios de IA acabaram por hoje. Tente novamente apos o reset.";
+        return "Seus créditos diários de IA acabaram por hoje. Tente novamente após o reset.";
     }
 
     if (isAuthError) {
-        return "Sua sessao expirou. Entre novamente para continuar usando a IA.";
+        return "Sua sessão expirou. Entre novamente para continuar usando a IA.";
     }
 
     if (isServiceUnavailable) {
-        return "A IA esta indisponivel no momento. Tente novamente em alguns instantes.";
+        return "A IA está indisponível no momento. Tente novamente em alguns instantes.";
     }
 
-    return "Nao foi possivel gerar este material agora. Tente novamente em instantes.";
+    return "Não foi possível gerar este material agora. Tente novamente em instantes.";
 }
 
 async function checkAiHealth() {
@@ -1324,7 +1420,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action)
                 detail: { credits: errorPayload.credits }
             }));
         }
-        throw new EducariaAiRequestError(errorPayload?.error || "Nao foi possivel gerar o material com IA.", {
+        throw new EducariaAiRequestError(errorPayload?.error || "Não foi possível gerar o material com IA.", {
             status: response.status,
             code: aiErrorCodeFromMessage(errorPayload?.error),
             credits: errorPayload?.credits || null
@@ -1369,6 +1465,9 @@ function materialConfig(materialType) {
             actionId: "quiz-acao-ia",
             countId: "quiz-quantidade",
             formatId: "quiz-formato",
+            classId: "quiz-turma",
+            subjectId: "quiz-disciplina",
+            audienceId: "quiz-ano",
             apply: applyQuizFromStructuredData,
             fallback: buildFallbackQuiz
         };
@@ -1382,6 +1481,8 @@ function materialConfig(materialType) {
             countId: "slides-quantidade",
             detailId: "slides-detalhamento",
             imagePrefId: "slides-imagens-preferencia",
+            classId: "slides-turma",
+            subjectId: "slides-disciplina",
             audienceId: "slides-publico",
             toneId: "slides-tom",
             objectiveId: "slides-objetivo",
@@ -1396,6 +1497,9 @@ function materialConfig(materialType) {
             fileId: "cards-arquivo",
             actionId: "cards-acao-ia",
             countId: "cards-quantidade-livre",
+            classId: "cards-turma",
+            subjectId: "cards-disciplina",
+            audienceId: "cards-ano",
             apply: applyFlashcardsFromStructuredData,
             fallback: buildFallbackFlashcards
         };
@@ -1407,8 +1511,25 @@ function materialConfig(materialType) {
             fileId: "memoria-arquivo",
             actionId: "memoria-acao-ia",
             countId: "memoria-quantidade-livre",
+            classId: "memoria-turma",
+            subjectId: "memoria-disciplina",
+            audienceId: "memoria-ano",
             apply: applyMemoryFromStructuredData,
             fallback: buildFallbackMemory
+        };
+    }
+
+    if (materialType === "hangman") {
+        return {
+            textId: "forca-fonte-texto",
+            fileId: "forca-arquivo",
+            actionId: "forca-acao-ia",
+            countId: "forca-quantidade-livre",
+            classId: "forca-turma",
+            subjectId: "forca-disciplina",
+            audienceId: "forca-ano",
+            apply: applyHangmanFromStructuredData,
+            fallback: buildFallbackHangman
         };
     }
 
@@ -1429,6 +1550,9 @@ function materialConfig(materialType) {
             fileId: "ligar-arquivo",
             actionId: "ligar-acao-ia",
             countId: "ligar-quantidade-livre",
+            classId: "ligar-turma",
+            subjectId: "ligar-disciplina",
+            audienceId: "ligar-ano",
             apply: applyMatchFromStructuredData,
             fallback: buildFallbackMatch
         };
@@ -1440,6 +1564,9 @@ function materialConfig(materialType) {
             fileId: "roleta-arquivo",
             actionId: "roleta-acao-ia",
             countId: "roleta-quantidade-livre",
+            classId: "roleta-turma",
+            subjectId: "roleta-disciplina",
+            audienceId: "roleta-ano",
             apply: applyWheelFromStructuredData,
             fallback: buildFallbackWheel
         };
@@ -1490,7 +1617,7 @@ async function generateMaterialFromTemplate(materialType, button) {
     const file = fileField?.files?.[0] || null;
 
     if (!file) {
-        window.alert("Envie um arquivo preenchido com o modelo antes de usar esta opcao.");
+        window.alert("Envie um arquivo preenchido com o modelo antes de usar esta opção.");
         return;
     }
 
@@ -1525,7 +1652,7 @@ async function generateMaterialFromTemplate(materialType, button) {
             materialType,
             hasFile: Boolean(file)
         });
-        openAiReadyModal();
+        openAiReadyModal(materialType);
     } catch (error) {
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
         educariaTrackAiEvent("ai_model_generate_failed", {
@@ -1555,6 +1682,7 @@ async function generateMaterial(materialType, button) {
     const audienceField = config.audienceId ? document.getElementById(config.audienceId) : null;
     const toneField = config.toneId ? document.getElementById(config.toneId) : null;
     const objectiveField = config.objectiveId ? document.getElementById(config.objectiveId) : null;
+    const subjectField = config.subjectId ? document.getElementById(config.subjectId) : null;
     const file = fileField?.files?.[0] || null;
     const typedText = textField?.value.trim() || "";
     const fileText = await readTextFile(file);
@@ -1568,6 +1696,8 @@ async function generateMaterial(materialType, button) {
     const audienceText = audienceField ? String(audienceField.value || "").trim() : "";
     const toneText = toneField ? toneField.options[toneField.selectedIndex].text.trim() : "";
     const objectiveText = objectiveField ? String(objectiveField.value || "").trim() : "";
+    const subjectText = subjectField ? String(subjectField.value || "").trim() : "";
+    const classText = config.classId ? String(document.getElementById(config.classId)?.value || "").trim() : "";
     const requestedCount = Number(countText) || undefined;
 
     if (!sourceText && !file) {
@@ -1606,7 +1736,10 @@ async function generateMaterial(materialType, button) {
             ? [
                 action,
                 requestedCount ? `Gerar ${requestedCount} perguntas.` : "",
-                formatText ? `Formato desejado: ${formatText}.` : ""
+                formatText ? `Formato desejado: ${formatText}.` : "",
+                subjectText ? `Disciplina: ${subjectText}.` : "",
+                audienceText ? `Ano ou público: ${audienceText}.` : "",
+                classText ? `Turma: ${classText}.` : ""
             ].filter(Boolean).join(" ")
             : materialType === "slides"
                 ? [
@@ -1614,6 +1747,8 @@ async function generateMaterial(materialType, button) {
                 requestedCount ? `Gerar ${requestedCount} slides.` : "",
                 audienceText ? `Público ou ano: ${audienceText}.` : "",
                 objectiveText ? `Objetivo da aula: ${objectiveText}.` : "",
+                subjectText ? `Disciplina: ${subjectText}.` : "",
+                classText ? `Turma: ${classText}.` : "",
                 toneText ? `Tom desejado: ${toneText}.` : "",
                 detailText ? `Nível de detalhamento: ${detailText}.` : "",
                 imagePrefText ? `Uso de imagens: ${imagePrefText}.` : ""
@@ -1622,6 +1757,9 @@ async function generateMaterial(materialType, button) {
                     ? [
                 action,
                 requestedCount ? `Gerar ${requestedCount} cards.` : "",
+                subjectText ? `Disciplina: ${subjectText}.` : "",
+                audienceText ? `Ano ou público: ${audienceText}.` : "",
+                classText ? `Turma: ${classText}.` : "",
                 document.getElementById("cards-exemplo")?.value ? `Incluir exemplos: ${document.getElementById("cards-exemplo").value}.` : ""
             ].filter(Boolean).join(" ")
                     : materialType === "mindmap"
@@ -1635,7 +1773,7 @@ async function generateMaterial(materialType, button) {
                 action,
                 requestedCount ? `Gerar ${requestedCount} entradas.` : "",
                 document.getElementById("cruzada-titulo-ia")?.value ? `Título desejado: ${document.getElementById("cruzada-titulo-ia").value}.` : "",
-                "Retornar respostas curtas e pistas objetivas em portugues do Brasil."
+                "Retornar respostas curtas e pistas objetivas em português do Brasil."
             ].filter(Boolean).join(" ")
                         : materialType === "memory"
                             ? [
@@ -1663,10 +1801,33 @@ async function generateMaterial(materialType, button) {
                 formatText ? `Formato desejado: ${formatText}.` : ""
             ].filter(Boolean).join(" ");
 
+        if (["memory", "hangman"].includes(materialType)) {
+            const unit = materialType === "memory" ? "pares" : "palavras com dicas";
+            const titleId = materialType === "memory" ? "memoria-titulo" : "forca-titulo";
+            const desiredTitle = String(document.getElementById(titleId)?.value || "").trim();
+            generationHints = [
+                action,
+                requestedCount ? `Gerar ${requestedCount} ${unit}.` : "",
+                subjectText ? `Disciplina: ${subjectText}.` : "",
+                audienceText ? `Ano ou público: ${audienceText}.` : "",
+                classText ? `Turma: ${classText}.` : "",
+                desiredTitle ? `Título desejado: ${desiredTitle}.` : ""
+            ].filter(Boolean).join(" ");
+        }
+
+        if (["wheel", "match"].includes(materialType)) {
+            generationHints = [
+                generationHints,
+                subjectText ? `Disciplina: ${subjectText}.` : "",
+                audienceText ? `Ano ou público: ${audienceText}.` : "",
+                classText ? `Turma: ${classText}.` : ""
+            ].filter(Boolean).join(" ");
+        }
+
         if (materialType === "wordsearch") {
             generationHints = [
                 requestedCount ? `Gerar ${requestedCount} palavras.` : "",
-                "Prefira termos curtos, claros e adequados para um caca-palavras."
+                "Prefira termos curtos, claros e adequados para um caça-palavras."
             ].filter(Boolean).join(" ");
         }
 
@@ -1685,7 +1846,7 @@ async function generateMaterial(materialType, button) {
             creditsLimit: Number(payload?.credits?.limit ?? -1),
             plan: payload?.credits?.plan || ""
         });
-        openAiReadyModal();
+        openAiReadyModal(materialType);
     } catch (error) {
         const endpoint = resolveAiEndpoint();
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
@@ -1729,7 +1890,14 @@ function bindAiMaterialGenerator() {
     });
 
     document.addEventListener("click", (event) => {
-        if (event.target.matches("[data-ai-ready-modal]") || event.target.closest("[data-ai-ready-modal-close]")) {
+        const reviewButton = event.target.closest("[data-ai-ready-review]");
+        if (reviewButton) {
+            const modal = reviewButton.closest("[data-ai-ready-modal]");
+            reviewGeneratedMaterial(modal?.dataset.materialType || "");
+            return;
+        }
+
+        if (event.target.matches("[data-ai-ready-modal]")) {
             closeAiReadyModal();
         }
     });

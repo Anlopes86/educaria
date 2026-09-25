@@ -344,6 +344,7 @@ function renderFlashcardsPresentation(cards, controls = {}) {
     });
 
     document.addEventListener("keydown", (event) => {
+        if (event.defaultPrevented) return;
         if (event.key === "ArrowLeft") {
             event.preventDefault();
             if (currentIndex === 0) return;

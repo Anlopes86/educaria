@@ -23,20 +23,20 @@ function sidebarTeacherInstitution() {
 
 const SIDEBAR_FORMATS = {
     core: [
-        { href: "slides-builder.html", label: "Slides", labelKey: "dashboard.formats.slides" },
-        { href: "quiz-builder.html", label: "Quiz", labelKey: "dashboard.formats.quiz" },
+        { href: "slides-builder.html?new=1", label: "Slides", labelKey: "dashboard.formats.slides" },
+        { href: "quiz-builder.html?new=1", label: "Quiz", labelKey: "dashboard.formats.quiz" },
         { href: "criar-aula.html", label: "Aula completa", labelKey: "dashboard.formats.lesson" }
     ],
     extra: [
-        { href: "flashcards-builder.html", label: "Flashcards", labelKey: "sidebar.formats.flashcards" },
-        { href: "jogo-memoria-builder.html", label: "Jogo da memoria", labelKey: "sidebar.formats.memory" },
-        { href: "roleta-builder.html", label: "Roleta", labelKey: "sidebar.formats.wheel" },
-        { href: "ligar-pontos-builder.html", label: "Ligar pontos", labelKey: "sidebar.formats.match" },
-        { href: "mapa-mental-builder.html", label: "Mapa mental", labelKey: "sidebar.formats.mindmap" },
-        { href: "debate-guiado-builder.html", label: "Debate guiado", labelKey: "sidebar.formats.debate" },
-        { href: "caca-palavras-builder.html", label: "Caca-palavras", labelKey: "sidebar.formats.wordsearch" },
-        { href: "palavras-cruzadas-builder.html", label: "Palavras cruzadas", labelKey: "sidebar.formats.crossword" },
-        { href: "forca-builder.html", label: "Forca", labelKey: "sidebar.formats.hangman" }
+        { href: "flashcards-builder.html?new=1", label: "Flashcards", labelKey: "sidebar.formats.flashcards" },
+        { href: "jogo-memoria-builder.html?new=1", label: "Jogo da memória", labelKey: "sidebar.formats.memory" },
+        { href: "roleta-builder.html?new=1", label: "Roleta", labelKey: "sidebar.formats.wheel" },
+        { href: "ligar-pontos-builder.html?new=1", label: "Ligar pontos", labelKey: "sidebar.formats.match" },
+        { href: "mapa-mental-builder.html?new=1", label: "Mapa mental", labelKey: "sidebar.formats.mindmap" },
+        { href: "debate-guiado-builder.html?new=1", label: "Debate guiado", labelKey: "sidebar.formats.debate" },
+        { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras", labelKey: "sidebar.formats.wordsearch" },
+        { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas", labelKey: "sidebar.formats.crossword" },
+        { href: "forca-builder.html?new=1", label: "Força", labelKey: "sidebar.formats.hangman" }
     ]
 };
 
@@ -75,7 +75,7 @@ function ensureSidebarClassesPageLink() {
             parent.insertBefore(link, button);
         }
 
-        button.textContent = sidebarTranslate("sidebar.nav.quickClasses", "Turmas rapidas");
+        button.textContent = sidebarTranslate("sidebar.nav.quickClasses", "Turmas rápidas");
     });
 }
 
@@ -108,7 +108,7 @@ function renderSidebarFormats() {
         const items = SIDEBAR_FORMATS[group];
 
         root.innerHTML = items.map((item) => {
-            const active = item.href === currentPath ? " is-active" : "";
+            const active = item.href.split("?")[0] === currentPath ? " is-active" : "";
             return `
                 <a href="${item.href}" class="sidebar-subitem${active}">
                     ${escapeSidebarHtml(sidebarTranslate(item.labelKey, item.label))}
@@ -130,15 +130,15 @@ function renderSidebarClasses() {
         root.innerHTML = `
             <div class="sidebar-empty-state">
                 <strong>${sidebarTranslate("sidebar.empty.noClasses", "Nenhuma turma criada")}</strong>
-                <span>${sidebarTranslate("sidebar.empty.createFirstClass", "Crie a primeira turma no formulario abaixo.")}</span>
+                <span>${sidebarTranslate("sidebar.empty.createFirstClass", "Crie a primeira turma no formulário abaixo.")}</span>
             </div>
         `;
         return;
     }
 
     root.innerHTML = classes.map((className) => `
-        <a href="turma.html" class="sidebar-subitem ${className === current ? "is-active" : ""}" data-sidebar-class-link="${className}">
-            ${className}
+        <a href="turma.html" class="sidebar-subitem ${className === current ? "is-active" : ""}" data-sidebar-class-link="${escapeSidebarHtml(className)}">
+            ${escapeSidebarHtml(className)}
         </a>
     `).join("");
 }
@@ -166,7 +166,7 @@ function createSidebarClass() {
     if (!subject) {
         if (feedback) {
             feedback.hidden = false;
-            feedback.textContent = sidebarTranslate("sidebar.feedback.chooseSubject", "Escolha a materia da turma.");
+            feedback.textContent = sidebarTranslate("sidebar.feedback.chooseSubject", "Escolha a matéria da turma.");
         }
         subjectField?.focus();
         return;
@@ -208,7 +208,7 @@ function createSidebarClass() {
     if (feedback) {
         feedback.hidden = false;
         feedback.textContent = exists
-            ? `${sidebarTranslate("sidebar.feedback.alreadyExistsPrefix", "A turma")} ${composedName} ${sidebarTranslate("sidebar.feedback.alreadyExistsSuffix", "ja estava criada e foi selecionada.")}`
+            ? `${sidebarTranslate("sidebar.feedback.alreadyExistsPrefix", "A turma")} ${composedName} ${sidebarTranslate("sidebar.feedback.alreadyExistsSuffix", "já estava criada e foi selecionada.")}`
             : `${sidebarTranslate("sidebar.feedback.createdPrefix", "Turma")} ${composedName} ${sidebarTranslate("sidebar.feedback.createdSuffix", "criada e selecionada.")}`;
     }
 
@@ -318,7 +318,51 @@ function hydrateSidebarTeacher() {
     });
 }
 
+function setMobileSidebarOpen(open) {
+    const shouldOpen = Boolean(open) && window.matchMedia("(max-width: 860px)").matches;
+    document.body.classList.toggle("app-sidebar-open", shouldOpen);
+    document.querySelector("[data-sidebar-mobile-toggle]")?.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+}
+
+function ensureMobileSidebarControls() {
+    const sidebar = document.querySelector(".app-sidebar");
+    if (!sidebar || document.querySelector("[data-sidebar-mobile-toggle]")) return;
+
+    sidebar.id = sidebar.id || "educaria-app-sidebar";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "app-sidebar-mobile-toggle";
+    toggle.dataset.sidebarMobileToggle = "";
+    toggle.setAttribute("aria-controls", sidebar.id);
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", sidebarTranslate("sidebar.mobile.open", "Abrir menu principal"));
+    toggle.textContent = sidebarTranslate("sidebar.mobile.menu", "Menu");
+
+    const backdrop = document.createElement("button");
+    backdrop.type = "button";
+    backdrop.className = "app-sidebar-backdrop";
+    backdrop.dataset.sidebarBackdrop = "";
+    backdrop.setAttribute("aria-label", sidebarTranslate("sidebar.mobile.close", "Fechar menu principal"));
+
+    document.body.append(toggle, backdrop);
+    toggle.addEventListener("click", () => setMobileSidebarOpen(!document.body.classList.contains("app-sidebar-open")));
+    backdrop.addEventListener("click", () => setMobileSidebarOpen(false));
+
+    sidebar.addEventListener("click", (event) => {
+        if (event.target.closest("a[href]")) setMobileSidebarOpen(false);
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") setMobileSidebarOpen(false);
+    });
+
+    window.addEventListener("resize", () => {
+        if (!window.matchMedia("(max-width: 860px)").matches) setMobileSidebarOpen(false);
+    });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+    ensureMobileSidebarControls();
     hydrateSidebarTeacher();
     ensureSidebarClassesPageLink();
     renderSidebarFormats();

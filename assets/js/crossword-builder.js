@@ -54,7 +54,7 @@ function addCrosswordEntry() {
     stack.insertAdjacentHTML("beforeend", crosswordEntryTemplate(count));
     renumberCrosswordEntries();
     renderCrosswordPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function removeCrosswordEntry(trigger) {
@@ -67,7 +67,7 @@ function removeCrosswordEntry(trigger) {
     card.remove();
     renumberCrosswordEntries();
     renderCrosswordPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function buildCrosswordClueMarkup(entries, emptyLabel) {
@@ -138,7 +138,7 @@ function renderCrosswordPreview() {
     if (noteRoot) {
         let message = "";
         if (puzzle.placedEntries.length < 2) {
-            message = "O preview completo aparece quando houver pelo menos duas entradas válidas.";
+            message = "A prévia completa aparece quando houver pelo menos duas entradas válidas.";
         } else if (puzzle.omittedEntries.length) {
             message = `${puzzle.omittedEntries.length} ${puzzle.omittedEntries.length === 1 ? "entrada não entrou" : "entradas não entraram"} na grade atual.`;
         } else if (puzzle.sizeAdjusted) {

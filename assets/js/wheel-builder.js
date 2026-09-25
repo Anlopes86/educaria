@@ -106,7 +106,7 @@ function addWheelSegment() {
     stack.insertAdjacentHTML("beforeend", wheelSegmentTemplate(count, "", palette[count % palette.length]));
     setWheelCountSelect(count + 1);
     renderWheelPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function removeWheelSegment(trigger) {
@@ -119,7 +119,7 @@ function removeWheelSegment(trigger) {
     segment.remove();
     setWheelCountSelect(segments.length - 1);
     renderWheelPreview();
-    document.dispatchEvent(new Event("input"));
+    dispatchBuilderContentChange("input");
 }
 
 function polar(cx, cy, radius, angle) {
