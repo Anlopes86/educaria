@@ -52,6 +52,9 @@ jobs:
           fs.writeFileSync("assets/js/firebase-config.local.js", content, "utf8");
           NODE
 
+      - name: Install AI service dependencies
+        run: npm ci --prefix ai-service
+
       - name: Validate static project
         run: |
           node tools/check-i18n.mjs
