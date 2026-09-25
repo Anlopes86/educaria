@@ -29,6 +29,7 @@ const pages = process.argv.slice(2).length
 const port = 9322 + Math.floor(Math.random() * 500);
 const profilePath = await fs.mkdtemp(path.join(os.tmpdir(), "educaria-layout-"));
 
+let chromeStderr = "";
 const chrome = spawn(chromePath, [
     "--headless=new",
     "--disable-gpu",
@@ -41,21 +42,29 @@ const chrome = spawn(chromePath, [
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${profilePath}`,
     "about:blank"
-], { stdio: "ignore", windowsHide: true });
+], { stdio: ["ignore", "ignore", "pipe"], windowsHide: true });
+
+chrome.stderr.setEncoding("utf8");
+chrome.stderr.on("data", (chunk) => {
+    chromeStderr = `${chromeStderr}${chunk}`.slice(-4000);
+});
 
 const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function waitForDebugger() {
-    for (let attempt = 0; attempt < 60; attempt += 1) {
+    for (let attempt = 0; attempt < 200; attempt += 1) {
         try {
             const response = await fetch(`http://127.0.0.1:${port}/json/version`);
             if (response.ok) return;
         } catch {
             // Chrome is still starting.
         }
+        if (chrome.exitCode !== null) {
+            throw new Error(`Chrome exited before the DevTools endpoint started (code ${chrome.exitCode}).\n${chromeStderr}`);
+        }
         await delay(100);
     }
-    throw new Error("Chrome DevTools endpoint did not start.");
+    throw new Error(`Chrome DevTools endpoint did not start within 20 seconds.\n${chromeStderr}`);
 }
 
 async function createPage(url) {
