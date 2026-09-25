@@ -527,18 +527,23 @@ try {
     if (chrome.exitCode === null) {
         const exited = new Promise((resolve) => chrome.once("exit", resolve));
         chrome.kill();
-        await Promise.race([exited, delay(3000)]);
-    }
-
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-        try {
-            await fs.rm(profilePath, { recursive: true, force: true });
-            break;
-        } catch (error) {
-            if (error?.code !== "EBUSY" || attempt === 4) throw error;
-            await delay(250);
+        const stoppedGracefully = await Promise.race([
+            exited.then(() => true),
+            delay(3000).then(() => false)
+        ]);
+        if (!stoppedGracefully && chrome.exitCode === null) {
+            const forcedExit = new Promise((resolve) => chrome.once("exit", resolve));
+            chrome.kill("SIGKILL");
+            await Promise.race([forcedExit, delay(3000)]);
         }
     }
+
+    await fs.rm(profilePath, {
+        recursive: true,
+        force: true,
+        maxRetries: 10,
+        retryDelay: 250
+    });
 }
 
 if (failed) process.exitCode = 1;
