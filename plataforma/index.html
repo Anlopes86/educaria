@@ -173,7 +173,6 @@
 
                 <div class="dashboard-toolkit-grid" data-dashboard-tour-anchor="toolkit">
                     <a href="slides-builder.html?new=1" class="dashboard-tool-card dashboard-tool-card--slides">
-                        <span class="dashboard-tool-purpose" data-i18n="dashboard.toolkit.slides.purpose">Para explicar</span>
                         <div class="dashboard-tool-visual" aria-hidden="true">
                             <span class="dashboard-tool-visual-kicker">SLIDE 01</span>
                             <span class="dashboard-tool-visual-title">Uma ideia de cada vez</span>
@@ -195,7 +194,6 @@
                     </a>
 
                     <a href="quiz-builder.html?new=1" class="dashboard-tool-card dashboard-tool-card--quiz">
-                        <span class="dashboard-tool-purpose" data-i18n="dashboard.toolkit.quiz.purpose">Para revisar</span>
                         <div class="dashboard-tool-visual" aria-hidden="true">
                             <span class="dashboard-tool-visual-kicker">PERGUNTA 01</span>
                             <span class="dashboard-tool-visual-title">A turma entendeu?</span>
@@ -218,7 +216,6 @@
                     </a>
 
                     <a href="criar-aula.html" class="dashboard-tool-card dashboard-tool-card--lesson">
-                        <span class="dashboard-tool-purpose" data-i18n="dashboard.toolkit.lesson.purpose">Para planejar</span>
                         <div class="dashboard-tool-visual" aria-hidden="true">
                             <span class="dashboard-tool-visual-kicker">PLANO DE AULA</span>
                             <span class="dashboard-tool-visual-title">Do início ao fechamento</span>
@@ -265,26 +262,24 @@
 
             <section class="dashboard-section dashboard-recent-section" data-dashboard-recent-section>
                 <div class="dashboard-section-head">
-                    <div>
-                        <span class="platform-section-label" data-i18n="dashboard.recent.label">Turmas recentes</span>
-                        <h2 data-i18n="dashboard.recent.title">Abra de novo o que você usou por último</h2>
+                    <div class="dashboard-recent-heading">
+                        <span class="platform-section-label" data-i18n="dashboard.recent.label">Suas turmas</span>
+                        <h2 data-i18n="dashboard.recent.title">Continue de onde parou</h2>
+                        <p data-i18n="dashboard.recent.copy">Retome a atividade mais recente ou abra uma turma para preparar o próximo encontro.</p>
                     </div>
-                    <p data-i18n="dashboard.recent.copy">As três turmas mais recentes aparecem aqui com acesso direto para retomar a aula, editar materiais ou abrir a biblioteca da turma.</p>
+                    <a href="turmas.html" class="dashboard-recent-all-link" data-i18n="dashboard.recent.allClasses">Ver todas as turmas →</a>
                 </div>
 
                 <div class="quick-class-grid dashboard-quick-grid dashboard-class-grid dashboard-recent-grid" data-dashboard-recent-classes aria-live="polite" aria-busy="false"></div>
             </section>
 
-            <section class="dashboard-section">
+            <section class="dashboard-section dashboard-class-summary">
                 <div class="dashboard-section-head">
                     <div>
-                        <span class="platform-section-label" data-i18n="dashboard.classes.label">Meu ecossistema</span>
-                        <h2 data-i18n="dashboard.classes.title">Turmas ativas</h2>
+                        <span class="platform-section-label" data-i18n="dashboard.classes.label">Organização</span>
+                        <h2 data-i18n="dashboard.classes.title">Visão geral</h2>
                     </div>
-                    <div class="dashboard-class-nav" aria-hidden="true">
-                        <span>&lt;</span>
-                        <span>&gt;</span>
-                    </div>
+                    <a href="turmas.html" class="dashboard-inline-link" data-i18n="dashboard.classes.manage">Gerenciar turmas →</a>
                 </div>
 
                 <div class="teacher-dashboard-kpis dashboard-overview-kpis">
@@ -302,13 +297,6 @@
                     </article>
                 </div>
 
-                <div class="quick-class-grid dashboard-quick-grid dashboard-class-grid" data-dashboard-classes>
-                    <article class="quick-class-card quick-class-card--active">
-                        <span class="route-tag" data-i18n="dashboard.empty.noClasses">Sem turmas</span>
-                        <h3 data-i18n="dashboard.empty.noClassesTitle">Nenhuma turma criada ainda</h3>
-                        <p data-i18n="dashboard.empty.noClassesCopy">Você já pode criar atividades na biblioteca pessoal. Crie uma turma quando quiser organizar os materiais por grupo.</p>
-                    </article>
-                </div>
             </section>
 
             <section class="dashboard-library-banner">

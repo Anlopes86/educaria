@@ -13,6 +13,7 @@ const auditScreenshotDir = process.env.EDUCARIA_AUDIT_SCREENSHOT_DIR
     : "";
 const auditDisableDashboardTour = process.env.EDUCARIA_AUDIT_DISABLE_DASHBOARD_TOUR === "1";
 const auditScrollTo = process.env.EDUCARIA_AUDIT_SCROLL_TO || "";
+const auditSeedDashboard = process.env.EDUCARIA_AUDIT_SEED_DASHBOARD === "1";
 const auditMobile = auditWidth < 768;
 const pages = process.argv.slice(2).length
     ? process.argv.slice(2).map((page) => ({
@@ -164,9 +165,12 @@ async function auditPage(pageConfig) {
         const dashboardTourSeed = auditDisableDashboardTour
             ? " localStorage.setItem('educaria:dashboard-tour:layout-audit', 'done'); localStorage.setItem('educaria:dashboard-tour:auditoria@educaria.test', 'done');"
             : "";
+        const dashboardContentSeed = auditSeedDashboard && pagePath.includes("plataforma/index.html")
+            ? ` localStorage.setItem('educaria:classList:layout-audit', JSON.stringify(['8º Ano A', '6º Ano B', 'Inglês - 9º Ano'])); localStorage.setItem('educaria:lessons:layout-audit', JSON.stringify([{ id: 'dashboard-slides-audit', className: '8º Ano A', scope: 'class', title: 'Sistema solar: movimentos e descobertas', type: 'Slides', materialType: 'slides', createdAt: new Date(Date.now() - 7200000).toISOString(), updatedAt: new Date(Date.now() - 3600000).toISOString(), status: 'draft', draft: '' }, { id: 'dashboard-quiz-audit', className: '6º Ano B', scope: 'class', title: 'Quiz sobre frações equivalentes', type: 'Quiz', materialType: 'quiz', createdAt: new Date(Date.now() - 172800000).toISOString(), updatedAt: new Date(Date.now() - 86400000).toISOString(), status: 'ready', draft: '' }]));`
+            : "";
         await cdp.send("Network.setBlockedURLs", { urls: ["*gstatic.com/firebasejs/*"] });
         await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-            source: `localStorage.setItem('educaria:auth:teacher-cache', JSON.stringify({ uid: 'layout-audit', name: 'Professor Auditoria', email: 'auditoria@educaria.test', institution: 'Escola de Teste', role: 'teacher', plan: 'free' })); localStorage.setItem('educaria:auth:session', 'auditoria@educaria.test');${dashboardTourSeed}${pagePath.includes("biblioteca.html") ? ` localStorage.setItem('educaria:lessons:layout-audit', JSON.stringify([{ id: 'lesson-library-audit', className: '', scope: 'library', title: 'Quiz para renomear', summary: 'Atividade de auditoria', type: 'Quiz', materialType: 'quiz', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: 'draft', draft: '' }]));` : ""}`
+            source: `localStorage.setItem('educaria:auth:teacher-cache', JSON.stringify({ uid: 'layout-audit', name: 'Professor Auditoria', email: 'auditoria@educaria.test', institution: 'Escola de Teste', role: 'teacher', plan: 'free' })); localStorage.setItem('educaria:auth:session', 'auditoria@educaria.test');${dashboardTourSeed}${dashboardContentSeed}${pagePath.includes("biblioteca.html") ? ` localStorage.setItem('educaria:lessons:layout-audit', JSON.stringify([{ id: 'lesson-library-audit', className: '', scope: 'library', title: 'Quiz para renomear', summary: 'Atividade de auditoria', type: 'Quiz', materialType: 'quiz', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: 'draft', draft: '' }]));` : ""}`
         });
     }
     if (localPagePath.endsWith("plataforma/apresentacao.html")) {
