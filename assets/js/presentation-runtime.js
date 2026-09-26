@@ -51,13 +51,13 @@ function parseSlideCards(stackHtml) {
         };
 
         const normalizeLayout = (value, hasImage) => {
-            if (hasImage) return "split";
-
             const text = String(value || "")
                 .toLowerCase()
                 .normalize("NFD")
                 .replace(/[\u0300-\u036f]/g, "");
 
+            if (hasImage && text.includes("destaque")) return "feature";
+            if (hasImage) return "split";
             if (text.includes("lado")) return "split";
             return "stack";
         };
@@ -67,14 +67,17 @@ function parseSlideCards(stackHtml) {
         const body = fieldValue("slide-body");
         const imageUrl = fieldValue("slide-image-url");
         const imagePrompt = fieldValue("slide-image-prompt");
-        const hasImage = Boolean(imageUrl || imagePrompt);
+        const hasImage = Boolean(imageUrl);
+        const slideType = card.dataset.slideType
+            || (index === 0 ? "cover" : index === cards.length - 1 ? "closing" : "content");
 
-        if (![title, subtitle, body, imageUrl, imagePrompt].some(Boolean)) {
+        if (![title, subtitle, body, imageUrl].some(Boolean)) {
             return null;
         }
 
         return {
             index,
+            slideType,
             title: title || `Slide ${index + 1}`,
             subtitle,
             body,
@@ -92,7 +95,7 @@ function parseSlideCards(stackHtml) {
 
 function serializeSlideCards(slides) {
     return slides.map((slide, index) => `
-        <section class="platform-question-card activity-content-card" data-slide-card>
+        <section class="platform-question-card activity-content-card" data-slide-card data-slide-type="${escapeHtml(slide.slideType || "content")}">
             <div class="platform-form-grid">
                 <div class="platform-field platform-field-wide">
                     <label>Título</label>
@@ -107,24 +110,15 @@ function serializeSlideCards(slides) {
                     <textarea data-field="slide-body" rows="4">${escapeHtml(slide.body || "")}</textarea>
                 </div>
                 <div class="platform-field">
-                    <label>Modo de imagem</label>
-                    <select data-field="slide-image-mode">
-                        <option selected>${escapeHtml(slide.imageMode || "Sem imagem")}</option>
-                    </select>
-                </div>
-                <div class="platform-field">
                     <label>Layout</label>
                     <select data-field="slide-layout">
-                        <option selected>${escapeHtml(slide.layoutMode || "stack")}</option>
+                        <option value="Lado a lado"${slide.layoutMode === "split" ? " selected" : ""}>Lado a lado</option>
+                        <option value="Imagem em destaque"${slide.layoutMode === "feature" ? " selected" : ""}>Imagem em destaque</option>
                     </select>
                 </div>
                 <div class="platform-field platform-field-wide">
-                    <label>Prompt da imagem</label>
-                    <textarea data-field="slide-image-prompt" rows="3">${escapeHtml(slide.imagePrompt || "")}</textarea>
-                </div>
-                <div class="platform-field platform-field-wide">
-                    <label>URL da imagem</label>
-                    <input data-field="slide-image-url" type="text" value="${escapeHtml(slide.imageUrl || "")}">
+                    <label>Endereço da imagem (opcional)</label>
+                    <input data-field="slide-image-url" type="url" value="${escapeHtml(slide.imageUrl || "")}" placeholder="Cole o endereço de uma imagem real">
                 </div>
                 <div class="platform-field">
                     <label>Fonte</label>
@@ -170,16 +164,6 @@ function renderSlideBody(body) {
     }
 
     return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
-}
-
-function renderMediaPlaceholder(slide) {
-    return `
-        <div class="presentation-media-placeholder">
-            <span class="platform-section-label">Imagem sugerida</span>
-            <strong>${escapeHtml(slide.title)}</strong>
-            <p>${escapeHtml(slide.imagePrompt || "Ilustração educativa para apoiar o slide.")}</p>
-        </div>
-    `;
 }
 
 function renderStructuredSlideBody(body) {
@@ -304,7 +288,7 @@ function applySlideDensity(slideRoot, copyRoot, slide, viewport = {}) {
     const subtitleLength = String(slide.subtitle || "").length;
     const bodyLength = String(slide.body || "").length;
     const lineCount = String(slide.body || "").replace(/\r/g, "").split("\n").filter((line) => line.trim()).length;
-    const hasImage = Boolean(slide.imageUrl || slide.imagePrompt);
+    const hasImage = Boolean(slide.imageUrl);
     const stageHeight = Number(viewport.stageHeight || window.innerHeight);
     const stageWidth = Number(viewport.stageWidth || window.innerWidth);
     const viewportPenalty = Math.max(0, 700 - stageHeight) * 1.45 + Math.max(0, 1240 - stageWidth) * 0.2;
@@ -348,7 +332,7 @@ function applySlideLayout(slideRoot, slide) {
     slideRoot.style.alignItems = "";
     slideRoot.style.flexDirection = "";
 
-    if (!slide.imageUrl && !slide.imagePrompt) {
+    if (!slide.imageUrl) {
         slideRoot.classList.add("presentation-slide--text-only");
         return;
     }
@@ -364,24 +348,6 @@ function applySlideLayout(slideRoot, slide) {
     }
 
     slideRoot.classList.add("presentation-slide--stack");
-}
-
-function resolveSplitMediaOffset(slideRoot, media) {
-    const mediaAspect = slideRoot.dataset.mediaAspect || media.dataset.mediaAspect || "";
-
-    if (mediaAspect === "portrait") {
-        return "clamp(-72px, -3vh, -28px)";
-    }
-
-    if (mediaAspect === "square") {
-        return "clamp(-98px, -4.2vh, -36px)";
-    }
-
-    if (mediaAspect === "landscape") {
-        return "clamp(-140px, -6.5vh, -60px)";
-    }
-
-    return "clamp(-92px, -4vh, -34px)";
 }
 
 function applySplitAspect(slideRoot, media) {
@@ -409,6 +375,17 @@ function applySplitAspect(slideRoot, media) {
     slideRoot.style.setProperty("--split-media-max-height", "min(66vh, 700px)");
 }
 
+function slideTypeLabel(type) {
+    const labels = {
+        cover: "Abertura",
+        content: "Ideia principal",
+        question: "Pergunta para a turma",
+        instructions: "Orientações",
+        closing: "Fechamento"
+    };
+    return labels[type] || labels.content;
+}
+
 function renderPresentation(slides, draft = {}) {
     const slideRoot = document.querySelector("[data-presentation-slide]");
     const copyRoot = document.querySelector("[data-presentation-copy]");
@@ -419,6 +396,9 @@ function renderPresentation(slides, draft = {}) {
     const prevButton = document.querySelector("[data-presentation-prev]");
     const nextButton = document.querySelector("[data-presentation-next]");
     const counter = document.querySelector("[data-presentation-counter]");
+    const sectionLabel = document.querySelector("[data-presentation-section]");
+    const slideNumber = document.querySelector("[data-presentation-number]");
+    const progress = document.querySelector("[data-presentation-progress]");
     const media = document.querySelector("[data-presentation-media]");
     const controls = document.querySelector("[data-presentation-controls]");
     const shell = document.querySelector(".presentation-shell--lesson");
@@ -512,14 +492,24 @@ function renderPresentation(slides, draft = {}) {
         }
         classLabel.textContent = turma ? `${turma} • ${slide.title}` : slide.title;
         counter.textContent = `${currentIndex + 1} de ${state.slides.length}`;
+        const slideType = slide.slideType
+            || (currentIndex === 0 ? "cover" : currentIndex === state.slides.length - 1 ? "closing" : "content");
+        const paddedCurrent = String(currentIndex + 1).padStart(2, "0");
+        const paddedTotal = String(state.slides.length).padStart(2, "0");
+        if (sectionLabel) sectionLabel.textContent = slideTypeLabel(slideType);
+        if (slideNumber) slideNumber.textContent = `${paddedCurrent} / ${paddedTotal}`;
+        if (progress) progress.style.width = `${((currentIndex + 1) / state.slides.length) * 100}%`;
 
-        slideRoot.style.background = `linear-gradient(180deg, ${slide.slideColor} 0%, #ffffff 100%)`;
+        slideRoot.style.background = "";
+        slideRoot.style.setProperty("--slide-bg", slide.slideColor || "#f0fdfa");
         slideRoot.style.setProperty("--slide-accent", slide.accentColor || slide.textColor);
+        slideRoot.style.setProperty("--slide-text", slide.textColor || "#0f172a");
         slideRoot.style.color = slide.textColor;
         copyRoot.style.color = slide.textColor;
         slideTitle.style.color = slide.textColor;
         slideSubtitle.style.color = slide.textColor;
         slideBody.style.color = slide.textColor;
+        slideRoot.dataset.slideKind = slideType;
         slideRoot.dataset.slideFont = String(slide.fontChoice || "Destaque moderno")
             .toLowerCase()
             .normalize("NFD")
@@ -529,48 +519,19 @@ function renderPresentation(slides, draft = {}) {
         applySlideLayout(slideRoot, slide);
         resetMediaStyles();
 
-        if (slide.imageUrl || slide.imagePrompt) {
+        if (slide.imageUrl) {
             media.hidden = false;
-            media.innerHTML = slide.imageUrl
-                ? `<img data-presentation-image alt="${escapeHtml(slide.imagePrompt || slide.title)}" src="${escapeHtml(slide.imageUrl)}">`
-                : renderMediaPlaceholder(slide);
+            media.innerHTML = `<img data-presentation-image alt="${escapeHtml(slide.imagePrompt || slide.title)}" src="${escapeHtml(slide.imageUrl)}">`;
             applyMediaAspect(slideRoot, media, () => {
                 if (slide.layoutMode === "split") {
                     applySplitAspect(slideRoot, media);
-                    media.style.marginTop = resolveSplitMediaOffset(slideRoot, media);
                 }
 
                 applySlideDensity(slideRoot, copyRoot, slide, viewport);
             });
 
             if (slide.layoutMode === "split") {
-                slideRoot.style.display = "grid";
-                slideRoot.style.gridTemplateColumns = "var(--split-columns, minmax(0, 1fr) minmax(300px, 0.9fr))";
-                slideRoot.style.gridTemplateRows = "minmax(0, 1fr)";
-                slideRoot.style.gap = "20px";
-                slideRoot.style.alignItems = "start";
-                copyRoot.style.gridColumn = "1";
-                copyRoot.style.gridRow = "1";
-                media.style.gridColumn = "2";
-                media.style.gridRow = "1";
-                media.style.alignSelf = "end";
                 applySplitAspect(slideRoot, media);
-                media.style.marginTop = resolveSplitMediaOffset(slideRoot, media);
-                media.style.minHeight = "0";
-                media.style.height = "auto";
-            } else if (slide.layoutMode === "feature") {
-                slideRoot.style.display = "grid";
-                slideRoot.style.gridTemplateColumns = "minmax(0, 1fr)";
-                slideRoot.style.gridTemplateRows = "minmax(280px, 0.58fr) minmax(0, 0.42fr)";
-                slideRoot.style.gap = "18px";
-                slideRoot.style.alignItems = "stretch";
-                media.style.gridColumn = "1";
-                media.style.gridRow = "1";
-                copyRoot.style.gridColumn = "1";
-                copyRoot.style.gridRow = "2";
-                media.style.marginTop = "0";
-                media.style.marginBottom = "0";
-                media.style.minHeight = "100%";
             }
         } else {
             media.hidden = true;

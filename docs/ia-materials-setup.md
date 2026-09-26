@@ -90,7 +90,7 @@ No frontend, `assets/js/ai-credits.js` consulta `GET /api/ai/credits`, atualiza 
 
 Na pagina de configuracoes, o botao de pagamento aparece somente quando houver uma URL configurada em `window.EDUCARIA_BILLING_CHECKOUT_URL` ou no `localStorage` com a chave `educaria:billing:checkout-url`. Esse link deve apontar para um checkout criado por Stripe, Mercado Pago ou outro provedor, e o webhook do provedor ainda precisa atualizar `teachers/{uid}.plan` ou as claims do Firebase.
 
-No Free Tier, mantenha `AI_IMAGE_GENERATION_ENABLED=false`. Os slides usam placeholder local em vez de chamar modelo de imagem.
+No Free Tier, mantenha `AI_IMAGE_GENERATION_ENABLED=false`. A geração automática de imagens fica desabilitada, e o professor pode enviar uma imagem real em JPG, PNG ou WebP. A plataforma otimiza a imagem no próprio navegador antes de salvá-la no material.
 
 ## Uploads aceitos
 

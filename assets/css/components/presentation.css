@@ -80,6 +80,68 @@ body.presentation-topbar-collapsed .presentation-shell {
     grid-template-rows: 0 minmax(0, 1fr);
 }
 
+@media (min-width: 1025px) {
+    .presentation-page .presentation-shell {
+        --presentation-stage-height: calc(100dvh - 224px);
+    }
+
+    body.presentation-page.presentation-topbar-collapsed .presentation-shell {
+        --presentation-stage-height: calc(100dvh - 104px);
+    }
+}
+
+.presentation-topbar-restore {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    z-index: 80;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid rgba(15, 118, 110, 0.24);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #0f5f66;
+    box-shadow: 0 18px 36px -22px rgba(15, 23, 42, 0.58);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -160%);
+    transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.presentation-topbar-restore span {
+    font-size: 1.15rem;
+    line-height: 1;
+}
+
+.presentation-topbar-restore:hover,
+.presentation-topbar-restore:focus-visible {
+    box-shadow: 0 22px 42px -22px rgba(15, 23, 42, 0.7);
+}
+
+.presentation-topbar-restore:focus-visible {
+    outline: 4px solid rgba(14, 165, 233, 0.22);
+    outline-offset: 3px;
+}
+
+body.presentation-topbar-collapsed .presentation-topbar-restore {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(-50%, 0);
+}
+
+@media print {
+    .presentation-topbar-restore {
+        display: none !important;
+    }
+}
+
 .presentation-brand {
     display: inline-grid;
     grid-template-columns: auto 1fr;
@@ -314,18 +376,29 @@ body.presentation-runtime-page .quiz-application-stage {
     gap: clamp(20px, 2.8vw, 30px);
     padding: clamp(20px, 2.6vw, 30px);
     overflow: hidden;
+    isolation: isolate;
+    border: 1px solid color-mix(in srgb, var(--slide-accent, #0ea5e9) 20%, rgba(148, 163, 184, 0.2));
     background:
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.9), transparent 30%),
-        linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(248, 250, 252, 0.98));
+        radial-gradient(circle at 88% 10%, color-mix(in srgb, var(--slide-accent, #0ea5e9) 22%, transparent), transparent 28%),
+        linear-gradient(145deg, color-mix(in srgb, var(--slide-bg, #f0fdfa) 90%, white), var(--slide-bg, #f0fdfa));
+    box-shadow: 0 34px 74px -42px rgba(15, 23, 42, 0.54);
 }
 
 .presentation-page .presentation-slide {
-    width: min(100%, var(--presentation-stage-width), calc(var(--presentation-stage-height) * 2.2));
+    width: min(100%, var(--presentation-stage-width));
     min-height: 0;
     height: var(--presentation-stage-height);
     max-height: none;
     aspect-ratio: auto;
     align-self: center;
+}
+
+@media (min-width: 900px) {
+    .presentation-page .presentation-slide {
+        width: min(100%, var(--presentation-stage-width), calc(var(--presentation-stage-height) * 1.7778));
+        height: auto;
+        aspect-ratio: 16 / 9;
+    }
 }
 
 .presentation-slide.presentation-slide--empty,

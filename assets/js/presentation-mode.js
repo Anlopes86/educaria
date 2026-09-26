@@ -60,6 +60,24 @@
         showPresentationChrome();
     }
 
+    function addTopbarRestoreAction() {
+        if (document.querySelector("[data-presentation-topbar-restore]")) return;
+
+        const restore = document.createElement("button");
+        restore.type = "button";
+        restore.className = "presentation-topbar-restore";
+        restore.dataset.presentationTopbarRestore = "";
+        restore.setAttribute("aria-label", "Mostrar novamente a barra superior");
+        restore.innerHTML = '<span aria-hidden="true">⌄</span> Mostrar topo';
+        restore.addEventListener("click", () => {
+            const topbarButton = document.querySelector("[data-presentation-topbar]");
+            if (document.body.classList.contains("presentation-topbar-collapsed")) {
+                toggleTopbar(topbarButton);
+            }
+        });
+        document.body.appendChild(restore);
+    }
+
     function addPresentationChromeActions() {
         const actions = document.querySelector(
             ".presentation-topbar .platform-top-actions, .presentation-topbar .presentation-topbar-group"
@@ -117,6 +135,7 @@
 
         document.body.classList.add("presentation-runtime-page", "presentation-topbar-pinned");
         addPresentationChromeActions();
+        addTopbarRestoreAction();
         showPresentationChrome();
 
         ["mousemove", "pointerdown", "focusin", "touchstart", "keydown"].forEach((eventName) => {

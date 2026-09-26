@@ -505,6 +505,24 @@ function applyQuizFromStructuredData(payload) {
     return true;
 }
 
+function slideVisualFor(type, index) {
+    if (type === "cover") {
+        return { accent: "#2dd4bf", background: "#102a43", text: "#f8fafc" };
+    }
+
+    if (type === "question") {
+        return { accent: "#f97316", background: "#fff7ed", text: "#7c2d12" };
+    }
+
+    if (type === "closing") {
+        return { accent: "#facc15", background: "#153e3a", text: "#f8fafc" };
+    }
+
+    return index % 2 === 0
+        ? { accent: "#0f766e", background: "#f0fdfa", text: "#16324f" }
+        : { accent: "#2563eb", background: "#eff6ff", text: "#172554" };
+}
+
 function applySlidesFromStructuredData(payload) {
     const slides = Array.isArray(payload?.slides) ? payload.slides : [];
     if (!slides.length) return false;
@@ -519,29 +537,30 @@ function applySlidesFromStructuredData(payload) {
         const body = card.querySelector('[data-field="slide-body"]');
         const imageMode = card.querySelector('[data-field="slide-image-mode"]');
         const imagePrompt = card.querySelector('[data-field="slide-image-prompt"]');
+        const imageUrl = card.querySelector('[data-field="slide-image-url"]');
         const layout = card.querySelector('[data-field="slide-layout"]');
+        const accentColor = card.querySelector('[data-field="slide-accent-color"]');
+        const slideColor = card.querySelector('[data-field="slide-color"]');
+        const textColor = card.querySelector('[data-field="slide-text-color"]');
+        const slideType = slide.type || (index === 0 ? "cover" : index === slides.length - 1 ? "closing" : "content");
+        const visual = slideVisualFor(slideType, index);
 
         if (title) title.value = slide.title || "";
         if (subtitle) subtitle.value = slide.subtitle || "";
-        if (body) body.value = compactSlideBodyText(slide.body || "", slide.type || (index === 0 ? "cover" : "content"));
-        if (imagePrompt) imagePrompt.value = slide.image_prompt || "";
-
-        const imageUrl = card.querySelector('[data-field="slide-image-url"]');
-        if (imageUrl && slide.image_prompt && !imageUrl.value && typeof createSvgDataUrl === "function") {
-            imageUrl.value = createSvgDataUrl(
-                slide.title || "Slide",
-                slide.image_prompt,
-                ["#99f6e4", "#dbeafe"]
-            );
-        }
+        if (body) body.value = compactSlideBodyText(slide.body || "", slideType);
+        if (imagePrompt) imagePrompt.value = "";
+        if (imageUrl) imageUrl.value = "";
+        if (accentColor) accentColor.value = visual.accent;
+        if (slideColor) slideColor.value = visual.background;
+        if (textColor) textColor.value = visual.text;
+        card.dataset.slideType = slideType;
 
         if (imageMode) {
-            const desiredMode = slide.image_prompt ? "Gerar com IA" : "Sem imagem";
-            setSelectByText(imageMode, desiredMode);
+            setSelectByText(imageMode, "Sem imagem");
         }
 
         if (layout) {
-            setSelectByText(layout, "Lado a lado");
+            setSelectByText(layout, slide.layout === "feature" ? "Imagem em destaque" : "Lado a lado");
         }
     });
 
@@ -1480,7 +1499,6 @@ function materialConfig(materialType) {
             actionId: "slides-acao-ia",
             countId: "slides-quantidade",
             detailId: "slides-detalhamento",
-            imagePrefId: "slides-imagens-preferencia",
             classId: "slides-turma",
             subjectId: "slides-disciplina",
             audienceId: "slides-publico",

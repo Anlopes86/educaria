@@ -261,7 +261,7 @@ function builderTemplateApplySlides(templateId) {
         if (titleField) titleField.value = title;
         if (subtitleField) subtitleField.value = subtitle;
         if (bodyField) bodyField.value = body;
-        builderTemplateSetSelect(imageMode, index === 0 ? "Placeholder local" : "Sem imagem");
+        builderTemplateSetSelect(imageMode, "Sem imagem");
         stack.appendChild(card);
     });
     builderTemplateDispatch();

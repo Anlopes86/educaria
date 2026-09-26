@@ -6,7 +6,7 @@ const SLIDE_THEME_PRESETS = {
         text: "#0f172a"
     },
     academico: {
-        font: "Serifada classica",
+        font: "Serifada clássica",
         accent: "#1d4ed8",
         bg: "#eef2ff",
         text: "#172554"

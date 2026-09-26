@@ -31,16 +31,18 @@ function cloneFlashcard(card) {
     return clone;
 }
 
-function cloneSlideCard(card) {
+function cloneSlideCard(card, { preserveType = false } = {}) {
     const clone = card.cloneNode(true);
     const fields = clone.querySelectorAll("input, textarea, select");
     fields.forEach((field) => {
+        if (field.type === "color") return;
         if (field.tagName === "SELECT") {
             field.selectedIndex = 0;
         } else {
             field.value = "";
         }
     });
+    if (!preserveType) delete clone.dataset.slideType;
     return clone;
 }
 
@@ -118,7 +120,7 @@ function bindBuilderActions() {
             event.preventDefault();
             const card = button.closest("[data-slide-card]");
             if (!card) return;
-            card.insertAdjacentElement("afterend", cloneSlideCard(card));
+            card.insertAdjacentElement("afterend", cloneSlideCard(card, { preserveType: true }));
             renumberCards("[data-slide-card]", "Slide");
         }
 

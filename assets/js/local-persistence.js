@@ -225,6 +225,50 @@ function buildColorField(name, labelText, value) {
     return wrapper;
 }
 
+function normalizeSlideImageControls(card) {
+    const imageMode = card.querySelector('[data-field="slide-image-mode"]');
+    const imageUrl = card.querySelector('[data-field="slide-image-url"]');
+    const layout = card.querySelector('[data-field="slide-layout"]');
+    const openButton = card.querySelector("[data-open-resource]");
+    const panel = card.querySelector("[data-image-panel]");
+
+    if (imageMode) {
+        const hasImage = Boolean(imageUrl?.value);
+        imageMode.innerHTML = `
+            <option>Sem imagem</option>
+            <option>Enviar imagem</option>
+        `;
+        imageMode.value = hasImage ? "Enviar imagem" : "Sem imagem";
+    }
+
+    if (layout) {
+        const wantsFeature = String(layout.value || "").toLowerCase().includes("destaque");
+        layout.innerHTML = `
+            <option>Lado a lado</option>
+            <option>Imagem em destaque</option>
+        `;
+        layout.value = wantsFeature ? "Imagem em destaque" : "Lado a lado";
+    }
+
+    if (openButton) openButton.textContent = "Enviar ou trocar imagem";
+
+    if (panel) {
+        panel.hidden = true;
+        panel.innerHTML = `
+            <div class="resource-source-grid resource-source-grid--single">
+                <article class="resource-source-card">
+                    <h3>Imagem do computador</h3>
+                    <p>Use JPG, PNG ou WebP. A imagem fica salva junto com o rascunho.</p>
+                    <input data-upload-input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
+                </article>
+            </div>
+            <div class="resource-panel-actions">
+                <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Fechar painel</button>
+            </div>
+        `;
+    }
+}
+
 function normalizeSlideBuilder(stack) {
     if (!stack || !stack.matches("[data-slides-stack]")) return;
 
@@ -256,6 +300,8 @@ function normalizeSlideBuilder(stack) {
         if (!card.querySelector('[data-field="slide-image-url"]') && grid) {
             grid.appendChild(buildHiddenField("slide-image-url"));
         }
+
+        normalizeSlideImageControls(card);
     });
 }
 

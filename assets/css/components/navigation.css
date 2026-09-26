@@ -115,6 +115,8 @@ body.product-body.theme-editor {
 
     .activity-preview-pane {
         position: static;
+        max-height: none;
+        overflow: visible;
     }
 }
 

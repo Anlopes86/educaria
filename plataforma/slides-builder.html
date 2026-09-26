@@ -58,7 +58,7 @@
             <div>
                 <span class="focus-eyebrow">Editor de slides</span>
                 <h1>Organize a sequência e acompanhe o resultado na prévia.</h1>
-                <p>Comece pelo essencial. Abra Mais opções para imagem e estilo.</p>
+                <p>A IA organiza o conteúdo e a hierarquia visual. Se quiser, adicione depois uma imagem real do seu computador.</p>
             </div>
         </section>
 
@@ -100,7 +100,7 @@
                                 <select id="slides-acao-ia">
                                     <option>Organizar texto em slides</option>
                                     <option>Resumir tópicos em sequência</option>
-                                    <option>Gerar imagem quando fizer sentido</option>
+                                    <option>Criar sequência didática mais visual</option>
                                 </select>
                             </div>
                             <div class="platform-field">
@@ -113,15 +113,6 @@
                                     <option>Equilibrado</option>
                                     <option>Mais enxuto</option>
                                     <option>Mais detalhado</option>
-                                </select>
-                            </div>
-                            <div class="platform-field">
-                                <label for="slides-imagens-preferencia">Uso de imagens</label>
-                                <select id="slides-imagens-preferencia">
-                                    <option>Quando fizer sentido</option>
-                                    <option>Só no slide inicial</option>
-                                    <option>Em vários slides</option>
-                                    <option>Sem imagens</option>
                                 </select>
                             </div>
                             <div class="platform-field">
@@ -256,29 +247,27 @@
                         </div>
 
                         <details class="activity-optional-disclosure">
-                            <summary>Mais opções: imagem do slide</summary>
+                            <summary>Mais opções: adicionar imagem</summary>
                         <div class="activity-optional-block">
                             <span class="route-tag">Imagem opcional</span>
                             <div class="platform-form-grid activity-media-grid">
                                 <div class="platform-field">
-                                    <label>Origem da imagem</label>
+                                    <label>Imagem</label>
                                     <select data-field="slide-image-mode">
-                                        <option>Placeholder local</option>
-                                        <option>Upload</option>
-                                        <option>Biblioteca</option>
-                                        <option>Buscar gr&aacute;tis</option>
                                         <option>Sem imagem</option>
+                                        <option>Enviar imagem</option>
                                     </select>
                                 </div>
                                 <div class="platform-field">
                                     <label>Layout com imagem</label>
                                     <select data-field="slide-layout">
                                         <option>Lado a lado</option>
+                                        <option>Imagem em destaque</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="utility-actions" style="margin-top: 14px;">
-                                <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Escolher imagem</button>
+                                <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Enviar ou trocar imagem</button>
                             </div>
                             <div class="platform-field platform-field-wide" hidden>
                                 <label>Descrição da imagem</label>
@@ -290,43 +279,14 @@
                         </div>
 
                         <div class="resource-panel" data-image-panel hidden>
-                            <div class="resource-source-grid">
+                            <div class="resource-source-grid resource-source-grid--single">
                                 <article class="resource-source-card">
-                                    <h3>Upload</h3>
-                                    <p>Escolha uma imagem do computador.</p>
-                                    <input data-upload-input type="file" accept="image/*">
+                                    <h3>Imagem do computador</h3>
+                                    <p>Use JPG, PNG ou WebP. A imagem fica salva junto com o rascunho.</p>
+                                    <input data-upload-input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
                                 </article>
-                                <article class="resource-source-card">
-                                    <h3>Biblioteca</h3>
-                                    <p>Selecione uma imagem já salva no projeto.</p>
-                                </article>
-                                <article class="resource-source-card">
-                                    <h3>Buscar grátis</h3>
-                                    <p>Use bancos gratuitos como Pexels e Openverse.</p>
-                                </article>
-                            </div>
-                            <div class="resource-results-grid">
-                                <div class="resource-result-card">
-                                    <button type="button" data-pick-image data-label="Biblioteca: sala moderna" data-prompt="Sala de aula moderna com alunos usando computadores" data-theme="Biblioteca interna" data-palette="#bfe8ea,#eff6ff">
-                                        <div class="resource-thumb">Sala moderna</div>
-                                        <div class="resource-result-meta"><strong>Biblioteca</strong><span>Imagem já salva no projeto.</span></div>
-                                    </button>
-                                </div>
-                                <div class="resource-result-card">
-                                    <button type="button" data-pick-image data-label="Pexels: classroom technology" data-prompt="Foto de sala de aula com tecnologia" data-theme="Pexels" data-palette="#fde68a,#dbeafe">
-                                        <div class="resource-thumb">Pexels</div>
-                                        <div class="resource-result-meta"><strong>Classroom technology</strong><span>Busca gratuita sugerida.</span></div>
-                                    </button>
-                                </div>
-                                <div class="resource-result-card">
-                                    <button type="button" data-pick-image data-label="Openverse: school illustration" data-prompt="Ilustração escolar com livros e computador" data-theme="Openverse" data-palette="#c7d2fe,#f0fdf4">
-                                        <div class="resource-thumb">Openverse</div>
-                                        <div class="resource-result-meta"><strong>School illustration</strong><span>Resultado educativo livre.</span></div>
-                                    </button>
-                                </div>
                             </div>
                             <div class="resource-panel-actions">
-                                <button type="button" data-generate-ai-image class="platform-link-button platform-link-primary">Usar placeholder local</button>
                                 <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Fechar painel</button>
                             </div>
                         </div>
@@ -390,29 +350,27 @@
                         </div>
 
                         <details class="activity-optional-disclosure">
-                            <summary>Mais opções: imagem do slide</summary>
+                            <summary>Mais opções: adicionar imagem</summary>
                         <div class="activity-optional-block">
                             <span class="route-tag">Imagem opcional</span>
                             <div class="platform-form-grid activity-media-grid">
                                 <div class="platform-field">
-                                    <label>Origem da imagem</label>
+                                    <label>Imagem</label>
                                     <select data-field="slide-image-mode">
                                         <option>Sem imagem</option>
-                                        <option>Placeholder local</option>
-                                        <option>Upload</option>
-                                        <option>Biblioteca</option>
-                                        <option>Buscar gr&aacute;tis</option>
+                                        <option>Enviar imagem</option>
                                     </select>
                                 </div>
                                 <div class="platform-field">
                                     <label>Layout com imagem</label>
                                     <select data-field="slide-layout">
                                         <option>Lado a lado</option>
+                                        <option>Imagem em destaque</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="utility-actions" style="margin-top: 14px;">
-                                <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Escolher imagem</button>
+                                <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Enviar ou trocar imagem</button>
                             </div>
                             <div class="platform-field platform-field-wide" hidden>
                                 <label>Descrição da imagem</label>
@@ -424,43 +382,14 @@
                         </div>
 
                         <div class="resource-panel" data-image-panel hidden>
-                            <div class="resource-source-grid">
+                            <div class="resource-source-grid resource-source-grid--single">
                                 <article class="resource-source-card">
-                                    <h3>Upload</h3>
-                                    <p>Escolha uma imagem do computador.</p>
-                                    <input data-upload-input type="file" accept="image/*">
+                                    <h3>Imagem do computador</h3>
+                                    <p>Use JPG, PNG ou WebP. A imagem fica salva junto com o rascunho.</p>
+                                    <input data-upload-input type="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
                                 </article>
-                                <article class="resource-source-card">
-                                    <h3>Biblioteca</h3>
-                                    <p>Selecione uma imagem já salva no projeto.</p>
-                                </article>
-                                <article class="resource-source-card">
-                                    <h3>Buscar grátis</h3>
-                                    <p>Use bancos gratuitos como Pexels e Openverse.</p>
-                                </article>
-                            </div>
-                            <div class="resource-results-grid">
-                                <div class="resource-result-card">
-                                    <button type="button" data-pick-image data-label="Biblioteca: gramática visual" data-prompt="Quadro visual com exemplos de present perfect" data-theme="Biblioteca interna" data-palette="#bfdbfe,#ecfeff">
-                                        <div class="resource-thumb">Gramática visual</div>
-                                        <div class="resource-result-meta"><strong>Biblioteca</strong><span>Recurso já salvo.</span></div>
-                                    </button>
-                                </div>
-                                <div class="resource-result-card">
-                                    <button type="button" data-pick-image data-label="Pexels: students learning" data-prompt="Foto de alunos aprendendo com tecnologia" data-theme="Pexels" data-palette="#fde68a,#ddd6fe">
-                                        <div class="resource-thumb">Pexels</div>
-                                        <div class="resource-result-meta"><strong>Students learning</strong><span>Busca gratuita sugerida.</span></div>
-                                    </button>
-                                </div>
-                                <div class="resource-result-card">
-                                    <button type="button" data-pick-image data-label="Openverse: education icons" data-prompt="Ilustração educacional com ícones de escola" data-theme="Openverse" data-palette="#bbf7d0,#dbeafe">
-                                        <div class="resource-thumb">Openverse</div>
-                                        <div class="resource-result-meta"><strong>Education icons</strong><span>Resultado educativo livre.</span></div>
-                                    </button>
-                                </div>
                             </div>
                             <div class="resource-panel-actions">
-                                <button type="button" data-generate-ai-image class="platform-link-button platform-link-primary">Usar placeholder local</button>
                                 <button type="button" data-open-resource class="platform-link-button platform-link-secondary">Fechar painel</button>
                             </div>
                         </div>

@@ -164,6 +164,26 @@ async function auditPage(pageConfig) {
             source: `localStorage.setItem('educaria:auth:teacher-cache', JSON.stringify({ uid: 'layout-audit', name: 'Professor Auditoria', email: 'auditoria@educaria.test', institution: 'Escola de Teste', role: 'teacher', plan: 'free' })); localStorage.setItem('educaria:auth:session', 'auditoria@educaria.test');${pagePath.includes("biblioteca.html") ? ` localStorage.setItem('educaria:lessons:layout-audit', JSON.stringify([{ id: 'lesson-library-audit', className: '', scope: 'library', title: 'Quiz para renomear', summary: 'Atividade de auditoria', type: 'Quiz', materialType: 'quiz', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: 'draft', draft: '' }]));` : ""}`
         });
     }
+    if (localPagePath.endsWith("plataforma/apresentacao.html")) {
+        const slideStack = `
+            <section data-slide-card data-slide-type="cover">
+                <input data-field="slide-title" value="Como a tecnologia transforma a aprendizagem">
+                <input data-field="slide-subtitle" value="Uma conversa sobre escolhas, oportunidades e responsabilidade">
+                <textarea data-field="slide-body">Observe o que já mudou\nCompare diferentes experiências\nPrepare uma pergunta para a turma</textarea>
+                <select data-field="slide-image-mode"><option selected>Sem imagem</option></select>
+                <select data-field="slide-layout"><option selected>Lado a lado</option></select>
+                <textarea data-field="slide-image-prompt"></textarea>
+                <input data-field="slide-image-url" value="">
+                <select data-field="slide-font"><option selected>Destaque moderno</option></select>
+                <input data-field="slide-accent-color" value="#2dd4bf">
+                <input data-field="slide-color" value="#102a43">
+                <input data-field="slide-text-color" value="#f8fafc">
+            </section>
+        `;
+        await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+            source: `localStorage.setItem('educaria:builder:slides:guest', ${JSON.stringify(JSON.stringify({ stackHtml: slideStack }))});`
+        });
+    }
     await cdp.send("Emulation.setDeviceMetricsOverride", {
         width: auditWidth,
         height: auditHeight,
@@ -232,6 +252,8 @@ async function auditPage(pageConfig) {
             }));
         const flashcardStage = document.querySelector('[data-flashcard-stage]');
         const flashcardRect = flashcardStage?.getBoundingClientRect();
+        const previewPane = document.querySelector('.activity-preview-pane');
+        const previewStyle = previewPane ? getComputedStyle(previewPane) : null;
         return {
             viewportWidth,
             scrollWidth,
@@ -241,6 +263,11 @@ async function auditPage(pageConfig) {
             dashboardRuntime: typeof window.refreshTeacherDashboard,
             hasPresentation: Boolean(document.querySelector('.presentation-shell')),
             hasPrintAction: Boolean(document.querySelector('[data-presentation-print]')),
+            previewScroll: previewPane ? {
+                overflowY: previewStyle.overflowY,
+                maxHeight: previewStyle.maxHeight,
+                position: previewStyle.position
+            } : null,
             flashcardState: flashcardStage ? {
                 visibility: getComputedStyle(flashcardStage).visibility,
                 display: getComputedStyle(flashcardStage).display,
@@ -465,8 +492,41 @@ async function auditPage(pageConfig) {
         mobileMenu = menuEvaluation.result.value;
         }
     }
+    let topbarRestore = null;
+    if (evaluation.result.value.hasPresentation) {
+        const restoreEvaluation = await cdp.send("Runtime.evaluate", {
+            expression: `(async () => {
+                const toggle = document.querySelector('[data-presentation-topbar]');
+                const restore = document.querySelector('[data-presentation-topbar-restore]');
+                if (!toggle || !restore) return { exists: false, collapsed: false, visible: false, restored: false };
+                toggle.click();
+                await new Promise((resolve) => setTimeout(resolve, 240));
+                const collapsed = document.body.classList.contains('presentation-topbar-collapsed');
+                const restoreStyle = getComputedStyle(restore);
+                const restoreRect = restore.getBoundingClientRect();
+                const visible = restoreRect.width > 0
+                    && restoreRect.bottom > 0
+                    && restoreStyle.pointerEvents !== 'none'
+                    && Number(restoreStyle.opacity) > 0.5;
+                restore.click();
+                await new Promise((resolve) => setTimeout(resolve, 240));
+                return {
+                    exists: true,
+                    collapsed,
+                    visible,
+                    restored: !document.body.classList.contains('presentation-topbar-collapsed'),
+                    opacity: restoreStyle.opacity,
+                    pointerEvents: restoreStyle.pointerEvents,
+                    rect: { top: Math.round(restoreRect.top), bottom: Math.round(restoreRect.bottom), width: Math.round(restoreRect.width) }
+                };
+            })()`,
+            returnByValue: true,
+            awaitPromise: true
+        });
+        topbarRestore = restoreEvaluation.result.value;
+    }
     cdp.close();
-    return { ...evaluation.result.value, mobileMenu, quizJourney, libraryRename, screenshotPath, diagnostics: cdp.diagnostics };
+    return { ...evaluation.result.value, mobileMenu, topbarRestore, quizJourney, libraryRename, screenshotPath, diagnostics: cdp.diagnostics };
 }
 
 let failed = false;
@@ -487,8 +547,21 @@ try {
         if (result.hasPresentation) {
             console.log(`  print-action=${result.hasPrintAction ? "ok" : "failed"}`);
             if (!result.hasPrintAction) failed = true;
+            const restoreWorks = result.topbarRestore?.exists
+                && result.topbarRestore.collapsed
+                && result.topbarRestore.visible
+                && result.topbarRestore.restored;
+            console.log(`  topbar-restore=${restoreWorks ? "ok" : "failed"}${restoreWorks ? "" : ` state=${JSON.stringify(result.topbarRestore)}`}`);
+            if (!restoreWorks) failed = true;
         }
         if (result.flashcardState) console.log(`  flashcard-stage=${JSON.stringify(result.flashcardState)}`);
+        if (result.previewScroll && !auditMobile) {
+            const previewScrollWorks = result.previewScroll.overflowY === "auto"
+                && result.previewScroll.maxHeight !== "none"
+                && result.previewScroll.position === "sticky";
+            console.log(`  preview-scroll=${previewScrollWorks ? "ok" : "failed"}`);
+            if (!previewScrollWorks) failed = true;
+        }
         if (auditBaseUrl) {
             console.log(`  offline-registration=${result.offlineState || "missing"}`);
             if (result.offlineState !== "registered") failed = true;
