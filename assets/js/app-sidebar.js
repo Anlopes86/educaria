@@ -36,7 +36,7 @@ const SIDEBAR_FORMATS = {
         { href: "debate-guiado-builder.html?new=1", label: "Debate guiado", labelKey: "sidebar.formats.debate" },
         { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras", labelKey: "sidebar.formats.wordsearch" },
         { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas", labelKey: "sidebar.formats.crossword" },
-        { href: "forca-builder.html?new=1", label: "Força", labelKey: "sidebar.formats.hangman" }
+        { href: "forca-builder.html?new=1", label: "Forca", labelKey: "sidebar.formats.hangman" }
     ]
 };
 

@@ -1237,3 +1237,480 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.74);
 }
+
+/* Creation-focused teacher home */
+body.product-body.theme-overview .app-content.dashboard-overview-content {
+    background:
+        radial-gradient(circle at 84% 7%, rgba(45, 212, 191, 0.1), transparent 26%),
+        radial-gradient(circle at 14% 34%, rgba(14, 165, 233, 0.08), transparent 24%),
+        #f5f8f7;
+}
+
+body.product-body.theme-overview .dashboard-hero-panel {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 88% 14%, rgba(45, 212, 191, 0.2), transparent 30%),
+        linear-gradient(135deg, #081d2d 0%, #0d3441 58%, #0f5f66 100%);
+    box-shadow: 0 30px 70px -42px rgba(5, 28, 43, 0.8);
+}
+
+body.product-body.theme-overview .dashboard-hero-panel::before,
+body.product-body.theme-overview .dashboard-hero-panel::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+body.product-body.theme-overview .dashboard-hero-panel::before {
+    width: 260px;
+    height: 260px;
+    right: -110px;
+    top: -130px;
+    border: 42px solid rgba(255, 255, 255, 0.05);
+}
+
+body.product-body.theme-overview .dashboard-hero-panel::after {
+    width: 150px;
+    height: 150px;
+    left: 42%;
+    bottom: -118px;
+    border: 28px solid rgba(245, 207, 107, 0.09);
+}
+
+.dashboard-hero-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 4px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dashboard-hero-flow li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 5px 11px 5px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.78rem;
+}
+
+.dashboard-hero-flow li span {
+    display: grid;
+    width: 25px;
+    height: 25px;
+    place-items: center;
+    border-radius: 50%;
+    background: #5eead4;
+    color: #083344;
+    font-weight: 900;
+}
+
+.dashboard-hero-flow li strong {
+    font-weight: 750;
+}
+
+body.product-body.theme-overview .dashboard-quick-create {
+    position: relative;
+    color: var(--navy-dark);
+    background:
+        radial-gradient(circle at 100% 0%, rgba(45, 212, 191, 0.16), transparent 28%),
+        linear-gradient(155deg, rgba(255, 255, 255, 0.99), rgba(240, 253, 250, 0.96));
+    border: 1px solid rgba(255, 255, 255, 0.64);
+    box-shadow: 0 24px 50px -32px rgba(2, 16, 27, 0.76);
+}
+
+body.product-body.theme-overview .dashboard-quick-create .dashboard-next-class-tag {
+    background: #ccfbf1;
+    color: #0f766e;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+body.product-body.theme-overview .dashboard-quick-create strong {
+    color: #0b2438;
+    font-size: 1.35rem;
+}
+
+body.product-body.theme-overview .dashboard-quick-create p {
+    color: #475569;
+    line-height: 1.55;
+}
+
+body.product-body.theme-overview .dashboard-quick-field span {
+    color: #334155;
+}
+
+body.product-body.theme-overview .dashboard-quick-field span::before {
+    background: #14b8a6;
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.13);
+}
+
+body.product-body.theme-overview .dashboard-quick-field select {
+    border-color: rgba(15, 118, 110, 0.16);
+    background: rgba(255, 255, 255, 0.9);
+    color: #0f172a;
+    box-shadow: 0 8px 18px -18px rgba(15, 23, 42, 0.5);
+}
+
+body.product-body.theme-overview .dashboard-hero-panel .dashboard-quick-create .platform-link-primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, #0f766e, #0891b2);
+    color: #ffffff;
+    box-shadow: 0 16px 26px -18px rgba(8, 145, 178, 0.72);
+}
+
+.dashboard-quick-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #0f5f66;
+    font-size: 0.78rem;
+    font-weight: 750;
+}
+
+.dashboard-quick-note > span:first-child {
+    font-size: 1rem;
+    color: #0d9488;
+}
+
+body.product-body.theme-overview #activity-toolkit {
+    gap: 22px;
+    padding: 26px;
+    border: 1px solid rgba(203, 213, 225, 0.7);
+    border-radius: 30px;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+    box-shadow: 0 28px 64px -48px rgba(15, 23, 42, 0.5);
+}
+
+.dashboard-section-title {
+    display: grid;
+    gap: 7px;
+}
+
+body.product-body.theme-overview .dashboard-section-title h2 {
+    margin: 0;
+    font-size: clamp(2rem, 3vw, 2.8rem);
+    letter-spacing: -0.035em;
+}
+
+.dashboard-section-title p {
+    max-width: 64ch;
+    margin: 0;
+    color: #64748b;
+    line-height: 1.55;
+}
+
+body.product-body.theme-overview .dashboard-inline-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #e6fffb;
+    color: #0f766e;
+    transition: transform 160ms ease, background-color 160ms ease;
+}
+
+body.product-body.theme-overview .dashboard-inline-link:hover,
+body.product-body.theme-overview .dashboard-inline-link:focus-visible {
+    background: #ccfbf1;
+    transform: translateY(-1px);
+}
+
+body.product-body.theme-overview .dashboard-tool-card {
+    --tool-accent: #0e7490;
+    position: relative;
+    gap: 14px;
+    padding: 14px;
+    overflow: hidden;
+    border-color: rgba(148, 163, 184, 0.2);
+    border-radius: 25px;
+    background: #ffffff;
+    box-shadow: 0 20px 42px -34px rgba(15, 23, 42, 0.52);
+}
+
+body.product-body.theme-overview .dashboard-tool-card--quiz {
+    --tool-accent: #0f766e;
+}
+
+body.product-body.theme-overview .dashboard-tool-card--lesson {
+    --tool-accent: #b45309;
+}
+
+.dashboard-tool-purpose {
+    position: absolute;
+    z-index: 5;
+    top: 26px;
+    left: 26px;
+    display: inline-flex;
+    min-height: 28px;
+    align-items: center;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, 0.64);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--tool-accent);
+    box-shadow: 0 12px 24px -18px rgba(15, 23, 42, 0.46);
+    font-size: 0.72rem;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+body.product-body.theme-overview .dashboard-tool-card .dashboard-tool-visual {
+    height: 178px;
+    border-radius: 19px;
+    background:
+        radial-gradient(circle at 88% 15%, rgba(255, 255, 255, 0.72), transparent 25%),
+        linear-gradient(145deg, #dff7f7 0%, #c5eef0 100%);
+}
+
+body.product-body.theme-overview .dashboard-tool-card--quiz .dashboard-tool-visual {
+    background: linear-gradient(145deg, #dcfce7 0%, #c7f3e3 100%);
+}
+
+body.product-body.theme-overview .dashboard-tool-card--lesson .dashboard-tool-visual {
+    background: linear-gradient(145deg, #fff7ed 0%, #fde7c4 100%);
+}
+
+.dashboard-tool-visual-kicker,
+.dashboard-tool-visual-title {
+    position: absolute;
+    z-index: 4;
+    left: 22px;
+    color: #123047;
+}
+
+.dashboard-tool-visual-kicker {
+    top: 70px;
+    font-size: 0.67rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+}
+
+.dashboard-tool-visual-title {
+    bottom: 22px;
+    width: 56%;
+    font-family: var(--font-display);
+    font-size: 1.28rem;
+    font-weight: 850;
+    line-height: 1.05;
+}
+
+body.product-body.theme-overview .dashboard-tool-card .dashboard-tool-visual svg {
+    position: absolute;
+    z-index: 3;
+    right: 14px;
+    bottom: 8px;
+    width: 106px;
+    height: 106px;
+    color: var(--tool-accent);
+    opacity: 0.52;
+}
+
+body.product-body.theme-overview .dashboard-tool-content {
+    gap: 10px;
+    padding: 2px 5px 5px;
+}
+
+body.product-body.theme-overview .dashboard-tool-content h3 {
+    color: #0b2438;
+    font-family: var(--font-display);
+    font-size: 1.42rem;
+    letter-spacing: -0.02em;
+}
+
+body.product-body.theme-overview .dashboard-tool-content p {
+    min-height: 72px;
+    color: #526174;
+    font-size: 0.94rem;
+}
+
+body.product-body.theme-overview .dashboard-tool-meta span {
+    background: color-mix(in srgb, var(--tool-accent) 10%, white);
+    color: var(--tool-accent);
+}
+
+body.product-body.theme-overview .dashboard-tool-cta {
+    justify-content: space-between;
+    width: 100%;
+    min-height: 42px;
+    padding: 0 15px;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--tool-accent) 92%, #0f172a);
+}
+
+body.product-body.theme-overview .dashboard-tool-card:hover .dashboard-tool-cta,
+body.product-body.theme-overview .dashboard-tool-card:focus-visible .dashboard-tool-cta {
+    background: var(--tool-accent);
+}
+
+body.product-body.theme-overview .dashboard-toolkit-secondary {
+    gap: 22px;
+    margin-top: 2px;
+    padding: 26px;
+    overflow: hidden;
+    border: 0;
+    border-radius: 27px;
+    background:
+        radial-gradient(circle at 100% 0%, rgba(45, 212, 191, 0.18), transparent 28%),
+        linear-gradient(135deg, #0b2438, #123d4a);
+    box-shadow: 0 30px 60px -42px rgba(5, 28, 43, 0.76);
+}
+
+.dashboard-toolkit-secondary-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-secondary-head .platform-section-label {
+    background: rgba(94, 234, 212, 0.13);
+    color: #99f6e4;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-secondary-head strong {
+    margin-top: 9px;
+    color: #ffffff;
+    font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+}
+
+body.product-body.theme-overview .dashboard-toolkit-secondary-head p {
+    max-width: 64ch;
+    color: rgba(226, 232, 240, 0.82);
+    line-height: 1.55;
+}
+
+.dashboard-toolkit-count {
+    flex: 0 0 auto;
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    padding: 0 13px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.07);
+    color: #f8fafc;
+    font-size: 0.78rem;
+    font-weight: 800;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-link {
+    --extra-accent: #0f766e;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    min-height: 112px;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 18px 30px -26px rgba(2, 16, 27, 0.8);
+}
+
+body.product-body.theme-overview .dashboard-toolkit-link--green { --extra-accent: #15803d; }
+body.product-body.theme-overview .dashboard-toolkit-link--orange { --extra-accent: #c2410c; }
+body.product-body.theme-overview .dashboard-toolkit-link--blue { --extra-accent: #1d4ed8; }
+body.product-body.theme-overview .dashboard-toolkit-link--violet { --extra-accent: #7c3aed; }
+body.product-body.theme-overview .dashboard-toolkit-link--rose { --extra-accent: #be185d; }
+body.product-body.theme-overview .dashboard-toolkit-link--mint { --extra-accent: #0f766e; }
+body.product-body.theme-overview .dashboard-toolkit-link--sky { --extra-accent: #0369a1; }
+body.product-body.theme-overview .dashboard-toolkit-link--yellow { --extra-accent: #a16207; }
+
+.dashboard-toolkit-icon {
+    display: grid;
+    width: 46px;
+    height: 46px;
+    place-items: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--extra-accent) 12%, white);
+    color: var(--extra-accent);
+    font-size: 1.25rem;
+    font-weight: 900;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-link > span:nth-child(2) {
+    display: grid;
+    gap: 3px;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-link small {
+    color: var(--extra-accent);
+    font-size: 0.64rem;
+    font-weight: 900;
+    letter-spacing: 0.1em;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-link strong {
+    margin: 0;
+    color: #0f172a;
+    font-size: 0.98rem;
+    line-height: 1.15;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-link em {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-style: normal;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-link b {
+    color: var(--extra-accent);
+    font-size: 1.15rem;
+    transition: transform 160ms ease;
+}
+
+body.product-body.theme-overview .dashboard-toolkit-link:hover,
+body.product-body.theme-overview .dashboard-toolkit-link:focus-visible {
+    border-color: color-mix(in srgb, var(--extra-accent) 36%, white);
+    background: #ffffff;
+    box-shadow: 0 24px 38px -28px rgba(2, 16, 27, 0.82);
+    transform: translateY(-3px);
+}
+
+body.product-body.theme-overview .dashboard-toolkit-link:hover b,
+body.product-body.theme-overview .dashboard-toolkit-link:focus-visible b {
+    transform: translateX(3px);
+}
+
+@media (max-width: 1180px) {
+    body.product-body.theme-overview .dashboard-toolkit-links {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 860px) {
+    body.product-body.theme-overview #activity-toolkit,
+    body.product-body.theme-overview .dashboard-toolkit-secondary {
+        padding: 18px;
+        border-radius: 22px;
+    }
+
+    .dashboard-toolkit-secondary-head {
+        display: grid;
+        align-items: start;
+    }
+
+    body.product-body.theme-overview .dashboard-toolkit-links {
+        grid-template-columns: 1fr;
+    }
+}

@@ -11,6 +11,8 @@ const auditHeight = Math.max(480, Number(process.env.EDUCARIA_AUDIT_HEIGHT || 84
 const auditScreenshotDir = process.env.EDUCARIA_AUDIT_SCREENSHOT_DIR
     ? path.resolve(process.env.EDUCARIA_AUDIT_SCREENSHOT_DIR)
     : "";
+const auditDisableDashboardTour = process.env.EDUCARIA_AUDIT_DISABLE_DASHBOARD_TOUR === "1";
+const auditScrollTo = process.env.EDUCARIA_AUDIT_SCROLL_TO || "";
 const auditMobile = auditWidth < 768;
 const pages = process.argv.slice(2).length
     ? process.argv.slice(2).map((page) => ({
@@ -159,9 +161,12 @@ async function auditPage(pageConfig) {
     await cdp.send("Log.enable");
     await cdp.send("Network.enable");
     if (pageConfig.authenticated) {
+        const dashboardTourSeed = auditDisableDashboardTour
+            ? " localStorage.setItem('educaria:dashboard-tour:layout-audit', 'done'); localStorage.setItem('educaria:dashboard-tour:auditoria@educaria.test', 'done');"
+            : "";
         await cdp.send("Network.setBlockedURLs", { urls: ["*gstatic.com/firebasejs/*"] });
         await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-            source: `localStorage.setItem('educaria:auth:teacher-cache', JSON.stringify({ uid: 'layout-audit', name: 'Professor Auditoria', email: 'auditoria@educaria.test', institution: 'Escola de Teste', role: 'teacher', plan: 'free' })); localStorage.setItem('educaria:auth:session', 'auditoria@educaria.test');${pagePath.includes("biblioteca.html") ? ` localStorage.setItem('educaria:lessons:layout-audit', JSON.stringify([{ id: 'lesson-library-audit', className: '', scope: 'library', title: 'Quiz para renomear', summary: 'Atividade de auditoria', type: 'Quiz', materialType: 'quiz', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: 'draft', draft: '' }]));` : ""}`
+            source: `localStorage.setItem('educaria:auth:teacher-cache', JSON.stringify({ uid: 'layout-audit', name: 'Professor Auditoria', email: 'auditoria@educaria.test', institution: 'Escola de Teste', role: 'teacher', plan: 'free' })); localStorage.setItem('educaria:auth:session', 'auditoria@educaria.test');${dashboardTourSeed}${pagePath.includes("biblioteca.html") ? ` localStorage.setItem('educaria:lessons:layout-audit', JSON.stringify([{ id: 'lesson-library-audit', className: '', scope: 'library', title: 'Quiz para renomear', summary: 'Atividade de auditoria', type: 'Quiz', materialType: 'quiz', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: 'draft', draft: '' }]));` : ""}`
         });
     }
     if (localPagePath.endsWith("plataforma/apresentacao.html")) {
@@ -214,6 +219,14 @@ async function auditPage(pageConfig) {
         await waitForPageCondition(cdp, "Boolean(document.documentElement.dataset.educariaOffline)");
     }
     await delay(250);
+
+    if (auditScrollTo) {
+        await cdp.send("Runtime.evaluate", {
+            expression: `(() => { const target = document.querySelector(${JSON.stringify(auditScrollTo)}); if (!target) return false; target.scrollIntoView({ block: 'start' }); return true; })()`,
+            returnByValue: true
+        });
+        await delay(180);
+    }
 
     let screenshotPath = "";
     if (auditScreenshotDir) {

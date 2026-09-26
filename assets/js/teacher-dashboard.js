@@ -10,15 +10,15 @@ const DASHBOARD_CORE_FORMATS = [
     { href: "criar-aula.html", label: "Aula completa (15-25 min)" }
 ];
 const DASHBOARD_EXTRA_FORMATS = [
-    { href: "flashcards-builder.html?new=1", label: "Flashcards" },
-    { href: "jogo-memoria-builder.html?new=1", label: "Jogo da memória" },
-    { href: "roleta-builder.html?new=1", label: "Roleta" },
-    { href: "ligar-pontos-builder.html?new=1", label: "Ligar pontos" },
-    { href: "mapa-mental-builder.html?new=1", label: "Mapa mental" },
-    { href: "debate-guiado-builder.html?new=1", label: "Debate guiado" },
-    { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras" },
-    { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas" },
-    { href: "forca-builder.html?new=1", label: "Força" }
+    { href: "flashcards-builder.html?new=1", label: "Flashcards", category: "Revisar", description: "Retomada rápida de conceitos", icon: "⚡", tone: "teal" },
+    { href: "jogo-memoria-builder.html?new=1", label: "Jogo da memória", category: "Associar", description: "Conecte pares e significados", icon: "▦", tone: "green" },
+    { href: "roleta-builder.html?new=1", label: "Roleta", category: "Engajar", description: "Sorteie perguntas e desafios", icon: "✦", tone: "orange" },
+    { href: "ligar-pontos-builder.html?new=1", label: "Ligar pontos", category: "Praticar", description: "Relacione ideias e respostas", icon: "↔", tone: "blue" },
+    { href: "mapa-mental-builder.html?new=1", label: "Mapa mental", category: "Organizar", description: "Visualize conexões do tema", icon: "⌘", tone: "violet" },
+    { href: "debate-guiado-builder.html?new=1", label: "Debate guiado", category: "Discutir", description: "Estruture falas e argumentos", icon: "◉", tone: "rose" },
+    { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras", category: "Aquecer", description: "Explore o vocabulário da aula", icon: "⌕", tone: "mint" },
+    { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas", category: "Fixar", description: "Reforce conceitos com pistas", icon: "#", tone: "sky" },
+    { href: "forca-builder.html?new=1", label: "Forca", category: "Descobrir", description: "Revele palavras com a turma", icon: "?", tone: "yellow" }
 ];
 const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_EXTRA_FORMATS];
 const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
@@ -185,7 +185,7 @@ function quickCreateActionLabel(target) {
 function syncDashboardFormatHierarchy() {
     const quickCopy = document.querySelector("[data-dashboard-quick-copy]");
     if (quickCopy) {
-        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Escolha uma atividade e entre direto no editor. A turma é opcional e pode ser definida agora ou depois.");
+        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Escolha o formato e entre no editor. Lá você poderá digitar um tema, colar um texto ou enviar um arquivo.");
     }
 
     const toolkitSection = document.getElementById("activity-toolkit");
@@ -194,10 +194,10 @@ function syncDashboardFormatHierarchy() {
     const sectionLabel = toolkitSection.querySelector(".platform-section-label");
     const sectionTitle = toolkitSection.querySelector("h2");
     const sectionLink = toolkitSection.querySelector(".dashboard-inline-link");
-    if (sectionLabel) sectionLabel.textContent = dashboardTranslate("dashboard.toolkit.label", "Fluxo principal");
-    if (sectionTitle) sectionTitle.textContent = dashboardTranslate("dashboard.toolkit.title", "Comece por aqui");
+    if (sectionLabel) sectionLabel.textContent = dashboardTranslate("dashboard.toolkit.label", "Crie para o seu momento de aula");
+    if (sectionTitle) sectionTitle.textContent = dashboardTranslate("dashboard.toolkit.title", "O que você quer fazer com a turma?");
     if (sectionLink) {
-        sectionLink.textContent = dashboardTranslate("dashboard.toolkit.extraLink", "Ver formatos extras");
+        sectionLink.textContent = dashboardTranslate("dashboard.toolkit.extraLink", "Explorar todas as atividades ↓");
         sectionLink.setAttribute("href", "#extra-formats");
     }
 
@@ -214,13 +214,13 @@ function syncDashboardFormatHierarchy() {
     const slidesCard = grid.querySelector('.dashboard-tool-card--slides .dashboard-tool-content p');
     const lessonCard = grid.querySelector('.dashboard-tool-card--lesson .dashboard-tool-content p');
     if (slidesCard) {
-        slidesCard.textContent = dashboardTranslate("dashboard.toolkit.slides.copy", "Quando usar: conduzir explicação e organizar a sequência da aula. Tempo estimado: 10 a 15 min.");
+        slidesCard.textContent = dashboardTranslate("dashboard.toolkit.slides.copy", "Transforme um tema em uma sequência visual clara, pronta para projetar e conduzir a explicação.");
     }
     if (quizCard) {
-        quizCard.textContent = dashboardTranslate("dashboard.toolkit.quiz.copy", "Quando usar: revisar conteúdo no fim da aula e checar entendimento. Tempo estimado: 5 a 8 min.");
+        quizCard.textContent = dashboardTranslate("dashboard.toolkit.quiz.copy", "Crie perguntas envolventes para revisar o conteúdo e descobrir o que a turma já compreendeu.");
     }
     if (lessonCard) {
-        lessonCard.textContent = dashboardTranslate("dashboard.toolkit.lesson.copy", "Quando usar: planejar bloco completo com início, desenvolvimento e fechamento. Tempo estimado: 15 a 25 min.");
+        lessonCard.textContent = dashboardTranslate("dashboard.toolkit.lesson.copy", "Organize objetivo, explicação, prática e fechamento em um roteiro completo para a aula.");
     }
 
     let secondary = toolkitSection.querySelector(".dashboard-toolkit-secondary");
@@ -232,13 +232,25 @@ function syncDashboardFormatHierarchy() {
     }
 
     secondary.innerHTML = `
-        <div>
-            <strong>${dashboardTranslate("dashboard.toolkit.moreFormats", "Mais formatos")}</strong>
-            <p>${dashboardTranslate("dashboard.toolkit.moreFormats.copy", "Use formatos extras para momentos específicos da aula: retomada curta, dinâmica rápida ou fechamento leve.")}</p>
+        <div class="dashboard-toolkit-secondary-head">
+            <div>
+                <span class="platform-section-label">${dashboardTranslate("dashboard.toolkit.moreFormats.label", "Mais possibilidades")}</span>
+                <strong>${dashboardTranslate("dashboard.toolkit.moreFormats", "Dê outro ritmo à sua aula")}</strong>
+                <p>${dashboardTranslate("dashboard.toolkit.moreFormats.copy", "Atividades rápidas para aquecer, praticar, organizar ideias ou fechar a aula com participação.")}</p>
+            </div>
+            <span class="dashboard-toolkit-count">${dashboardTranslate("dashboard.toolkit.moreFormats.count", "9 formatos prontos para criar")}</span>
         </div>
         <div class="dashboard-toolkit-links">
             ${DASHBOARD_EXTRA_FORMATS.map((format) => `
-                <a href="${format.href}" class="dashboard-toolkit-link">${format.label}</a>
+                <a href="${escapeHtml(format.href)}" class="dashboard-toolkit-link dashboard-toolkit-link--${escapeHtml(format.tone)}">
+                    <span class="dashboard-toolkit-icon" aria-hidden="true">${escapeHtml(format.icon)}</span>
+                    <span>
+                        <small>${escapeHtml(format.category)}</small>
+                        <strong>${escapeHtml(format.label)}</strong>
+                        <em>${escapeHtml(format.description)}</em>
+                    </span>
+                    <b aria-hidden="true">→</b>
+                </a>
             `).join("")}
         </div>
     `;
@@ -443,14 +455,15 @@ function setDashboardTourSidebarPanel(key) {
 function dashboardTourSteps() {
     return [
         {
-            selector: '[data-dashboard-tour-anchor="hero-action"]',
-            title: "Comece criando uma atividade",
-            description: "Escolha o formato que combina com a aula. No editor, você pode informar um tema, enviar um arquivo ou montar o conteúdo manualmente."
+            selector: '[data-dashboard-tour-anchor="create-class-form"]',
+            panel: "create-class",
+            title: "Comece criando sua primeira turma",
+            description: "Dê um nome à turma e escolha a matéria. Assim, as atividades que você criar já ficam organizadas para cada grupo."
         },
         {
             selector: '[data-dashboard-tour-anchor="quick-create"]',
-            title: "Turma é opcional",
-            description: "Entre direto no editor usando a biblioteca pessoal. Se quiser, selecione uma turma agora para deixar o material organizado por grupo."
+            title: "Crie a primeira atividade",
+            description: "Escolha a turma e o formato. No editor, você poderá informar um tema, enviar um arquivo ou montar o conteúdo manualmente."
         },
         {
             selector: '[data-dashboard-tour-anchor="toolkit"]',
@@ -461,12 +474,6 @@ function dashboardTourSteps() {
             selector: '[data-dashboard-tour-anchor="library"]',
             title: "Guarde seu próprio acervo",
             description: "A biblioteca concentra os materiais que você salvou nos builders, para revisar, editar e reutilizar depois."
-        },
-        {
-            selector: '[data-dashboard-tour-anchor="create-class-form"]',
-            panel: "create-class",
-            title: "Organize por turma quando quiser",
-            description: "Criar uma turma não é obrigatório para começar. Use este recurso quando quiser agrupar materiais e facilitar o uso com cada classe."
         }
     ];
 }
