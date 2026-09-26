@@ -171,6 +171,16 @@ function syncDashboardFormatHierarchy() {
     const toolkitSection = document.getElementById("activity-toolkit");
     if (!toolkitSection) return;
 
+    const sectionLabel = toolkitSection.querySelector(".dashboard-section-title .platform-section-label");
+    const sectionTitle = toolkitSection.querySelector(".dashboard-section-title h2");
+    const sectionLink = toolkitSection.querySelector(".dashboard-section-head .dashboard-inline-link");
+    if (sectionLabel) sectionLabel.textContent = dashboardTranslate("dashboard.toolkit.label", "Crie para o seu momento de aula");
+    if (sectionTitle) sectionTitle.textContent = dashboardTranslate("dashboard.toolkit.title", "O que você quer fazer com a turma?");
+    if (sectionLink) {
+        sectionLink.textContent = dashboardTranslate("dashboard.toolkit.extraLink", "Explorar todas as atividades ↓");
+        sectionLink.setAttribute("href", "#extra-formats");
+    }
+
     const grid = toolkitSection.querySelector(".dashboard-toolkit-grid");
     if (!grid) return;
 
