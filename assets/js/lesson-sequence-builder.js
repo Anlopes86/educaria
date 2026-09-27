@@ -233,6 +233,11 @@ let dragHoverLessonBlockId = "";
 let lessonSequenceGenerating = false;
 let lessonSequencePointerDrag = null;
 let openLessonEditorBlockIds = new Set();
+let lessonSequenceActivityFilters = {
+    search: "",
+    classScope: "all",
+    materialType: "all"
+};
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -1959,42 +1964,131 @@ function persistLessonSequence() {
     writeLessonSequenceDraft(lessonSequenceState);
 }
 
-function renderToolPicker() {
-    const root = document.querySelector("[data-lesson-tool-grid]");
-    if (!root) return;
+function normalizeLessonSequenceSearch(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim();
+}
 
-    const savedLessons = [...classLessonsForSequence(), ...libraryLessonsForSequence()]
+function savedLessonsForSequencePicker() {
+    return readAllActivityLessons()
         .filter((lesson, index, lessons) => lessons.findIndex((item) => item.id === lesson.id) === index)
         .sort((left, right) => Number(right.updatedAt || right.createdAt || 0) - Number(left.updatedAt || left.createdAt || 0));
+}
 
-    const savedMarkup = savedLessons.length
-        ? savedLessons.map((lesson) => {
-            const materialType = lesson.materialType || "slides";
-            const selectedCount = lessonSequenceState.blocks.filter((block) => block.lessonRefId === lesson.id).length;
-            const scope = detectLessonScope(lesson);
-            return `
-                <article class="lesson-sequence-material-card ${selectedCount ? "is-selected" : ""}">
-                    <div class="lesson-sequence-material-card-head">
-                        <span class="platform-block-chip">${escapeHtml(materialGroupLabel(materialType))}</span>
-                        <span class="lesson-sequence-material-source">${escapeHtml(sourceLabel(scope))}</span>
-                    </div>
-                    <div class="lesson-sequence-material-card-copy">
-                        <strong>${escapeHtml(lesson.title || materialGroupLabel(materialType))}</strong>
-                        <p>${escapeHtml(lesson.summary || materialGroupDescription(materialType))}</p>
-                    </div>
-                    <button type="button" class="lesson-sequence-material-add" data-add-saved-lesson="${escapeAttr(lesson.id)}">
-                        <span aria-hidden="true">+</span>
-                        <span>${selectedCount ? `Adicionar novamente · ${selectedCount} na aula` : "Adicionar à aula"}</span>
-                    </button>
-                </article>
-            `;
-        }).join("")
+function lessonSequenceClassFilterValue(lesson) {
+    return detectLessonScope(lesson) === "library"
+        ? "library"
+        : `class:${String(lesson.className || "Turma").trim()}`;
+}
+
+function lessonSequenceFiltersActive() {
+    return Boolean(
+        lessonSequenceActivityFilters.search
+        || lessonSequenceActivityFilters.classScope !== "all"
+        || lessonSequenceActivityFilters.materialType !== "all"
+    );
+}
+
+function filteredLessonsForSequencePicker(savedLessons = savedLessonsForSequencePicker()) {
+    const search = normalizeLessonSequenceSearch(lessonSequenceActivityFilters.search);
+
+    return savedLessons.filter((lesson) => {
+        const matchesClass = lessonSequenceActivityFilters.classScope === "all"
+            || lessonSequenceClassFilterValue(lesson) === lessonSequenceActivityFilters.classScope;
+        const matchesType = lessonSequenceActivityFilters.materialType === "all"
+            || (lesson.materialType || "slides") === lessonSequenceActivityFilters.materialType;
+        const matchesSearch = !search || normalizeLessonSequenceSearch(lesson.title || "").includes(search);
+        return matchesClass && matchesType && matchesSearch;
+    });
+}
+
+function renderSequenceMaterialCard(lesson) {
+    const materialType = lesson.materialType || "slides";
+    const selectedCount = lessonSequenceState.blocks.filter((block) => block.lessonRefId === lesson.id).length;
+    const scope = detectLessonScope(lesson);
+    const sourceName = scope === "library" ? "Biblioteca pessoal" : (lesson.className || "Turma");
+
+    return `
+        <article class="lesson-sequence-material-card ${selectedCount ? "is-selected" : ""}">
+            <div class="lesson-sequence-material-card-head">
+                <span class="platform-block-chip">${escapeHtml(materialGroupLabel(materialType))}</span>
+                <span class="lesson-sequence-material-source" title="Origem do material">${escapeHtml(sourceName)}</span>
+            </div>
+            <div class="lesson-sequence-material-card-copy">
+                <strong>${escapeHtml(lesson.title || materialGroupLabel(materialType))}</strong>
+                <p>${escapeHtml(lesson.summary || materialGroupDescription(materialType))}</p>
+            </div>
+            <button type="button" class="lesson-sequence-material-add" data-add-saved-lesson="${escapeAttr(lesson.id)}">
+                <span aria-hidden="true">+</span>
+                <span>${selectedCount ? `Adicionar novamente · ${selectedCount} na aula` : "Adicionar à aula"}</span>
+            </button>
+        </article>
+    `;
+}
+
+function refreshLessonSequenceMaterialResults(savedLessons = savedLessonsForSequencePicker()) {
+    const grid = document.querySelector("[data-lesson-material-grid]");
+    const count = document.querySelector("[data-lesson-material-result-count]");
+    const clearButton = document.querySelector("[data-clear-lesson-material-filters]");
+    if (!grid) return;
+
+    const filteredLessons = filteredLessonsForSequencePicker(savedLessons);
+    const hasFilters = lessonSequenceFiltersActive();
+
+    if (count) {
+        count.textContent = hasFilters
+            ? `${filteredLessons.length} de ${savedLessons.length} encontrados`
+            : `${savedLessons.length} ${savedLessons.length === 1 ? "material disponível" : "materiais disponíveis"}`;
+    }
+    if (clearButton) clearButton.hidden = !hasFilters;
+
+    if (filteredLessons.length) {
+        grid.innerHTML = filteredLessons.map(renderSequenceMaterialCard).join("");
+        return;
+    }
+
+    grid.innerHTML = savedLessons.length
+        ? `
+            <div class="lesson-sequence-material-empty">
+                <strong>Nenhuma atividade encontrada</strong>
+                <p>Tente buscar outro nome ou limpar os filtros de turma e tipo de atividade.</p>
+                <button type="button" class="platform-link-button platform-link-secondary" data-clear-lesson-material-filters>Limpar filtros</button>
+            </div>
+        `
         : `
             <div class="lesson-sequence-material-empty">
                 <strong>Você ainda não tem atividades salvas</strong>
                 <p>Use a opção abaixo para criar um bloco novo agora. Depois de salvar outras atividades, elas aparecerão aqui para reutilização.</p>
             </div>
         `;
+}
+
+function renderToolPicker() {
+    const root = document.querySelector("[data-lesson-tool-grid]");
+    if (!root) return;
+
+    const savedLessons = savedLessonsForSequencePicker();
+    const classNames = [...new Set(savedLessons
+        .filter((lesson) => detectLessonScope(lesson) === "class" && lesson.className)
+        .map((lesson) => lesson.className))]
+        .sort((left, right) => {
+            const currentClass = currentTurmaName();
+            if (left === currentClass) return -1;
+            if (right === currentClass) return 1;
+            return left.localeCompare(right, "pt-BR");
+        });
+    const hasLibraryMaterials = savedLessons.some((lesson) => detectLessonScope(lesson) === "library");
+    const validClassFilters = new Set([
+        "all",
+        ...(hasLibraryMaterials ? ["library"] : []),
+        ...classNames.map((className) => `class:${className}`)
+    ]);
+    if (!validClassFilters.has(lessonSequenceActivityFilters.classScope)) {
+        lessonSequenceActivityFilters.classScope = "all";
+    }
 
     const newToolsMarkup = LESSON_SEQUENCE_TYPES.map((type) => {
         const counts = lessonCountsForType(type.value);
@@ -2019,9 +2113,37 @@ function renderToolPicker() {
                     <strong>Suas atividades salvas</strong>
                     <p>Escolha quantas quiser. Você também pode repetir uma atividade na mesma aula.</p>
                 </div>
-                <span>${savedLessons.length} ${savedLessons.length === 1 ? "material disponível" : "materiais disponíveis"}</span>
+                <span data-lesson-material-result-count></span>
             </div>
-            <div class="lesson-sequence-material-grid">${savedMarkup}</div>
+
+            <div class="lesson-sequence-material-filters" aria-label="Filtros das atividades salvas">
+                <div class="platform-field lesson-sequence-material-search">
+                    <label for="lesson-material-search">Buscar por nome</label>
+                    <input id="lesson-material-search" type="search" value="${escapeAttr(lessonSequenceActivityFilters.search)}" placeholder="Ex.: frações, sistema solar..." autocomplete="off" data-lesson-material-search>
+                </div>
+                <div class="platform-field">
+                    <label for="lesson-material-class-filter">Turma</label>
+                    <select id="lesson-material-class-filter" data-lesson-material-class-filter>
+                        <option value="all" ${lessonSequenceActivityFilters.classScope === "all" ? "selected" : ""}>Todas as turmas e biblioteca</option>
+                        ${classNames.map((className) => {
+                            const value = `class:${className}`;
+                            const suffix = className === currentTurmaName() ? " · atual" : "";
+                            return `<option value="${escapeAttr(value)}" ${lessonSequenceActivityFilters.classScope === value ? "selected" : ""}>${escapeHtml(className)}${suffix}</option>`;
+                        }).join("")}
+                        ${hasLibraryMaterials ? `<option value="library" ${lessonSequenceActivityFilters.classScope === "library" ? "selected" : ""}>Biblioteca pessoal</option>` : ""}
+                    </select>
+                </div>
+                <div class="platform-field">
+                    <label for="lesson-material-type-filter">Tipo de atividade</label>
+                    <select id="lesson-material-type-filter" data-lesson-material-type-filter>
+                        <option value="all" ${lessonSequenceActivityFilters.materialType === "all" ? "selected" : ""}>Todos os tipos</option>
+                        ${LESSON_SEQUENCE_TYPES.map((type) => `<option value="${type.value}" ${lessonSequenceActivityFilters.materialType === type.value ? "selected" : ""}>${escapeHtml(type.label)}</option>`).join("")}
+                    </select>
+                </div>
+                <button type="button" class="lesson-sequence-filter-clear" data-clear-lesson-material-filters hidden>Limpar filtros</button>
+            </div>
+
+            <div class="lesson-sequence-material-grid" data-lesson-material-grid></div>
         </section>
 
         <details class="lesson-sequence-new-tools">
@@ -2034,6 +2156,8 @@ function renderToolPicker() {
             <div class="lesson-sequence-new-tools-body">${newToolsMarkup}</div>
         </details>
     `;
+
+    refreshLessonSequenceMaterialResults(savedLessons);
 }
 
 function renderPreview() {
@@ -2446,6 +2570,14 @@ function renderLessonSequence() {
 
 function bindLessonSequenceEvents() {
     document.addEventListener("click", (event) => {
+        const clearFiltersTrigger = event.target.closest("[data-clear-lesson-material-filters]");
+        if (clearFiltersTrigger) {
+            lessonSequenceActivityFilters = { search: "", classScope: "all", materialType: "all" };
+            renderToolPicker();
+            document.querySelector("[data-lesson-material-search]")?.focus();
+            return;
+        }
+
         const addSavedTrigger = event.target.closest("[data-add-saved-lesson]");
         if (addSavedTrigger) {
             addSavedLessonToSequence(addSavedTrigger.dataset.addSavedLesson || "");
@@ -2585,6 +2717,20 @@ function bindLessonSequenceEvents() {
     });
 
     document.addEventListener("change", (event) => {
+        const classFilter = event.target.closest("[data-lesson-material-class-filter]");
+        if (classFilter) {
+            lessonSequenceActivityFilters.classScope = classFilter.value || "all";
+            refreshLessonSequenceMaterialResults();
+            return;
+        }
+
+        const typeFilter = event.target.closest("[data-lesson-material-type-filter]");
+        if (typeFilter) {
+            lessonSequenceActivityFilters.materialType = typeFilter.value || "all";
+            refreshLessonSequenceMaterialResults();
+            return;
+        }
+
         const select = event.target.closest("[data-block-select-material]");
         if (select) {
             setBlockMaterial(select.dataset.blockSelectMaterial || "", select.value);
@@ -2668,6 +2814,13 @@ function bindLessonSequenceEvents() {
     });
 
     document.addEventListener("input", (event) => {
+        const materialSearch = event.target.closest("[data-lesson-material-search]");
+        if (materialSearch) {
+            lessonSequenceActivityFilters.search = materialSearch.value || "";
+            refreshLessonSequenceMaterialResults();
+            return;
+        }
+
         const blockField = event.target.closest("[data-block-field]");
         if (blockField) {
             updateBlockField(blockField.dataset.blockId || "", blockField.dataset.blockField || "", blockField.value);

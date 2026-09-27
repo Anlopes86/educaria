@@ -119,6 +119,76 @@
     font-weight: 800;
 }
 
+.lesson-sequence-material-filters {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.35fr) minmax(170px, 0.85fr) minmax(160px, 0.8fr) auto;
+    gap: 10px;
+    align-items: end;
+    padding: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 16px 30px -28px rgba(15, 23, 42, 0.28);
+}
+
+.lesson-sequence-material-filters .platform-field {
+    min-width: 0;
+}
+
+.lesson-sequence-material-filters label {
+    font-size: 0.75rem;
+}
+
+.lesson-sequence-material-filters input,
+.lesson-sequence-material-filters select {
+    min-width: 0;
+    min-height: 44px;
+    background-color: #ffffff;
+}
+
+.lesson-sequence-material-search {
+    position: relative;
+}
+
+.lesson-sequence-material-search::after {
+    content: "⌕";
+    position: absolute;
+    right: 13px;
+    bottom: 10px;
+    color: #64748b;
+    font-size: 1.05rem;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.lesson-sequence-material-search input {
+    padding-right: 38px;
+}
+
+.lesson-sequence-filter-clear {
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid rgba(15, 118, 110, 0.2);
+    border-radius: 13px;
+    background: #f0fdfa;
+    color: #0f766e;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 850;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.lesson-sequence-filter-clear:hover,
+.lesson-sequence-filter-clear:focus-visible {
+    border-color: rgba(15, 118, 110, 0.42);
+    background: #ccfbf1;
+}
+
+.lesson-sequence-filter-clear[hidden] {
+    display: none;
+}
+
 .lesson-sequence-material-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -238,6 +308,11 @@
     margin: 0;
     color: var(--gray-dark);
     line-height: 1.55;
+}
+
+.lesson-sequence-material-empty .platform-link-button {
+    justify-self: start;
+    margin-top: 6px;
 }
 
 .lesson-sequence-new-tools {
@@ -1069,6 +1144,18 @@ body.lesson-sequence-embedded .presentation-shell {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .lesson-sequence-material-filters {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lesson-sequence-material-search {
+        grid-column: 1 / -1;
+    }
+
+    .lesson-sequence-filter-clear {
+        justify-self: start;
+    }
+
     .lesson-sequence-stage-objective {
         display: none;
     }
@@ -1105,12 +1192,17 @@ body.lesson-sequence-embedded .presentation-shell {
 
 @media (max-width: 720px) {
     .lesson-sequence-material-grid,
+    .lesson-sequence-material-filters,
     .lesson-sequence-meta-grid,
     .lesson-sequence-item-fields,
     .lesson-sequence-inline-editor-grid,
     .lesson-sequence-inline-status,
     .lesson-sequence-new-tools-body {
         grid-template-columns: 1fr;
+    }
+
+    .lesson-sequence-material-search {
+        grid-column: auto;
     }
 
     .lesson-sequence-meta-grid .platform-field-wide {

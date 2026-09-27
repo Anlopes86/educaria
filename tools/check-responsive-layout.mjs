@@ -197,13 +197,14 @@ async function auditPage(pageConfig) {
         const activityLessons = [
             { id: "lesson-sequence-slides-audit", className: "8º Ano A", scope: "class", title: "Energia nos ecossistemas", summary: "Introdução visual aos fluxos de energia.", type: "Slides", materialType: "slides", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonSlidesDraft },
             { id: "lesson-sequence-flashcards-audit", className: "8º Ano A", scope: "class", title: "Conceitos essenciais", summary: "Cartões para retomar o vocabulário principal.", type: "Flashcards", materialType: "flashcards", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonFlashcardsDraft },
-            { id: "lesson-sequence-quiz-audit", className: "", scope: "library", title: "Quiz de fechamento", summary: "Perguntas rápidas para conferir a aprendizagem.", type: "Quiz", materialType: "quiz", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonQuizDraft }
+            { id: "lesson-sequence-quiz-audit", className: "", scope: "library", title: "Quiz de fechamento", summary: "Perguntas rápidas para conferir a aprendizagem.", type: "Quiz", materialType: "quiz", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonQuizDraft },
+            { id: "lesson-sequence-other-class-audit", className: "6º Ano B", scope: "class", title: "Ciclo da água", summary: "Slides usados em outra turma para testar o filtro.", type: "Slides", materialType: "slides", createdAt: new Date(Date.now() - 86400000).toISOString(), updatedAt: new Date(Date.now() - 86400000).toISOString(), status: "ready", draft: lessonSlidesDraft }
         ];
         const sequenceDraft = {
             title: "Energia e equilíbrio nos ecossistemas",
             objective: "Compreender como a energia circula nas cadeias alimentares e verificar a aprendizagem ao final.",
             duration: 45,
-            blocks: activityLessons.map((lesson, index) => ({
+            blocks: activityLessons.slice(0, 3).map((lesson, index) => ({
                 id: `lesson-sequence-block-${index + 1}`,
                 lessonRefId: lesson.id,
                 materialType: lesson.materialType,
@@ -408,6 +409,44 @@ async function auditPage(pageConfig) {
             .replace(/^-|-$/g, "") || "pagina";
         screenshotPath = path.join(auditScreenshotDir, `${screenshotName}-${auditWidth}x${auditHeight}.png`);
         await fs.writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));
+    }
+
+    let lessonFilterJourney = null;
+    if (localPagePath.endsWith("plataforma/criar-aula.html")) {
+        const filterEvaluation = await cdp.send("Runtime.evaluate", {
+            expression: `(() => {
+                const visibleTitles = () => [...document.querySelectorAll('[data-lesson-material-grid] .lesson-sequence-material-card-copy strong')].map((item) => item.textContent.trim());
+                const search = document.querySelector('[data-lesson-material-search]');
+                if (!search) return { exists: false };
+
+                search.value = 'quiz de fechamento';
+                search.dispatchEvent(new Event('input', { bubbles: true }));
+                const searchTitles = visibleTitles();
+                document.querySelector('[data-clear-lesson-material-filters]')?.click();
+
+                const classFilter = document.querySelector('[data-lesson-material-class-filter]');
+                classFilter.value = 'class:6º Ano B';
+                classFilter.dispatchEvent(new Event('change', { bubbles: true }));
+                const classTitles = visibleTitles();
+                document.querySelector('[data-clear-lesson-material-filters]')?.click();
+
+                const typeFilter = document.querySelector('[data-lesson-material-type-filter]');
+                typeFilter.value = 'slides';
+                typeFilter.dispatchEvent(new Event('change', { bubbles: true }));
+                const typeTitles = visibleTitles();
+                document.querySelector('[data-clear-lesson-material-filters]')?.click();
+
+                return {
+                    exists: true,
+                    searchTitles,
+                    classTitles,
+                    typeTitles,
+                    resetCount: visibleTitles().length
+                };
+            })()`,
+            returnByValue: true
+        });
+        lessonFilterJourney = filterEvaluation.result.value;
     }
 
     const expression = `(() => {
@@ -767,7 +806,7 @@ async function auditPage(pageConfig) {
         topbarRestore = restoreEvaluation.result.value;
     }
     cdp.close();
-    return { ...evaluation.result.value, mobileMenu, topbarRestore, quizJourney, libraryRename, screenshotPath, diagnostics: cdp.diagnostics };
+    return { ...evaluation.result.value, mobileMenu, topbarRestore, quizJourney, libraryRename, lessonFilterJourney, screenshotPath, diagnostics: cdp.diagnostics };
 }
 
 let failed = false;
@@ -801,6 +840,17 @@ try {
         if (result.debateBuilderState) console.log(`  debate-builder=${JSON.stringify(result.debateBuilderState)}`);
         if (result.lessonSequenceState) console.log(`  lesson-sequence=${JSON.stringify(result.lessonSequenceState)}`);
         if (result.lessonPlayerState) console.log(`  lesson-player=${JSON.stringify(result.lessonPlayerState)}`);
+        if (result.lessonFilterJourney) {
+            const lessonFiltersWork = result.lessonFilterJourney.exists
+                && result.lessonFilterJourney.searchTitles.length === 1
+                && result.lessonFilterJourney.searchTitles[0] === "Quiz de fechamento"
+                && result.lessonFilterJourney.classTitles.length === 1
+                && result.lessonFilterJourney.classTitles[0] === "Ciclo da água"
+                && result.lessonFilterJourney.typeTitles.length === 2
+                && result.lessonFilterJourney.resetCount === 4;
+            console.log(`  lesson-filters=${lessonFiltersWork ? "ok" : "failed"} state=${JSON.stringify(result.lessonFilterJourney)}`);
+            if (!lessonFiltersWork) failed = true;
+        }
         if (result.previewScroll && !auditMobile) {
             const previewScrollWorks = result.previewScroll.overflowY === "auto"
                 && result.previewScroll.maxHeight !== "none"
