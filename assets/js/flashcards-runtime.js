@@ -141,14 +141,14 @@ function fitFlashcardFaceContent(face) {
     const availableWidth = Math.max(face.clientWidth - 56, 220);
     const density = face.dataset.density || "comfort";
     const maxTitleSize = density === "dense"
-        ? Math.min(face.clientWidth * 0.12, face.clientHeight * 0.16, 72)
+        ? Math.min(face.clientWidth * 0.13, face.clientHeight * 0.18, 80)
         : density === "compact"
-            ? Math.min(face.clientWidth * 0.15, face.clientHeight * 0.19, 90)
-            : Math.min(face.clientWidth * 0.19, face.clientHeight * 0.24, 116);
-    const minTitleSize = density === "dense" ? 28 : density === "compact" ? 34 : 44;
+            ? Math.min(face.clientWidth * 0.16, face.clientHeight * 0.21, 100)
+            : Math.min(face.clientWidth * 0.2, face.clientHeight * 0.26, 128);
+    const minTitleSize = density === "dense" ? 32 : density === "compact" ? 38 : 48;
     const initialTitleSize = Math.max(minTitleSize, Math.round(maxTitleSize));
-    const maxExampleSize = exampleVisible ? Math.min(face.clientWidth * 0.03, 22) : 0;
-    const minExampleSize = 15;
+    const maxExampleSize = exampleVisible ? Math.min(face.clientWidth * 0.038, 28) : 0;
+    const minExampleSize = 18;
 
     title.style.maxWidth = `${availableWidth}px`;
     title.style.fontSize = `${initialTitleSize}px`;
@@ -167,7 +167,7 @@ function fitFlashcardFaceContent(face) {
     let exampleSize = exampleText ? parseFloat(window.getComputedStyle(exampleText).fontSize) || 16 : 0;
     let attempts = 0;
 
-    while (face.scrollHeight > face.clientHeight - 8 && attempts < 100) {
+    while (face.scrollHeight > face.clientHeight + 2 && attempts < 100) {
         if (titleSize > minTitleSize) {
             titleSize -= titleSize > 72 ? 2 : 1;
             title.style.fontSize = `${titleSize}px`;

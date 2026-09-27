@@ -14,6 +14,7 @@ const auditScreenshotDir = process.env.EDUCARIA_AUDIT_SCREENSHOT_DIR
 const auditDisableDashboardTour = process.env.EDUCARIA_AUDIT_DISABLE_DASHBOARD_TOUR === "1";
 const auditScrollTo = process.env.EDUCARIA_AUDIT_SCROLL_TO || "";
 const auditSeedDashboard = process.env.EDUCARIA_AUDIT_SEED_DASHBOARD === "1";
+const auditFlashcardSide = process.env.EDUCARIA_AUDIT_FLASHCARD_SIDE || "front";
 const auditMobile = auditWidth < 768;
 const pages = process.argv.slice(2).length
     ? process.argv.slice(2).map((page) => ({
@@ -211,6 +212,22 @@ async function auditPage(pageConfig) {
             source: `localStorage.setItem('educaria:builder:quiz:guest', ${JSON.stringify(quizDraft)}); localStorage.setItem('educaria:builder:quiz:layout-audit', ${JSON.stringify(quizDraft)});`
         });
     }
+    if (localPagePath.endsWith("plataforma/flashcards-apresentacao.html")) {
+        const flashcardsStack = `
+            <section data-flashcard>
+                <textarea data-field="front">Fotossíntese</textarea>
+                <textarea data-field="back">Produção de energia pelas plantas</textarea>
+                <textarea data-field="example">Anote no quadro: a planta utiliza luz, água e gás carbônico para produzir matéria orgânica e liberar oxigênio.</textarea>
+                <input data-field="front-color" value="#ffffff">
+                <input data-field="back-color" value="#dbeafe">
+                <input data-field="text-color" value="#0f172a">
+            </section>
+        `;
+        const flashcardsDraft = JSON.stringify({ controls: { "cards-tema": "Fotossíntese", "cards-exemplo": "Sim" }, stackHtml: flashcardsStack });
+        await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+            source: `localStorage.setItem('educaria:builder:flashcards:guest', ${JSON.stringify(flashcardsDraft)}); localStorage.setItem('educaria:builder:flashcards:layout-audit', ${JSON.stringify(flashcardsDraft)});`
+        });
+    }
     await cdp.send("Emulation.setDeviceMetricsOverride", {
         width: auditWidth,
         height: auditHeight,
@@ -241,6 +258,14 @@ async function auditPage(pageConfig) {
         await waitForPageCondition(cdp, "Boolean(document.documentElement.dataset.educariaOffline)");
     }
     await delay(250);
+
+    if (localPagePath.endsWith("plataforma/flashcards-apresentacao.html") && auditFlashcardSide === "back") {
+        await cdp.send("Runtime.evaluate", {
+            expression: "document.querySelector('[data-flashcard-flip]')?.click()"
+        });
+        await waitForPageCondition(cdp, "document.querySelector('[data-flashcard-stage]')?.classList.contains('is-flipped')");
+        await delay(600);
+    }
 
     if (auditScrollTo) {
         await cdp.send("Runtime.evaluate", {
@@ -308,7 +333,10 @@ async function auditPage(pageConfig) {
                 display: getComputedStyle(flashcardStage).display,
                 width: Math.round(flashcardRect?.width || 0),
                 height: Math.round(flashcardRect?.height || 0),
-                front: document.querySelector('[data-flashcard-front]')?.textContent || ''
+                front: document.querySelector('[data-flashcard-front]')?.textContent || '',
+                frontSize: getComputedStyle(document.querySelector('[data-flashcard-front]')).fontSize,
+                backSize: getComputedStyle(document.querySelector('[data-flashcard-back]')).fontSize,
+                noteSize: getComputedStyle(document.querySelector('[data-flashcard-example]')).fontSize
             } : null,
             offlineState: document.documentElement.dataset.educariaOffline || ''
         };
