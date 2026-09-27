@@ -1548,13 +1548,15 @@ function blockReady(block) {
     if (!block) return false;
     const lesson = effectiveLessonForBlock(block);
     if (lesson) return true;
-    if (effectiveSourceForBlock(block, lesson) === "new") return true;
+    if (effectiveSourceForBlock(block, lesson) === "new") {
+        return Boolean(block.lessonDraft && block.lessonDraft !== blankActivityDraft());
+    }
     return Boolean(block.lessonDraft);
 }
 
 function blockStatusText(block) {
     const source = effectiveSourceForBlock(block);
-    if (source === "new") return "Novo";
+    if (source === "new") return blockReady(block) ? "Novo" : "Criar conteúdo";
     return blockReady(block) ? "Pronto" : "Falta conteúdo";
 }
 
@@ -1562,14 +1564,6 @@ function blockStatusClass(block) {
     const source = effectiveSourceForBlock(block);
     if (source === "new") return "is-new";
     return blockReady(block) ? "is-ready" : "is-pending";
-}
-
-function preferredSourceForType(type) {
-    const classMatches = lessonsForSource(type, "class");
-    if (classMatches.length) return "class";
-    const libraryMatches = lessonsForSource(type, "library");
-    if (libraryMatches.length) return "library";
-    return "new";
 }
 
 function buildBaseBlock(type) {
@@ -1634,23 +1628,23 @@ function clearBlockSelection(block, sourceScope) {
 
 function buildBlockForType(type) {
     const block = buildBaseBlock(type);
-    const source = preferredSourceForType(type);
-    if (source === "new") {
-        return applyNewSourceToBlock(block);
-    }
-
-    const lesson = lessonsForSource(type, source)[0];
-    return lesson ? applyLessonToBlock(block, lesson, source) : clearBlockSelection(block, source);
+    return applyNewSourceToBlock(block);
 }
 
 function addTypeToSequence(type) {
-    const existingBlock = lessonSequenceState.blocks.find((item) => item.materialType === type);
-    if (existingBlock) {
-        removeBlock(existingBlock.id);
-        return;
-    }
-
     const block = buildBlockForType(type);
+    lessonSequenceState.blocks.push(block);
+    selectedBlockId = block.id;
+    persistLessonSequence();
+    renderLessonSequence();
+}
+
+function addSavedLessonToSequence(lessonId) {
+    const lesson = findLessonById(lessonId);
+    if (!lesson || (lesson.materialType || "slides") === "lesson") return;
+
+    const block = buildBaseBlock(lesson.materialType || "slides");
+    applyLessonToBlock(block, lesson, detectLessonScope(lesson));
     lessonSequenceState.blocks.push(block);
     selectedBlockId = block.id;
     persistLessonSequence();
@@ -1969,12 +1963,45 @@ function renderToolPicker() {
     const root = document.querySelector("[data-lesson-tool-grid]");
     if (!root) return;
 
-    root.innerHTML = LESSON_SEQUENCE_TYPES.map((type) => {
+    const savedLessons = [...classLessonsForSequence(), ...libraryLessonsForSequence()]
+        .filter((lesson, index, lessons) => lessons.findIndex((item) => item.id === lesson.id) === index)
+        .sort((left, right) => Number(right.updatedAt || right.createdAt || 0) - Number(left.updatedAt || left.createdAt || 0));
+
+    const savedMarkup = savedLessons.length
+        ? savedLessons.map((lesson) => {
+            const materialType = lesson.materialType || "slides";
+            const selectedCount = lessonSequenceState.blocks.filter((block) => block.lessonRefId === lesson.id).length;
+            const scope = detectLessonScope(lesson);
+            return `
+                <article class="lesson-sequence-material-card ${selectedCount ? "is-selected" : ""}">
+                    <div class="lesson-sequence-material-card-head">
+                        <span class="platform-block-chip">${escapeHtml(materialGroupLabel(materialType))}</span>
+                        <span class="lesson-sequence-material-source">${escapeHtml(sourceLabel(scope))}</span>
+                    </div>
+                    <div class="lesson-sequence-material-card-copy">
+                        <strong>${escapeHtml(lesson.title || materialGroupLabel(materialType))}</strong>
+                        <p>${escapeHtml(lesson.summary || materialGroupDescription(materialType))}</p>
+                    </div>
+                    <button type="button" class="lesson-sequence-material-add" data-add-saved-lesson="${escapeAttr(lesson.id)}">
+                        <span aria-hidden="true">+</span>
+                        <span>${selectedCount ? `Adicionar novamente · ${selectedCount} na aula` : "Adicionar à aula"}</span>
+                    </button>
+                </article>
+            `;
+        }).join("")
+        : `
+            <div class="lesson-sequence-material-empty">
+                <strong>Você ainda não tem atividades salvas</strong>
+                <p>Use a opção abaixo para criar um bloco novo agora. Depois de salvar outras atividades, elas aparecerão aqui para reutilização.</p>
+            </div>
+        `;
+
+    const newToolsMarkup = LESSON_SEQUENCE_TYPES.map((type) => {
         const counts = lessonCountsForType(type.value);
-        const selectedIndex = lessonSequenceState.blocks.findIndex((block) => block.materialType === type.value);
+        const selectedCount = lessonSequenceState.blocks.filter((block) => block.materialType === type.value).length;
         return `
-            <button type="button" class="lesson-sequence-tool-button ${selectedIndex !== -1 ? "is-selected" : ""}" data-add-lesson-type="${type.value}">
-                ${selectedIndex !== -1 ? `<span class="lesson-sequence-tool-order" aria-label="Selecionado na posição ${selectedIndex + 1}">${selectedIndex + 1}</span>` : ""}
+            <button type="button" class="lesson-sequence-tool-button ${selectedCount ? "is-selected" : ""}" data-add-lesson-type="${type.value}">
+                ${selectedCount ? `<span class="lesson-sequence-tool-order" aria-label="${selectedCount} na sequência">${selectedCount}×</span>` : ""}
                 <strong>${escapeHtml(type.label)}</strong>
                 <p>${escapeHtml(materialGroupDescription(type.value))}</p>
                 <div class="lesson-sequence-tool-meta">
@@ -1984,6 +2011,29 @@ function renderToolPicker() {
             </button>
         `;
     }).join("");
+
+    root.innerHTML = `
+        <section class="lesson-sequence-material-picker">
+            <div class="lesson-sequence-picker-heading">
+                <div>
+                    <strong>Suas atividades salvas</strong>
+                    <p>Escolha quantas quiser. Você também pode repetir uma atividade na mesma aula.</p>
+                </div>
+                <span>${savedLessons.length} ${savedLessons.length === 1 ? "material disponível" : "materiais disponíveis"}</span>
+            </div>
+            <div class="lesson-sequence-material-grid">${savedMarkup}</div>
+        </section>
+
+        <details class="lesson-sequence-new-tools">
+            <summary>
+                <span>
+                    <strong>Criar uma atividade nova nesta aula</strong>
+                    <small>Adicione um bloco vazio e preencha manualmente ou com IA.</small>
+                </span>
+            </summary>
+            <div class="lesson-sequence-new-tools-body">${newToolsMarkup}</div>
+        </details>
+    `;
 }
 
 function renderPreview() {
@@ -2111,6 +2161,10 @@ function renderReadinessPanel() {
                     </span>
                     ${statusMarkup}
                 </button>
+                <div class="lesson-sequence-progress-reorder" aria-label="Alterar posição de ${escapeAttr(block.label || effectiveTitleForBlock(block, lesson))}">
+                    <button type="button" data-move-lesson-block="${block.id}" data-direction="up" aria-label="Mover para cima" ${index === 0 ? "disabled" : ""}>&#8593;</button>
+                    <button type="button" data-move-lesson-block="${block.id}" data-direction="down" aria-label="Mover para baixo" ${index === blocks.length - 1 ? "disabled" : ""}>&#8595;</button>
+                </div>
                 <button type="button" class="lesson-sequence-progress-remove" data-remove-lesson-block="${block.id}" aria-label="Remover ${escapeAttr(block.label || effectiveTitleForBlock(block, lesson))}">X</button>
                 <div class="lesson-sequence-progress-actions">
                     <button type="button" class="platform-link-button platform-link-secondary" data-open-lesson-block-inline="${block.id}">Editar material</button>
@@ -2392,6 +2446,12 @@ function renderLessonSequence() {
 
 function bindLessonSequenceEvents() {
     document.addEventListener("click", (event) => {
+        const addSavedTrigger = event.target.closest("[data-add-saved-lesson]");
+        if (addSavedTrigger) {
+            addSavedLessonToSequence(addSavedTrigger.dataset.addSavedLesson || "");
+            return;
+        }
+
         const addTypeTrigger = event.target.closest("[data-add-lesson-type]");
         if (addTypeTrigger) {
             addTypeToSequence(addTypeTrigger.dataset.addLessonType || "slides");

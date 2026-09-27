@@ -111,7 +111,11 @@ function hydrateBlockDraft(block, fallbackLesson = null) {
 function blockPresentationPath(block, lesson) {
     const materialType = lessonPlayerMaterialType(block, lesson);
     const lessonForPath = lesson ? { ...lesson, materialType } : { materialType };
-    return withLessonEditorContext(withMaterialContext(presentationPathForLesson(lessonForPath), materialType));
+    const contextualPath = withLessonEditorContext(withMaterialContext(presentationPathForLesson(lessonForPath), materialType));
+    const blockId = String(block?.id || "").trim();
+    return blockId
+        ? `${contextualPath}${contextualPath.includes("?") ? "&" : "?"}lessonBlock=${encodeURIComponent(blockId)}`
+        : contextualPath;
 }
 
 function renderLessonPlayerList() {
@@ -120,7 +124,7 @@ function renderLessonPlayerList() {
 
     const blocks = lessonPlayerBlocks();
     list.innerHTML = blocks.map((block, index) => `
-        <button type="button" class="lesson-sequence-player-item ${index === lessonPlayerIndex ? "is-active" : ""}" data-lesson-player-select="${index}">
+        <button type="button" class="lesson-sequence-player-item ${index === lessonPlayerIndex ? "is-active" : ""}" data-lesson-player-select="${index}" ${index === lessonPlayerIndex ? 'aria-current="step"' : ""}>
             <span class="lesson-sequence-player-order">${index + 1}</span>
             <span>
                 <strong>${escapeLessonPlayerHtml(block.label || block.lessonTitle || "Bloco")}</strong>
@@ -128,6 +132,33 @@ function renderLessonPlayerList() {
             </span>
         </button>
     `).join("");
+
+    requestAnimationFrame(() => {
+        const activeItem = list.querySelector(".lesson-sequence-player-item.is-active");
+        if (!activeItem) return;
+        const centeredLeft = activeItem.offsetLeft - ((list.clientWidth - activeItem.offsetWidth) / 2);
+        list.scrollTo({ left: Math.max(0, centeredLeft), behavior: "smooth" });
+    });
+}
+
+function setLessonPlayerTransition(isVisible) {
+    const transition = document.querySelector("[data-lesson-player-transition]");
+    const embed = document.querySelector("[data-lesson-player-embed]");
+    if (transition) transition.hidden = !isVisible;
+    if (embed) embed.classList.toggle("is-loading", isVisible);
+}
+
+function enhanceEmbeddedLesson() {
+    const iframe = document.querySelector("[data-lesson-player-iframe]");
+    if (!iframe) return;
+
+    try {
+        iframe.contentDocument?.body?.classList.add("lesson-sequence-embedded");
+    } catch (error) {
+        console.warn("EducarIA embedded lesson unavailable:", error);
+    }
+
+    setLessonPlayerTransition(false);
 }
 
 function renderLessonPlayerCurrent() {
@@ -139,6 +170,7 @@ function renderLessonPlayerCurrent() {
     const nextButton = document.querySelector("[data-lesson-player-next]");
     const openLink = document.querySelector("[data-lesson-player-open]");
     const titleNode = document.querySelector("[data-lesson-player-current-title]");
+    const navigation = document.querySelector("[data-lesson-player-navigation]");
     if (!embed || !iframe || !prevButton || !nextButton) return;
 
     const blocks = lessonPlayerBlocks();
@@ -153,6 +185,8 @@ function renderLessonPlayerCurrent() {
         if (counter) counter.textContent = "0 de 0";
         prevButton.disabled = true;
         nextButton.disabled = true;
+        if (navigation) navigation.hidden = true;
+        setLessonPlayerTransition(false);
         if (openLink) openLink.setAttribute("href", "criar-aula.html");
         return;
     }
@@ -163,13 +197,26 @@ function renderLessonPlayerCurrent() {
     hydrateBlockDraft(currentBlock, currentLesson);
 
     embed.hidden = false;
+    if (navigation) navigation.hidden = false;
     if (empty) empty.hidden = true;
     if (titleNode) titleNode.textContent = currentBlock.label || currentTitle;
-    iframe.src = blockPresentationPath(currentBlock, currentLesson);
-    if (openLink) openLink.setAttribute("href", blockPresentationPath(currentBlock, currentLesson));
+    const presentationPath = blockPresentationPath(currentBlock, currentLesson);
+    if (iframe.dataset.lessonPlayerSrc !== presentationPath) {
+        setLessonPlayerTransition(true);
+        iframe.dataset.lessonPlayerSrc = presentationPath;
+        iframe.src = presentationPath;
+    }
+    if (openLink) openLink.setAttribute("href", presentationPath);
     if (counter) counter.textContent = `${lessonPlayerIndex + 1} de ${blocks.length}`;
     prevButton.disabled = lessonPlayerIndex === 0;
     nextButton.disabled = lessonPlayerIndex === blocks.length - 1;
+
+    const previousTitle = blocks[lessonPlayerIndex - 1]?.label || blocks[lessonPlayerIndex - 1]?.lessonTitle || "Atividade anterior";
+    const nextTitle = blocks[lessonPlayerIndex + 1]?.label || blocks[lessonPlayerIndex + 1]?.lessonTitle || "Fim da aula";
+    const previousLabel = prevButton.querySelector("strong");
+    const nextLabel = nextButton.querySelector("strong");
+    if (previousLabel) previousLabel.textContent = previousTitle;
+    if (nextLabel) nextLabel.textContent = nextTitle;
 }
 
 function renderLessonPlayerMeta() {
@@ -200,6 +247,31 @@ function selectLessonPlayerIndex(nextIndex) {
     renderLessonPlayer();
 }
 
+function toggleLessonPlayerRoute() {
+    const trigger = document.querySelector("[data-lesson-player-toggle-route]");
+    const routeIsHidden = document.body.classList.toggle("lesson-sequence-route-hidden");
+    if (!trigger) return;
+    trigger.setAttribute("aria-pressed", String(routeIsHidden));
+    trigger.textContent = routeIsHidden ? "Mostrar roteiro" : "Ocultar roteiro";
+}
+
+async function toggleLessonPlayerFullscreen() {
+    try {
+        if (!document.fullscreenElement) {
+            await document.documentElement.requestFullscreen?.();
+        } else {
+            await document.exitFullscreen?.();
+        }
+    } catch (error) {
+        console.warn("EducarIA fullscreen unavailable:", error);
+    }
+}
+
+function syncLessonPlayerFullscreenLabel() {
+    const trigger = document.querySelector("[data-lesson-player-fullscreen]");
+    if (trigger) trigger.textContent = document.fullscreenElement ? "Sair da tela cheia" : "Tela cheia";
+}
+
 function bindLessonPlayerEvents() {
     document.addEventListener("click", (event) => {
         const selectTrigger = event.target.closest("[data-lesson-player-select]");
@@ -215,6 +287,16 @@ function bindLessonPlayerEvents() {
 
         if (event.target.closest("[data-lesson-player-next]")) {
             selectLessonPlayerIndex(lessonPlayerIndex + 1);
+            return;
+        }
+
+        if (event.target.closest("[data-lesson-player-toggle-route]")) {
+            toggleLessonPlayerRoute();
+            return;
+        }
+
+        if (event.target.closest("[data-lesson-player-fullscreen]")) {
+            toggleLessonPlayerFullscreen();
             return;
         }
 
@@ -239,6 +321,11 @@ function bindLessonPlayerEvents() {
             selectLessonPlayerIndex(lessonPlayerIndex + 1);
         }
     });
+
+    document.addEventListener("fullscreenchange", syncLessonPlayerFullscreenLabel);
+
+    const iframe = document.querySelector("[data-lesson-player-iframe]");
+    iframe?.addEventListener("load", enhanceEmbeddedLesson);
 }
 
 function initLessonSequencePlayer() {

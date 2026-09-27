@@ -17,6 +17,7 @@ const auditSeedDashboard = process.env.EDUCARIA_AUDIT_SEED_DASHBOARD === "1";
 const auditFlashcardSide = process.env.EDUCARIA_AUDIT_FLASHCARD_SIDE || "front";
 const auditMindmapLayout = process.env.EDUCARIA_AUDIT_MINDMAP_LAYOUT || "Radial";
 const auditDebateFormat = process.env.EDUCARIA_AUDIT_DEBATE_FORMAT || "Dois lados";
+const auditLessonIndex = Math.max(0, Number(process.env.EDUCARIA_AUDIT_LESSON_INDEX || 0));
 const auditMobile = auditWidth < 768;
 const pages = process.argv.slice(2).length
     ? process.argv.slice(2).map((page) => ({
@@ -171,9 +172,52 @@ async function auditPage(pageConfig) {
         const dashboardContentSeed = auditSeedDashboard && pagePath.includes("plataforma/index.html")
             ? ` localStorage.setItem('educaria:classList:layout-audit', JSON.stringify(['8º Ano A', '6º Ano B', 'Inglês - 9º Ano'])); localStorage.setItem('educaria:lessons:layout-audit', JSON.stringify([{ id: 'dashboard-slides-audit', className: '8º Ano A', scope: 'class', title: 'Sistema solar: movimentos e descobertas', type: 'Slides', materialType: 'slides', createdAt: new Date(Date.now() - 7200000).toISOString(), updatedAt: new Date(Date.now() - 3600000).toISOString(), status: 'draft', draft: '' }, { id: 'dashboard-quiz-audit', className: '6º Ano B', scope: 'class', title: 'Quiz sobre frações equivalentes', type: 'Quiz', materialType: 'quiz', createdAt: new Date(Date.now() - 172800000).toISOString(), updatedAt: new Date(Date.now() - 86400000).toISOString(), status: 'ready', draft: '' }]));`
             : "";
-        await cdp.send("Network.setBlockedURLs", { urls: ["*gstatic.com/firebasejs/*"] });
+        const blockedUrls = ["*gstatic.com/firebasejs/*"];
+        if (pagePath.includes("criar-aula.html") || pagePath.includes("aula-completa-apresentacao.html")) {
+            blockedUrls.push("*auth-flow.js*");
+        }
+        await cdp.send("Network.setBlockedURLs", { urls: blockedUrls });
         await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
             source: `localStorage.setItem('educaria:auth:teacher-cache', JSON.stringify({ uid: 'layout-audit', name: 'Professor Auditoria', email: 'auditoria@educaria.test', institution: 'Escola de Teste', role: 'teacher', plan: 'free' })); localStorage.setItem('educaria:auth:session', 'auditoria@educaria.test');${dashboardTourSeed}${dashboardContentSeed}${pagePath.includes("biblioteca.html") ? ` localStorage.setItem('educaria:lessons:layout-audit', JSON.stringify([{ id: 'lesson-library-audit', className: '', scope: 'library', title: 'Quiz para renomear', summary: 'Atividade de auditoria', type: 'Quiz', materialType: 'quiz', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: 'draft', draft: '' }]));` : ""}`
+        });
+    }
+    if (localPagePath.endsWith("plataforma/criar-aula.html")
+        || localPagePath.endsWith("plataforma/aula-completa-apresentacao.html")) {
+        const lessonSlidesDraft = JSON.stringify({
+            stackHtml: `<section data-slide-card data-slide-type="cover"><input data-field="slide-title" value="A energia que move os ecossistemas"><input data-field="slide-subtitle" value="Fotossíntese, cadeias alimentares e equilíbrio ambiental"><textarea data-field="slide-body">Observe como a energia do Sol entra no ecossistema e acompanha cada relação entre produtores e consumidores.</textarea><select data-field="slide-image-mode"><option selected>Sem imagem</option></select><select data-field="slide-layout"><option selected>Destaque central</option></select><textarea data-field="slide-image-prompt"></textarea><input data-field="slide-image-url" value=""><select data-field="slide-font"><option selected>Destaque moderno</option></select><input data-field="slide-accent-color" value="#2dd4bf"><input data-field="slide-color" value="#102a43"><input data-field="slide-text-color" value="#f8fafc"></section>`
+        });
+        const lessonQuizDraft = JSON.stringify({
+            controls: { "quiz-tema": "Fotossíntese e ecossistemas" },
+            stackHtml: `<section data-quiz-question><textarea data-field="prompt">Qual é o papel dos produtores em uma cadeia alimentar?</textarea><select data-field="type"><option selected>Múltipla escolha</option></select><select data-field="correct"><option selected>Alternativa B</option></select><input data-option data-option-key="Alternativa A" value="Consumir toda a matéria orgânica disponível."><input data-option data-option-key="Alternativa B" value="Transformar energia luminosa em energia química."><input data-option data-option-key="Alternativa C" value="Decompor exclusivamente restos de animais."><input data-option data-option-key="Alternativa D" value="Eliminar o oxigênio do ambiente."><textarea data-field="explanation">Produtores, como as plantas, fazem fotossíntese e formam a base das cadeias alimentares.</textarea></section>`
+        });
+        const lessonFlashcardsDraft = JSON.stringify({
+            controls: { "cards-tema": "Conceitos essenciais", "cards-exemplo": "Sim" },
+            stackHtml: `<section data-flashcard><textarea data-field="front">Produtor</textarea><textarea data-field="back">Ser vivo que produz seu próprio alimento.</textarea><textarea data-field="example">As plantas usam luz, água e gás carbônico durante a fotossíntese.</textarea><input data-field="front-color" value="#ffffff"><input data-field="back-color" value="#dbeafe"><input data-field="text-color" value="#0f172a"></section>`
+        });
+        const activityLessons = [
+            { id: "lesson-sequence-slides-audit", className: "8º Ano A", scope: "class", title: "Energia nos ecossistemas", summary: "Introdução visual aos fluxos de energia.", type: "Slides", materialType: "slides", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonSlidesDraft },
+            { id: "lesson-sequence-flashcards-audit", className: "8º Ano A", scope: "class", title: "Conceitos essenciais", summary: "Cartões para retomar o vocabulário principal.", type: "Flashcards", materialType: "flashcards", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonFlashcardsDraft },
+            { id: "lesson-sequence-quiz-audit", className: "", scope: "library", title: "Quiz de fechamento", summary: "Perguntas rápidas para conferir a aprendizagem.", type: "Quiz", materialType: "quiz", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonQuizDraft }
+        ];
+        const sequenceDraft = {
+            title: "Energia e equilíbrio nos ecossistemas",
+            objective: "Compreender como a energia circula nas cadeias alimentares e verificar a aprendizagem ao final.",
+            duration: 45,
+            blocks: activityLessons.map((lesson, index) => ({
+                id: `lesson-sequence-block-${index + 1}`,
+                lessonRefId: lesson.id,
+                materialType: lesson.materialType,
+                sourceScope: lesson.scope,
+                label: lesson.title,
+                duration: [12, 10, 8][index],
+                note: "",
+                lessonTitle: lesson.title,
+                lessonSummary: lesson.summary,
+                lessonDraft: lesson.draft
+            }))
+        };
+        await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+            source: `['layout-audit', 'guest', 'auditoria-educaria-test'].forEach((scope) => { localStorage.setItem('educaria:selectedClass:' + scope, '8º Ano A'); localStorage.setItem('educaria:classList:' + scope, JSON.stringify(['8º Ano A'])); localStorage.setItem('educaria:lessons:' + scope, ${JSON.stringify(JSON.stringify(activityLessons))}); localStorage.setItem('educaria:builder:lesson:' + scope, ${JSON.stringify(JSON.stringify(sequenceDraft))}); }); localStorage.setItem('educaria:lessons', ${JSON.stringify(JSON.stringify(activityLessons))}); localStorage.setItem('educaria:builder:lesson', ${JSON.stringify(JSON.stringify(sequenceDraft))});`
         });
     }
     if (localPagePath.endsWith("plataforma/apresentacao.html")) {
@@ -309,6 +353,19 @@ async function auditPage(pageConfig) {
     if (pagePath.includes("biblioteca.html")) {
         await waitForPageCondition(cdp, "Boolean(document.querySelector('[data-library-count]')?.textContent.trim() && document.querySelector('[data-library-materials] details'))", 80);
     }
+    if (localPagePath.endsWith("plataforma/criar-aula.html")) {
+        await waitForPageCondition(cdp, "Boolean(document.querySelector('[data-lesson-tool-grid]')?.children.length && document.querySelectorAll('[data-progress-item-id]').length)", 80);
+    }
+    if (localPagePath.endsWith("plataforma/aula-completa-apresentacao.html")) {
+        await waitForPageCondition(cdp, "Boolean(document.querySelectorAll('[data-lesson-player-select]').length && document.querySelector('[data-lesson-player-iframe]')?.src)", 80);
+        if (auditLessonIndex > 0) {
+            await cdp.send("Runtime.evaluate", {
+                expression: `document.querySelector('[data-lesson-player-select="${auditLessonIndex}"]')?.click()`
+            });
+            await waitForPageCondition(cdp, `document.querySelector('[data-lesson-player-select="${auditLessonIndex}"]')?.classList.contains('is-active')`, 80);
+            await waitForPageCondition(cdp, "document.querySelector('[data-lesson-player-iframe]')?.contentDocument?.body?.classList.contains('lesson-sequence-embedded')", 80);
+        }
+    }
     if (auditBaseUrl) {
         await waitForPageCondition(cdp, "Boolean(document.documentElement.dataset.educariaOffline)");
     }
@@ -443,6 +500,21 @@ async function auditPage(pageConfig) {
                 value: debateFormatField.value,
                 options: [...debateFormatField.options].map((option) => option.textContent.trim()),
                 aiOptions: [...(document.getElementById('debate-formato-ia')?.options || [])].map((option) => option.textContent.trim())
+            } : null,
+            lessonSequenceState: document.querySelector('[data-lesson-tool-grid]') ? {
+                scope: typeof educariaCurrentUserScope === 'function' ? educariaCurrentUserScope() : '',
+                libraryCount: typeof readLessonsLibrary === 'function' ? readLessonsLibrary().length : -1,
+                blockCount: typeof lessonSequenceState === 'object' && Array.isArray(lessonSequenceState?.blocks) ? lessonSequenceState.blocks.length : -1,
+                pickerLength: document.querySelector('[data-lesson-tool-grid]')?.innerHTML.length || 0,
+                progressCount: document.querySelectorAll('[data-progress-item-id]').length
+            } : null,
+            lessonPlayerState: document.querySelector('[data-lesson-player-list]') ? {
+                itemCount: document.querySelectorAll('[data-lesson-player-select]').length,
+                activeIndex: [...document.querySelectorAll('[data-lesson-player-select]')].findIndex((item) => item.classList.contains('is-active')),
+                currentTitle: document.querySelector('[data-lesson-player-current-title]')?.textContent.trim() || '',
+                iframePath: document.querySelector('[data-lesson-player-iframe]')?.getAttribute('src') || '',
+                embeddedMode: Boolean(document.querySelector('[data-lesson-player-iframe]')?.contentDocument?.body?.classList.contains('lesson-sequence-embedded')),
+                childTopbarHidden: document.querySelector('[data-lesson-player-iframe]')?.contentDocument?.querySelector('.presentation-topbar') ? getComputedStyle(document.querySelector('[data-lesson-player-iframe]').contentDocument.querySelector('.presentation-topbar')).display === 'none' : false
             } : null,
             offlineState: document.documentElement.dataset.educariaOffline || ''
         };
@@ -727,6 +799,8 @@ try {
         if (result.mindmapState) console.log(`  mindmap-stage=${JSON.stringify(result.mindmapState)}`);
         if (result.debateState) console.log(`  debate-stage=${JSON.stringify(result.debateState)}`);
         if (result.debateBuilderState) console.log(`  debate-builder=${JSON.stringify(result.debateBuilderState)}`);
+        if (result.lessonSequenceState) console.log(`  lesson-sequence=${JSON.stringify(result.lessonSequenceState)}`);
+        if (result.lessonPlayerState) console.log(`  lesson-player=${JSON.stringify(result.lessonPlayerState)}`);
         if (result.previewScroll && !auditMobile) {
             const previewScrollWorks = result.previewScroll.overflowY === "auto"
                 && result.previewScroll.maxHeight !== "none"

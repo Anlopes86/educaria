@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aula Completa | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260927-3">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -17,7 +17,7 @@
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
-    <script src="../assets/js/lesson-sequence-builder.js?v=20260927-2" defer></script>
+    <script src="../assets/js/lesson-sequence-builder.js?v=20260927-3" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="lesson">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -81,7 +81,7 @@
                     </div>
                 </details>
 
-                <details class="editor-disclosure lesson-sequence-step-disclosure" data-lesson-step="1">
+                <details class="editor-disclosure lesson-sequence-step-disclosure" data-lesson-step="1" open>
                     <summary>
                         <span>Etapa 1 · Escolha as atividades na ordem da aula</span>
                     </summary>
@@ -89,9 +89,9 @@
                         <div class="page-section-title page-section-title--compact">
                             <div>
                                 <span class="platform-section-label">Etapa 1</span>
-                                <h2>Escolha as atividades na ordem da aula</h2>
+                                <h2>Escolha os materiais da aula</h2>
                             </div>
-                            <p>Adicione as ferramentas que vão compor a aula. Você pode reorganizar depois, mas a ideia já é montar a linha do tempo principal aqui.</p>
+                            <p>Adicione atividades que você já criou. Cada clique inclui um novo bloco no fim da aula; depois, arraste os blocos ao lado para definir a ordem.</p>
                         </div>
 
                         <div class="lesson-sequence-tool-grid" data-lesson-tool-grid></div>
@@ -142,20 +142,25 @@
             <aside class="lesson-sequence-preview">
                 <details class="editor-disclosure lesson-sequence-step-disclosure lesson-sequence-summary-card" data-lesson-step="3" open>
                     <summary>
-                        <span>Etapa 3 · Conferir sequência final</span>
+                        <span>Ordem da apresentação</span>
                     </summary>
                     <div class="editor-disclosure-body lesson-sequence-step-body">
                         <div class="page-section-title page-section-title--compact">
                             <div>
-                                <span class="platform-section-label">Etapa 3</span>
-                                <h2>Conferir sequência final</h2>
+                                <span class="platform-section-label">Roteiro da aula</span>
+                                <h2>Organize a sequência</h2>
                             </div>
-                            <p>Acompanhe o que já está definido e o que ainda falta antes de abrir a apresentação completa.</p>
+                            <p>Arraste pelos pontos ou use as setas para deixar as atividades exatamente na ordem em que serão apresentadas.</p>
                         </div>
 
                         <div class="lesson-sequence-readiness" data-lesson-sequence-readiness>
                             <strong>0 de 0 blocos prontos</strong>
                             <p>Escolha as atividades para começar.</p>
+                        </div>
+
+                        <div class="lesson-sequence-order-guide" aria-hidden="true">
+                            <span class="lesson-sequence-order-grip"></span>
+                            <span>A ordem deste roteiro será usada na apresentação.</span>
                         </div>
 
                         <div class="lesson-sequence-progress-list" data-lesson-sequence-progress-list></div>
