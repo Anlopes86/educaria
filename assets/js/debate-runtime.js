@@ -281,6 +281,7 @@ function renderDebateApplication() {
 
     const cardRoot = document.querySelector(".debate-stage-card");
     const sidesRoot = document.querySelector(".debate-stage-sides");
+    const progressRoot = document.querySelector("[data-debate-stage-progress]");
     const layoutRoot = document.querySelector(".debate-stage-layout--full");
     const topbar = document.querySelector(".debate-stage-shell > .presentation-topbar");
     const controlsRoot = document.querySelector(".debate-floating-controls");
@@ -395,9 +396,49 @@ function renderDebateApplication() {
         setTextAll("[data-debate-stage-main-question]", runtime.draftState.controls["debate-pergunta"]);
         setTextAll("[data-debate-stage-side-a]", runtime.draftState.controls["debate-lado-a"]);
         setTextAll("[data-debate-stage-side-b]", runtime.draftState.controls["debate-lado-b"]);
-        setTextAll("[data-debate-stage-side-a-label]", variantClass === "debate-variant--groups" ? "Grupo 1" : "Lado A");
-        setTextAll("[data-debate-stage-side-b-label]", variantClass === "debate-variant--groups" ? "Grupo 2" : "Lado B");
+        setTextAll("[data-debate-stage-side-a-label]", variantClass === "debate-variant--groups" ? "Grupo 1 · defende" : "Defende");
+        setTextAll("[data-debate-stage-side-b-label]", variantClass === "debate-variant--groups" ? "Grupo 2 · contesta" : "Contesta");
         setTextAll("[data-debate-stage-guidance-label]", modeClass === "debate-mode--guided" ? "Condução" : "Mediação");
+    };
+
+    const renderProgress = () => {
+        if (!progressRoot) return;
+
+        progressRoot.innerHTML = runtime.steps.map((step, index) => {
+            const stateClass = index === runtime.activeIndex
+                ? " is-active"
+                : index < runtime.activeIndex
+                    ? " is-complete"
+                    : "";
+            const ariaCurrent = index === runtime.activeIndex ? ' aria-current="step"' : "";
+            const title = escapeDebateText(step.title || `Etapa ${index + 1}`);
+            const time = escapeDebateText(step.time || "5 min");
+            const accessibleLabel = escapeDebateAttr(`Ir para a etapa ${index + 1}: ${step.title || `Etapa ${index + 1}`}`);
+
+            return `
+                <button type="button" class="debate-stage-progress-item${stateClass}" data-debate-stage-jump="${index}" aria-label="${accessibleLabel}"${ariaCurrent}>
+                    <span class="debate-stage-progress-number">${index + 1}</span>
+                    <span class="debate-stage-progress-copy">
+                        <strong>${title}</strong>
+                        <small>${time}</small>
+                    </span>
+                </button>
+            `;
+        }).join("");
+
+        const activeProgress = progressRoot.querySelector(".is-active");
+        if (activeProgress) {
+            const itemLeft = activeProgress.offsetLeft;
+            const itemRight = itemLeft + activeProgress.offsetWidth;
+            const visibleLeft = progressRoot.scrollLeft;
+            const visibleRight = visibleLeft + progressRoot.clientWidth;
+            if (itemLeft < visibleLeft || itemRight > visibleRight) {
+                progressRoot.scrollTo({
+                    left: Math.max(0, itemLeft - ((progressRoot.clientWidth - activeProgress.offsetWidth) / 2)),
+                    behavior: "smooth"
+                });
+            }
+        }
     };
 
     const renderStep = () => {
@@ -406,8 +447,8 @@ function renderDebateApplication() {
 
         const guidanceHtml = formatDebateGuidanceHtml(step.guidance);
         const stepCounter = `${runtime.activeIndex + 1} de ${runtime.steps.length}`;
-        const sideALabel = variantClass === "debate-variant--groups" ? "Grupo 1" : "Lado A";
-        const sideBLabel = variantClass === "debate-variant--groups" ? "Grupo 2" : "Lado B";
+        const sideALabel = variantClass === "debate-variant--groups" ? "Grupo 1 · defende" : "Defende";
+        const sideBLabel = variantClass === "debate-variant--groups" ? "Grupo 2 · contesta" : "Contesta";
 
         renderStaticFields();
 
@@ -416,12 +457,14 @@ function renderDebateApplication() {
         }
 
         setTextAll("[data-debate-stage-counter]", stepCounter);
+        setTextAll("[data-debate-stage-round]", `Rodada ${runtime.activeIndex + 1}`);
         setTextAll("[data-debate-stage-time]", step.time);
         setTextAll("[data-debate-stage-step-title]", step.title);
         setTextAll("[data-debate-stage-step-question]", step.question);
         setTextAll("[data-debate-stage-side-a-label]", sideALabel);
         setTextAll("[data-debate-stage-side-b-label]", sideBLabel);
         setHtmlAll("[data-debate-stage-guidance]", guidanceHtml);
+        renderProgress();
 
         document.querySelectorAll("[data-debate-stage-prev]").forEach((button) => {
             button.disabled = runtime.activeIndex === 0;
@@ -512,6 +555,16 @@ function renderDebateApplication() {
                 event.preventDefault();
                 runtime.guidanceOpen = false;
                 syncDebateGuidanceUi(runtime);
+                return;
+            }
+
+            const progressTrigger = event.target.closest("[data-debate-stage-jump]");
+            if (progressTrigger) {
+                event.preventDefault();
+                const targetIndex = Number(progressTrigger.dataset.debateStageJump);
+                if (!Number.isInteger(targetIndex) || targetIndex < 0 || targetIndex >= runtime.steps.length) return;
+                runtime.activeIndex = targetIndex;
+                renderStep();
                 return;
             }
 

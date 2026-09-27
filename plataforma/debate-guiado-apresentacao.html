@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apresentação de Debate Guiado | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260413-3">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260927-1">
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/presentation-mode.js" defer></script>
-    <script src="../assets/js/debate-runtime.js?v=20260413-6" defer></script>
+    <script src="../assets/js/debate-runtime.js?v=20260927-1" defer></script>
 </head>
 <body class="debate-presentation-shell" data-material-type="debate">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -33,18 +33,32 @@
                     <div class="debate-stage-counter" data-debate-stage-counter>1 de 3</div>
                 </div>
 
-                <div class="debate-stage-question" data-debate-stage-main-question data-debate-editable="control:debate-pergunta">Pergunta central do debate</div>
+                <section class="debate-stage-motion" aria-labelledby="debate-motion-label">
+                    <span class="debate-stage-motion-label" id="debate-motion-label">Proposição em debate</span>
+                    <div class="debate-stage-question" data-debate-stage-main-question data-debate-editable="control:debate-pergunta">Pergunta central do debate</div>
+                </section>
+
+                <nav class="debate-stage-progress" data-debate-stage-progress aria-label="Etapas do debate"></nav>
 
                 <div class="debate-stage-content">
                     <aside class="debate-stage-rail">
                         <div class="debate-stage-sides">
-                            <article class="debate-stage-side">
-                                <span class="platform-section-label" data-debate-stage-side-a-label>Lado A</span>
+                            <article class="debate-stage-side debate-stage-side--support">
+                                <div class="debate-stage-side-head">
+                                    <span class="debate-stage-team-badge" aria-hidden="true">A</span>
+                                    <span class="platform-section-label" data-debate-stage-side-a-label>Defende</span>
+                                </div>
                                 <strong data-debate-stage-side-a data-debate-editable="control:debate-lado-a">Posição A</strong>
+                                <span class="debate-stage-side-prompt">Construa argumentos a favor</span>
                             </article>
-                            <article class="debate-stage-side">
-                                <span class="platform-section-label" data-debate-stage-side-b-label>Lado B</span>
+                            <div class="debate-stage-versus" aria-hidden="true"><span>VS</span></div>
+                            <article class="debate-stage-side debate-stage-side--counter">
+                                <div class="debate-stage-side-head">
+                                    <span class="debate-stage-team-badge" aria-hidden="true">B</span>
+                                    <span class="platform-section-label" data-debate-stage-side-b-label>Contesta</span>
+                                </div>
                                 <strong data-debate-stage-side-b data-debate-editable="control:debate-lado-b">Posição B</strong>
+                                <span class="debate-stage-side-prompt">Questione e apresente contrapontos</span>
                             </article>
                         </div>
                     </aside>
@@ -52,12 +66,16 @@
                     <section class="debate-stage-main">
                         <section class="debate-stage-step">
                             <div class="debate-stage-step-head">
-                                <span class="platform-section-label" data-debate-stage-time data-debate-editable="step:time">5 min</span>
+                                <div class="debate-stage-round-meta">
+                                    <span class="debate-stage-round" data-debate-stage-round>Rodada 1</span>
+                                    <span class="platform-section-label debate-stage-time" data-debate-stage-time data-debate-editable="step:time">5 min</span>
+                                </div>
                                 <button type="button" class="platform-link-button platform-link-secondary debate-guidance-toggle" data-debate-guidance-toggle aria-expanded="false">Mediação</button>
                             </div>
                             <div class="debate-stage-step-copy">
                                 <h2 data-debate-stage-step-title data-debate-editable="step:title">Etapa</h2>
                                 <div class="debate-stage-step-question-card">
+                                    <span>Desafio desta rodada</span>
                                     <h3 data-debate-stage-step-question data-debate-editable="step:question">Pergunta da etapa</h3>
                                 </div>
                             </div>

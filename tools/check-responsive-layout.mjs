@@ -16,6 +16,7 @@ const auditScrollTo = process.env.EDUCARIA_AUDIT_SCROLL_TO || "";
 const auditSeedDashboard = process.env.EDUCARIA_AUDIT_SEED_DASHBOARD === "1";
 const auditFlashcardSide = process.env.EDUCARIA_AUDIT_FLASHCARD_SIDE || "front";
 const auditMindmapLayout = process.env.EDUCARIA_AUDIT_MINDMAP_LAYOUT || "Radial";
+const auditDebateFormat = process.env.EDUCARIA_AUDIT_DEBATE_FORMAT || "Dois lados";
 const auditMobile = auditWidth < 768;
 const pages = process.argv.slice(2).length
     ? process.argv.slice(2).map((page) => ({
@@ -260,6 +261,27 @@ async function auditPage(pageConfig) {
             source: `localStorage.setItem('educaria:builder:mindmap:guest', ${JSON.stringify(mindmapDraft)}); localStorage.setItem('educaria:builder:mindmap:layout-audit', ${JSON.stringify(mindmapDraft)});`
         });
     }
+    if (localPagePath.endsWith("plataforma/debate-guiado-apresentacao.html")) {
+        const debateDraft = JSON.stringify({
+            controls: {
+                "debate-titulo": "Celular em sala: aliado ou distração?",
+                "debate-formato": auditDebateFormat,
+                "debate-acao-ia": "Organizar roteiro de debate",
+                "debate-pergunta": "O uso de celulares deve ser permitido durante as aulas quando houver uma finalidade pedagógica?",
+                "debate-lado-a": "Permitir com regras claras e objetivos de aprendizagem",
+                "debate-lado-b": "Restringir para preservar a atenção e a convivência"
+            },
+            steps: [
+                { title: "Abertura", time: "4 min", question: "Que experiências da turma ajudam a compreender os benefícios e os riscos do uso do celular?", guidance: "Apresente a proposição e combine as regras de escuta.\n\n- Evite interrupções\n- Peça exemplos concretos" },
+                { title: "Argumentos", time: "8 min", question: "Qual é o argumento mais forte de cada lado e em quais evidências ele se apoia?", guidance: "Alterne as falas e peça que cada grupo justifique suas afirmações." },
+                { title: "Contrapontos", time: "6 min", question: "Como cada lado responderia à principal preocupação apresentada pelo grupo oposto?", guidance: "Incentive respostas diretas, respeitosas e baseadas no que foi dito." },
+                { title: "Síntese", time: "5 min", question: "Que acordo equilibrado a turma poderia propor para conciliar aprendizagem, atenção e responsabilidade?", guidance: "Registre os consensos e os pontos que ainda dividem a turma." }
+            ]
+        });
+        await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+            source: `localStorage.setItem('educaria:builder:debate:guest', ${JSON.stringify(debateDraft)}); localStorage.setItem('educaria:builder:debate:layout-audit', ${JSON.stringify(debateDraft)});`
+        });
+    }
     await cdp.send("Emulation.setDeviceMetricsOverride", {
         width: auditWidth,
         height: auditHeight,
@@ -366,6 +388,8 @@ async function auditPage(pageConfig) {
         )).length : 0;
         const mindmapDetail = document.querySelector('[data-mind-stage-detail-text]');
         const mindmapDetailHint = document.querySelector('[data-mind-stage-detail-scroll]');
+        const debateCard = document.querySelector('.debate-stage-card');
+        const debateQuestionCard = document.querySelector('.debate-stage-step-question-card');
         const previewPane = document.querySelector('.activity-preview-pane');
         const previewStyle = previewPane ? getComputedStyle(previewPane) : null;
         return {
@@ -403,6 +427,14 @@ async function auditPage(pageConfig) {
                 detailScrollHeight: mindmapDetail?.scrollHeight || 0,
                 detailOverflowY: mindmapDetail ? getComputedStyle(mindmapDetail).overflowY : '',
                 detailHintVisible: Boolean(mindmapDetailHint && !mindmapDetailHint.hidden)
+            } : null,
+            debateState: debateCard ? {
+                variant: [...debateCard.classList].find((name) => name.startsWith('debate-variant--')) || '',
+                progressCount: document.querySelectorAll('[data-debate-stage-jump]').length,
+                activeProgress: document.querySelector('[data-debate-stage-jump].is-active')?.textContent.trim() || '',
+                sidesVisible: getComputedStyle(document.querySelector('.debate-stage-sides')).display !== 'none',
+                cardOverflow: debateCard.scrollHeight > debateCard.clientHeight + 1,
+                questionOverflow: debateQuestionCard ? debateQuestionCard.scrollHeight > debateQuestionCard.clientHeight + 1 : false
             } : null,
             offlineState: document.documentElement.dataset.educariaOffline || ''
         };
@@ -685,6 +717,7 @@ try {
         }
         if (result.flashcardState) console.log(`  flashcard-stage=${JSON.stringify(result.flashcardState)}`);
         if (result.mindmapState) console.log(`  mindmap-stage=${JSON.stringify(result.mindmapState)}`);
+        if (result.debateState) console.log(`  debate-stage=${JSON.stringify(result.debateState)}`);
         if (result.previewScroll && !auditMobile) {
             const previewScrollWorks = result.previewScroll.overflowY === "auto"
                 && result.previewScroll.maxHeight !== "none"
