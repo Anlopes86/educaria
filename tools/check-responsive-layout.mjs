@@ -183,8 +183,9 @@ async function auditPage(pageConfig) {
     }
     if (localPagePath.endsWith("plataforma/criar-aula.html")
         || localPagePath.endsWith("plataforma/aula-completa-apresentacao.html")) {
+        const lessonSlideImage = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#dff8f0"/><stop offset="1" stop-color="#b9ddff"/></linearGradient></defs><rect width="1200" height="675" rx="48" fill="url(#bg)"/><circle cx="935" cy="145" r="72" fill="#fbbf24"/><path d="M90 554C250 330 390 350 520 554M450 554C650 260 830 330 1040 554" fill="none" stroke="#0f766e" stroke-width="30" stroke-linecap="round"/><path d="M290 516c22-118 83-190 181-225M725 508c5-112 60-192 167-244" fill="none" stroke="#22c55e" stroke-width="24" stroke-linecap="round"/><path d="M465 291l-28 76 80-12M890 264l-43 69 82 3" fill="#22c55e"/><text x="82" y="112" fill="#134e4a" font-family="Arial, sans-serif" font-size="52" font-weight="700">Energia no ecossistema</text><text x="82" y="172" fill="#155e75" font-family="Arial, sans-serif" font-size="30">Do Sol aos produtores e consumidores</text></svg>`)}`;
         const lessonSlidesDraft = JSON.stringify({
-            stackHtml: `<section data-slide-card data-slide-type="cover"><input data-field="slide-title" value="A energia que move os ecossistemas"><input data-field="slide-subtitle" value="Fotossíntese, cadeias alimentares e equilíbrio ambiental"><textarea data-field="slide-body">Observe como a energia do Sol entra no ecossistema e acompanha cada relação entre produtores e consumidores.</textarea><select data-field="slide-image-mode"><option selected>Sem imagem</option></select><select data-field="slide-layout"><option selected>Destaque central</option></select><textarea data-field="slide-image-prompt"></textarea><input data-field="slide-image-url" value=""><select data-field="slide-font"><option selected>Destaque moderno</option></select><input data-field="slide-accent-color" value="#2dd4bf"><input data-field="slide-color" value="#102a43"><input data-field="slide-text-color" value="#f8fafc"></section>`
+            stackHtml: `<section data-slide-card data-slide-type="cover"><input data-field="slide-title" value="A energia que move os ecossistemas"><input data-field="slide-subtitle" value="Fotossíntese, cadeias alimentares e equilíbrio ambiental"><textarea data-field="slide-body">Observe como a energia do Sol entra no ecossistema e acompanha cada relação entre produtores e consumidores.</textarea><select data-field="slide-image-mode"><option selected>Imagem sugerida</option></select><select data-field="slide-layout"><option selected>Lado a lado</option></select><textarea data-field="slide-image-prompt">Fluxo de energia em um ecossistema</textarea><input data-field="slide-image-url" value="${lessonSlideImage}"><select data-field="slide-font"><option selected>Destaque moderno</option></select><input data-field="slide-accent-color" value="#2dd4bf"><input data-field="slide-color" value="#102a43"><input data-field="slide-text-color" value="#f8fafc"></section>`
         });
         const lessonQuizDraft = JSON.stringify({
             controls: { "quiz-tema": "Fotossíntese e ecossistemas" },
@@ -490,6 +491,15 @@ async function auditPage(pageConfig) {
         const debateFormatField = document.getElementById('debate-formato');
         const previewPane = document.querySelector('.activity-preview-pane');
         const previewStyle = previewPane ? getComputedStyle(previewPane) : null;
+        const lessonPlayerIframe = document.querySelector('[data-lesson-player-iframe]');
+        const lessonPlayerDocument = lessonPlayerIframe?.contentDocument;
+        const embeddedSlide = lessonPlayerDocument?.querySelector('[data-presentation-slide]');
+        const embeddedSlideRect = embeddedSlide?.getBoundingClientRect();
+        const embeddedFrame = lessonPlayerDocument?.querySelector('.presentation-frame--solo');
+        const embeddedFrameRect = embeddedFrame?.getBoundingClientRect();
+        const embeddedCopy = lessonPlayerDocument?.querySelector('.presentation-slide-copy');
+        const embeddedMedia = lessonPlayerDocument?.querySelector('.presentation-media');
+        const embeddedMediaRect = embeddedMedia?.getBoundingClientRect();
         return {
             viewportWidth,
             scrollWidth,
@@ -551,9 +561,44 @@ async function auditPage(pageConfig) {
                 itemCount: document.querySelectorAll('[data-lesson-player-select]').length,
                 activeIndex: [...document.querySelectorAll('[data-lesson-player-select]')].findIndex((item) => item.classList.contains('is-active')),
                 currentTitle: document.querySelector('[data-lesson-player-current-title]')?.textContent.trim() || '',
-                iframePath: document.querySelector('[data-lesson-player-iframe]')?.getAttribute('src') || '',
-                embeddedMode: Boolean(document.querySelector('[data-lesson-player-iframe]')?.contentDocument?.body?.classList.contains('lesson-sequence-embedded')),
-                childTopbarHidden: document.querySelector('[data-lesson-player-iframe]')?.contentDocument?.querySelector('.presentation-topbar') ? getComputedStyle(document.querySelector('[data-lesson-player-iframe]').contentDocument.querySelector('.presentation-topbar')).display === 'none' : false
+                iframePath: lessonPlayerIframe?.getAttribute('src') || '',
+                embeddedMode: Boolean(lessonPlayerDocument?.body?.classList.contains('lesson-sequence-embedded')),
+                embeddedMaterial: lessonPlayerDocument?.body?.dataset.lessonSequenceMaterial || '',
+                childTopbarHidden: lessonPlayerDocument?.querySelector('.presentation-topbar') ? getComputedStyle(lessonPlayerDocument.querySelector('.presentation-topbar')).display === 'none' : false,
+                childViewport: lessonPlayerDocument ? {
+                    width: lessonPlayerDocument.documentElement.clientWidth,
+                    height: lessonPlayerDocument.documentElement.clientHeight
+                } : null,
+                slideRect: embeddedSlideRect ? {
+                    left: Math.round(embeddedSlideRect.left),
+                    top: Math.round(embeddedSlideRect.top),
+                    right: Math.round(embeddedSlideRect.right),
+                    bottom: Math.round(embeddedSlideRect.bottom),
+                    width: Math.round(embeddedSlideRect.width),
+                    height: Math.round(embeddedSlideRect.height)
+                } : null,
+                frameRect: embeddedFrameRect ? {
+                    width: Math.round(embeddedFrameRect.width),
+                    height: Math.round(embeddedFrameRect.height)
+                } : null,
+                mediaRect: embeddedMediaRect ? {
+                    width: Math.round(embeddedMediaRect.width),
+                    height: Math.round(embeddedMediaRect.height)
+                } : null,
+                contentOverflow: Boolean(
+                    (embeddedCopy && (embeddedCopy.scrollHeight > embeddedCopy.clientHeight + 1 || embeddedCopy.scrollWidth > embeddedCopy.clientWidth + 1))
+                    || (embeddedMedia && (embeddedMedia.scrollHeight > embeddedMedia.clientHeight + 1 || embeddedMedia.scrollWidth > embeddedMedia.clientWidth + 1))
+                ),
+                slideBox: embeddedSlide ? {
+                    clientWidth: embeddedSlide.clientWidth,
+                    clientHeight: embeddedSlide.clientHeight,
+                    scrollWidth: embeddedSlide.scrollWidth,
+                    scrollHeight: embeddedSlide.scrollHeight
+                } : null,
+                copyBox: embeddedCopy ? {
+                    clientHeight: embeddedCopy.clientHeight,
+                    scrollHeight: embeddedCopy.scrollHeight
+                } : null
             } : null,
             offlineState: document.documentElement.dataset.educariaOffline || ''
         };

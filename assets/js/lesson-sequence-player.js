@@ -153,7 +153,17 @@ function enhanceEmbeddedLesson() {
     if (!iframe) return;
 
     try {
-        iframe.contentDocument?.body?.classList.add("lesson-sequence-embedded");
+        const embeddedBody = iframe.contentDocument?.body;
+        const currentBlock = lessonPlayerBlocks()[lessonPlayerIndex];
+        const currentLesson = lessonForPlayerBlock(currentBlock);
+        if (embeddedBody) {
+            embeddedBody.classList.add("lesson-sequence-embedded");
+            embeddedBody.dataset.lessonSequenceMaterial = lessonPlayerMaterialType(currentBlock, currentLesson);
+        }
+
+        requestAnimationFrame(() => {
+            iframe.contentWindow?.dispatchEvent(new Event("resize"));
+        });
     } catch (error) {
         console.warn("EducarIA embedded lesson unavailable:", error);
     }
