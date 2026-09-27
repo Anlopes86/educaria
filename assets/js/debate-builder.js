@@ -13,6 +13,25 @@ function escapeDebateAttr(value) {
         .replaceAll(">", "&gt;");
 }
 
+function normalizeDebateFormat(value) {
+    return String(value || "").toLowerCase().includes("roda guiada")
+        ? "Roda guiada"
+        : "Dois lados";
+}
+
+function normalizeDebateFormatFields() {
+    let changed = false;
+    ["debate-formato", "debate-formato-ia"].forEach((id) => {
+        const field = document.getElementById(id);
+        if (!field) return;
+        const normalized = normalizeDebateFormat(field.value);
+        if (field.value === normalized) return;
+        field.value = normalized;
+        changed = true;
+    });
+    return changed;
+}
+
 function debateStepTemplate(index, title = "", time = "", question = "", guidance = "") {
     return `
         <section class="platform-question-card activity-content-card debate-step-card" data-debate-step>
@@ -162,8 +181,13 @@ function renderDebatePreview() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    const formatWasNormalized = normalizeDebateFormatFields();
     syncDebateStepCount();
     renderDebatePreview();
+
+    if (formatWasNormalized) {
+        dispatchBuilderContentChange("change");
+    }
 
     document.addEventListener("input", (event) => {
         if (event.target.closest("[data-debate-step]") || ["debate-titulo", "debate-pergunta", "debate-lado-a", "debate-lado-b"].includes(event.target.id)) {

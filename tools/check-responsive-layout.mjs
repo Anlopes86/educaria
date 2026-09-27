@@ -261,7 +261,8 @@ async function auditPage(pageConfig) {
             source: `localStorage.setItem('educaria:builder:mindmap:guest', ${JSON.stringify(mindmapDraft)}); localStorage.setItem('educaria:builder:mindmap:layout-audit', ${JSON.stringify(mindmapDraft)});`
         });
     }
-    if (localPagePath.endsWith("plataforma/debate-guiado-apresentacao.html")) {
+    if (localPagePath.endsWith("plataforma/debate-guiado-apresentacao.html")
+        || localPagePath.endsWith("plataforma/debate-guiado-builder.html")) {
         const debateDraft = JSON.stringify({
             controls: {
                 "debate-titulo": "Celular em sala: aliado ou distração?",
@@ -390,6 +391,7 @@ async function auditPage(pageConfig) {
         const mindmapDetailHint = document.querySelector('[data-mind-stage-detail-scroll]');
         const debateCard = document.querySelector('.debate-stage-card');
         const debateQuestionCard = document.querySelector('.debate-stage-step-question-card');
+        const debateFormatField = document.getElementById('debate-formato');
         const previewPane = document.querySelector('.activity-preview-pane');
         const previewStyle = previewPane ? getComputedStyle(previewPane) : null;
         return {
@@ -430,11 +432,17 @@ async function auditPage(pageConfig) {
             } : null,
             debateState: debateCard ? {
                 variant: [...debateCard.classList].find((name) => name.startsWith('debate-variant--')) || '',
+                format: document.querySelector('[data-debate-stage-format]')?.textContent.trim() || '',
                 progressCount: document.querySelectorAll('[data-debate-stage-jump]').length,
                 activeProgress: document.querySelector('[data-debate-stage-jump].is-active')?.textContent.trim() || '',
                 sidesVisible: getComputedStyle(document.querySelector('.debate-stage-sides')).display !== 'none',
                 cardOverflow: debateCard.scrollHeight > debateCard.clientHeight + 1,
                 questionOverflow: debateQuestionCard ? debateQuestionCard.scrollHeight > debateQuestionCard.clientHeight + 1 : false
+            } : null,
+            debateBuilderState: debateFormatField ? {
+                value: debateFormatField.value,
+                options: [...debateFormatField.options].map((option) => option.textContent.trim()),
+                aiOptions: [...(document.getElementById('debate-formato-ia')?.options || [])].map((option) => option.textContent.trim())
             } : null,
             offlineState: document.documentElement.dataset.educariaOffline || ''
         };
@@ -718,6 +726,7 @@ try {
         if (result.flashcardState) console.log(`  flashcard-stage=${JSON.stringify(result.flashcardState)}`);
         if (result.mindmapState) console.log(`  mindmap-stage=${JSON.stringify(result.mindmapState)}`);
         if (result.debateState) console.log(`  debate-stage=${JSON.stringify(result.debateState)}`);
+        if (result.debateBuilderState) console.log(`  debate-builder=${JSON.stringify(result.debateBuilderState)}`);
         if (result.previewScroll && !auditMobile) {
             const previewScrollWorks = result.previewScroll.overflowY === "auto"
                 && result.previewScroll.maxHeight !== "none"

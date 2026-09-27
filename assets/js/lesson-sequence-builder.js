@@ -1173,7 +1173,7 @@ function controlStateForDraft(materialType, payload) {
         return {
             "debate-titulo": payload.title || "Debate guiado",
             "debate-pergunta": payload.question || "",
-            "debate-formato": payload.format || "Dois lados",
+            "debate-formato": String(payload.format || "").toLowerCase().includes("roda guiada") ? "Roda guiada" : "Dois lados",
             "debate-lado-a": payload.side_a || "",
             "debate-lado-b": payload.side_b || ""
         };

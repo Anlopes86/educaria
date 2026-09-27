@@ -948,7 +948,7 @@ const debateSchema = {
     properties: {
         title: { type: "string" },
         question: { type: "string" },
-        format: { type: "string" },
+        format: { type: "string", enum: ["Dois lados", "Roda guiada"] },
         side_a: { type: "string" },
         side_b: { type: "string" },
         steps: {
@@ -1400,15 +1400,10 @@ function promptFor(materialType, action, sourceText) {
                 "Evite organizar o debate como confronto fixo entre dois lados.",
                 "Priorize escuta, participação coletiva, aprofundamento e mediação do professor."
             ]
-            : normalizedAction.includes("formato desejado: grupos com mediacao")
-                ? [
-                    "Formato desejado: grupos com mediação.",
-                    "Estruture o debate para trabalho entre grupos, com comparação de argumentos e mediação docente."
-                ]
-                : [
-                    "Formato desejado: dois lados.",
-                    "Estruture o debate com contraste claro entre duas perspectivas."
-                ];
+            : [
+                "Formato desejado: dois lados.",
+                "Estruture o debate com contraste claro entre duas perspectivas."
+            ];
 
         const assistanceInstructions = normalizedAction.includes("criar pergunta central e etapas")
             ? [

@@ -261,7 +261,9 @@ function renderDebateApplication() {
     ].map((step, index) => ({ ...step, index }));
 
     controls["debate-titulo"] = controls["debate-titulo"] || "Debate guiado";
-    controls["debate-formato"] = controls["debate-formato"] || "Dois lados";
+    controls["debate-formato"] = normalizeDebateToken(controls["debate-formato"]).includes("roda guiada")
+        ? "Roda guiada"
+        : "Dois lados";
     controls["debate-acao-ia"] = controls["debate-acao-ia"] || "Organizar roteiro de debate";
     controls["debate-pergunta"] = controls["debate-pergunta"] || "Pergunta central do debate";
     controls["debate-lado-a"] = controls["debate-lado-a"] || "Posição A";
@@ -327,9 +329,7 @@ function renderDebateApplication() {
 
     const variantClass = normalizedFormat.includes("roda guiada")
         ? "debate-variant--circle"
-        : normalizedFormat.includes("grupos")
-            ? "debate-variant--groups"
-            : "debate-variant--sides";
+        : "debate-variant--sides";
 
     const modeClass = normalizedAiMode.includes("criar pergunta central")
         ? "debate-mode--question"
@@ -339,7 +339,7 @@ function renderDebateApplication() {
 
     const applyCardVariant = () => {
         if (!cardRoot) return;
-        cardRoot.classList.remove("debate-variant--circle", "debate-variant--groups", "debate-variant--sides");
+        cardRoot.classList.remove("debate-variant--circle", "debate-variant--sides");
         cardRoot.classList.remove("debate-mode--question", "debate-mode--guided", "debate-mode--balanced");
         cardRoot.classList.add(variantClass, modeClass);
     };
@@ -396,8 +396,8 @@ function renderDebateApplication() {
         setTextAll("[data-debate-stage-main-question]", runtime.draftState.controls["debate-pergunta"]);
         setTextAll("[data-debate-stage-side-a]", runtime.draftState.controls["debate-lado-a"]);
         setTextAll("[data-debate-stage-side-b]", runtime.draftState.controls["debate-lado-b"]);
-        setTextAll("[data-debate-stage-side-a-label]", variantClass === "debate-variant--groups" ? "Grupo 1 · defende" : "Defende");
-        setTextAll("[data-debate-stage-side-b-label]", variantClass === "debate-variant--groups" ? "Grupo 2 · contesta" : "Contesta");
+        setTextAll("[data-debate-stage-side-a-label]", "Defende");
+        setTextAll("[data-debate-stage-side-b-label]", "Contesta");
         setTextAll("[data-debate-stage-guidance-label]", modeClass === "debate-mode--guided" ? "Condução" : "Mediação");
     };
 
@@ -447,8 +447,8 @@ function renderDebateApplication() {
 
         const guidanceHtml = formatDebateGuidanceHtml(step.guidance);
         const stepCounter = `${runtime.activeIndex + 1} de ${runtime.steps.length}`;
-        const sideALabel = variantClass === "debate-variant--groups" ? "Grupo 1 · defende" : "Defende";
-        const sideBLabel = variantClass === "debate-variant--groups" ? "Grupo 2 · contesta" : "Contesta";
+        const sideALabel = "Defende";
+        const sideBLabel = "Contesta";
 
         renderStaticFields();
 

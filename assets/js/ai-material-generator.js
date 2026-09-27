@@ -964,7 +964,12 @@ function applyDebateFromStructuredData(payload) {
 
     if (titleField) titleField.value = payload.title || "";
     if (questionField) questionField.value = payload.question || "";
-    if (formatField && payload.format) setSelectByText(formatField, payload.format);
+    if (formatField) {
+        const format = String(payload.format || "").toLowerCase().includes("roda guiada")
+            ? "Roda guiada"
+            : "Dois lados";
+        setSelectByText(formatField, format);
+    }
     if (sideAField) sideAField.value = payload.side_a || "";
     if (sideBField) sideBField.value = payload.side_b || "";
 
