@@ -518,7 +518,7 @@
 .mind-stage-content {
     min-height: 0;
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(330px, 0.62fr);
+    grid-template-columns: minmax(0, 1fr) clamp(380px, 36vw, 500px);
     gap: 18px;
     overflow: hidden;
 }
