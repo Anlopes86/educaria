@@ -766,7 +766,7 @@ const slidesSchema = {
                     image_prompt: { type: "string" },
                     layout: {
                         type: "string",
-                        enum: ["stack", "split", "feature"]
+                        enum: ["stack", "split"]
                     }
                 }
             }

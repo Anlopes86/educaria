@@ -242,12 +242,12 @@ function normalizeSlideImageControls(card) {
     }
 
     if (layout) {
-        const wantsFeature = String(layout.value || "").toLowerCase().includes("destaque");
-        layout.innerHTML = `
-            <option>Lado a lado</option>
-            <option>Imagem em destaque</option>
-        `;
-        layout.value = wantsFeature ? "Imagem em destaque" : "Lado a lado";
+        if (layout.tagName === "SELECT") {
+            layout.innerHTML = "<option>Lado a lado</option>";
+        }
+        layout.value = "Lado a lado";
+        const layoutField = layout.closest(".platform-field");
+        if (layoutField) layoutField.hidden = true;
     }
 
     if (openButton) openButton.textContent = "Enviar ou trocar imagem";

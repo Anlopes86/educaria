@@ -560,7 +560,7 @@ function applySlidesFromStructuredData(payload) {
         }
 
         if (layout) {
-            setSelectByText(layout, slide.layout === "feature" ? "Imagem em destaque" : "Lado a lado");
+            layout.value = "Lado a lado";
         }
     });
 

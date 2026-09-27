@@ -223,15 +223,16 @@ async function auditPage(pageConfig) {
         });
     }
     if (localPagePath.endsWith("plataforma/apresentacao.html")) {
+        const legacyFeatureImage = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="800" height="600" fill="#dff8f0"/><circle cx="590" cy="165" r="76" fill="#fbbf24"/><path d="M90 500C260 270 450 290 710 500" fill="none" stroke="#0f766e" stroke-width="36" stroke-linecap="round"/></svg>`)}`;
         const slideStack = `
             <section data-slide-card data-slide-type="cover">
                 <input data-field="slide-title" value="Como a tecnologia transforma a aprendizagem">
                 <input data-field="slide-subtitle" value="Uma conversa sobre escolhas, oportunidades e responsabilidade">
                 <textarea data-field="slide-body">Observe o que já mudou\nCompare diferentes experiências\nPrepare uma pergunta para a turma</textarea>
-                <select data-field="slide-image-mode"><option selected>Sem imagem</option></select>
-                <select data-field="slide-layout"><option selected>Lado a lado</option></select>
-                <textarea data-field="slide-image-prompt"></textarea>
-                <input data-field="slide-image-url" value="">
+                <select data-field="slide-image-mode"><option selected>Enviar imagem</option></select>
+                <select data-field="slide-layout"><option selected>Imagem em destaque</option></select>
+                <textarea data-field="slide-image-prompt">Tecnologia e aprendizagem</textarea>
+                <input data-field="slide-image-url" value="${legacyFeatureImage}">
                 <select data-field="slide-font"><option selected>Destaque moderno</option></select>
                 <input data-field="slide-accent-color" value="#2dd4bf">
                 <input data-field="slide-color" value="#102a43">
@@ -239,7 +240,7 @@ async function auditPage(pageConfig) {
             </section>
         `;
         await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-            source: `localStorage.setItem('educaria:builder:slides:guest', ${JSON.stringify(JSON.stringify({ stackHtml: slideStack }))});`
+            source: `['guest', 'layout-audit', 'auditoria-educaria-test'].forEach((scope) => localStorage.setItem('educaria:builder:slides:' + scope, ${JSON.stringify(JSON.stringify({ stackHtml: slideStack }))}));`
         });
     }
     if (localPagePath.endsWith("plataforma/quiz-aplicacao.html")) {
@@ -500,6 +501,8 @@ async function auditPage(pageConfig) {
         const embeddedCopy = lessonPlayerDocument?.querySelector('.presentation-slide-copy');
         const embeddedMedia = lessonPlayerDocument?.querySelector('.presentation-media');
         const embeddedMediaRect = embeddedMedia?.getBoundingClientRect();
+        const slideLayoutFields = [...document.querySelectorAll('[data-slide-card] [data-field="slide-layout"]')];
+        const presentedSlide = document.querySelector('[data-presentation-slide]');
         return {
             viewportWidth,
             scrollWidth,
@@ -509,6 +512,21 @@ async function auditPage(pageConfig) {
             dashboardRuntime: typeof window.refreshTeacherDashboard,
             hasPresentation: Boolean(document.querySelector('.presentation-shell')),
             hasPrintAction: Boolean(document.querySelector('[data-presentation-print]')),
+            slideBuilderState: slideLayoutFields.length ? {
+                count: slideLayoutFields.length,
+                values: slideLayoutFields.map((field) => field.value),
+                visibleCount: slideLayoutFields.filter((field) => {
+                    const wrapper = field.closest('.platform-field');
+                    return getComputedStyle(field).display !== 'none'
+                        && !field.hidden
+                        && !(wrapper && (wrapper.hidden || getComputedStyle(wrapper).display === 'none'));
+                }).length,
+                featureOptionCount: slideLayoutFields.reduce((total, field) => total + [...(field.options || [])].filter((option) => option.textContent.toLowerCase().includes('destaque')).length, 0)
+            } : null,
+            slidePresentationState: presentedSlide ? {
+                split: presentedSlide.classList.contains('presentation-slide--split'),
+                feature: presentedSlide.classList.contains('presentation-slide--feature')
+            } : null,
             previewScroll: previewPane ? {
                 overflowY: previewStyle.overflowY,
                 maxHeight: previewStyle.maxHeight,
@@ -883,6 +901,18 @@ try {
         if (result.mindmapState) console.log(`  mindmap-stage=${JSON.stringify(result.mindmapState)}`);
         if (result.debateState) console.log(`  debate-stage=${JSON.stringify(result.debateState)}`);
         if (result.debateBuilderState) console.log(`  debate-builder=${JSON.stringify(result.debateBuilderState)}`);
+        if (result.slideBuilderState) {
+            const slideBuilderUsesSplitOnly = result.slideBuilderState.visibleCount === 0
+                && result.slideBuilderState.featureOptionCount === 0
+                && result.slideBuilderState.values.every((value) => value === "Lado a lado");
+            console.log(`  slide-layout-control=${slideBuilderUsesSplitOnly ? "ok" : "failed"} state=${JSON.stringify(result.slideBuilderState)}`);
+            if (!slideBuilderUsesSplitOnly) failed = true;
+        }
+        if (result.slidePresentationState) {
+            const slidePresentationUsesSplit = result.slidePresentationState.split && !result.slidePresentationState.feature;
+            console.log(`  slide-presentation-layout=${slidePresentationUsesSplit ? "ok" : "failed"} state=${JSON.stringify(result.slidePresentationState)}`);
+            if (!slidePresentationUsesSplit) failed = true;
+        }
         if (result.lessonSequenceState) console.log(`  lesson-sequence=${JSON.stringify(result.lessonSequenceState)}`);
         if (result.lessonPlayerState) console.log(`  lesson-player=${JSON.stringify(result.lessonPlayerState)}`);
         if (result.lessonFilterJourney) {

@@ -50,17 +50,7 @@ function parseSlideCards(stackHtml) {
             return selectedOption?.text?.trim() || "";
         };
 
-        const normalizeLayout = (value, hasImage) => {
-            const text = String(value || "")
-                .toLowerCase()
-                .normalize("NFD")
-                .replace(/[\u0300-\u036f]/g, "");
-
-            if (hasImage && text.includes("destaque")) return "feature";
-            if (hasImage) return "split";
-            if (text.includes("lado")) return "split";
-            return "stack";
-        };
+        const normalizeLayout = (hasImage) => hasImage ? "split" : "stack";
 
         const title = fieldValue("slide-title");
         const subtitle = fieldValue("slide-subtitle");
@@ -81,7 +71,7 @@ function parseSlideCards(stackHtml) {
             title: title || `Slide ${index + 1}`,
             subtitle,
             body,
-            layoutMode: normalizeLayout(fieldLabel("slide-layout"), hasImage),
+            layoutMode: normalizeLayout(hasImage),
             imageMode: fieldLabel("slide-image-mode") || "Sem imagem",
             imageUrl,
             imagePrompt,
@@ -109,13 +99,7 @@ function serializeSlideCards(slides) {
                     <label>Corpo</label>
                     <textarea data-field="slide-body" rows="4">${escapeHtml(slide.body || "")}</textarea>
                 </div>
-                <div class="platform-field">
-                    <label>Layout</label>
-                    <select data-field="slide-layout">
-                        <option value="Lado a lado"${slide.layoutMode === "split" ? " selected" : ""}>Lado a lado</option>
-                        <option value="Imagem em destaque"${slide.layoutMode === "feature" ? " selected" : ""}>Imagem em destaque</option>
-                    </select>
-                </div>
+                <input data-field="slide-layout" type="hidden" value="Lado a lado">
                 <div class="platform-field platform-field-wide">
                     <label>Endereço da imagem (opcional)</label>
                     <input data-field="slide-image-url" type="url" value="${escapeHtml(slide.imageUrl || "")}" placeholder="Cole o endereço de uma imagem real">
@@ -337,17 +321,7 @@ function applySlideLayout(slideRoot, slide) {
         return;
     }
 
-    if (slide.layoutMode === "split") {
-        slideRoot.classList.add("presentation-slide--split");
-        return;
-    }
-
-    if (slide.layoutMode === "feature") {
-        slideRoot.classList.add("presentation-slide--feature");
-        return;
-    }
-
-    slideRoot.classList.add("presentation-slide--stack");
+    slideRoot.classList.add("presentation-slide--split");
 }
 
 function applySplitAspect(slideRoot, media) {
@@ -523,16 +497,12 @@ function renderPresentation(slides, draft = {}) {
             media.hidden = false;
             media.innerHTML = `<img data-presentation-image alt="${escapeHtml(slide.imagePrompt || slide.title)}" src="${escapeHtml(slide.imageUrl)}">`;
             applyMediaAspect(slideRoot, media, () => {
-                if (slide.layoutMode === "split") {
-                    applySplitAspect(slideRoot, media);
-                }
+                applySplitAspect(slideRoot, media);
 
                 applySlideDensity(slideRoot, copyRoot, slide, viewport);
             });
 
-            if (slide.layoutMode === "split") {
-                applySplitAspect(slideRoot, media);
-            }
+            applySplitAspect(slideRoot, media);
         } else {
             media.hidden = true;
             media.innerHTML = '<img data-presentation-image alt="">';

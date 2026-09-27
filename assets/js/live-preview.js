@@ -200,7 +200,6 @@ function buildSlidesPreview() {
             const textColor = colorValue(slide, "slide-text-color", "#0f172a");
             const accentColor = colorValue(slide, "slide-accent-color", "#0ea5e9");
             const slideFont = selectValue(slide, "slide-font") || "Destaque moderno";
-            const slideLayout = selectValue(slide, "slide-layout") || "Lado a lado";
             const bodyLines = body.replace(/\r/g, "").split("\n").map((line) => line.replace(/^[-*•]\s*/, "").trim()).filter(Boolean);
             const bodyMarkup = bodyLines.length > 1
                 ? `<ul>${bodyLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
@@ -230,7 +229,6 @@ function buildSlidesPreview() {
                 <section class="live-preview-card slide-preview-card" style="--slide-preview-accent: ${escapeHtml(accentColor)}; --slide-preview-bg: ${escapeHtml(slideColor)}; --slide-preview-text: ${escapeHtml(textColor)};">
                     <div class="slide-preview-kicker"><span>Slide ${index + 1}</span><span>${escapeHtml(index === 0 ? "Abertura" : index === slides.length - 1 ? "Fechamento" : "Conteúdo")}</span></div>
                     <div class="preview-chip-row">
-                        ${imageUrl ? `<span class="preview-chip">${escapeHtml(slideLayout)}</span>` : ""}
                         <span class="preview-chip">${escapeHtml(slideFont)}</span>
                     </div>
                     ${slideBody}
