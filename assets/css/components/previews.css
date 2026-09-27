@@ -182,18 +182,41 @@
 }
 
 .mind-preview-map {
-    display: grid;
-    gap: 14px;
+    position: relative;
+    min-height: 420px;
+    overflow: hidden;
+    border-radius: 24px;
+    background:
+        radial-gradient(circle at center, rgba(45, 212, 191, 0.14), transparent 20%),
+        linear-gradient(145deg, #f8fcfc, #eff7f8);
 }
 
 .mind-preview-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 3;
+    width: min(44%, 200px);
+    min-height: 104px;
     display: grid;
+    place-content: center;
     gap: 6px;
-    padding: 18px;
-    border-radius: 24px;
-    background: linear-gradient(135deg, #0f172a, #1e293b);
+    padding: 16px;
+    border: 4px solid rgba(255, 255, 255, 0.9);
+    border-radius: 999px;
+    background: linear-gradient(135deg, #0f766e, #0f4c5c 58%, #12324b);
     color: #ffffff;
     text-align: center;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 18px 30px -22px rgba(15, 42, 67, 0.68);
+}
+
+.mind-preview-center small {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.66rem;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .mind-preview-center strong {
@@ -202,30 +225,127 @@
 
 .mind-preview-center span {
     color: rgba(255, 255, 255, 0.82);
+    font-size: 0.78rem;
+    line-height: 1.25;
+}
+
+.mind-preview-connectors {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.mind-preview-connectors line {
+    stroke: var(--mind-accent, #22c55e);
+    stroke-width: 4;
+    stroke-linecap: round;
+    opacity: 0.46;
+    vector-effect: non-scaling-stroke;
 }
 
 .mind-preview-branch {
+    position: absolute;
+    top: var(--mind-y, 50%);
+    left: var(--mind-x, 50%);
+    z-index: 2;
+    width: clamp(112px, 34%, 156px);
+    min-height: 64px;
     display: grid;
-    gap: 8px;
-    padding: 14px 16px;
-    border-radius: 20px;
-    border-left: 8px solid var(--mind-accent, #22c55e);
+    align-content: center;
+    gap: 4px;
+    padding: 10px 12px;
+    border: 2px solid color-mix(in srgb, var(--mind-accent, #22c55e) 42%, white);
+    border-radius: 16px;
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), color-mix(in srgb, var(--mind-accent, #22c55e) 10%, white));
+    text-align: center;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 14px 24px -20px rgba(15, 42, 67, 0.56);
 }
 
 .mind-preview-branch strong {
     color: var(--navy-dark);
+    font-size: 0.86rem;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
 }
 
 .mind-preview-branch em {
+    display: -webkit-box;
+    overflow: hidden;
     font-style: normal;
     color: color-mix(in srgb, var(--mind-accent, #22c55e) 72%, #0f172a);
+    font-size: 0.72rem;
     font-weight: 700;
+    line-height: 1.2;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .mind-preview-branch span {
+    display: none;
     color: var(--gray-dark);
     line-height: 1.5;
+}
+
+.mind-preview-map.is-topics {
+    min-height: 0;
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+    overflow: visible;
+}
+
+.mind-preview-map.is-topics .mind-preview-connectors {
+    display: none;
+}
+
+.mind-preview-map.is-topics .mind-preview-center,
+.mind-preview-map.is-topics .mind-preview-branch {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    transform: none;
+}
+
+.mind-preview-map.is-topics .mind-preview-center {
+    min-height: 82px;
+    border-radius: 18px;
+}
+
+.mind-preview-map.is-topics .mind-preview-branch {
+    min-height: 72px;
+    padding: 12px 14px 12px 54px;
+    border-left: 7px solid var(--mind-accent, #22c55e);
+    text-align: left;
+}
+
+.mind-preview-map.is-topics .mind-preview-branch::before {
+    content: attr(data-mind-order);
+    position: absolute;
+    top: 50%;
+    left: 12px;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    color: #ffffff;
+    background: var(--mind-accent, #22c55e);
+    font-size: 0.66rem;
+    font-weight: 900;
+    transform: translateY(-50%);
+}
+
+.mind-preview-map.is-topics .mind-preview-branch span {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.74rem;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
 }
 
 .mind-preview-list {

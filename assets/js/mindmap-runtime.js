@@ -139,6 +139,41 @@ function formatMindDetailHtml(text) {
     return blocks.join("") || `<p>${formatMindInlineHtml(text)}</p>`;
 }
 
+function normalizeMindLayout(value) {
+    return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+}
+
+function mindRadialPosition(index, total) {
+    const count = Math.max(1, total);
+    let angle = -90 + (index * 360 / count);
+
+    if (count === 2) angle = 180 + (index * 180);
+    if (count === 4) angle = -45 + (index * 90);
+
+    const radians = angle * Math.PI / 180;
+    const radiusX = count >= 7 ? 36 : count >= 5 ? 37 : 36;
+    const radiusY = count >= 7 ? 40 : count >= 5 ? 38 : 35;
+
+    return {
+        x: Number((50 + Math.cos(radians) * radiusX).toFixed(2)),
+        y: Number((50 + Math.sin(radians) * radiusY).toFixed(2))
+    };
+}
+
+function mindConnectorPath(position) {
+    const endX = position.x * 10;
+    const endY = position.y * 6.2;
+    const deltaX = endX - 500;
+    const deltaY = endY - 310;
+    const firstX = 500 + deltaX * 0.28;
+    const secondX = 500 + deltaX * 0.72;
+
+    return `M 500 310 C ${firstX.toFixed(1)} 310, ${secondX.toFixed(1)} ${(310 + deltaY).toFixed(1)}, ${endX.toFixed(1)} ${endY.toFixed(1)}`;
+}
+
 function renderMindmapApplication() {
     const draft = readMindmapDraft() || {};
     const controls = { ...(draft.controls || {}) };
@@ -169,6 +204,7 @@ function renderMindmapApplication() {
     const detailTitleRoot = document.querySelector("[data-mind-stage-detail-title]");
     const detailSubtitleRoot = document.querySelector("[data-mind-stage-detail-subtitle]");
     const detailTextRoot = document.querySelector("[data-mind-stage-detail-text]");
+    const detailScrollButton = document.querySelector("[data-mind-stage-detail-scroll]");
 
     let activeIndex = 0;
     let saveTimer = 0;
@@ -195,9 +231,10 @@ function renderMindmapApplication() {
     };
 
     const renderStatic = () => {
+        const isTopics = normalizeMindLayout(state.controls["mapa-layout"]).includes("topicos");
         if (titleRoot) titleRoot.textContent = state.controls["mapa-centro"];
         if (subtitleRoot) subtitleRoot.textContent = state.controls["mapa-subtitulo"];
-        if (countRoot) countRoot.textContent = `${state.branches.length} tópicos`;
+        if (countRoot) countRoot.textContent = `${state.branches.length} tópicos · ${isTopics ? "Leitura em tópicos" : "Mapa radial"}`;
     };
 
     const renderDetail = () => {
@@ -207,6 +244,7 @@ function renderMindmapApplication() {
         if (detailTitleRoot) detailTitleRoot.textContent = branch.title;
         if (detailSubtitleRoot) detailSubtitleRoot.textContent = branch.subtitle;
         if (detailTextRoot) {
+            detailTextRoot.scrollTop = 0;
             if (inlineEdit?.enabled) {
                 detailTextRoot.textContent = branch.detail;
             } else {
@@ -214,17 +252,40 @@ function renderMindmapApplication() {
             }
         }
         inlineEdit?.syncUi();
+        window.requestAnimationFrame(syncDetailOverflow);
+    };
+
+    const syncDetailOverflow = () => {
+        if (!detailTextRoot || !detailScrollButton) return;
+        const hasMore = detailTextRoot.scrollHeight - detailTextRoot.scrollTop > detailTextRoot.clientHeight + 3;
+        detailScrollButton.hidden = !hasMore;
     };
 
     const renderMap = () => {
         if (!mapRoot) return;
-        const normalizedLayout = String(state.controls["mapa-layout"]).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        const normalizedLayout = normalizeMindLayout(state.controls["mapa-layout"]);
         const isTopics = normalizedLayout.includes("topicos");
+        const positions = state.branches.map((branch, index) => ({
+            ...mindRadialPosition(index, state.branches.length),
+            color: branch.color || "#22c55e"
+        }));
         mapRoot.classList.toggle("is-topics", isTopics);
         mapRoot.classList.toggle("is-radial", !isTopics);
+        mapRoot.dataset.mindLayout = isTopics ? "topics" : "radial";
         mapRoot.innerHTML = `
+            <svg class="mind-stage-connectors" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+                ${positions.map((position, index) => `
+                    <path class="mind-stage-connector${index === activeIndex ? " is-active" : ""}" d="${mindConnectorPath(position)}" style="--mind-accent:${escapeMindAttr(position.color)};"></path>
+                    <circle cx="${position.x * 10}" cy="${position.y * 6.2}" r="7" style="--mind-accent:${escapeMindAttr(position.color)};"></circle>
+                `).join("")}
+            </svg>
+            <article class="mind-stage-central">
+                <span>Tema central</span>
+                <h2 data-inline-editable="control:mapa-centro">${escapeMindText(state.controls["mapa-centro"])}</h2>
+                <p data-inline-editable="control:mapa-subtitulo">${escapeMindText(state.controls["mapa-subtitulo"])}</p>
+            </article>
             ${state.branches.map((branch, index) => `
-                <button type="button" class="mind-stage-branch mind-stage-branch--${isTopics ? "topics" : "radial"}${index === activeIndex ? " is-active" : ""}" data-mind-stage-branch="${index}" style="--mind-accent:${branch.color};">
+                <button type="button" class="mind-stage-branch mind-stage-branch--${isTopics ? "topics" : "radial"}${index === activeIndex ? " is-active" : ""}" data-mind-stage-branch="${index}" data-mind-order="${String(index + 1).padStart(2, "0")}" aria-pressed="${index === activeIndex ? "true" : "false"}" style="--mind-accent:${escapeMindAttr(branch.color)};--mind-x:${positions[index].x}%;--mind-y:${positions[index].y}%;">
                     <strong data-inline-editable="branch-index:${index}:title">${escapeMindText(branch.title)}</strong>
                     <em data-inline-editable="branch-index:${index}:subtitle">${escapeMindText(branch.subtitle)}</em>
                 </button>
@@ -291,6 +352,12 @@ function renderMindmapApplication() {
         renderMap();
         renderDetail();
     });
+
+    detailTextRoot?.addEventListener("scroll", syncDetailOverflow, { passive: true });
+    detailScrollButton?.addEventListener("click", () => {
+        detailTextRoot?.scrollBy({ top: Math.max(120, detailTextRoot.clientHeight * 0.72), behavior: "smooth" });
+    });
+    window.addEventListener("resize", syncDetailOverflow);
 }
 
 document.addEventListener("DOMContentLoaded", renderMindmapApplication);

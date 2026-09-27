@@ -15,6 +15,20 @@ function escapeMindAttr(value) {
 
 const mindPalette = ["#22c55e", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#6366f1"];
 
+function mindPreviewRadialPosition(index, total) {
+    const count = Math.max(1, total);
+    let angle = -90 + (index * 360 / count);
+    if (count === 2) angle = 180 + (index * 180);
+    if (count === 4) angle = -45 + (index * 90);
+    const radians = angle * Math.PI / 180;
+    const radiusX = count >= 7 ? 31.5 : 36;
+    const radiusY = count >= 7 ? 40 : 36;
+    return {
+        x: Number((50 + Math.cos(radians) * radiusX).toFixed(2)),
+        y: Number((50 + Math.sin(radians) * radiusY).toFixed(2))
+    };
+}
+
 function mindBranchTemplate(index, title = "", subtitle = "", detail = "", color = "#22c55e") {
     return `
         <section class="platform-question-card activity-content-card mind-branch-card" data-mind-branch>
@@ -146,14 +160,24 @@ function renderMindPreview() {
     if (countRoot) countRoot.textContent = `${branches.length} tópicos`;
 
     if (mapRoot) {
-        mapRoot.classList.toggle("is-topics", layout === "Tópicos");
+        const isTopics = layout === "Tópicos";
+        const positions = branches.map((branch, index) => ({
+            ...mindPreviewRadialPosition(index, branches.length),
+            color: branch.color
+        }));
+        mapRoot.classList.toggle("is-topics", isTopics);
+        mapRoot.classList.toggle("is-radial", !isTopics);
         mapRoot.innerHTML = `
             <article class="mind-preview-center">
+                <small>Tema central</small>
                 <strong>${escapeMindAttr(center)}</strong>
                 <span>${escapeMindAttr(subtitle)}</span>
             </article>
-            ${branches.map((branch) => `
-                <article class="mind-preview-branch" style="--mind-accent:${branch.color};">
+            <svg class="mind-preview-connectors" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+                ${positions.map((position) => `<line x1="500" y1="310" x2="${position.x * 10}" y2="${position.y * 6.2}" style="--mind-accent:${escapeMindAttr(position.color)};"></line>`).join("")}
+            </svg>
+            ${branches.map((branch, index) => `
+                <article class="mind-preview-branch" data-mind-order="${String(index + 1).padStart(2, "0")}" style="--mind-accent:${branch.color};--mind-x:${positions[index].x}%;--mind-y:${positions[index].y}%;">
                     <strong>${escapeMindAttr(branch.title)}</strong>
                     <em>${escapeMindAttr(branch.subtitle)}</em>
                     <span>${escapeMindAttr(branch.detail)}</span>
@@ -163,16 +187,8 @@ function renderMindPreview() {
     }
 
     if (listRoot) {
-        listRoot.innerHTML = branches.map((branch, index) => `
-            <article class="mind-preview-list-item" style="--mind-accent:${branch.color};">
-                <span>${index + 1}</span>
-                <div>
-                    <strong>${escapeMindAttr(branch.title)}</strong>
-                    <small>${escapeMindAttr(branch.subtitle)}</small>
-                    <p>${escapeMindAttr(branch.detail)}</p>
-                </div>
-            </article>
-        `).join("");
+        listRoot.hidden = true;
+        listRoot.innerHTML = "";
     }
 }
 

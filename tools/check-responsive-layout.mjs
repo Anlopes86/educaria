@@ -15,6 +15,7 @@ const auditDisableDashboardTour = process.env.EDUCARIA_AUDIT_DISABLE_DASHBOARD_T
 const auditScrollTo = process.env.EDUCARIA_AUDIT_SCROLL_TO || "";
 const auditSeedDashboard = process.env.EDUCARIA_AUDIT_SEED_DASHBOARD === "1";
 const auditFlashcardSide = process.env.EDUCARIA_AUDIT_FLASHCARD_SIDE || "front";
+const auditMindmapLayout = process.env.EDUCARIA_AUDIT_MINDMAP_LAYOUT || "Radial";
 const auditMobile = auditWidth < 768;
 const pages = process.argv.slice(2).length
     ? process.argv.slice(2).map((page) => ({
@@ -228,6 +229,37 @@ async function auditPage(pageConfig) {
             source: `localStorage.setItem('educaria:builder:flashcards:guest', ${JSON.stringify(flashcardsDraft)}); localStorage.setItem('educaria:builder:flashcards:layout-audit', ${JSON.stringify(flashcardsDraft)});`
         });
     }
+    if (localPagePath.endsWith("plataforma/mapa-mental-apresentacao.html")) {
+        const mindmapBranches = [
+            ["Causas", "O que inicia o processo", "A Revolução Industrial reuniu mudanças econômicas, técnicas e sociais.\n\n- Acúmulo de capital\n- Disponibilidade de carvão e ferro\n- Crescimento dos mercados consumidores\n- Transformações no campo", "#22c55e"],
+            ["Inovações", "Máquinas e novas fontes de energia", "A máquina a vapor ampliou a capacidade produtiva e permitiu mecanizar diferentes etapas do trabalho.", "#0ea5e9"],
+            ["Trabalho", "Novas relações de produção", "O trabalho artesanal perdeu espaço para a produção fabril, com divisão de tarefas, jornadas extensas e novas formas de organização.", "#f59e0b"],
+            ["Cidades", "Urbanização acelerada", "O crescimento das fábricas atraiu trabalhadores e transformou o espaço urbano, muitas vezes sem infraestrutura suficiente.", "#ec4899"],
+            ["Impactos", "Consequências sociais e ambientais", "A industrialização aumentou a produção, mas também intensificou desigualdades, poluição e conflitos trabalhistas.", "#8b5cf6"],
+            ["Legados", "Mudanças que permanecem", "Muitos processos atuais de produção, consumo, transporte e organização do trabalho têm raízes nesse período.", "#14b8a6"],
+            ["Tecnologia", "Aperfeiçoamento contínuo", "Novas máquinas e técnicas aceleraram os ciclos de inovação e modificaram a relação entre ciência e produção.", "#ef4444"],
+            ["Debates", "Interpretações históricas", "Historiadores analisam diferentes ritmos de industrialização e seus efeitos em grupos sociais e regiões distintas.", "#6366f1"]
+        ];
+        const mindmapStack = mindmapBranches.map(([title, subtitle, detail, color]) => `
+            <section data-mind-branch>
+                <input data-mind-title value="${title}">
+                <input data-mind-subtitle value="${subtitle}">
+                <textarea data-mind-detail>${detail}</textarea>
+                <input data-mind-color value="${color}">
+            </section>
+        `).join("");
+        const mindmapDraft = JSON.stringify({
+            controls: {
+                "mapa-centro": "Revolução Industrial",
+                "mapa-subtitulo": "Transformações do século XVIII ao XIX",
+                "mapa-layout": auditMindmapLayout
+            },
+            stackHtml: mindmapStack
+        });
+        await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+            source: `localStorage.setItem('educaria:builder:mindmap:guest', ${JSON.stringify(mindmapDraft)}); localStorage.setItem('educaria:builder:mindmap:layout-audit', ${JSON.stringify(mindmapDraft)});`
+        });
+    }
     await cdp.send("Emulation.setDeviceMetricsOverride", {
         width: auditWidth,
         height: auditHeight,
@@ -265,6 +297,13 @@ async function auditPage(pageConfig) {
         });
         await waitForPageCondition(cdp, "document.querySelector('[data-flashcard-stage]')?.classList.contains('is-flipped')");
         await delay(600);
+    }
+
+    if (localPagePath.endsWith("plataforma/mapa-mental-builder.html")) {
+        await cdp.send("Runtime.evaluate", {
+            expression: `(() => { const field = document.querySelector('#mapa-layout'); if (!field) return false; field.value = ${JSON.stringify(auditMindmapLayout)}; field.dispatchEvent(new Event('change', { bubbles: true })); return true; })()`
+        });
+        await delay(250);
     }
 
     if (auditScrollTo) {
@@ -312,6 +351,21 @@ async function auditPage(pageConfig) {
             }));
         const flashcardStage = document.querySelector('[data-flashcard-stage]');
         const flashcardRect = flashcardStage?.getBoundingClientRect();
+        const mindmapRoot = document.querySelector('[data-mind-stage-map]');
+        const mindmapRootRect = mindmapRoot?.getBoundingClientRect();
+        const mindmapBranches = mindmapRoot ? [...mindmapRoot.querySelectorAll('[data-mind-stage-branch]')] : [];
+        const mindmapBranchRects = mindmapBranches.map((branch) => branch.getBoundingClientRect());
+        const mindmapOverlapCount = mindmapBranchRects.reduce((total, rect, index) => total + mindmapBranchRects.slice(index + 1).filter((other) => {
+            const overlapWidth = Math.min(rect.right, other.right) - Math.max(rect.left, other.left);
+            const overlapHeight = Math.min(rect.bottom, other.bottom) - Math.max(rect.top, other.top);
+            return overlapWidth > 2 && overlapHeight > 2;
+        }).length, 0);
+        const mindmapOutOfBoundsCount = mindmapRootRect ? mindmapBranchRects.filter((rect) => (
+            rect.left < mindmapRootRect.left - 1 || rect.right > mindmapRootRect.right + 1
+            || rect.top < mindmapRootRect.top - 1 || rect.bottom > mindmapRootRect.bottom + 1
+        )).length : 0;
+        const mindmapDetail = document.querySelector('[data-mind-stage-detail-text]');
+        const mindmapDetailHint = document.querySelector('[data-mind-stage-detail-scroll]');
         const previewPane = document.querySelector('.activity-preview-pane');
         const previewStyle = previewPane ? getComputedStyle(previewPane) : null;
         return {
@@ -337,6 +391,18 @@ async function auditPage(pageConfig) {
                 frontSize: getComputedStyle(document.querySelector('[data-flashcard-front]')).fontSize,
                 backSize: getComputedStyle(document.querySelector('[data-flashcard-back]')).fontSize,
                 noteSize: getComputedStyle(document.querySelector('[data-flashcard-example]')).fontSize
+            } : null,
+            mindmapState: mindmapRoot ? {
+                layout: mindmapRoot.dataset.mindLayout || '',
+                branchCount: mindmapBranches.length,
+                overlapCount: mindmapOverlapCount,
+                outOfBoundsCount: mindmapOutOfBoundsCount,
+                hasCentralNode: Boolean(mindmapRoot.querySelector('.mind-stage-central')),
+                connectorCount: mindmapRoot.querySelectorAll('.mind-stage-connector').length,
+                detailClientHeight: mindmapDetail?.clientHeight || 0,
+                detailScrollHeight: mindmapDetail?.scrollHeight || 0,
+                detailOverflowY: mindmapDetail ? getComputedStyle(mindmapDetail).overflowY : '',
+                detailHintVisible: Boolean(mindmapDetailHint && !mindmapDetailHint.hidden)
             } : null,
             offlineState: document.documentElement.dataset.educariaOffline || ''
         };
@@ -618,6 +684,7 @@ try {
             if (!restoreWorks) failed = true;
         }
         if (result.flashcardState) console.log(`  flashcard-stage=${JSON.stringify(result.flashcardState)}`);
+        if (result.mindmapState) console.log(`  mindmap-stage=${JSON.stringify(result.mindmapState)}`);
         if (result.previewScroll && !auditMobile) {
             const previewScrollWorks = result.previewScroll.overflowY === "auto"
                 && result.previewScroll.maxHeight !== "none"
