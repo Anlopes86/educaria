@@ -523,6 +523,10 @@
     overflow: hidden;
 }
 
+.mind-stage-content.is-topics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .mind-stage-map {
     position: relative;
     min-height: 0;

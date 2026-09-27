@@ -199,6 +199,7 @@ function renderMindmapApplication() {
     const titleRoot = document.querySelector("[data-mind-stage-title]");
     const subtitleRoot = document.querySelector("[data-mind-stage-subtitle]");
     const countRoot = document.querySelector("[data-mind-stage-count]");
+    const contentRoot = document.querySelector(".mind-stage-content");
     const mapRoot = document.querySelector("[data-mind-stage-map]");
     const detailRoot = document.querySelector(".mind-stage-detail");
     const detailTitleRoot = document.querySelector("[data-mind-stage-detail-title]");
@@ -271,6 +272,8 @@ function renderMindmapApplication() {
         }));
         mapRoot.classList.toggle("is-topics", isTopics);
         mapRoot.classList.toggle("is-radial", !isTopics);
+        contentRoot?.classList.toggle("is-topics", isTopics);
+        contentRoot?.classList.toggle("is-radial", !isTopics);
         mapRoot.dataset.mindLayout = isTopics ? "topics" : "radial";
         mapRoot.innerHTML = `
             <svg class="mind-stage-connectors" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
