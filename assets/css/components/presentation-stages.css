@@ -592,7 +592,7 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
 .quiz-application-title {
     margin-top: 0;
     margin-bottom: 0;
-    font-size: clamp(1.7rem, 2.6vw, 2.45rem);
+    font-size: clamp(1.82rem, 2.75vw, 2.65rem);
     text-align: left;
     line-height: 1.12;
     max-width: 26ch;
@@ -642,7 +642,7 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
 
 .quiz-application-prompt {
     margin: 0;
-    font-size: clamp(1.38rem, 2vw, 2rem);
+    font-size: clamp(1.52rem, 2.25vw, 2.25rem);
     line-height: 1.25;
     text-wrap: balance;
 }
@@ -685,11 +685,11 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
 .quiz-application-options .option-btn {
     display: flex;
     width: 100%;
-    min-height: 68px;
-    padding: 14px 16px;
+    min-height: 72px;
+    padding: 15px 18px;
     align-items: flex-start;
     border: 2px solid rgba(100, 116, 139, 0.2);
-    font-size: clamp(0.94rem, 1.02vw, 1.04rem);
+    font-size: clamp(1.04rem, 1.18vw, 1.18rem);
     font-family: inherit;
     font-weight: 700;
     color: var(--navy-dark);
@@ -722,13 +722,13 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
     display: inline-grid;
     place-items: center;
     flex: 0 0 auto;
-    width: 38px;
-    height: 38px;
+    width: 40px;
+    height: 40px;
     margin-right: 14px;
     border-radius: 12px;
     background: rgba(14, 165, 233, 0.12);
     color: #075985;
-    font-size: 0.98rem;
+    font-size: 1.02rem;
     font-weight: 900;
 }
 
@@ -787,7 +787,7 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
     padding: 14px 18px;
     border-radius: 22px;
     background: rgba(14, 165, 233, 0.1);
-    font-size: 1.04rem;
+    font-size: 1.12rem;
     line-height: 1.6;
     grid-column: 2;
     grid-row: 2;

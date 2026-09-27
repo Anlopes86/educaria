@@ -193,6 +193,24 @@ async function auditPage(pageConfig) {
             source: `localStorage.setItem('educaria:builder:slides:guest', ${JSON.stringify(JSON.stringify({ stackHtml: slideStack }))});`
         });
     }
+    if (localPagePath.endsWith("plataforma/quiz-aplicacao.html")) {
+        const quizStack = `
+            <section data-quiz-question>
+                <textarea data-field="prompt">Qual alternativa explica melhor como a fotossíntese contribui para o equilíbrio dos ecossistemas?</textarea>
+                <select data-field="type"><option selected>Múltipla escolha</option></select>
+                <select data-field="correct"><option selected>Alternativa B</option></select>
+                <input data-option data-option-key="Alternativa A" value="Ela transforma diretamente o oxigênio da atmosfera em nutrientes para todos os seres vivos.">
+                <input data-option data-option-key="Alternativa B" value="Ela produz matéria orgânica e libera oxigênio, sustentando cadeias alimentares e a respiração.">
+                <input data-option data-option-key="Alternativa C" value="Ela impede que a energia solar alcance o solo e reduz a temperatura de todo o planeta.">
+                <input data-option data-option-key="Alternativa D" value="Ela elimina o gás carbônico por completo e interrompe o ciclo natural do carbono.">
+                <textarea data-field="explanation">As plantas convertem energia luminosa em energia química e formam a base de muitas cadeias alimentares.</textarea>
+            </section>
+        `;
+        const quizDraft = JSON.stringify({ controls: { "quiz-tema": "Fotossíntese e ecossistemas" }, stackHtml: quizStack });
+        await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+            source: `localStorage.setItem('educaria:builder:quiz:guest', ${JSON.stringify(quizDraft)}); localStorage.setItem('educaria:builder:quiz:layout-audit', ${JSON.stringify(quizDraft)});`
+        });
+    }
     await cdp.send("Emulation.setDeviceMetricsOverride", {
         width: auditWidth,
         height: auditHeight,
