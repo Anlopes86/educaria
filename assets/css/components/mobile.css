@@ -1,0 +1,679 @@
+/* Ajustes finais para uso confortável da plataforma em celulares. */
+@media (max-width: 760px) {
+    html {
+        scroll-padding-top: 72px;
+    }
+
+    button,
+    a,
+    input,
+    select,
+    textarea,
+    summary {
+        touch-action: manipulation;
+    }
+
+    input,
+    select,
+    textarea {
+        max-width: 100%;
+        font-size: 16px;
+    }
+
+    .platform-shell {
+        width: calc(100% - 16px);
+    }
+
+    .platform-flow-shell,
+    .activity-editor-shell {
+        gap: 12px;
+        padding: 10px 0 116px;
+    }
+
+    .activity-editor-shell .platform-topbar,
+    .lesson-review-shell .platform-topbar {
+        gap: 12px;
+        padding: 12px;
+        border-radius: 20px;
+    }
+
+    .platform-brand {
+        min-width: 0;
+        max-width: 100%;
+        gap: 10px;
+    }
+
+    .platform-brand::before {
+        width: 40px;
+        height: 40px;
+        border-radius: 13px;
+        font-size: 0.8rem;
+    }
+
+    .platform-brand-logo {
+        width: 40px !important;
+        height: 40px !important;
+        max-width: 40px !important;
+        object-fit: contain;
+    }
+
+    .platform-brand span {
+        min-height: 26px;
+        padding-inline: 9px;
+        font-size: 0.68rem;
+    }
+
+    .platform-brand strong {
+        margin-top: 3px;
+        font-size: 1rem;
+    }
+
+    .activity-editor-shell .platform-top-actions,
+    .lesson-review-shell .platform-top-actions {
+        width: 100%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .activity-editor-shell .platform-top-actions .platform-link-button,
+    .lesson-review-shell .platform-top-actions .platform-link-button {
+        width: 100%;
+        min-width: 0;
+        min-height: 42px;
+        padding: 8px 10px;
+        font-size: 0.78rem;
+        line-height: 1.2;
+        text-align: center;
+        white-space: normal;
+    }
+
+    .activity-editor-shell .platform-top-actions > :last-child:nth-child(odd),
+    .lesson-review-shell .platform-top-actions > :last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+    }
+
+    .activity-editor-context {
+        padding: 2px 0 4px;
+    }
+
+    .activity-editor-context h1 {
+        margin: 12px 0 0;
+        font-size: clamp(1.72rem, 8.2vw, 2.15rem);
+        line-height: 1.18;
+        letter-spacing: -0.025em;
+    }
+
+    .activity-editor-context p {
+        margin: 12px 0 0;
+        font-size: 0.94rem;
+        line-height: 1.55;
+    }
+
+    .builder-floating-actions {
+        left: 8px;
+        right: 8px;
+        bottom: max(8px, env(safe-area-inset-bottom));
+        width: auto;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        padding: 8px;
+        border-radius: 16px;
+    }
+
+    .builder-floating-actions .builder-save-status {
+        grid-column: 1 / -1;
+        width: 100%;
+        min-height: 28px;
+        justify-content: center;
+        margin: 0;
+        padding: 4px 8px;
+        font-size: 0.7rem;
+        white-space: normal;
+        text-align: center;
+    }
+
+    .builder-floating-actions .platform-link-button {
+        width: 100%;
+        min-width: 0;
+        min-height: 48px;
+        padding: 6px;
+        font-size: 0.72rem;
+        line-height: 1.15;
+        white-space: normal;
+        text-align: center;
+    }
+
+    .builder-floating-actions .platform-link-button[data-save-target="turma.html"]::after {
+        display: none;
+    }
+
+    .focus-card,
+    .platform-builder-card,
+    .live-preview-card,
+    .platform-question-card,
+    .activity-content-card {
+        padding: 15px;
+        border-radius: 18px;
+    }
+
+    .editor-disclosure > summary {
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        min-height: 60px;
+        padding: 10px 12px;
+    }
+
+    .editor-disclosure > summary > small:not(.editor-disclosure-toggle) {
+        grid-column: 1 / -1;
+        width: 100%;
+        justify-content: center;
+        white-space: normal;
+        text-align: center;
+    }
+
+    .editor-disclosure-toggle {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .editor-disclosure-icon {
+        width: 36px;
+        height: 36px;
+        flex-basis: 36px;
+        border-radius: 12px;
+    }
+
+    .editor-disclosure-body {
+        padding: 12px;
+    }
+
+    .builder-item-navigator {
+        top: 8px;
+        padding: 9px;
+        border-radius: 15px;
+    }
+
+    .builder-item-navigator-button {
+        flex-basis: min(190px, 76%);
+    }
+
+    .activity-card-header {
+        gap: 10px;
+    }
+
+    .activity-card-actions,
+    .activity-stack-actions {
+        width: 100%;
+    }
+
+    .activity-card-actions .platform-link-button,
+    .activity-stack-actions .platform-link-button {
+        flex: 1 1 140px;
+    }
+
+    .app-sidebar-mobile-toggle {
+        top: max(10px, env(safe-area-inset-top));
+        left: 10px;
+        min-width: 80px;
+        min-height: 42px;
+        padding-inline: 14px;
+    }
+
+    body.product-body.theme-overview .app-content,
+    .app-content {
+        padding: 66px 12px 24px !important;
+        gap: 16px;
+    }
+
+    .dashboard-hero-panel,
+    .dashboard-toolkit-grid,
+    .dashboard-class-grid,
+    .dashboard-recent-grid,
+    .dashboard-overview-kpis,
+    .dashboard-toolkit-links {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .dashboard-hero-panel {
+        gap: 16px;
+        padding: 16px;
+        border-radius: 22px;
+    }
+
+    .dashboard-hero-copy h1 {
+        font-size: clamp(1.9rem, 9vw, 2.45rem);
+        line-height: 1.04;
+    }
+
+    .dashboard-quick-create {
+        width: 100%;
+        min-width: 0;
+        padding: 16px;
+        border-radius: 20px;
+    }
+
+    .dashboard-tour-card {
+        inset: auto 12px 12px 12px !important;
+        width: auto !important;
+        max-height: calc(100dvh - 24px);
+        overflow-y: auto;
+        padding: 18px !important;
+        border-radius: 22px !important;
+    }
+
+    .dashboard-tour-actions,
+    .dashboard-tour-actions-group {
+        flex-wrap: wrap;
+    }
+
+    .platform-modal-backdrop {
+        padding: 10px;
+    }
+
+    .platform-modal-card {
+        width: 100%;
+        max-height: calc(100dvh - 20px);
+        overflow-y: auto;
+        padding: 18px;
+        border-radius: 22px;
+    }
+
+    /* Controles de apresentação ficam em uma única faixa rolável. */
+    .presentation-shell {
+        --presentation-stage-height: calc(100dvh - 82px);
+        width: calc(100vw - 8px);
+        gap: 8px;
+        padding: 4px 0 6px;
+    }
+
+    .presentation-topbar {
+        top: 4px;
+        min-height: 0;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 5px;
+        padding: 6px;
+        overflow: hidden;
+        border-radius: 16px;
+    }
+
+    .presentation-topbar .presentation-brand {
+        display: none;
+    }
+
+    .presentation-topbar .platform-top-actions {
+        width: 100%;
+        max-width: 100%;
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: 6px;
+        padding: 2px 2px 5px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scrollbar-width: thin;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .presentation-topbar .platform-top-actions > * {
+        flex: 0 0 auto;
+    }
+
+    .presentation-topbar .platform-link-button,
+    .presentation-chrome-button {
+        min-height: 38px;
+        padding: 7px 11px;
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+
+    .presentation-inline-edit-note {
+        max-height: 32dvh;
+        overflow-y: auto;
+        font-size: 0.78rem;
+        line-height: 1.4;
+    }
+
+    .quiz-application-card {
+        gap: 12px;
+        padding: 15px;
+        overflow-y: auto;
+    }
+
+    .quiz-application-title {
+        font-size: 1.55rem;
+    }
+
+    .quiz-application-prompt {
+        font-size: 1.28rem;
+        line-height: 1.3;
+    }
+
+    .quiz-application-options .option-btn {
+        min-height: 58px;
+        padding: 12px 14px;
+        border-radius: 17px;
+        font-size: 1rem;
+    }
+
+    /* No celular, o mapa radial vira uma leitura compacta e tocável. */
+    .mind-stage-card {
+        height: 100%;
+        grid-template-rows: auto max-content;
+        gap: 12px;
+        padding: 16px;
+        overflow-y: auto;
+    }
+
+    .mind-stage-head {
+        align-items: start;
+        gap: 10px;
+    }
+
+    .mind-stage-card h1 {
+        font-size: 1.75rem;
+        line-height: 1.08;
+    }
+
+    .mind-stage-count {
+        min-height: 36px;
+        padding-inline: 11px;
+        font-size: 0.78rem;
+        text-align: center;
+    }
+
+    .mind-stage-content,
+    .mind-stage-content.is-topics {
+        min-height: max-content;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: max-content max-content;
+        align-content: start;
+        gap: 12px;
+        overflow: visible;
+    }
+
+    .mind-stage-map,
+    .mind-stage-map.is-topics {
+        height: auto;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: max-content;
+        align-content: start;
+        gap: 8px;
+        padding: 10px;
+        overflow: visible;
+        border-radius: 22px;
+        background: linear-gradient(145deg, rgba(248, 252, 252, 0.98), rgba(241, 248, 250, 0.94));
+    }
+
+    .mind-stage-map .mind-stage-connectors {
+        display: none;
+    }
+
+    .mind-stage-map .mind-stage-central,
+    .mind-stage-map.is-topics .mind-stage-central {
+        position: static;
+        width: 100%;
+        min-height: 82px;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto;
+        place-content: center;
+        gap: 4px;
+        padding: 14px;
+        border-width: 3px;
+        border-radius: 18px;
+        text-align: left;
+        transform: none;
+    }
+
+    .mind-stage-map.is-topics .mind-stage-central span {
+        grid-row: auto;
+    }
+
+    .mind-stage-map .mind-stage-central h2 {
+        font-size: 1.15rem;
+    }
+
+    .mind-stage-map .mind-stage-central p {
+        font-size: 0.78rem;
+    }
+
+    .mind-stage-branch--radial,
+    .mind-stage-branch--radial:hover,
+    .mind-stage-branch--radial:focus-visible,
+    .mind-stage-branch--radial.is-active {
+        position: static;
+        width: 100%;
+        min-height: 64px;
+        padding: 11px 13px;
+        text-align: left;
+        transform: none;
+    }
+
+    .mind-stage-branch--topics {
+        min-height: 68px;
+        padding: 12px 12px 12px 62px;
+    }
+
+    .mind-stage-branch--topics::before {
+        left: 13px;
+        width: 36px;
+        height: 36px;
+    }
+
+    .mind-stage-detail {
+        min-height: 0;
+        gap: 8px;
+        padding: 16px;
+        overflow: visible;
+        border-radius: 20px;
+    }
+
+    .mind-stage-detail-content {
+        max-height: none;
+        overflow: visible;
+        font-size: 0.94rem;
+        line-height: 1.55;
+    }
+
+    /* Debate: os dois lados passam a ser lidos verticalmente. */
+    .debate-stage-card {
+        height: 100%;
+        grid-template-rows: auto auto auto auto;
+        gap: 9px;
+        padding: 14px;
+        overflow-y: auto;
+    }
+
+    .debate-stage-card h1 {
+        font-size: 1.62rem;
+        line-height: 1.08;
+    }
+
+    .debate-stage-counter {
+        min-height: 38px;
+        padding-inline: 11px;
+    }
+
+    .debate-stage-motion {
+        min-height: 0;
+        padding: 12px 14px;
+        overflow: visible;
+        border-radius: 18px;
+    }
+
+    .debate-stage-question {
+        font-size: 1.06rem;
+        line-height: 1.3;
+    }
+
+    .debate-stage-progress {
+        grid-auto-columns: 116px;
+    }
+
+    .debate-stage-content {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+        overflow: visible;
+    }
+
+    .debate-stage-sides {
+        height: auto;
+        min-height: 0;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto;
+        gap: 8px;
+    }
+
+    .debate-stage-side {
+        min-height: 126px;
+        padding: 13px;
+        overflow: visible;
+        border-radius: 18px;
+    }
+
+    .debate-stage-versus {
+        position: static;
+        width: 36px;
+        height: 36px;
+        justify-self: center;
+        margin-block: -4px;
+        border-width: 4px;
+        transform: none;
+    }
+
+    .debate-stage-step {
+        height: auto;
+        gap: 10px;
+        padding: 14px;
+        overflow: visible;
+        border-radius: 20px;
+    }
+
+    .debate-stage-step-copy {
+        min-height: max-content;
+        grid-template-rows: auto auto;
+    }
+
+    .debate-stage-step-head {
+        align-items: start;
+        flex-wrap: wrap;
+    }
+
+    .debate-stage-step-question-card {
+        min-height: max-content;
+        overflow: visible;
+        align-content: start;
+        padding: 14px;
+    }
+
+    .debate-stage-step h2 {
+        font-size: 1.42rem;
+    }
+
+    .debate-stage-step h3 {
+        font-size: 1.12rem;
+        line-height: 1.35;
+    }
+
+    /* Slides dentro da aula completa não preservam mínimos de desktop. */
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide {
+        padding: 12px;
+        overflow-y: auto;
+    }
+
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide--split {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(120px, 1fr);
+        gap: 10px;
+    }
+
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide--split .presentation-slide-copy {
+        grid-column: 1;
+        grid-row: 1;
+        align-content: start;
+        padding-right: 0;
+        overflow: visible;
+    }
+
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide--split .presentation-media {
+        grid-column: 1;
+        grid-row: 2;
+        width: 100%;
+        height: 100%;
+        min-height: 120px;
+        align-self: stretch;
+        padding: 0;
+    }
+
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide h1,
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide[data-slide-kind="cover"] h1,
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide[data-slide-kind="closing"] h1,
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide--compact[data-slide-kind="cover"] h1,
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide--dense[data-slide-kind="cover"] h1 {
+        max-width: 100%;
+        font-size: clamp(1.45rem, 7vw, 1.95rem);
+        line-height: 1.08;
+    }
+
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide h2 {
+        font-size: 0.98rem;
+    }
+
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide-body,
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide p {
+        font-size: 0.9rem;
+        line-height: 1.38;
+    }
+
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-media img,
+    body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-media-placeholder {
+        width: 100%;
+        height: 100%;
+        min-height: 120px;
+        max-height: 190px;
+        object-fit: contain;
+    }
+
+    .lesson-sequence-picker-heading {
+        display: grid;
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .lesson-sequence-picker-heading > span {
+        justify-self: start;
+    }
+
+    .lesson-sequence-stage-topbar {
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .lesson-sequence-stage-route {
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+    }
+}
+
+@media (max-width: 420px) {
+    .landing-header-actions .landing-text-link {
+        display: none;
+    }
+
+    .landing-header-cta {
+        padding-inline: 12px;
+    }
+
+    .presentation-topbar-restore {
+        top: 8px;
+        min-height: 40px;
+        padding-inline: 13px;
+        font-size: 0.8rem;
+    }
+}
