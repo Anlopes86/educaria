@@ -14,6 +14,7 @@ import {
     estimateAiCreditReservation,
     mergeAiUsageMetadata
 } from "./ai-credit-policy.js";
+import { createAiCreditStore } from "./ai-credit-store.js";
 
 function parseNonNegativeNumber(value, fallback) {
     const parsed = Number(value);
@@ -76,8 +77,18 @@ const aiDailyCreditLimits = {
     pro: aiDailyCreditLimitPro
 };
 const aiCreditUsagePolicy = buildAiCreditUsagePolicy(process.env);
-const aiCreditStore = String(process.env.AI_CREDIT_STORE || "memory").trim().toLowerCase();
+const aiCreditStoreMode = String(process.env.AI_CREDIT_STORE || "memory").trim().toLowerCase();
 const aiCreditStorePath = path.resolve(process.env.AI_CREDIT_STORE_PATH || ".data/ai-credits.json");
+const aiCreditRepository = createAiCreditStore({
+    type: aiCreditStoreMode,
+    filePath: aiCreditStorePath,
+    projectId: firebaseProjectId,
+    databaseId: String(process.env.AI_CREDIT_FIRESTORE_DATABASE || "(default)").trim(),
+    collection: String(process.env.AI_CREDIT_FIRESTORE_COLLECTION || "aiCreditUsage").trim(),
+    credentialsJson: process.env.FIREBASE_SERVICE_ACCOUNT_JSON,
+    credentialsBase64: process.env.FIREBASE_SERVICE_ACCOUNT_JSON_BASE64,
+    reservationTtlMs: Number(process.env.AI_CREDIT_RESERVATION_TTL_MS || 60 * 60 * 1000)
+});
 const aiProUidAllowList = new Set(parseAllowedOrigins(process.env.AI_PRO_UIDS));
 const aiImageGenerationEnabled = String(process.env.AI_IMAGE_GENERATION_ENABLED || "").trim().toLowerCase() === "true";
 const billingCheckoutUrl = String(process.env.BILLING_CHECKOUT_URL || "").trim();
@@ -89,15 +100,16 @@ const firebaseCertCache = {
     certs: {}
 };
 const aiRateLimitBuckets = new Map();
-const aiDailyCreditBuckets = new Map();
 const billingRecords = new Map();
-let aiCreditFileLoaded = false;
-let aiCreditFileWriteQueue = Promise.resolve();
 let billingStoreLoaded = false;
 let billingStoreWriteQueue = Promise.resolve();
 
 if (String(process.env.TRUST_PROXY || "").trim().toLowerCase() === "true") {
     app.set("trust proxy", 1);
+}
+
+if (process.env.NODE_ENV === "production" && aiCreditStoreType() !== "firestore") {
+    console.warn("EducarIA: AI credits are not using Firestore; balances will not be reliable across production instances or restarts.");
 }
 
 /**
@@ -371,67 +383,7 @@ function aiCreditBucketKey(request, day) {
 }
 
 function aiCreditStoreType() {
-    return aiCreditStore === "file" ? "file" : "memory";
-}
-
-function aiCreditFileStoreEnabled() {
-    return aiCreditStoreType() === "file";
-}
-
-function normalizeStoredCreditCount(value) {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-        return 0;
-    }
-
-    return Math.floor(parsed);
-}
-
-async function loadAiCreditFileStore() {
-    if (!aiCreditFileStoreEnabled() || aiCreditFileLoaded) {
-        return;
-    }
-
-    try {
-        const content = await fs.readFile(aiCreditStorePath, "utf8");
-        const parsed = JSON.parse(content);
-        const buckets = parsed?.buckets && typeof parsed.buckets === "object" ? parsed.buckets : parsed;
-
-        Object.entries(buckets || {}).forEach(([key, value]) => {
-            const used = normalizeStoredCreditCount(value);
-            if (used > 0) {
-                aiDailyCreditBuckets.set(key, used);
-            }
-        });
-    } catch (error) {
-        if (error?.code !== "ENOENT") {
-            console.warn("EducarIA AI credit store could not be loaded:", error instanceof Error ? error.message : error);
-        }
-    } finally {
-        aiCreditFileLoaded = true;
-    }
-}
-
-async function persistAiCreditFileStore() {
-    if (!aiCreditFileStoreEnabled()) {
-        return;
-    }
-
-    const payload = JSON.stringify({
-        updatedAt: new Date().toISOString(),
-        buckets: Object.fromEntries(aiDailyCreditBuckets)
-    }, null, 2);
-
-    aiCreditFileWriteQueue = aiCreditFileWriteQueue.then(async () => {
-        await fs.mkdir(path.dirname(aiCreditStorePath), { recursive: true });
-        const tempPath = `${aiCreditStorePath}.${process.pid}.tmp`;
-        await fs.writeFile(tempPath, payload, "utf8");
-        await fs.rename(tempPath, aiCreditStorePath);
-    }).catch((error) => {
-        console.warn("EducarIA AI credit store could not be saved:", error instanceof Error ? error.message : error);
-    });
-
-    return aiCreditFileWriteQueue;
+    return aiCreditRepository.type;
 }
 
 function normalizeBillingRecord(record) {
@@ -596,20 +548,21 @@ function billingRecordFromWebhook(payload) {
  * User is identified by Firebase UID when auth is enabled, otherwise by IP.
  * Credits reset at midnight Pacific time (UTC-8/UTC-7).
  * @param {import('express').Request} request
- * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, policy: object, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }>}
+ * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, policy: object, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" | "firestore" }>}
  */
 async function aiDailyCreditsFor(request) {
-    await loadAiCreditFileStore();
     await loadBillingStore();
     const day = dailyCreditDateKey();
     const plan = aiPlanForRequest(request);
     const key = aiCreditBucketKey(request, day);
-    return aiDailyCreditsSnapshot(day, plan, key);
+    const userId = aiCreditUserKey(request);
+    const { used } = await aiCreditRepository.get({ key, userId, day, plan });
+    return aiDailyCreditsSnapshot(day, plan, used);
 }
 
-function aiDailyCreditsSnapshot(day, plan, key) {
-    const used = aiDailyCreditBuckets.get(key) || 0;
+function aiDailyCreditsSnapshot(day, plan, used = 0) {
     const limit = aiDailyCreditLimitForPlan(plan);
+    const normalizedUsed = Math.max(0, Math.floor(Number(used) || 0));
     return {
         day,
         plan,
@@ -623,8 +576,8 @@ function aiDailyCreditsSnapshot(day, plan, key) {
             minimumCharge: aiCreditUsagePolicy.minimumCharge
         },
         limit,
-        used,
-        remaining: Math.max(0, limit - used),
+        used: normalizedUsed,
+        remaining: Math.max(0, limit - normalizedUsed),
         resetAt: nextDailyCreditResetAt(),
         store: aiCreditStoreType()
     };
@@ -639,15 +592,24 @@ function aiDailyCreditsSnapshot(day, plan, key) {
  * @returns {Promise<{ reserved: boolean, cost: number, credits: object, reservation: object | null }>}
  */
 async function reserveAiDailyCredit(request, requestedCost = 1) {
-    await loadAiCreditFileStore();
     await loadBillingStore();
     const day = dailyCreditDateKey();
     const plan = aiPlanForRequest(request);
+    const userId = aiCreditUserKey(request);
     const key = aiCreditBucketKey(request, day);
-    const credits = aiDailyCreditsSnapshot(day, plan, key);
+    const limit = aiDailyCreditLimitForPlan(plan);
     const estimatedCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
+    const reservation = await aiCreditRepository.reserve({
+        key,
+        userId,
+        day,
+        plan,
+        limit,
+        amount: estimatedCost
+    });
+    const credits = aiDailyCreditsSnapshot(day, plan, reservation.used);
 
-    if (credits.remaining <= 0) {
+    if (!reservation.reserved) {
         return {
             reserved: false,
             cost: 0,
@@ -657,58 +619,48 @@ async function reserveAiDailyCredit(request, requestedCost = 1) {
         };
     }
 
-    const cost = Math.min(estimatedCost, credits.remaining);
-    aiDailyCreditBuckets.set(key, credits.used + cost);
-    await persistAiCreditFileStore();
     return {
         reserved: true,
-        cost,
+        cost: reservation.cost,
         estimatedCost,
-        credits: aiDailyCreditsSnapshot(day, plan, key),
-        reservation: { day, plan, key, cost }
+        credits,
+        reservation: {
+            day,
+            plan,
+            key,
+            id: reservation.reservationId,
+            cost: reservation.cost
+        }
     };
 }
 
 async function refundAiDailyCredit(reservation) {
-    if (!reservation?.key) {
+    if (!reservation?.key || !reservation?.id) {
         return null;
     }
 
-    const used = aiDailyCreditBuckets.get(reservation.key) || 0;
-    const cost = Math.max(1, Math.floor(Number(reservation.cost) || 1));
-    if (used <= cost) {
-        aiDailyCreditBuckets.delete(reservation.key);
-    } else {
-        aiDailyCreditBuckets.set(reservation.key, used - cost);
-    }
-
-    await persistAiCreditFileStore();
-    return aiDailyCreditsSnapshot(reservation.day, reservation.plan, reservation.key);
+    const refunded = await aiCreditRepository.refund({
+        key: reservation.key,
+        reservationId: reservation.id
+    });
+    return aiDailyCreditsSnapshot(reservation.day, reservation.plan, refunded.used);
 }
 
 async function settleAiDailyCredit(reservation, requestedCost) {
-    if (!reservation?.key) return null;
+    if (!reservation?.key || !reservation?.id) return null;
 
-    const reservedCost = Math.max(1, Math.floor(Number(reservation.cost) || 1));
     const measuredCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
-    const currentUsed = aiDailyCreditBuckets.get(reservation.key) || 0;
-    const baseUsed = Math.max(0, currentUsed - reservedCost);
     const limit = aiDailyCreditLimitForPlan(reservation.plan);
-    const availableForCharge = Math.max(0, limit - baseUsed);
-    const charged = Math.min(measuredCost, availableForCharge);
-    const settledUsed = baseUsed + charged;
-
-    if (settledUsed > 0) {
-        aiDailyCreditBuckets.set(reservation.key, settledUsed);
-    } else {
-        aiDailyCreditBuckets.delete(reservation.key);
-    }
-
-    await persistAiCreditFileStore();
+    const settlement = await aiCreditRepository.settle({
+        key: reservation.key,
+        reservationId: reservation.id,
+        amount: measuredCost,
+        limit
+    });
     return {
-        charged,
-        measuredCost,
-        credits: aiDailyCreditsSnapshot(reservation.day, reservation.plan, reservation.key)
+        charged: settlement.charged,
+        measuredCost: settlement.measuredCost,
+        credits: aiDailyCreditsSnapshot(reservation.day, reservation.plan, settlement.used)
     };
 }
 
@@ -746,18 +698,9 @@ setInterval(() => {
         }
     });
 
-    const currentDay = dailyCreditDateKey();
-    let prunedCredits = false;
-    aiDailyCreditBuckets.forEach((_used, key) => {
-        if (!key.endsWith(`:${currentDay}`)) {
-            aiDailyCreditBuckets.delete(key);
-            prunedCredits = true;
-        }
+    aiCreditRepository.prune(dailyCreditDateKey()).catch((error) => {
+        console.warn("EducarIA AI credit store could not be pruned:", error instanceof Error ? error.message : error);
     });
-
-    if (prunedCredits) {
-        persistAiCreditFileStore();
-    }
 }, Math.max(60_000, aiRateLimitWindowMs)).unref?.();
 
 const quizSchema = {
@@ -1987,18 +1930,11 @@ app.delete("/api/account", aiRateLimit, requireAiAuth, async (request, response)
         return response.status(401).json({ error: "Login necessário para excluir a conta." });
     }
 
-    await loadAiCreditFileStore();
     await loadBillingStore();
     billingRecords.delete(uid);
     aiProUidAllowList.delete(uid);
 
-    for (const key of [...aiDailyCreditBuckets.keys()]) {
-        if (key.startsWith(`${uid}:`)) {
-            aiDailyCreditBuckets.delete(key);
-        }
-    }
-
-    await Promise.all([persistBillingStore(), persistAiCreditFileStore()]);
+    await Promise.all([persistBillingStore(), aiCreditRepository.deleteUser(uid)]);
     return response.json({ ok: true });
 });
 

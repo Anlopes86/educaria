@@ -59,8 +59,12 @@ AI_CREDIT_MINIMUM_CHARGE=1
 AI_CREDIT_PROMPT_OVERHEAD_TOKENS=600
 AI_CREDIT_ESTIMATED_OUTPUT_TOKENS=1200
 AI_CREDIT_IMAGE_OUTPUT_CREDITS=100
-AI_CREDIT_STORE=memory
+AI_CREDIT_STORE=firestore
 AI_CREDIT_STORE_PATH=.data/ai-credits.json
+AI_CREDIT_FIRESTORE_DATABASE=(default)
+AI_CREDIT_FIRESTORE_COLLECTION=aiCreditUsage
+AI_CREDIT_RESERVATION_TTL_MS=3600000
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 AI_PRO_UIDS=uid1,uid2
 AI_MAX_UPLOAD_MB=5
 AI_JSON_LIMIT=2mb
@@ -91,7 +95,29 @@ O plano pode ser resolvido por:
 
 Cada chamada válida para `POST /api/ai/generate` faz uma reserva estimada com base no tamanho do conteúdo. Ao terminar, o backend substitui a reserva pelo custo real retornado pelo modelo. Se a geração falhar, a reserva é devolvida integralmente. Essa reserva evita que várias requisições simultâneas usem o mesmo saldo.
 
-Por padrao, `AI_CREDIT_STORE=memory` mantem o contador no processo do `ai-service`.
+O saldo é sempre associado ao `uid` validado no token do Firebase. Assim, cada professor tem seu próprio consumo mesmo que todos usem a mesma chave do Gemini. O mesmo usuário também mantém o mesmo saldo ao trocar de computador ou celular.
+
+A chave do Gemini e a cota contratada no Google continuam sendo compartilhadas pelo serviço inteiro. O saldo individual da EducarIA controla quanto cada usuário pode consumir, mas não cria uma cota separada dentro do Google para cada professor.
+
+Em produção, use `AI_CREDIT_STORE=firestore`. O serviço grava um documento diário por usuário e faz reservas e acertos em operações atômicas. Isso impede que duas gerações simultâneas do mesmo professor gastem o mesmo saldo. Também permite executar mais de uma instância do backend sem perder a separação dos usuários.
+
+No Render, adicione como variável secreta uma das opções abaixo:
+
+```env
+FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
+```
+
+ou o mesmo JSON codificado em Base64:
+
+```env
+FIREBASE_SERVICE_ACCOUNT_JSON_BASE64=...
+```
+
+Essa credencial deve pertencer ao mesmo projeto definido em `FIREBASE_PROJECT_ID`, com permissão de leitura e escrita no Firestore. Nunca coloque o JSON da conta de serviço no frontend, no GitHub ou em um arquivo público. Em ambientes do Google Cloud com credenciais padrão da aplicação, as duas variáveis podem ficar vazias.
+
+Os documentos recebem o campo `expiresAt`. É recomendável habilitar uma política de TTL para esse campo no Firestore, mantendo o banco limpo automaticamente. A exclusão de conta também remove os registros de crédito daquele UID.
+
+Para desenvolvimento local, `AI_CREDIT_STORE=memory` mantém o contador apenas no processo do `ai-service`.
 
 Para persistir o consumo entre reinicios em uma instalacao simples, use:
 
@@ -100,7 +126,7 @@ AI_CREDIT_STORE=file
 AI_CREDIT_STORE_PATH=.data/ai-credits.json
 ```
 
-O modo `file` grava um JSON local e remove dias antigos automaticamente. Ele resolve o problema de reinicio do servico e a reserva de credito evita corrida dentro de uma unica instancia Node. Ainda nao e o armazenamento ideal para varias instancias rodando ao mesmo tempo. Para controle financeiro mais rigido em producao horizontal, mova esse contador para Redis, Firestore via Admin SDK ou outro banco de servidor com incremento atomico.
+O modo `file` grava um JSON local e remove dias antigos automaticamente. Ele resolve reinícios em uma instalação simples, mas não é indicado para o Render nem para várias instâncias ao mesmo tempo.
 
 No frontend, `assets/js/ai-credits.js` consulta `GET /api/ai/credits`, mostra o saldo atualizado em todos os elementos com `data-ai-credits` e expõe `ensureEducariaAiCreditsAvailable()`. O custo exato aparece somente depois da geração, pois vem do consumo medido pelo provedor.
 
