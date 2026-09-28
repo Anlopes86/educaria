@@ -257,8 +257,19 @@ function setSlideDensityClass(slideRoot, densityClass) {
 }
 
 function isSlideOverflowing(slideRoot, copyRoot) {
+    const slideRect = slideRoot.getBoundingClientRect();
+    const copyRect = copyRoot.getBoundingClientRect();
+    const visibleChildren = [...copyRoot.children].filter((element) => {
+        const style = getComputedStyle(element);
+        return !element.hidden && style.display !== "none" && style.visibility !== "hidden";
+    });
+    const contentBottom = visibleChildren.reduce((bottom, element) => (
+        Math.max(bottom, element.getBoundingClientRect().bottom)
+    ), copyRect.top);
+
     return slideRoot.scrollHeight > slideRoot.clientHeight + 4
-        || copyRoot.scrollHeight > copyRoot.clientHeight + 4;
+        || copyRoot.scrollHeight > copyRoot.clientHeight + 4
+        || contentBottom > Math.min(copyRect.bottom, slideRect.bottom) + 3;
 }
 
 function applySlideDensity(slideRoot, copyRoot, slide, viewport = {}) {

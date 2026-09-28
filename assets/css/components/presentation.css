@@ -112,7 +112,7 @@ body.presentation-topbar-collapsed .presentation-shell {
     opacity: 0;
     pointer-events: none;
     transform: translate(-50%, -160%);
-    transition: opacity 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+    transition: box-shadow 180ms ease;
 }
 
 .presentation-topbar-restore span {
@@ -398,6 +398,12 @@ body.presentation-runtime-page .quiz-application-stage {
         width: min(100%, var(--presentation-stage-width), calc(var(--presentation-stage-height) * 1.7778));
         height: auto;
         aspect-ratio: 16 / 9;
+    }
+
+    .presentation-page.presentation-page--compact .presentation-slide {
+        width: min(100%, var(--presentation-stage-width));
+        height: var(--presentation-stage-height);
+        aspect-ratio: auto;
     }
 }
 

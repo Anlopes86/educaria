@@ -1014,6 +1014,12 @@
     min-height: 0;
 }
 
+.wordsearch-grid--stage {
+    height: 100%;
+    display: grid;
+    place-items: center;
+}
+
 .wordsearch-grid-inner {
     display: grid;
     grid-template-columns: repeat(var(--wordsearch-cols), minmax(0, 1fr));

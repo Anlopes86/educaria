@@ -90,6 +90,7 @@ function renderWordsearchApplication() {
     let pendingStartKey = "";
     let pendingSelectionCells = new Set();
     let feedbackTimer = 0;
+    let boardResizeFrame = 0;
     const entryColors = new Map(
         puzzle.placedEntries.map((entry, index) => [
             entry.id,
@@ -182,12 +183,37 @@ function renderWordsearchApplication() {
         });
     }
 
+    function fitBoardToAvailableSpace() {
+        if (!boardRoot) return;
+        const shell = boardRoot.closest(".wordsearch-stage-board-shell");
+        const inner = boardRoot.querySelector(".wordsearch-grid-inner");
+        if (!shell || !inner) return;
+
+        window.cancelAnimationFrame(boardResizeFrame);
+        boardResizeFrame = window.requestAnimationFrame(() => {
+            const shellStyle = getComputedStyle(shell);
+            const innerStyle = getComputedStyle(inner);
+            const horizontalPadding = Number.parseFloat(shellStyle.paddingLeft || "0") + Number.parseFloat(shellStyle.paddingRight || "0");
+            const verticalPadding = Number.parseFloat(shellStyle.paddingTop || "0") + Number.parseFloat(shellStyle.paddingBottom || "0");
+            const gap = Number.parseFloat(innerStyle.columnGap || innerStyle.gap || "0") || 0;
+            const rows = Math.max(1, Number(puzzle.rows || 1));
+            const cols = Math.max(1, Number(puzzle.cols || 1));
+            const availableWidth = Math.max(1, shell.clientWidth - horizontalPadding);
+            const availableHeight = Math.max(1, shell.clientHeight - verticalPadding);
+            const cellSizeByHeight = Math.max(1, (availableHeight - gap * (rows - 1)) / rows);
+            const widthByHeight = cellSizeByHeight * cols + gap * (cols - 1);
+            const fittedWidth = Math.max(1, Math.min(availableWidth, widthByHeight));
+            inner.style.width = `${Math.floor(fittedWidth)}px`;
+        });
+    }
+
     function paintBoard() {
         if (!boardRoot) return;
         const shouldHighlight = revealSolution || foundEntryIds.length > 0 || activeEntryIds.length > 0 || pendingSelectionCells.size > 0;
         boardRoot.innerHTML = api.buildBoardMarkup(puzzle, {
             highlightMap: shouldHighlight ? highlightMapForActiveEntries() : new Map()
         });
+        fitBoardToAvailableSpace();
     }
 
     function activateAllPlacedEntries() {
@@ -339,6 +365,15 @@ function renderWordsearchApplication() {
         paintBoard();
         resetNoteMessage();
     });
+
+    if (typeof ResizeObserver === "function" && boardRoot) {
+        const boardShell = boardRoot.closest(".wordsearch-stage-board-shell");
+        if (boardShell) {
+            new ResizeObserver(fitBoardToAvailableSpace).observe(boardShell);
+        }
+    } else {
+        window.addEventListener("resize", fitBoardToAvailableSpace, { passive: true });
+    }
 }
 
 document.addEventListener("DOMContentLoaded", renderWordsearchApplication);

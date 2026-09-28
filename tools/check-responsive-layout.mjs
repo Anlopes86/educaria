@@ -571,8 +571,29 @@ async function auditPage(pageConfig) {
         const embeddedMatchItems = [...(lessonPlayerDocument?.querySelectorAll('.match-stage-item') || [])];
         const slideLayoutFields = [...document.querySelectorAll('[data-slide-card] [data-field="slide-layout"]')];
         const presentedSlide = document.querySelector('[data-presentation-slide]');
+        const presentedSlideRect = presentedSlide?.getBoundingClientRect();
+        const presentedCopy = document.querySelector('[data-presentation-copy]');
+        const presentedCopyRect = presentedCopy?.getBoundingClientRect();
+        const presentedControls = document.querySelector('[data-presentation-controls]');
+        const presentedControlsRect = presentedControls?.getBoundingClientRect();
+        const presentedProgress = document.querySelector('.presentation-slide-progress');
+        const presentedProgressRect = presentedProgress?.getBoundingClientRect();
+        const presentedCopyChildren = presentedCopy ? [...presentedCopy.children].filter((element) => {
+            const style = getComputedStyle(element);
+            return !element.hidden && style.display !== 'none' && style.visibility !== 'hidden';
+        }) : [];
+        const presentedContentBottom = presentedCopyChildren.reduce((bottom, element) => (
+            Math.max(bottom, element.getBoundingClientRect().bottom)
+        ), presentedCopyRect?.top || 0);
         const binaryQuizButtons = [...document.querySelectorAll('.quiz-application-options .option-btn.is-binary')];
         const matchStageItems = [...document.querySelectorAll('.match-stage-item')];
+        const wordsearchShell = document.querySelector('.wordsearch-stage-board-shell');
+        const wordsearchShellRect = wordsearchShell?.getBoundingClientRect();
+        const wordsearchGrid = wordsearchShell?.querySelector('.wordsearch-grid-inner');
+        const wordsearchGridRect = wordsearchGrid?.getBoundingClientRect();
+        const presentationTopbar = document.querySelector('.presentation-topbar');
+        const presentationTopbarRect = presentationTopbar?.getBoundingClientRect();
+        const presentationTopbarStyle = presentationTopbar ? getComputedStyle(presentationTopbar) : null;
         const projectorModal = document.querySelector('[data-projector-preview-modal]');
         const projectorFrame = document.querySelector('[data-projector-preview-frame]');
         const aiReadyModal = document.querySelector('[data-ai-ready-modal]');
@@ -608,6 +629,16 @@ async function auditPage(pageConfig) {
             } : null,
             hasPresentation: Boolean(document.querySelector('.presentation-shell')),
             hasPrintAction: Boolean(document.querySelector('[data-presentation-print]')),
+            presentationTopbarState: presentationTopbar ? {
+                bodyClasses: document.body.className,
+                scrollY: Math.round(window.scrollY),
+                top: Math.round(presentationTopbarRect?.top || 0),
+                bottom: Math.round(presentationTopbarRect?.bottom || 0),
+                height: Math.round(presentationTopbarRect?.height || 0),
+                opacity: presentationTopbarStyle?.opacity || '',
+                transform: presentationTopbarStyle?.transform || '',
+                visible: Boolean(presentationTopbarRect && presentationTopbarRect.bottom > 0 && presentationTopbarRect.top < window.innerHeight)
+            } : null,
             slideBuilderState: slideLayoutFields.length ? {
                 count: slideLayoutFields.length,
                 values: slideLayoutFields.map((field) => field.value),
@@ -621,7 +652,35 @@ async function auditPage(pageConfig) {
             } : null,
             slidePresentationState: presentedSlide ? {
                 split: presentedSlide.classList.contains('presentation-slide--split'),
-                feature: presentedSlide.classList.contains('presentation-slide--feature')
+                feature: presentedSlide.classList.contains('presentation-slide--feature'),
+                density: [...presentedSlide.classList].find((name) => name.startsWith('presentation-slide--dense') || name.startsWith('presentation-slide--compact') || name.startsWith('presentation-slide--comfort')) || '',
+                copyOverflow: Boolean(
+                    presentedCopy
+                    && presentedSlideRect
+                    && presentedCopyRect
+                    && (
+                        presentedCopy.scrollHeight > presentedCopy.clientHeight + 4
+                        || presentedContentBottom > Math.min(presentedCopyRect.bottom, presentedSlideRect.bottom) + 3
+                    )
+                ),
+                controlsClearance: presentedControlsRect && presentedSlideRect
+                    ? Math.round(presentedControlsRect.top - presentedSlideRect.bottom)
+                    : null,
+                progressClearance: presentedProgressRect
+                    ? Math.round(presentedProgressRect.top - presentedContentBottom)
+                    : null
+            } : null,
+            wordsearchStageState: wordsearchShell ? {
+                shellHeight: Math.round(wordsearchShellRect?.height || 0),
+                gridHeight: Math.round(wordsearchGridRect?.height || 0),
+                boardContained: Boolean(
+                    wordsearchGridRect
+                    && wordsearchShellRect
+                    && wordsearchGridRect.left >= wordsearchShellRect.left - 1
+                    && wordsearchGridRect.right <= wordsearchShellRect.right + 1
+                    && wordsearchGridRect.top >= wordsearchShellRect.top - 1
+                    && wordsearchGridRect.bottom <= wordsearchShellRect.bottom + 1
+                )
             } : null,
             binaryQuizState: binaryQuizButtons.length ? {
                 buttonCount: binaryQuizButtons.length,
@@ -1033,6 +1092,7 @@ try {
             result.offenders.forEach((offender) => console.log(`  ${JSON.stringify(offender)}`));
         }
         if (result.hasPresentation) {
+            console.log(`  topbar-initial=${JSON.stringify(result.presentationTopbarState)}`);
             console.log(`  print-action=${result.hasPrintAction ? "ok" : "failed"}`);
             if (!result.hasPrintAction) failed = true;
             const restoreWorks = result.topbarRestore?.exists
@@ -1058,9 +1118,17 @@ try {
             if (!slideBuilderUsesSplitOnly) failed = true;
         }
         if (result.slidePresentationState) {
-            const slidePresentationUsesSplit = result.slidePresentationState.split && !result.slidePresentationState.feature;
-            console.log(`  slide-presentation-layout=${slidePresentationUsesSplit ? "ok" : "failed"} state=${JSON.stringify(result.slidePresentationState)}`);
-            if (!slidePresentationUsesSplit) failed = true;
+            const slidePresentationWorks = result.slidePresentationState.split
+                && !result.slidePresentationState.feature
+                && !result.slidePresentationState.copyOverflow
+                && (result.slidePresentationState.controlsClearance === null || result.slidePresentationState.controlsClearance >= 8)
+                && (result.slidePresentationState.progressClearance === null || result.slidePresentationState.progressClearance >= 6);
+            console.log(`  slide-presentation-layout=${slidePresentationWorks ? "ok" : "failed"} state=${JSON.stringify(result.slidePresentationState)}`);
+            if (!slidePresentationWorks) failed = true;
+        }
+        if (result.wordsearchStageState) {
+            console.log(`  wordsearch-board=${result.wordsearchStageState.boardContained ? "ok" : "failed"} state=${JSON.stringify(result.wordsearchStageState)}`);
+            if (!result.wordsearchStageState.boardContained) failed = true;
         }
         if (result.binaryQuizState) {
             const binaryQuizLabelsWork = result.binaryQuizState.buttonCount === 2

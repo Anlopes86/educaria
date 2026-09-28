@@ -335,6 +335,44 @@
     min-height: 100%;
 }
 
+.presentation-page--compact .presentation-slide--dense {
+    gap: 12px;
+    padding: 18px 28px;
+}
+
+.presentation-page--compact .presentation-slide--dense .presentation-slide-copy {
+    gap: 6px;
+}
+
+.presentation-page--compact .presentation-slide--dense h1 {
+    font-size: clamp(2.2rem, 3.1vw, 2.75rem);
+    line-height: 1.02;
+}
+
+.presentation-page--compact .presentation-slide--dense h2 {
+    font-size: clamp(1rem, 1.4vw, 1.2rem);
+    line-height: 1.2;
+}
+
+.presentation-page--compact .presentation-slide--dense .presentation-slide-body,
+.presentation-page--compact .presentation-slide--dense .presentation-slide-body p {
+    gap: 6px;
+    font-size: clamp(1.08rem, 1.4vw, 1.25rem);
+    line-height: 1.38;
+}
+
+.presentation-page--compact .presentation-slide--dense .presentation-slide-body p {
+    color: inherit;
+}
+
+.presentation-page--compact .presentation-slide--dense .presentation-slide-body ul {
+    gap: 5px;
+}
+
+.presentation-page--compact .presentation-slide-progress {
+    bottom: 8px;
+}
+
 .presentation-slide h1,
 .flashcards-stage-card h1,
 .quiz-application-card h2,
@@ -401,6 +439,23 @@ body.presentation-runtime-page .presentation-controls--floating,
     box-shadow: none;
     backdrop-filter: none;
     pointer-events: auto;
+}
+
+body.presentation-page .presentation-frame--teacher .presentation-controls--floating {
+    position: static;
+    inset: auto;
+    align-self: end;
+    justify-self: center;
+    transform: none;
+}
+
+body.presentation-controls-idle.presentation-page .presentation-frame--teacher .presentation-controls--floating {
+    transform: translateY(6px);
+}
+
+body.presentation-controls-idle.presentation-page .presentation-frame--teacher .presentation-controls--floating:hover,
+body.presentation-controls-idle.presentation-page .presentation-frame--teacher .presentation-controls--floating:focus-within {
+    transform: none;
 }
 
 body.presentation-controls-idle .presentation-controls--floating,
