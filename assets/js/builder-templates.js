@@ -269,50 +269,6 @@ function builderTemplateApplySlides(templateId) {
     builderTemplateAnnounce("Modelo aplicado aos slides.");
 }
 
-function builderTemplateApplyFlashcards(templateId) {
-    const stack = document.querySelector("[data-flashcards-stack]");
-    const template = document.querySelector("[data-flashcard]")?.cloneNode(true);
-    if (!stack || !template || !builderTemplateConfirmReplace(stack)) return;
-
-    const payloads = {
-        vocab: [
-            ["Conceito-chave", "Definição curta", "Use um exemplo oral antes de virar o card."],
-            ["Exemplo", "Situação que mostra o conceito", "Peça aos alunos outro exemplo."],
-            ["Contraexemplo", "Situação parecida, mas incorreta", "Ajuda a evitar confusões comuns."],
-            ["Aplicação", "Quando usar esta ideia", "Feche com uma pergunta rápida."]
-        ],
-        fractions: [
-            ["Numerador", "Parte de cima da fração", "Mostra quantas partes foram consideradas."],
-            ["Denominador", "Parte de baixo da fração", "Mostra em quantas partes o inteiro foi dividido."],
-            ["Fração equivalente", "Representa a mesma quantidade", "Ex.: 1/2 e 2/4."],
-            ["Simplificar", "Escrever a fração em forma menor", "Divida numerador e denominador pelo mesmo número."]
-        ],
-        language: [
-            ["Main idea", "Ideia principal", "Use para identificar o foco do texto."],
-            ["Evidence", "Evidência", "Trecho que sustenta uma resposta."],
-            ["Inference", "Inferência", "Conclusão feita com pistas do texto."],
-            ["Context", "Contexto", "Informações ao redor que ajudam a entender."]
-        ]
-    };
-
-    const cards = payloads[templateId] || payloads.vocab;
-    builderTemplateSetBusy(stack, true);
-    stack.innerHTML = "";
-    cards.forEach(([front, back, example], index) => {
-        const card = builderTemplateCloneCard(template, "Card", index);
-        const frontField = card.querySelector('[data-field="front"]');
-        const backField = card.querySelector('[data-field="back"]');
-        const exampleField = card.querySelector('[data-field="example"]');
-        if (frontField) frontField.value = front;
-        if (backField) backField.value = back;
-        if (exampleField) exampleField.value = example;
-        stack.appendChild(card);
-    });
-    builderTemplateDispatch();
-    builderTemplateSetBusy(stack, false);
-    builderTemplateAnnounce("Modelo aplicado aos flashcards.");
-}
-
 function bindBuilderTemplates() {
     document.addEventListener("click", (event) => {
         const trigger = event.target.closest("[data-builder-template]");
@@ -324,7 +280,6 @@ function bindBuilderTemplates() {
 
         if (type === "quiz") builderTemplateApplyQuiz(templateId);
         if (type === "slides") builderTemplateApplySlides(templateId);
-        if (type === "flashcards") builderTemplateApplyFlashcards(templateId);
     });
 }
 
