@@ -19,6 +19,7 @@ function renderLandingState() {
     if (authenticated) {
         updateLandingLink("[data-landing-nav-primary]", "plataforma/index.html", "Abrir painel");
         updateLandingLink("[data-landing-nav-secondary]", "plataforma/biblioteca.html", "Biblioteca");
+        updateLandingLink("[data-landing-hero-primary]", "plataforma/index.html", "Criar nova atividade");
         updateLandingLink("[data-landing-cta-primary]", "plataforma/index.html", "Abrir painel");
         updateLandingLink("[data-landing-cta-secondary]", "plataforma/biblioteca.html", "Ir para biblioteca");
         return;
@@ -26,6 +27,7 @@ function renderLandingState() {
 
     updateLandingLink("[data-landing-nav-primary]", "cadastro.html", "Criar conta");
     updateLandingLink("[data-landing-nav-secondary]", "login.html", "Entrar");
+    updateLandingLink("[data-landing-hero-primary]", "cadastro.html", "Criar minha primeira atividade");
     updateLandingLink("[data-landing-cta-primary]", "cadastro.html", "Criar conta");
     updateLandingLink("[data-landing-cta-secondary]", "login.html", "Entrar");
 }

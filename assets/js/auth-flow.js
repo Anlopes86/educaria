@@ -606,6 +606,22 @@ function bindLoginForm() {
     });
 }
 
+function bindPasswordToggles() {
+    document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const field = document.getElementById(button.dataset.passwordToggle || "");
+            if (!field) return;
+
+            const willShow = field.type === "password";
+            field.type = willShow ? "text" : "password";
+            button.setAttribute("aria-pressed", willShow ? "true" : "false");
+            button.textContent = willShow
+                ? authTranslate("auth.actions.hidePassword", "Ocultar")
+                : authTranslate("auth.actions.showPassword", "Mostrar");
+        });
+    });
+}
+
 function showAuthOutcomeMessage() {
     if (document.body?.dataset.authPage !== "true") return;
     const params = new URLSearchParams(window.location.search);
@@ -770,6 +786,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     enforceAuth();
     bindLoginForm();
     bindPasswordReset();
+    bindPasswordToggles();
     bindRegisterForm();
     bindLogout();
     syncAuthStateWithFirebase();
