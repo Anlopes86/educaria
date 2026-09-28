@@ -788,11 +788,14 @@ function applyMatchColorControl(draftState) {
     inputs.forEach((input, index) => {
         if (mode === "same") {
             input.value = singleColor;
+            input.setAttribute("value", singleColor);
             return;
         }
 
         if (mode === "shuffle") {
-            input.value = matchPaletteColor(index);
+            const shuffledColor = matchPaletteColor(index);
+            input.value = shuffledColor;
+            input.setAttribute("value", shuffledColor);
         }
     });
 

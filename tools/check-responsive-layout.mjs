@@ -189,15 +189,15 @@ async function auditPage(pageConfig) {
         });
         const lessonQuizDraft = JSON.stringify({
             controls: { "quiz-tema": "Fotossíntese e ecossistemas" },
-            stackHtml: `<section data-quiz-question><textarea data-field="prompt">Qual é o papel dos produtores em uma cadeia alimentar?</textarea><select data-field="type"><option selected>Múltipla escolha</option></select><select data-field="correct"><option selected>Alternativa B</option></select><input data-option data-option-key="Alternativa A" value="Consumir toda a matéria orgânica disponível."><input data-option data-option-key="Alternativa B" value="Transformar energia luminosa em energia química."><input data-option data-option-key="Alternativa C" value="Decompor exclusivamente restos de animais."><input data-option data-option-key="Alternativa D" value="Eliminar o oxigênio do ambiente."><textarea data-field="explanation">Produtores, como as plantas, fazem fotossíntese e formam a base das cadeias alimentares.</textarea></section>`
+            stackHtml: `<section data-quiz-question><textarea data-field="prompt">As plantas transformam energia luminosa em energia química durante a fotossíntese.</textarea><select data-field="type"><option selected>Verdadeiro ou falso</option></select><select data-field="correct"><option selected>Alternativa A</option></select><input data-option data-option-key="Alternativa A" value="Verdadeiro"><input data-option data-option-key="Alternativa B" value="Falso"><textarea data-field="explanation">A fotossíntese converte a energia da luz em energia armazenada na matéria orgânica.</textarea></section>`
         });
-        const lessonFlashcardsDraft = JSON.stringify({
-            controls: { "cards-tema": "Conceitos essenciais", "cards-exemplo": "Sim" },
-            stackHtml: `<section data-flashcard><textarea data-field="front">Produtor</textarea><textarea data-field="back">Ser vivo que produz seu próprio alimento.</textarea><textarea data-field="example">As plantas usam luz, água e gás carbônico durante a fotossíntese.</textarea><input data-field="front-color" value="#ffffff"><input data-field="back-color" value="#dbeafe"><input data-field="text-color" value="#0f172a"></section>`
+        const lessonMatchDraft = JSON.stringify({
+            controls: { "ligar-titulo": "Relações ecológicas", "ligar-coluna-a": "Conceito", "ligar-coluna-b": "Definição", "ligar-embaralhar": "Não", "ligar-cores": "same", "ligar-cor-unica": "#7c3aed" },
+            stackHtml: `<section data-match-pair><input data-match-left value="Produtor"><input data-match-right value="Produz o próprio alimento"><input data-match-color type="color" value="#22c55e"></section><section data-match-pair><input data-match-left value="Consumidor"><input data-match-right value="Obtém energia de outros seres"><input data-match-color type="color" value="#0ea5e9"></section>`
         });
         const activityLessons = [
             { id: "lesson-sequence-slides-audit", className: "8º Ano A", scope: "class", title: "Energia nos ecossistemas", summary: "Introdução visual aos fluxos de energia.", type: "Slides", materialType: "slides", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonSlidesDraft },
-            { id: "lesson-sequence-flashcards-audit", className: "8º Ano A", scope: "class", title: "Conceitos essenciais", summary: "Cartões para retomar o vocabulário principal.", type: "Flashcards", materialType: "flashcards", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonFlashcardsDraft },
+            { id: "lesson-sequence-match-audit", className: "8º Ano A", scope: "class", title: "Relações ecológicas", summary: "Ligações entre conceitos e definições.", type: "Ligar pontos", materialType: "match", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonMatchDraft },
             { id: "lesson-sequence-quiz-audit", className: "", scope: "library", title: "Quiz de fechamento", summary: "Perguntas rápidas para conferir a aprendizagem.", type: "Quiz", materialType: "quiz", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), status: "ready", draft: lessonQuizDraft },
             { id: "lesson-sequence-other-class-audit", className: "6º Ano B", scope: "class", title: "Ciclo da água", summary: "Slides usados em outra turma para testar o filtro.", type: "Slides", materialType: "slides", createdAt: new Date(Date.now() - 86400000).toISOString(), updatedAt: new Date(Date.now() - 86400000).toISOString(), status: "ready", draft: lessonSlidesDraft }
         ];
@@ -246,14 +246,12 @@ async function auditPage(pageConfig) {
     if (localPagePath.endsWith("plataforma/quiz-aplicacao.html")) {
         const quizStack = `
             <section data-quiz-question>
-                <textarea data-field="prompt">Qual alternativa explica melhor como a fotossíntese contribui para o equilíbrio dos ecossistemas?</textarea>
-                <select data-field="type"><option selected>Múltipla escolha</option></select>
-                <select data-field="correct"><option selected>Alternativa B</option></select>
-                <input data-option data-option-key="Alternativa A" value="Ela transforma diretamente o oxigênio da atmosfera em nutrientes para todos os seres vivos.">
-                <input data-option data-option-key="Alternativa B" value="Ela produz matéria orgânica e libera oxigênio, sustentando cadeias alimentares e a respiração.">
-                <input data-option data-option-key="Alternativa C" value="Ela impede que a energia solar alcance o solo e reduz a temperatura de todo o planeta.">
-                <input data-option data-option-key="Alternativa D" value="Ela elimina o gás carbônico por completo e interrompe o ciclo natural do carbono.">
-                <textarea data-field="explanation">As plantas convertem energia luminosa em energia química e formam a base de muitas cadeias alimentares.</textarea>
+                <textarea data-field="prompt">A fotossíntese transforma energia luminosa em energia química.</textarea>
+                <select data-field="type"><option selected>Verdadeiro ou falso</option></select>
+                <select data-field="correct"><option selected>Alternativa A</option></select>
+                <input data-option data-option-key="Alternativa A" value="Verdadeiro">
+                <input data-option data-option-key="Alternativa B" value="Falso">
+                <textarea data-field="explanation">As plantas armazenam parte da energia luminosa na matéria orgânica produzida.</textarea>
             </section>
         `;
         const quizDraft = JSON.stringify({ controls: { "quiz-tema": "Fotossíntese e ecossistemas" }, stackHtml: quizStack });
@@ -275,6 +273,15 @@ async function auditPage(pageConfig) {
         const flashcardsDraft = JSON.stringify({ controls: { "cards-tema": "Fotossíntese", "cards-exemplo": "Sim" }, stackHtml: flashcardsStack });
         await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
             source: `localStorage.setItem('educaria:builder:flashcards:guest', ${JSON.stringify(flashcardsDraft)}); localStorage.setItem('educaria:builder:flashcards:layout-audit', ${JSON.stringify(flashcardsDraft)});`
+        });
+    }
+    if (localPagePath.endsWith("plataforma/ligar-pontos-apresentacao.html")) {
+        const matchDraft = JSON.stringify({
+            controls: { "ligar-titulo": "Relações ecológicas", "ligar-coluna-a": "Conceito", "ligar-coluna-b": "Definição", "ligar-embaralhar": "Não", "ligar-cores": "same", "ligar-cor-unica": "#7c3aed" },
+            stackHtml: `<section data-match-pair><input data-match-left value="Produtor"><input data-match-right value="Produz o próprio alimento"><input data-match-color type="color" value="#22c55e"></section><section data-match-pair><input data-match-left value="Consumidor"><input data-match-right value="Obtém energia de outros seres"><input data-match-color type="color" value="#0ea5e9"></section>`
+        });
+        await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
+            source: `localStorage.setItem('educaria:builder:match:guest', ${JSON.stringify(matchDraft)}); localStorage.setItem('educaria:builder:match:layout-audit', ${JSON.stringify(matchDraft)});`
         });
     }
     if (localPagePath.endsWith("plataforma/mapa-mental-apresentacao.html")) {
@@ -414,6 +421,7 @@ async function auditPage(pageConfig) {
     }
 
     let lessonFilterJourney = null;
+    let lessonMatchColorJourney = null;
     if (localPagePath.endsWith("plataforma/criar-aula.html")) {
         const filterEvaluation = await cdp.send("Runtime.evaluate", {
             expression: `(() => {
@@ -449,6 +457,29 @@ async function auditPage(pageConfig) {
             returnByValue: true
         });
         lessonFilterJourney = filterEvaluation.result.value;
+
+        const matchColorEvaluation = await cdp.send("Runtime.evaluate", {
+            expression: `(() => {
+                const blockId = 'lesson-sequence-block-2';
+                if (typeof updateBlockDraftControlField !== 'function' || typeof lessonSequenceState !== 'object') {
+                    return { exists: false };
+                }
+                updateBlockDraftControlField(blockId, 'ligar-cores', 'same');
+                updateBlockDraftControlField(blockId, 'ligar-cor-unica', '#d946ef');
+                const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
+                const draft = block?.lessonDraft ? JSON.parse(block.lessonDraft) : null;
+                const doc = new DOMParser().parseFromString('<div>' + (draft?.stackHtml || '') + '</div>', 'text/html');
+                return {
+                    exists: Boolean(block && draft),
+                    mode: draft?.controls?.['ligar-cores'] || '',
+                    singleColor: draft?.controls?.['ligar-cor-unica'] || '',
+                    values: [...doc.querySelectorAll('[data-match-color]')].map((field) => field.value.toLowerCase()),
+                    attributes: [...doc.querySelectorAll('[data-match-color]')].map((field) => (field.getAttribute('value') || '').toLowerCase())
+                };
+            })()`,
+            returnByValue: true
+        });
+        lessonMatchColorJourney = matchColorEvaluation.result.value;
     }
 
     const expression = `(() => {
@@ -501,8 +532,12 @@ async function auditPage(pageConfig) {
         const embeddedCopy = lessonPlayerDocument?.querySelector('.presentation-slide-copy');
         const embeddedMedia = lessonPlayerDocument?.querySelector('.presentation-media');
         const embeddedMediaRect = embeddedMedia?.getBoundingClientRect();
+        const embeddedBinaryQuizButtons = [...(lessonPlayerDocument?.querySelectorAll('.quiz-application-options .option-btn.is-binary') || [])];
+        const embeddedMatchItems = [...(lessonPlayerDocument?.querySelectorAll('.match-stage-item') || [])];
         const slideLayoutFields = [...document.querySelectorAll('[data-slide-card] [data-field="slide-layout"]')];
         const presentedSlide = document.querySelector('[data-presentation-slide]');
+        const binaryQuizButtons = [...document.querySelectorAll('.quiz-application-options .option-btn.is-binary')];
+        const matchStageItems = [...document.querySelectorAll('.match-stage-item')];
         return {
             viewportWidth,
             scrollWidth,
@@ -526,6 +561,16 @@ async function auditPage(pageConfig) {
             slidePresentationState: presentedSlide ? {
                 split: presentedSlide.classList.contains('presentation-slide--split'),
                 feature: presentedSlide.classList.contains('presentation-slide--feature')
+            } : null,
+            binaryQuizState: binaryQuizButtons.length ? {
+                buttonCount: binaryQuizButtons.length,
+                buttonTexts: binaryQuizButtons.map((button) => button.textContent.trim()),
+                optionTextCounts: binaryQuizButtons.map((button) => button.querySelectorAll('.option-text').length),
+                optionLetterCounts: binaryQuizButtons.map((button) => button.querySelectorAll('.option-letter').length)
+            } : null,
+            matchColorState: matchStageItems.length ? {
+                itemCount: matchStageItems.length,
+                colors: [...new Set(matchStageItems.map((item) => getComputedStyle(item).getPropertyValue('--match-accent').trim().toLowerCase()))]
             } : null,
             previewScroll: previewPane ? {
                 overflowY: previewStyle.overflowY,
@@ -616,7 +661,15 @@ async function auditPage(pageConfig) {
                 copyBox: embeddedCopy ? {
                     clientHeight: embeddedCopy.clientHeight,
                     scrollHeight: embeddedCopy.scrollHeight
-                } : null
+                } : null,
+                binaryQuiz: embeddedBinaryQuizButtons.length ? {
+                    buttonTexts: embeddedBinaryQuizButtons.map((button) => button.textContent.trim()),
+                    optionTextCounts: embeddedBinaryQuizButtons.map((button) => button.querySelectorAll('.option-text').length),
+                    optionLetterCounts: embeddedBinaryQuizButtons.map((button) => button.querySelectorAll('.option-letter').length)
+                } : null,
+                matchColors: embeddedMatchItems.length
+                    ? [...new Set(embeddedMatchItems.map((item) => getComputedStyle(item).getPropertyValue('--match-accent').trim().toLowerCase()))]
+                    : null
             } : null,
             offlineState: document.documentElement.dataset.educariaOffline || ''
         };
@@ -869,7 +922,7 @@ async function auditPage(pageConfig) {
         topbarRestore = restoreEvaluation.result.value;
     }
     cdp.close();
-    return { ...evaluation.result.value, mobileMenu, topbarRestore, quizJourney, libraryRename, lessonFilterJourney, screenshotPath, diagnostics: cdp.diagnostics };
+    return { ...evaluation.result.value, mobileMenu, topbarRestore, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, screenshotPath, diagnostics: cdp.diagnostics };
 }
 
 let failed = false;
@@ -913,8 +966,38 @@ try {
             console.log(`  slide-presentation-layout=${slidePresentationUsesSplit ? "ok" : "failed"} state=${JSON.stringify(result.slidePresentationState)}`);
             if (!slidePresentationUsesSplit) failed = true;
         }
+        if (result.binaryQuizState) {
+            const binaryQuizLabelsWork = result.binaryQuizState.buttonCount === 2
+                && result.binaryQuizState.buttonTexts.join('|') === 'Verdadeiro|Falso'
+                && result.binaryQuizState.optionTextCounts.every((count) => count === 1)
+                && result.binaryQuizState.optionLetterCounts.every((count) => count === 0);
+            console.log(`  binary-quiz-labels=${binaryQuizLabelsWork ? "ok" : "failed"} state=${JSON.stringify(result.binaryQuizState)}`);
+            if (!binaryQuizLabelsWork) failed = true;
+        }
+        if (result.matchColorState) {
+            const matchSingleColorWorks = result.matchColorState.itemCount === 4
+                && result.matchColorState.colors.length === 1
+                && result.matchColorState.colors[0] === '#7c3aed';
+            console.log(`  match-single-color=${matchSingleColorWorks ? "ok" : "failed"} state=${JSON.stringify(result.matchColorState)}`);
+            if (!matchSingleColorWorks) failed = true;
+        }
         if (result.lessonSequenceState) console.log(`  lesson-sequence=${JSON.stringify(result.lessonSequenceState)}`);
-        if (result.lessonPlayerState) console.log(`  lesson-player=${JSON.stringify(result.lessonPlayerState)}`);
+        if (result.lessonPlayerState) {
+            console.log(`  lesson-player=${JSON.stringify(result.lessonPlayerState)}`);
+            if (result.lessonPlayerState.embeddedMaterial === 'quiz') {
+                const embeddedBinaryQuizWorks = result.lessonPlayerState.binaryQuiz?.buttonTexts?.join('|') === 'Verdadeiro|Falso'
+                    && result.lessonPlayerState.binaryQuiz.optionTextCounts.every((count) => count === 1)
+                    && result.lessonPlayerState.binaryQuiz.optionLetterCounts.every((count) => count === 0);
+                console.log(`  embedded-binary-quiz-labels=${embeddedBinaryQuizWorks ? "ok" : "failed"}`);
+                if (!embeddedBinaryQuizWorks) failed = true;
+            }
+            if (result.lessonPlayerState.embeddedMaterial === 'match') {
+                const embeddedMatchSingleColorWorks = result.lessonPlayerState.matchColors?.length === 1
+                    && result.lessonPlayerState.matchColors[0] === '#7c3aed';
+                console.log(`  embedded-match-single-color=${embeddedMatchSingleColorWorks ? "ok" : "failed"}`);
+                if (!embeddedMatchSingleColorWorks) failed = true;
+            }
+        }
         if (result.lessonFilterJourney) {
             const lessonFiltersWork = result.lessonFilterJourney.exists
                 && result.lessonFilterJourney.searchTitles.length === 1
@@ -925,6 +1008,16 @@ try {
                 && result.lessonFilterJourney.resetCount === 4;
             console.log(`  lesson-filters=${lessonFiltersWork ? "ok" : "failed"} state=${JSON.stringify(result.lessonFilterJourney)}`);
             if (!lessonFiltersWork) failed = true;
+        }
+        if (result.lessonMatchColorJourney) {
+            const lessonMatchColorWorks = result.lessonMatchColorJourney.exists
+                && result.lessonMatchColorJourney.mode === 'same'
+                && result.lessonMatchColorJourney.singleColor === '#d946ef'
+                && result.lessonMatchColorJourney.values.length === 2
+                && result.lessonMatchColorJourney.values.every((color) => color === '#d946ef')
+                && result.lessonMatchColorJourney.attributes.every((color) => color === '#d946ef');
+            console.log(`  lesson-match-color-edit=${lessonMatchColorWorks ? "ok" : "failed"} state=${JSON.stringify(result.lessonMatchColorJourney)}`);
+            if (!lessonMatchColorWorks) failed = true;
         }
         if (result.previewScroll && !auditMobile) {
             const previewScrollWorks = result.previewScroll.overflowY === "auto"

@@ -14,7 +14,7 @@
 @import url('./components/offline-status.css');
 @import url('./components/navigation.css');
 @import url('./components/presentation.css');
-@import url('./components/presentation-stages.css');
+@import url('./components/presentation-stages.css?v=20260927-7');
 @import url('./components/presentation-activities.css');
 @import url('./components/debate.css');
 @import url('./components/lesson-sequence.css?v=20260927-5');

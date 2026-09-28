@@ -86,12 +86,18 @@ function renderMatchApplication() {
     const draft = readMatchDraft() || {};
     const controls = { ...(draft.controls || {}) };
     const pairs = parseMatchPairs(draft.stackHtml || "");
+    const colorMode = controls["ligar-cores"] || "manual";
+    const singleColor = controls["ligar-cor-unica"] || "#22c55e";
     const safePairs = (pairs.length ? pairs : [
         { left: "Brasil", right: "Brasília", color: "#22c55e" },
         { left: "Franca", right: "Paris", color: "#0ea5e9" },
         { left: "Japão", right: "Tóquio", color: "#f59e0b" },
         { left: "Argentina", right: "Buenos Aires", color: "#ec4899" }
-    ]).map((pair, index) => ({ ...pair, index }));
+    ]).map((pair, index) => ({
+        ...pair,
+        index,
+        color: colorMode === "same" ? singleColor : pair.color
+    }));
 
     controls["ligar-titulo"] = controls["ligar-titulo"] || "Ligar pontos";
     controls["ligar-coluna-a"] = controls["ligar-coluna-a"] || "Coluna A";

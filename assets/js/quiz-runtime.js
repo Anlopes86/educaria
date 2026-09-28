@@ -211,9 +211,10 @@ function renderQuizApplication(questions, controls = {}) {
                 <article class="route-card quiz-open-card" aria-hidden="true"></article>
             `;
         } else {
+            const binaryQuestion = isBinaryQuestion(question);
             optionsRoot.innerHTML = question.options.map((option) => `
-                <button type="button" class="option-btn ${isBinaryQuestion(question) ? "is-binary" : ""}" data-runtime-option="${escapeHtml(option.key)}">
-                    <span class="option-letter">${isBinaryQuestion(question) ? escapeHtml(option.value) : escapeHtml(option.key.replace("Alternativa ", ""))}</span>
+                <button type="button" class="option-btn ${binaryQuestion ? "is-binary" : ""}" data-runtime-option="${escapeHtml(option.key)}">
+                    ${binaryQuestion ? "" : `<span class="option-letter">${escapeHtml(option.key.replace("Alternativa ", ""))}</span>`}
                     <span class="option-text" data-inline-editable="question:option:${escapeHtml(option.key)}">${escapeHtml(option.value)}</span>
                 </button>
             `).join("");

@@ -739,6 +739,20 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
     white-space: normal;
 }
 
+.quiz-application-options .option-btn.is-binary {
+    min-height: 86px;
+    align-items: center;
+    justify-content: center;
+}
+
+.quiz-application-options .option-btn.is-binary .option-text {
+    flex: 0 1 auto;
+    font-size: clamp(1.28rem, 1.65vw, 1.65rem);
+    font-weight: 900;
+    line-height: 1.2;
+    text-align: center;
+}
+
 .quiz-application-actions .review-btn,
 .quiz-application-actions .restart-btn {
     min-width: 164px;
