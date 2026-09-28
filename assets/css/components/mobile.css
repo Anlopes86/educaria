@@ -662,12 +662,21 @@
 }
 
 @media (max-width: 420px) {
+    .landing-header-actions {
+        gap: 7px;
+    }
+
     .landing-header-actions .landing-text-link {
-        display: none;
+        display: inline-flex;
+        align-items: center;
+        min-height: 38px;
+        padding-inline: 6px;
+        font-size: 0.76rem;
     }
 
     .landing-header-cta {
-        padding-inline: 12px;
+        padding-inline: 11px;
+        font-size: 0.75rem;
     }
 
     .presentation-topbar-restore {
