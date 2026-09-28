@@ -817,10 +817,17 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 }
 
 .ai-credits-pill[data-state="empty"],
+.ai-credits-pill[data-state="insufficient"],
 .ai-credits-pill[data-state="unavailable"] {
     background: rgba(254, 242, 242, 0.92);
     border-color: rgba(185, 28, 28, 0.2);
     color: #7f1d1d;
+}
+
+.ai-cost-pill[data-state="available"] {
+    background: rgba(239, 246, 255, 0.94);
+    border-color: rgba(29, 78, 216, 0.18);
+    color: #1e3a8a;
 }
 
 .dashboard-hero-panel .platform-link-button {

@@ -51,6 +51,9 @@ AI_RATE_LIMIT_MAX=8
 AI_DAILY_CREDIT_LIMIT=5
 AI_DAILY_CREDIT_LIMIT_FREE=5
 AI_DAILY_CREDIT_LIMIT_PRO=20
+AI_CREDIT_COST_WHEEL=1
+AI_CREDIT_COST_QUIZ=3
+AI_CREDIT_COST_SLIDES=4
 AI_CREDIT_STORE=memory
 AI_CREDIT_STORE_PATH=.data/ai-credits.json
 AI_PRO_UIDS=uid1,uid2
@@ -68,12 +71,24 @@ O backend exige autenticacao por padrao e aceita chamadas de IA somente com um F
 
 `AI_DAILY_CREDIT_LIMIT_FREE` e `AI_DAILY_CREDIT_LIMIT_PRO` definem limites diarios por plano.
 
+Os custos padrão acompanham a complexidade da geração:
+
+| Custo | Formatos |
+| --- | --- |
+| 1 crédito | Roleta, Força e Caça-palavras |
+| 2 créditos | Flashcards, Memória, Ligar pontos e Palavras cruzadas |
+| 3 créditos | Quiz, Mapa mental e Debate guiado |
+| 4 créditos | Slides |
+| 5 créditos | Imagem gerada por IA, quando habilitada |
+
+A aula completa soma os custos dos blocos escolhidos. Todos os valores podem ser alterados no ambiente com `AI_CREDIT_COST_<TIPO>`, conforme o arquivo `ai-service/.env.example`.
+
 O plano pode ser resolvido por:
 
 - claim `plan=pro` no Firebase ID token
 - UID listado em `AI_PRO_UIDS` (fase inicial)
 
-Cada chamada valida para `POST /api/ai/generate` reserva 1 credito imediatamente antes de chamar o provedor de IA. Se a geracao falhar, o backend devolve esse credito. Essa reserva evita que varias requisicoes simultaneas passem juntas quando resta apenas 1 credito.
+Cada chamada válida para `POST /api/ai/generate` reserva o custo do formato imediatamente antes de chamar o provedor de IA. Se a geração falhar, o backend devolve todo o valor reservado. Essa reserva evita que várias requisições simultâneas usem o mesmo saldo.
 
 Por padrao, `AI_CREDIT_STORE=memory` mantem o contador no processo do `ai-service`.
 
@@ -86,7 +101,7 @@ AI_CREDIT_STORE_PATH=.data/ai-credits.json
 
 O modo `file` grava um JSON local e remove dias antigos automaticamente. Ele resolve o problema de reinicio do servico e a reserva de credito evita corrida dentro de uma unica instancia Node. Ainda nao e o armazenamento ideal para varias instancias rodando ao mesmo tempo. Para controle financeiro mais rigido em producao horizontal, mova esse contador para Redis, Firestore via Admin SDK ou outro banco de servidor com incremento atomico.
 
-No frontend, `assets/js/ai-credits.js` consulta `GET /api/ai/credits`, atualiza todos os elementos com `data-ai-credits` e expõe `ensureEducariaAiCreditsAvailable()`. Os geradores chamam essa funcao antes de enviar uma nova geracao para evitar chamadas conhecidamente sem saldo.
+No frontend, `assets/js/ai-credits.js` consulta `GET /api/ai/credits`, atualiza todos os elementos com `data-ai-credits` e expõe `ensureEducariaAiCreditsAvailable()`. Os geradores informam o formato ou o custo total antes de enviar uma nova geração para evitar chamadas conhecidamente sem saldo.
 
 Na pagina de configuracoes, o botao de pagamento aparece somente quando houver uma URL configurada em `window.EDUCARIA_BILLING_CHECKOUT_URL` ou no `localStorage` com a chave `educaria:billing:checkout-url`. Esse link deve apontar para um checkout criado por Stripe, Mercado Pago ou outro provedor, e o webhook do provedor ainda precisa atualizar `teachers/{uid}.plan` ou as claims do Firebase.
 

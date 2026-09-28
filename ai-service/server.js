@@ -8,6 +8,7 @@ import multer from "multer";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import { GoogleGenAI } from "@google/genai";
+import { aiCreditCostFor, buildAiCreditCosts } from "./ai-credit-policy.js";
 
 function parseNonNegativeNumber(value, fallback) {
     const parsed = Number(value);
@@ -66,6 +67,7 @@ const aiDailyCreditLimits = {
     free: aiDailyCreditLimitFree,
     pro: aiDailyCreditLimitPro
 };
+const aiCreditCosts = buildAiCreditCosts(process.env);
 const aiCreditStore = String(process.env.AI_CREDIT_STORE || "memory").trim().toLowerCase();
 const aiCreditStorePath = path.resolve(process.env.AI_CREDIT_STORE_PATH || ".data/ai-credits.json");
 const aiProUidAllowList = new Set(parseAllowedOrigins(process.env.AI_PRO_UIDS));
@@ -586,7 +588,7 @@ function billingRecordFromWebhook(payload) {
  * User is identified by Firebase UID when auth is enabled, otherwise by IP.
  * Credits reset at midnight Pacific time (UTC-8/UTC-7).
  * @param {import('express').Request} request
- * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }>}
+ * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, costs: object, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }>}
  */
 async function aiDailyCreditsFor(request) {
     await loadAiCreditFileStore();
@@ -604,6 +606,7 @@ function aiDailyCreditsSnapshot(day, plan, key) {
         day,
         plan,
         limits: aiDailyCreditLimits,
+        costs: aiCreditCosts,
         limit,
         used,
         remaining: Math.max(0, limit - used),
@@ -613,33 +616,38 @@ function aiDailyCreditsSnapshot(day, plan, key) {
 }
 
 /**
- * Reserves one daily credit before the provider call so concurrent requests
- * cannot all pass the last-credit check. Refund the reservation if generation fails.
+ * Reserves the required daily credits before the provider call so concurrent
+ * requests cannot all pass the available-credit check. Refunds the reservation
+ * if generation fails.
  * @param {import('express').Request} request
- * @returns {Promise<{ reserved: boolean, credits: { day: string, plan: "free" | "pro", limits: { free: number, pro: number }, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }, reservation: object | null }>}
+ * @param {number} requestedCost
+ * @returns {Promise<{ reserved: boolean, cost: number, credits: object, reservation: object | null }>}
  */
-async function reserveAiDailyCredit(request) {
+async function reserveAiDailyCredit(request, requestedCost = 1) {
     await loadAiCreditFileStore();
     await loadBillingStore();
     const day = dailyCreditDateKey();
     const plan = aiPlanForRequest(request);
     const key = aiCreditBucketKey(request, day);
     const credits = aiDailyCreditsSnapshot(day, plan, key);
+    const cost = Math.max(1, Math.floor(Number(requestedCost) || 1));
 
-    if (credits.remaining <= 0) {
+    if (credits.remaining < cost) {
         return {
             reserved: false,
+            cost,
             credits,
             reservation: null
         };
     }
 
-    aiDailyCreditBuckets.set(key, credits.used + 1);
+    aiDailyCreditBuckets.set(key, credits.used + cost);
     await persistAiCreditFileStore();
     return {
         reserved: true,
+        cost,
         credits: aiDailyCreditsSnapshot(day, plan, key),
-        reservation: { day, plan, key }
+        reservation: { day, plan, key, cost }
     };
 }
 
@@ -649,10 +657,11 @@ async function refundAiDailyCredit(reservation) {
     }
 
     const used = aiDailyCreditBuckets.get(reservation.key) || 0;
-    if (used <= 1) {
+    const cost = Math.max(1, Math.floor(Number(reservation.cost) || 1));
+    if (used <= cost) {
         aiDailyCreditBuckets.delete(reservation.key);
     } else {
-        aiDailyCreditBuckets.set(reservation.key, used - 1);
+        aiDailyCreditBuckets.set(reservation.key, used - cost);
     }
 
     await persistAiCreditFileStore();
@@ -1972,15 +1981,17 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(503).json({ error: "GEMINI_API_KEY não configurada no backend." });
         }
 
-        const creditReservation = await reserveAiDailyCredit(request);
+        const generationCost = aiCreditCostFor(materialType, aiCreditCosts);
+        const creditReservation = await reserveAiDailyCredit(request, generationCost);
         if (!creditReservation.reserved) {
             const credits = creditReservation.credits;
             const upgradeHint = credits.plan === "free" && credits.limits.pro > credits.limit
-                ? " Faca upgrade para o plano Pro para liberar mais geracoes por dia."
+                ? " Faça upgrade para o plano Pro para liberar mais créditos por dia."
                 : "";
             return response.status(429).json({
-                error: `Seus créditos diários de IA acabaram.${upgradeHint} Eles voltam amanhã.`,
-                credits
+                error: `Esta geração usa ${generationCost} ${generationCost === 1 ? "crédito" : "créditos"}, mas você tem ${credits.remaining}.${upgradeHint}`,
+                credits,
+                requiredCredits: generationCost
             });
         }
 
@@ -1999,7 +2010,11 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             ok: true,
             materialType,
             material,
-            credits: creditReservation.credits
+            credits: creditReservation.credits,
+            charge: {
+                materialType,
+                cost: generationCost
+            }
         });
     } catch (error) {
         if (isUploadValidationError(error)) {
@@ -2069,11 +2084,13 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
             return response.status(503).json({ error: "GEMINI_API_KEY não configurada no backend." });
         }
 
-        creditReservation = await reserveAiDailyCredit(request);
+        const generationCost = aiCreditCostFor("image", aiCreditCosts);
+        creditReservation = await reserveAiDailyCredit(request, generationCost);
         if (!creditReservation.reserved) {
             return response.status(429).json({
-                error: "Seus créditos diários de IA acabaram por hoje.",
-                credits: creditReservation.credits
+                error: `Gerar esta imagem usa ${generationCost} créditos, mas você tem ${creditReservation.credits.remaining}.`,
+                credits: creditReservation.credits,
+                requiredCredits: generationCost
             });
         }
 
@@ -2097,7 +2114,11 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
             ok: true,
             mimeType: imagePart.inlineData.mimeType || "image/png",
             imageBase64: imagePart.inlineData.data,
-            credits: creditReservation.credits
+            credits: creditReservation.credits,
+            charge: {
+                materialType: "image",
+                cost: generationCost
+            }
         });
     } catch (error) {
         if (creditReservation?.reserved) {

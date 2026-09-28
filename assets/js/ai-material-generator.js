@@ -1653,6 +1653,9 @@ function aiErrorToUserMessage(error) {
     const isServiceUnavailable = status === 503 || normalizedDetail.includes("health check");
 
     if (isQuotaError) {
+        if (status === 429 && credits && detail) {
+            return detail;
+        }
         if (credits?.plan === "free" && Number(credits?.limits?.pro || 0) > Number(credits?.limit || 0)) {
             return "Seus créditos diários acabaram. Faça upgrade para o plano Pro para liberar mais gerações por dia.";
         }
@@ -2006,7 +2009,7 @@ async function generateMaterial(materialType, button) {
         });
 
         if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
-            const hasCredits = await window.ensureEducariaAiCreditsAvailable();
+            const hasCredits = await window.ensureEducariaAiCreditsAvailable({ materialType });
             if (!hasCredits) {
                 educariaTrackAiEvent("ai_generate_blocked", {
                     materialType,
@@ -2132,6 +2135,7 @@ async function generateMaterial(materialType, button) {
             requestedCount: requestedCount || 0,
             creditsRemaining: Number(payload?.credits?.remaining ?? -1),
             creditsLimit: Number(payload?.credits?.limit ?? -1),
+            creditsCharged: Number(payload?.charge?.cost ?? 0),
             plan: payload?.credits?.plan || ""
         });
         openAiReadyModal(materialType);

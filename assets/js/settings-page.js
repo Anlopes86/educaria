@@ -1,6 +1,19 @@
 const SETTINGS_TEACHER_CACHE_KEY = "educaria:auth:teacher-cache";
 const SETTINGS_SESSION_KEY = "educaria:auth:session";
 const SETTINGS_CHECKOUT_URL_KEY = "educaria:billing:checkout-url";
+const SETTINGS_AI_MATERIAL_LABELS = Object.freeze({
+    wheel: "Roleta",
+    hangman: "Força",
+    wordsearch: "Caça-palavras",
+    memory: "Jogo da memória",
+    match: "Ligar pontos",
+    flashcards: "Flashcards",
+    crossword: "Palavras cruzadas",
+    quiz: "Quiz",
+    mindmap: "Mapa mental",
+    debate: "Debate guiado",
+    slides: "Slides"
+});
 
 function settingsFirebaseReady() {
     const config = window.EDUCARIA_FIREBASE_CONFIG || {};
@@ -156,6 +169,9 @@ function hydrateSettingsCreditUsage(credits) {
     }
 
     planUsage.hidden = false;
+    document.querySelectorAll("[data-settings-ai-used]").forEach((element) => {
+        element.textContent = String(credits.used ?? 0);
+    });
     document.querySelectorAll("[data-settings-ai-remaining]").forEach((element) => {
         element.textContent = String(credits.remaining ?? 0);
     });
@@ -165,6 +181,24 @@ function hydrateSettingsCreditUsage(credits) {
     document.querySelectorAll("[data-settings-ai-pro-limit]").forEach((element) => {
         element.textContent = String(credits.limits?.pro ?? credits.limit ?? 0);
     });
+    const costList = document.querySelector("[data-settings-ai-cost-list]");
+    if (costList) {
+        const groupedCosts = new Map();
+        Object.entries(SETTINGS_AI_MATERIAL_LABELS).forEach(([materialType, label]) => {
+            const cost = typeof window.educariaAiCostFor === "function"
+                ? window.educariaAiCostFor(materialType, credits)
+                : Number(credits.costs?.[materialType] || 1);
+            const labels = groupedCosts.get(cost) || [];
+            labels.push(label);
+            groupedCosts.set(cost, labels);
+        });
+
+        costList.innerHTML = [...groupedCosts.entries()]
+            .sort(([costA], [costB]) => costA - costB)
+            .map(([cost, labels]) => `<span><strong>${cost}</strong> ${cost === 1 ? "crédito" : "créditos"}: ${labels.join(", ")}</span>`)
+            .concat('<span><strong>Variável</strong>: Aula completa soma o custo dos blocos escolhidos</span>')
+            .join("");
+    }
 }
 
 function settingsTranslate(key, fallback) {
