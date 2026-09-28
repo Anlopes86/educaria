@@ -11,13 +11,13 @@ Este projeto usa Firebase Auth + Firestore no frontend.
 5. Crie o Firestore em modo nativo.
 6. Configure o Firebase Storage.
 
-## 2. Defina a configuracao sem commitar no GitHub
+## 2. Defina a configuração Web
 
-O arquivo versionado `assets/js/firebase-config.js` usa apenas placeholders por padrao. Sem configurar estes valores, login, cadastro e sincronizacao com Firestore ficam desativados com seguranca.
+O arquivo versionado `assets/js/firebase-config.js` contém a configuração Web pública usada em produção. Esses valores identificam o app Firebase no navegador, mas não autorizam acesso aos dados.
 
-Para desenvolvimento local, prefira `assets/js/firebase-config.local.js`. Esse arquivo e carregado automaticamente e esta no `.gitignore`.
+Para testar outro projeto em desenvolvimento local, use `assets/js/firebase-config.local.js`. Esse arquivo é carregado automaticamente apenas no ambiente local e está no `.gitignore`.
 
-Tambem ficam ignorados arquivos `.env`, `.env.*`, `*.local` e variantes `assets/js/*firebase*local*.js`. Antes de abrir PR, rode uma busca por `apiKey`, `AIza`, `private_key`, `secret` e `token` para confirmar que apenas placeholders ou documentacao de exemplo aparecem.
+Também ficam ignorados arquivos `.env`, `.env.*`, `*.local` e variantes `assets/js/*firebase*local*.js`. Nunca coloque no frontend uma conta de serviço, chave privada, token do Admin SDK ou chave da API Gemini.
 
 No browser (uma vez por ambiente), rode:
 
@@ -33,9 +33,9 @@ setEducariaFirebaseConfig({
 }, { persist: true });
 ```
 
-Isso salva a config no `localStorage` e evita colocar credenciais no Git.
+Isso salva a configuração alternativa no `localStorage` do ambiente local.
 
-Para GitHub Pages, use o workflow documentado em `docs/deploy-firebase-config.md`. Ele gera `firebase-config.local.js` no artefato publicado a partir de um secret do GitHub, sem gravar os valores no repositorio.
+Para GitHub Pages, não é necessário cadastrar um secret. Consulte `docs/deploy-firebase-config.md`.
 
 Para voltar ao estado sem credenciais locais, rode:
 
@@ -86,11 +86,11 @@ A pagina de configuracoes oferece backup da conta e exclusao autenticada. A excl
 
 ## Nota importante
 
-No Firebase Web SDK, o `apiKey` nao e segredo isoladamente.
-O controle real de seguranca vem de:
+No Firebase Web SDK, o `apiKey` não é uma senha. Ele deve ser restrito às APIs do Firebase e não pode ser reutilizado para Gemini ou outras APIs do Google Cloud.
+O controle real de segurança vem de:
 
 1. Regras de Firestore/Storage
-2. Auth obrigatorio
+2. Auth obrigatório
 3. Limites e monitoramento de uso
 
 As regras de Storage versionadas restringem uploads ao caminho do proprio professor e limitam tamanho/tipos permitidos. Se novos formatos forem adicionados, atualize `firebase/storage.rules` junto com o frontend/backend que consome esses arquivos.

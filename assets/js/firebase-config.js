@@ -1,14 +1,16 @@
 (function initEducariaFirebaseConfig() {
     const STORAGE_KEY = "educaria:firebase:config";
     const RUNTIME_CONFIG_FILE = "firebase-config.local.js";
+    // A configuração Web identifica o app Firebase no navegador; ela não concede
+    // acesso aos dados. A autorização continua protegida por Auth e Security Rules.
     const DEFAULT_CONFIG = {
-        apiKey: "COLE_AQUI_API_KEY",
-        authDomain: "COLE_AQUI_AUTH_DOMAIN",
-        projectId: "COLE_AQUI_PROJECT_ID",
-        storageBucket: "COLE_AQUI_STORAGE_BUCKET",
-        messagingSenderId: "COLE_AQUI_MESSAGING_SENDER_ID",
-        appId: "COLE_AQUI_APP_ID",
-        measurementId: "COLE_AQUI_MEASUREMENT_ID"
+        apiKey: "AIzaSyBd-ZXX-yNNhIctaYufhWVNhwWk_fXBRL4",
+        authDomain: "educaria-f46b2.firebaseapp.com",
+        projectId: "educaria-f46b2",
+        storageBucket: "educaria-f46b2.firebasestorage.app",
+        messagingSenderId: "856146928482",
+        appId: "1:856146928482:web:2d5a5aa8b868ef19b1c23b",
+        measurementId: "G-MXLZ2HQKY2"
     };
 
     function readStoredConfig() {
@@ -56,8 +58,21 @@
         return currentScript.src.replace(/firebase-config\.js(?:\?.*)?$/, RUNTIME_CONFIG_FILE);
     }
 
+    function isLocalDevelopment() {
+        if (typeof window === "undefined") return false;
+        const hostname = String(window.location.hostname || "").toLowerCase();
+        return window.location.protocol === "file:"
+            || hostname === "localhost"
+            || hostname === "127.0.0.1"
+            || hostname === "::1";
+    }
+
+    function readLocalDevelopmentConfig() {
+        return isLocalDevelopment() ? readStoredConfig() : {};
+    }
+
     function loadRuntimeConfigScript() {
-        if (typeof document === "undefined") return Promise.resolve();
+        if (typeof document === "undefined" || !isLocalDevelopment()) return Promise.resolve();
 
         return new Promise((resolve) => {
             const script = document.createElement("script");
@@ -71,8 +86,8 @@
 
     window.EDUCARIA_FIREBASE_CONFIG = mergeConfig(
         window.EDUCARIA_FIREBASE_CONFIG,
-        window.EDUCARIA_FIREBASE_CONFIG_OVERRIDE,
-        readStoredConfig()
+        readLocalDevelopmentConfig(),
+        window.EDUCARIA_FIREBASE_CONFIG_OVERRIDE
     );
 
     window.setEducariaFirebaseConfig = function setEducariaFirebaseConfig(nextConfig, options = {}) {
@@ -104,8 +119,8 @@
     window.educariaFirebaseConfigReady = loadRuntimeConfigScript().then(() => {
         window.EDUCARIA_FIREBASE_CONFIG = mergeConfig(
             window.EDUCARIA_FIREBASE_CONFIG,
-            window.EDUCARIA_FIREBASE_CONFIG_OVERRIDE,
-            readStoredConfig()
+            readLocalDevelopmentConfig(),
+            window.EDUCARIA_FIREBASE_CONFIG_OVERRIDE
         );
         return window.EDUCARIA_FIREBASE_CONFIG;
     });

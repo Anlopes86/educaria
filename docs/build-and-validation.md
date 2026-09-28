@@ -37,6 +37,7 @@ node tools/check-responsive-layout.mjs 'auth:plataforma/quiz-builder.html?new=1'
 
 - `tools/check-i18n.mjs`: verifica se as chaves usadas em HTML/JS existem em `pt-BR`, `en-US` e `es-ES`.
 - `tools/check-assets.mjs`: percorre HTML e CSS e falha quando encontra referencia local para arquivo inexistente.
+- `tools/check-firebase-config.mjs`: confirma que um dispositivo novo recebe a configuração de produção sem depender de arquivo local ou dados salvos no navegador.
 - `tools/check-js-syntax.mjs`: valida sintaxe dos scripts browser/CommonJS do front sem executar a aplicacao.
 - `node --check ai-service/server.js`: valida sintaxe do backend ESM de IA.
 - `node --check service-worker.js`: valida a sintaxe da camada de cache offline.
@@ -51,7 +52,7 @@ O navegador mostra um aviso acessivel quando perde a conexao e confirma quando a
 
 ## Deploy Pages
 
-O workflow `.github/workflows/deploy-pages.yml` injeta `assets/js/firebase-config.local.js` a partir de `EDUCARIA_FIREBASE_CONFIG_JSON` e roda as validacoes antes de publicar o artifact no GitHub Pages.
+O workflow `.github/workflows/deploy-pages.yml` roda as validações e publica o artefato no GitHub Pages. A configuração Web pública do Firebase já acompanha o frontend; dados e operações continuam protegidos por Firebase Auth e pelas regras de Firestore/Storage.
 
 ## Proxima evolucao
 

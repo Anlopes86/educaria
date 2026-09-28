@@ -83,17 +83,24 @@ async function waitForFirebaseConfig() {
 function firebaseServices() {
     if (!firebaseConfigReady() || typeof firebase === "undefined") return null;
 
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig());
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig());
+        }
+
+        const auth = firebase.auth();
+        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch((error) => {
+            console.warn("EducarIA auth persistence unavailable:", error);
+        });
+
+        return {
+            auth,
+            db: firebase.firestore()
+        };
+    } catch (error) {
+        console.error("EducarIA Firebase initialization failed:", error);
+        return null;
     }
-
-    const auth = firebase.auth();
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-
-    return {
-        auth,
-        db: firebase.firestore()
-    };
 }
 
 function saveSessionEmail(email) {

@@ -1,14 +1,23 @@
-# Firebase sem chave no repositorio
+# Configuração Web do Firebase
 
-O frontend precisa receber a configuracao Web do Firebase para autenticar no navegador. Essa configuracao nao e uma senha de servidor, mas ela fica visivel para qualquer pessoa que abre o site publicado.
+O frontend precisa do objeto de configuração Web para localizar o projeto Firebase. Como esse objeto é enviado a todo navegador que abre o site, ele faz parte do código publicado em `assets/js/firebase-config.js`.
 
-A diferenca segura e: nao versionar os valores no GitHub e proteger dados de verdade com Firebase Auth, Firestore Rules e dominios autorizados.
+Essa configuração identifica o app, mas não autoriza acesso aos dados. A segurança depende de:
+
+- Firebase Authentication;
+- regras de Firestore e Storage;
+- restrições da chave às APIs do Firebase;
+- App Check, quando habilitado.
+
+## GitHub Pages
+
+Não é necessário cadastrar um secret para o login funcionar. O workflow `.github/workflows/deploy-pages.yml` valida o projeto e publica os arquivos já configurados.
+
+Depois de alterar a configuração Web, valide o projeto e publique normalmente. O arquivo `firebase-config.js` fica fora do cache do service worker para que a correção chegue imediatamente aos dispositivos.
 
 ## Desenvolvimento local
 
-Crie `assets/js/firebase-config.local.js`. O arquivo ja esta no `.gitignore`.
-
-Exemplo:
+Para testar outro projeto Firebase sem alterar a configuração de produção, crie `assets/js/firebase-config.local.js`. Esse arquivo está no `.gitignore` e só é carregado em `localhost`, `127.0.0.1`, `::1` ou quando o site é aberto diretamente pelo sistema de arquivos.
 
 ```js
 (function configureEducariaFirebaseLocal() {
@@ -26,35 +35,4 @@ Exemplo:
 })();
 ```
 
-`assets/js/firebase-config.js` tenta carregar esse arquivo automaticamente a partir da mesma pasta. Se o arquivo nao existir, ele usa a configuracao salva no `localStorage`, quando houver.
-
-## GitHub Pages
-
-Este repo inclui o workflow `.github/workflows/deploy-pages.yml`.
-
-Configure o secret `EDUCARIA_FIREBASE_CONFIG_JSON` no GitHub com o JSON puro da configuracao:
-
-```json
-{
-  "apiKey": "...",
-  "authDomain": "...firebaseapp.com",
-  "projectId": "...",
-  "storageBucket": "...",
-  "messagingSenderId": "...",
-  "appId": "...",
-  "measurementId": "..."
-}
-```
-
-Depois, em **Settings > Pages**, use **GitHub Actions** como origem do deploy.
-
-O workflow gera `assets/js/firebase-config.local.js` somente no artefato publicado. Os valores nao entram no commit.
-
-Se o secret nao estiver configurado, o deploy continua e mostra um aviso. Nesse caso, `assets/js/firebase-config.local.js` nao e gerado e o frontend usa apenas configuracao salva no `localStorage` ou os placeholders locais. Para login real no GitHub Pages, configure o secret.
-
-## Checklist de seguranca
-
-- Em Firebase Authentication, autorize apenas os dominios usados pela EducarIA.
-- Em Firestore Rules, mantenha leitura/escrita restritas ao `request.auth.uid`.
-- Nao coloque service account, Admin SDK ou chaves privadas no frontend.
-- Trate a API key Web como identificador publico do app, nao como segredo.
+Nunca coloque no frontend uma conta de serviço, chave privada, token do Admin SDK ou chave da API Gemini.

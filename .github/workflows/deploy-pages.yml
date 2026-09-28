@@ -28,30 +28,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Inject Firebase runtime config
-        env:
-          FIREBASE_CONFIG_JSON: ${{ secrets.EDUCARIA_FIREBASE_CONFIG_JSON }}
-        run: |
-          node - <<'NODE'
-          const fs = require("node:fs");
-          const raw = process.env.FIREBASE_CONFIG_JSON || "";
-
-          if (!raw.trim()) {
-              console.warn("EDUCARIA_FIREBASE_CONFIG_JSON is not configured; skipping Firebase runtime config injection.");
-              process.exit(0);
-          }
-
-          const config = JSON.parse(raw);
-          const content = `(function configureEducariaFirebaseRuntime() {
-              if (typeof window.setEducariaFirebaseConfig !== "function") return;
-
-              window.setEducariaFirebaseConfig(${JSON.stringify(config, null, 4)}, { persist: true });
-          })();
-          `;
-
-          fs.writeFileSync("assets/js/firebase-config.local.js", content, "utf8");
-          NODE
-
       - name: Install AI service dependencies
         run: npm ci --prefix ai-service
 
@@ -59,6 +35,7 @@ jobs:
         run: |
           node tools/check-i18n.mjs
           node tools/check-assets.mjs
+          node tools/check-firebase-config.mjs
           node tools/check-js-syntax.mjs
           node --check ai-service/server.js
           node --check service-worker.js
