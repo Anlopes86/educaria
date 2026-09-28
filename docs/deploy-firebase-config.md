@@ -35,4 +35,4 @@ Para testar outro projeto Firebase sem alterar a configuração de produção, c
 })();
 ```
 
-Nunca coloque no frontend uma conta de serviço, chave privada, token do Admin SDK ou chave da API Gemini.
+Nunca coloque no frontend uma conta de serviço, chave privada, token do Admin SDK ou chave de API do Groq/Gemini.

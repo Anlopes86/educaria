@@ -26,7 +26,7 @@ Isso evita conectar uma API sem contrato claro.
 2. O frontend envia isso para `POST /api/ai/generate`.
 3. O backend valida tamanho, extensao, MIME e assinatura basica do arquivo.
 4. O backend extrai texto de `.txt`, `.docx`, `.rtf` e `.pdf`.
-5. O backend chama o Gemini.
+5. O backend chama o Groq para gerar o texto estruturado. Enquanto a chave do Groq não estiver configurada, o modo `auto` mantém o Gemini como alternativa temporária.
 6. A resposta volta em JSON estruturado.
 7. O frontend preenche automaticamente os cards do builder.
 
@@ -41,6 +41,13 @@ npm install
 Copie `.env.example` para `.env` e preencha:
 
 ```env
+AI_TEXT_PROVIDER=auto
+GROQ_API_KEY=...
+GROQ_MODEL=openai/gpt-oss-120b
+GROQ_REASONING_EFFORT=low
+GROQ_MAX_PROMPT_TOKENS=4000
+GROQ_MAX_COMPLETION_TOKENS=3500
+GROQ_REQUEST_TIMEOUT_MS=90000
 GEMINI_API_KEY=...
 GEMINI_MODEL=gemini-2.5-flash
 GEMINI_IMAGE_MODEL=gemini-3.1-flash-image-preview
@@ -54,6 +61,7 @@ AI_GLOBAL_DAILY_REQUEST_LIMIT=16
 AI_USER_DAILY_REQUEST_LIMIT_FREE=2
 AI_USER_DAILY_REQUEST_LIMIT_PRO=4
 AI_GENERATION_MAX_ATTEMPTS=1
+AI_PROVIDER_DAILY_TIME_ZONE=UTC
 AI_USAGE_DAILY_CREDIT_LIMIT=1000
 AI_USAGE_DAILY_CREDIT_LIMIT_FREE=1000
 AI_USAGE_DAILY_CREDIT_LIMIT_PRO=4000
@@ -84,7 +92,7 @@ O backend exige autenticacao por padrao e aceita chamadas de IA somente com um F
 
 `AI_USAGE_DAILY_CREDIT_LIMIT_FREE` e `AI_USAGE_DAILY_CREDIT_LIMIT_PRO` definem os saldos diários por plano. Se as novas variáveis não existirem, os limites antigos de 5/20 gerações são convertidos automaticamente para a nova escala de 1000/4000 créditos.
 
-O custo não depende do tipo da atividade. Depois que o Gemini conclui a geração, o backend lê `usageMetadata` e calcula o consumo real:
+O custo não depende do tipo da atividade. Depois que o provedor conclui a geração, o backend lê o consumo real de tokens e calcula o gasto:
 
 | Parte do processamento | Peso padrão |
 | --- | --- |
@@ -101,22 +109,35 @@ O plano pode ser resolvido por:
 
 Cada chamada válida para `POST /api/ai/generate` faz uma reserva estimada com base no tamanho do conteúdo. Ao terminar, o backend substitui a reserva pelo custo real retornado pelo modelo. Se a geração falhar, a reserva é devolvida integralmente. Essa reserva evita que várias requisições simultâneas usem o mesmo saldo.
 
-O saldo é sempre associado ao `uid` validado no token do Firebase. Assim, cada professor tem seu próprio consumo mesmo que todos usem a mesma chave do Gemini. O mesmo usuário também mantém o mesmo saldo ao trocar de computador ou celular.
+O saldo é sempre associado ao `uid` validado no token do Firebase. Assim, cada professor tem seu próprio consumo mesmo que todos usem a mesma chave do provedor. O mesmo usuário também mantém o mesmo saldo ao trocar de computador ou celular.
 
-A chave do Gemini e a cota contratada no Google continuam sendo compartilhadas pelo serviço inteiro. O saldo individual da EducarIA controla quanto cada usuário pode consumir, mas não cria uma cota separada dentro do Google para cada professor.
+A chave e a cota do provedor continuam sendo compartilhadas pelo serviço inteiro. O saldo individual da EducarIA controla quanto cada usuário pode consumir, mas não cria uma cota separada no Groq para cada professor.
 
-Por isso, a plataforma também mantém uma cota diária de requisições ao provedor. Com uma conta Gemini limitada a `5 RPM`, `250k TPM` e `20 RPD`, a configuração recomendada para testes é:
+Por isso, a plataforma também mantém uma cota diária de requisições ao provedor. Durante a migração, a configuração permanece conservadora para permitir testes reais sem colocar toda a cota gratuita em risco:
 
-- `AI_GLOBAL_DAILY_REQUEST_LIMIT=16`: reserva 20% das 20 chamadas diárias como margem de segurança;
+- `AI_GLOBAL_DAILY_REQUEST_LIMIT=16`: mantém uma trava global conservadora durante os primeiros testes com o novo provedor;
 - `AI_USER_DAILY_REQUEST_LIMIT_FREE=2`: impede um único professor gratuito de consumir toda a cota;
 - `AI_USER_DAILY_REQUEST_LIMIT_PRO=4`: permite uma cota maior ao plano Pro, ainda subordinada ao limite global;
-- `AI_GLOBAL_RATE_LIMIT_MAX=4`: mantém a plataforma abaixo das 5 chamadas por minuto do Gemini;
+- `AI_GLOBAL_RATE_LIMIT_MAX=4`: evita rajadas coletivas enquanto o comportamento do novo modelo é medido;
 - `AI_USER_RATE_LIMIT_MAX=2`: impede rajadas de um único professor;
 - `AI_GENERATION_MAX_ATTEMPTS=1`: evita que uma única ação consuma duas chamadas por causa de uma nova tentativa automática.
 
-As cotas diária global e individual usam reservas atômicas na mesma coleção do Firestore. Uma chamada que chegou ao Gemini é contabilizada mesmo quando a resposta do modelo falha, pois ela também consome `RPD` no provedor. Os créditos ponderados do usuário, por outro lado, são devolvidos quando não há material aproveitável.
+As cotas diária global e individual usam reservas atômicas na mesma coleção do Firestore. Uma chamada que chegou ao provedor é contabilizada mesmo quando a resposta do modelo falha, pois ela também consome a cota externa. Os créditos ponderados do usuário, por outro lado, são devolvidos quando não há material aproveitável.
 
-O limite diário é renovado à meia-noite no fuso usado pela cota do Gemini (`America/Los_Angeles`). A resposta de `GET /api/ai/credits` inclui `credits.requests`, com o saldo individual e o saldo global da plataforma.
+O limite diário é renovado à meia-noite no fuso definido por `AI_PROVIDER_DAILY_TIME_ZONE` (`UTC` por padrão para o Groq). A resposta de `GET /api/ai/credits` inclui `credits.requests`, com o saldo individual e o saldo global da plataforma.
+
+## Ativar o Groq no Render
+
+1. Crie uma conta em `https://console.groq.com` e gere uma API key.
+2. Abra o serviço `educaria-api-anlopes86` no Render.
+3. Entre em **Environment** e adicione `GROQ_API_KEY` com a chave gerada.
+4. Confirme que `AI_TEXT_PROVIDER` está como `auto` e salve as alterações.
+5. Aguarde o novo deploy e abra `/api/health` para confirmar que o serviço está funcionando.
+6. Gere uma atividade de teste e confira no retorno da requisição se `charge.provider` é `groq`.
+
+Nunca coloque a chave no frontend, no GitHub ou nesta documentação. No modo `auto`, a presença de `GROQ_API_KEY` ativa o Groq para textos. O Gemini continua disponível como retorno rápido e também permanece responsável por imagens enquanto `AI_IMAGE_GENERATION_ENABLED=true`. Para forçar um provedor específico, use `AI_TEXT_PROVIDER=groq` ou `AI_TEXT_PROVIDER=gemini`.
+
+O limite de entrada do Groq gratuito é protegido por `GROQ_MAX_PROMPT_TOKENS`. Quando um arquivo ultrapassa esse valor, o professor recebe uma mensagem para reduzir o conteúdo e nenhuma chamada é enviada ao provedor.
 
 Em produção, use `AI_CREDIT_STORE=firestore`. O serviço grava um documento diário por usuário e faz reservas e acertos em operações atômicas. Isso impede que duas gerações simultâneas do mesmo professor gastem o mesmo saldo. Também permite executar mais de uma instância do backend sem perder a separação dos usuários.
 

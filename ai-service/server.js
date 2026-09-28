@@ -8,6 +8,7 @@ import multer from "multer";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import { GoogleGenAI } from "@google/genai";
+import { generateGroqStructuredMaterial } from "./ai-text-provider.js";
 import {
     aiCreditsForUsage,
     buildAiCreditUsagePolicy,
@@ -57,6 +58,26 @@ const upload = multer({
     }
 });
 const gemini = process.env.GEMINI_API_KEY ? new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY }) : null;
+const groqApiKey = String(process.env.GROQ_API_KEY || "").trim();
+const requestedAiTextProvider = String(process.env.AI_TEXT_PROVIDER || "auto").trim().toLowerCase();
+const supportedAiTextProviders = new Set(["auto", "groq", "gemini"]);
+const aiTextProviderPreference = supportedAiTextProviders.has(requestedAiTextProvider)
+    ? requestedAiTextProvider
+    : "auto";
+const groqModel = String(process.env.GROQ_MODEL || "openai/gpt-oss-120b").trim();
+const requestedGroqReasoningEffort = String(process.env.GROQ_REASONING_EFFORT || "low").trim().toLowerCase();
+const groqReasoningEffort = new Set(["low", "medium", "high"]).has(requestedGroqReasoningEffort)
+    ? requestedGroqReasoningEffort
+    : "low";
+const groqMaxCompletionTokens = Math.max(1, Math.floor(
+    parseNonNegativeNumber(process.env.GROQ_MAX_COMPLETION_TOKENS, 3_500)
+));
+const groqMaxPromptTokens = Math.max(1, Math.floor(
+    parseNonNegativeNumber(process.env.GROQ_MAX_PROMPT_TOKENS, 4_000)
+));
+const groqRequestTimeoutMs = Math.max(1_000, Math.floor(
+    parseNonNegativeNumber(process.env.GROQ_REQUEST_TIMEOUT_MS, 90_000)
+));
 const aiAuthRequired = String(process.env.AI_AUTH_REQUIRED ?? "true").trim().toLowerCase() !== "false";
 const firebaseProjectId = String(
     process.env.FIREBASE_PROJECT_ID ||
@@ -119,6 +140,35 @@ const aiProviderRateLimitBuckets = new Map();
 const billingRecords = new Map();
 let billingStoreLoaded = false;
 let billingStoreWriteQueue = Promise.resolve();
+
+function activeAiTextProvider() {
+    if (aiTextProviderPreference === "groq") {
+        return groqApiKey ? "groq" : null;
+    }
+    if (aiTextProviderPreference === "gemini") {
+        return gemini ? "gemini" : null;
+    }
+    if (groqApiKey) {
+        return "groq";
+    }
+    return gemini ? "gemini" : null;
+}
+
+function activeAiTextModel(provider = activeAiTextProvider()) {
+    if (provider === "groq") return groqModel;
+    if (provider === "gemini") return process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    return "";
+}
+
+function aiTextProviderConfigurationError() {
+    if (aiTextProviderPreference === "groq") {
+        return "GROQ_API_KEY não configurada no backend.";
+    }
+    if (aiTextProviderPreference === "gemini") {
+        return "GEMINI_API_KEY não configurada no backend.";
+    }
+    return "Nenhum provedor de IA está configurado no backend.";
+}
 
 if (String(process.env.TRUST_PROXY || "").trim().toLowerCase() === "true") {
     app.set("trust proxy", 1);
@@ -395,7 +445,7 @@ function aiGenerationRateLimit(request, response, next) {
 
 function dailyCreditDateKey(date = new Date()) {
     return new Intl.DateTimeFormat("en-CA", {
-        timeZone: "America/Los_Angeles",
+        timeZone: String(process.env.AI_PROVIDER_DAILY_TIME_ZONE || "UTC").trim() || "UTC",
         year: "numeric",
         month: "2-digit",
         day: "2-digit"
@@ -2004,19 +2054,59 @@ function fallbackJsonPrompt(schemaConfig) {
 }
 
 /**
- * Calls Gemini to generate a structured activity, with a two-attempt retry strategy:
- *   1. Schema-enforced mode: responseMimeType=application/json + responseJsonSchema
- *   2. Plain JSON mode: appends a fallback instruction asking for raw JSON only
+ * Calls the configured text provider to generate a structured activity.
+ * Groq uses strict JSON Schema. Gemini keeps the existing schema-first strategy
+ * and optional plain-JSON retry for a reversible migration.
  * @param {string} materialType - Activity type key
  * @param {string} action - Teacher's goal string
  * @param {string} sourceText - Source material text
  * @param {{ name: string, description: string, schema: object }} schemaConfig - Schema from {@link schemaFor}
- * @returns {Promise<{ material: object, usageMetadata: object, providerRequests: number }>} Parsed material and accumulated provider usage
- * @throws {Error} If both attempts fail
+ * @returns {Promise<{ material: object, usageMetadata: object, providerRequests: number, provider: string, model: string }>} Parsed material and accumulated provider usage
+ * @throws {Error} If the provider call fails
  */
 async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig) {
-    const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+    const provider = activeAiTextProvider();
+    const model = activeAiTextModel(provider);
     const basePrompt = promptFor(materialType, action, sourceText);
+
+    if (provider === "groq") {
+        // Portuguese educational text often tokenizes more densely than the
+        // common four-characters-per-token estimate. Three keeps a useful
+        // safety margin below the free plan's token-per-minute ceiling.
+        const estimatedPromptTokens = Math.ceil(basePrompt.length / 3);
+        if (estimatedPromptTokens > groqMaxPromptTokens) {
+            const error = new Error("groq_prompt_too_long");
+            error.code = "groq_prompt_too_long";
+            error.status = 413;
+            error.providerRequests = 0;
+            throw error;
+        }
+
+        try {
+            const result = await generateGroqStructuredMaterial({
+                apiKey: groqApiKey,
+                model,
+                prompt: basePrompt,
+                schemaConfig,
+                reasoningEffort: groqReasoningEffort,
+                maxCompletionTokens: groqMaxCompletionTokens,
+                timeoutMs: groqRequestTimeoutMs
+            });
+            return {
+                material: parseGeneratedJson(result.text),
+                usageMetadata: result.usageMetadata,
+                providerRequests: 1,
+                provider,
+                model
+            };
+        } catch (cause) {
+            const error = cause instanceof Error ? cause : new Error(String(cause || "groq_generation_failed"));
+            error.providerRequests = Math.max(1, Math.floor(Number(error.providerRequests) || 1));
+            error.usageMetadata = error.usageMetadata || {};
+            throw error;
+        }
+    }
+
     const attempts = [
         {
             label: "schema",
@@ -2058,7 +2148,9 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
             return {
                 material,
                 usageMetadata: accumulatedUsage,
-                providerRequests
+                providerRequests,
+                provider: "gemini",
+                model
             };
         } catch (error) {
             if (result?.usageMetadata) {
@@ -2139,6 +2231,13 @@ app.get("/api/health", (_request, response) => {
 
     response.json({
         ok: true,
+        textProvider: {
+            preference: aiTextProviderPreference,
+            active: activeAiTextProvider(),
+            model: activeAiTextModel(),
+            groqConfigured: Boolean(groqApiKey),
+            geminiConfigured: Boolean(process.env.GEMINI_API_KEY)
+        },
         geminiConfigured: Boolean(process.env.GEMINI_API_KEY),
         authRequired: aiAuthRequired,
         firebaseProjectConfigured: Boolean(firebaseProjectId),
@@ -2297,8 +2396,8 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(400).json({ error: "Texto-base muito longo (max 50 000 caracteres)." });
         }
 
-        if (!gemini) {
-            return response.status(503).json({ error: "GEMINI_API_KEY não configurada no backend." });
+        if (!activeAiTextProvider()) {
+            return response.status(503).json({ error: aiTextProviderConfigurationError() });
         }
 
         const estimatedReservation = estimateAiCreditReservation(sourceText, action, aiCreditUsagePolicy);
@@ -2351,6 +2450,8 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             credits: settlement.credits,
             charge: {
                 materialType,
+                provider: generated.provider,
+                model: generated.model,
                 basis: "usage",
                 cost: settlement.charged,
                 measuredCost: settlement.measuredCost,
@@ -2375,6 +2476,30 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
 
         if (isUploadValidationError(error)) {
             return response.status(400).json({ error: "Arquivo não suportado. Envie TXT, RTF, DOCX ou PDF válidos." });
+        }
+
+        if (error?.code === "groq_prompt_too_long") {
+            return response.status(413).json({
+                error: "O conteúdo é longo demais para a geração gratuita. Reduza o texto ou envie apenas os trechos mais importantes.",
+                code: "content_too_long"
+            });
+        }
+
+        if (Number(error?.status) === 429) {
+            if (error?.retryAfter) {
+                response.setHeader("Retry-After", String(error.retryAfter));
+            }
+            return response.status(429).json({
+                error: "A IA atingiu um limite temporário do provedor. Aguarde um pouco e tente novamente; seus créditos não foram consumidos.",
+                code: "provider_rate_limit"
+            });
+        }
+
+        if (Number(error?.status) === 503 || error?.code === "groq_connection_failed") {
+            return response.status(503).json({
+                error: "Não foi possível conectar ao serviço de IA. Tente novamente em instantes.",
+                code: "provider_unavailable"
+            });
         }
 
         console.error("EducarIA AI service error:", error);

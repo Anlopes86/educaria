@@ -12,6 +12,20 @@ services:
         value: "22"
       - key: NODE_ENV
         value: production
+      - key: AI_TEXT_PROVIDER
+        value: auto
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: openai/gpt-oss-120b
+      - key: GROQ_REASONING_EFFORT
+        value: low
+      - key: GROQ_MAX_PROMPT_TOKENS
+        value: "4000"
+      - key: GROQ_MAX_COMPLETION_TOKENS
+        value: "3500"
+      - key: GROQ_REQUEST_TIMEOUT_MS
+        value: "90000"
       - key: GEMINI_API_KEY
         sync: false
       - key: GEMINI_MODEL
@@ -44,6 +58,8 @@ services:
         value: "4"
       - key: AI_GENERATION_MAX_ATTEMPTS
         value: "1"
+      - key: AI_PROVIDER_DAILY_TIME_ZONE
+        value: UTC
       - key: AI_MAX_UPLOAD_MB
         value: "5"
       - key: AI_JSON_LIMIT

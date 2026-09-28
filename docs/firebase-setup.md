@@ -17,7 +17,7 @@ O arquivo versionado `assets/js/firebase-config.js` contém a configuração Web
 
 Para testar outro projeto em desenvolvimento local, use `assets/js/firebase-config.local.js`. Esse arquivo é carregado automaticamente apenas no ambiente local e está no `.gitignore`.
 
-Também ficam ignorados arquivos `.env`, `.env.*`, `*.local` e variantes `assets/js/*firebase*local*.js`. Nunca coloque no frontend uma conta de serviço, chave privada, token do Admin SDK ou chave da API Gemini.
+Também ficam ignorados arquivos `.env`, `.env.*`, `*.local` e variantes `assets/js/*firebase*local*.js`. Nunca coloque no frontend uma conta de serviço, chave privada, token do Admin SDK ou chave de API do Groq/Gemini.
 
 No browser (uma vez por ambiente), rode:
 
