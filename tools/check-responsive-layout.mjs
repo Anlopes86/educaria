@@ -532,6 +532,12 @@ async function auditPage(pageConfig) {
             }));
         const flashcardStage = document.querySelector('[data-flashcard-stage]');
         const flashcardRect = flashcardStage?.getBoundingClientRect();
+        const flashcardScene = document.querySelector('.flashcards-stage-scene');
+        const flashcardSceneRect = flashcardScene?.getBoundingClientRect();
+        const flashcardInner = document.querySelector('.flashcards-stage-inner');
+        const flashcardInnerRect = flashcardInner?.getBoundingClientRect();
+        const flashcardFlip = document.querySelector('[data-flashcard-flip]');
+        const flashcardFlipRect = flashcardFlip?.getBoundingClientRect();
         const mindmapRoot = document.querySelector('[data-mind-stage-map]');
         const mindmapRootRect = mindmapRoot?.getBoundingClientRect();
         const mindmapBranches = mindmapRoot ? [...mindmapRoot.querySelectorAll('[data-mind-stage-branch]')] : [];
@@ -637,6 +643,12 @@ async function auditPage(pageConfig) {
                 display: getComputedStyle(flashcardStage).display,
                 width: Math.round(flashcardRect?.width || 0),
                 height: Math.round(flashcardRect?.height || 0),
+                sceneHeight: Math.round(flashcardSceneRect?.height || 0),
+                cardBottom: Math.round(flashcardInnerRect?.bottom || 0),
+                sceneBottom: Math.round(flashcardSceneRect?.bottom || 0),
+                flipTop: Math.round(flashcardFlipRect?.top || 0),
+                cardContained: Boolean(flashcardInnerRect && flashcardSceneRect && flashcardInnerRect.bottom <= flashcardSceneRect.bottom + 1),
+                flipClearance: flashcardInnerRect && flashcardFlipRect ? Math.round(flashcardFlipRect.top - flashcardInnerRect.bottom) : 0,
                 front: document.querySelector('[data-flashcard-front]')?.textContent || '',
                 frontSize: getComputedStyle(document.querySelector('[data-flashcard-front]')).fontSize,
                 backSize: getComputedStyle(document.querySelector('[data-flashcard-back]')).fontSize,
@@ -1030,7 +1042,11 @@ try {
             console.log(`  topbar-restore=${restoreWorks ? "ok" : "failed"}${restoreWorks ? "" : ` state=${JSON.stringify(result.topbarRestore)}`}`);
             if (!restoreWorks) failed = true;
         }
-        if (result.flashcardState) console.log(`  flashcard-stage=${JSON.stringify(result.flashcardState)}`);
+        if (result.flashcardState) {
+            const flashcardLayoutWorks = result.flashcardState.cardContained && result.flashcardState.flipClearance >= 8;
+            console.log(`  flashcard-stage=${flashcardLayoutWorks ? "ok" : "failed"} state=${JSON.stringify(result.flashcardState)}`);
+            if (!flashcardLayoutWorks) failed = true;
+        }
         if (result.mindmapState) console.log(`  mindmap-stage=${JSON.stringify(result.mindmapState)}`);
         if (result.debateState) console.log(`  debate-stage=${JSON.stringify(result.debateState)}`);
         if (result.debateBuilderState) console.log(`  debate-builder=${JSON.stringify(result.debateBuilderState)}`);
