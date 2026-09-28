@@ -1,0 +1,70 @@
+services:
+  - type: web
+    name: educaria-api-anlopes86
+    runtime: node
+    plan: free
+    rootDir: ai-service
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: GEMINI_IMAGE_MODEL
+        value: gemini-3.1-flash-image-preview
+      - key: AI_AUTH_REQUIRED
+        value: "true"
+      - key: FIREBASE_PROJECT_ID
+        value: educaria-f46b2
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON_BASE64
+        sync: false
+      - key: ALLOWED_ORIGIN
+        value: https://anlopes86.github.io
+      - key: TRUST_PROXY
+        value: "true"
+      - key: AI_RATE_LIMIT_WINDOW_MS
+        value: "60000"
+      - key: AI_RATE_LIMIT_MAX
+        value: "8"
+      - key: AI_MAX_UPLOAD_MB
+        value: "5"
+      - key: AI_JSON_LIMIT
+        value: 2mb
+      - key: AI_IMAGE_GENERATION_ENABLED
+        value: "false"
+      - key: AI_USAGE_DAILY_CREDIT_LIMIT
+        value: "1000"
+      - key: AI_USAGE_DAILY_CREDIT_LIMIT_FREE
+        value: "1000"
+      - key: AI_USAGE_DAILY_CREDIT_LIMIT_PRO
+        value: "4000"
+      - key: AI_CREDIT_TOKENS_PER_CREDIT
+        value: "100"
+      - key: AI_CREDIT_INPUT_WEIGHT
+        value: "1"
+      - key: AI_CREDIT_OUTPUT_WEIGHT
+        value: "3"
+      - key: AI_CREDIT_THOUGHT_WEIGHT
+        value: "3"
+      - key: AI_CREDIT_MINIMUM_CHARGE
+        value: "1"
+      - key: AI_CREDIT_PROMPT_OVERHEAD_TOKENS
+        value: "600"
+      - key: AI_CREDIT_ESTIMATED_OUTPUT_TOKENS
+        value: "1200"
+      - key: AI_CREDIT_IMAGE_OUTPUT_CREDITS
+        value: "100"
+      - key: AI_CREDIT_STORE
+        value: firestore
+      - key: AI_CREDIT_FIRESTORE_DATABASE
+        value: (default)
+      - key: AI_CREDIT_FIRESTORE_COLLECTION
+        value: aiCreditUsage
+      - key: AI_CREDIT_RESERVATION_TTL_MS
+        value: "3600000"

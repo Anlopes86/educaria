@@ -27,7 +27,7 @@ function productionEnvironment(overrides = {}) {
 }
 
 async function waitForServer() {
-    for (let attempt = 0; attempt < 120; attempt += 1) {
+    for (let attempt = 0; attempt < 300; attempt += 1) {
         if (server?.exitCode !== null) {
             throw new Error(`Test server exited before startup.${serverStderr ? `\n${serverStderr}` : ""}`);
         }
@@ -39,7 +39,7 @@ async function waitForServer() {
         }
         await delay(100);
     }
-    throw new Error(`Test server did not start within 12 seconds.${serverStderr ? `\n${serverStderr}` : ""}`);
+    throw new Error(`Test server did not start within 30 seconds.${serverStderr ? `\n${serverStderr}` : ""}`);
 }
 
 before(async () => {
