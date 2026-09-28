@@ -20,7 +20,7 @@
 @import url('./components/lesson-sequence.css?v=20260927-5');
 @import url('./components/previews.css');
 @import url('./components/toolbar.css');
-@import url('./layouts/app-shell.css');
+@import url('./layouts/app-shell.css?v=20260928-1');
 @import url('./pages/classes-overview.css');
 @import url('./pages/landing.css?v=20260928-1');
 @import url('./pages/home.css');
