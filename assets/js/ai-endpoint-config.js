@@ -1,6 +1,6 @@
 (() => {
     const LOCAL_ENDPOINT = "http://localhost:8787/api/ai/generate";
-    const REMOTE_ENDPOINT = "https://educaria-ai-service.onrender.com/api/ai/generate";
+    const REMOTE_ENDPOINT = "https://educaria-api-anlopes86.onrender.com/api/ai/generate";
 
     const hostname = window.location.hostname || "";
     const isLocal =
