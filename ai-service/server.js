@@ -66,6 +66,21 @@ const firebaseProjectId = String(
 ).trim();
 const aiRateLimitWindowMs = Number(process.env.AI_RATE_LIMIT_WINDOW_MS || 60_000);
 const aiRateLimitMax = Number(process.env.AI_RATE_LIMIT_MAX || 8);
+const aiGlobalRateLimitMax = parseNonNegativeNumber(process.env.AI_GLOBAL_RATE_LIMIT_MAX, 4);
+const aiUserRateLimitMax = parseNonNegativeNumber(process.env.AI_USER_RATE_LIMIT_MAX, 2);
+const aiGenerationMaxAttempts = Math.max(1, Math.min(2, Math.floor(
+    parseNonNegativeNumber(process.env.AI_GENERATION_MAX_ATTEMPTS, 1)
+)));
+const aiGlobalDailyRequestLimit = parseNonNegativeNumber(process.env.AI_GLOBAL_DAILY_REQUEST_LIMIT, 16);
+const aiUserDailyRequestLimitFree = parseNonNegativeNumber(process.env.AI_USER_DAILY_REQUEST_LIMIT_FREE, 2);
+const aiUserDailyRequestLimitPro = parseNonNegativeNumber(
+    process.env.AI_USER_DAILY_REQUEST_LIMIT_PRO,
+    Math.max(aiUserDailyRequestLimitFree, 4)
+);
+const aiUserDailyRequestLimits = {
+    free: aiUserDailyRequestLimitFree,
+    pro: aiUserDailyRequestLimitPro
+};
 const legacyAiDailyCreditLimitDefault = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT, 5);
 const legacyAiDailyCreditLimitFree = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_FREE, legacyAiDailyCreditLimitDefault);
 const legacyAiDailyCreditLimitPro = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_PRO, Math.max(legacyAiDailyCreditLimitDefault, 20));
@@ -100,6 +115,7 @@ const firebaseCertCache = {
     certs: {}
 };
 const aiRateLimitBuckets = new Map();
+const aiProviderRateLimitBuckets = new Map();
 const billingRecords = new Map();
 let billingStoreLoaded = false;
 let billingStoreWriteQueue = Promise.resolve();
@@ -314,7 +330,64 @@ function aiRateLimit(request, response, next) {
     response.setHeader("X-RateLimit-Reset", String(Math.ceil(bucket.resetAt / 1000)));
 
     if (bucket.count > aiRateLimitMax) {
-        return response.status(429).json({ error: "Muitas solicitacoes de IA. Tente novamente em alguns instantes." });
+        return response.status(429).json({ error: "Muitas solicitações de IA. Tente novamente em alguns instantes." });
+    }
+
+    next();
+}
+
+/**
+ * Protects the provider's shared requests-per-minute quota. The global bucket
+ * limits the whole service and the user bucket prevents one teacher from
+ * occupying every available slot in the same minute.
+ * @type {import('express').RequestHandler}
+ */
+function aiGenerationRateLimit(request, response, next) {
+    const now = Date.now();
+    const windowStart = now - aiRateLimitWindowMs;
+    const entries = [
+        { key: "provider:global", limit: aiGlobalRateLimitMax, scope: "platform" },
+        { key: `provider:user:${aiCreditUserKey(request)}`, limit: aiUserRateLimitMax, scope: "user" }
+    ].filter((entry) => entry.limit > 0);
+
+    if (!entries.length) {
+        next();
+        return;
+    }
+
+    const buckets = entries.map((entry) => {
+        const timestamps = (aiProviderRateLimitBuckets.get(entry.key) || [])
+            .filter((timestamp) => timestamp > windowStart);
+        return {
+            ...entry,
+            timestamps,
+            resetAt: timestamps.length
+                ? timestamps[0] + aiRateLimitWindowMs
+                : now + aiRateLimitWindowMs
+        };
+    });
+    const blocked = buckets.find((entry) => entry.timestamps.length >= entry.limit);
+
+    if (blocked) {
+        response.setHeader("Retry-After", String(Math.max(1, Math.ceil((blocked.resetAt - now) / 1000))));
+        return response.status(429).json({
+            error: blocked.scope === "platform"
+                ? "A IA está com muitas solicitações neste minuto. Aguarde um instante e tente novamente."
+                : "Você fez várias solicitações em sequência. Aguarde um instante e tente novamente.",
+            code: blocked.scope === "platform" ? "platform_minute_limit" : "user_minute_limit"
+        });
+    }
+
+    buckets.forEach((entry) => {
+        entry.timestamps.push(now);
+        aiProviderRateLimitBuckets.set(entry.key, entry.timestamps);
+    });
+
+    const globalBucket = buckets.find((entry) => entry.scope === "platform");
+    if (globalBucket) {
+        response.setHeader("X-AI-Global-RateLimit-Limit", String(globalBucket.limit));
+        response.setHeader("X-AI-Global-RateLimit-Remaining", String(Math.max(0, globalBucket.limit - globalBucket.timestamps.length)));
+        response.setHeader("X-AI-Global-RateLimit-Reset", String(Math.ceil(globalBucket.resetAt / 1000)));
     }
 
     next();
@@ -330,10 +403,20 @@ function dailyCreditDateKey(date = new Date()) {
 }
 
 function nextDailyCreditResetAt(date = new Date()) {
-    const pacificDate = dailyCreditDateKey(date);
-    const reset = new Date(`${pacificDate}T08:00:00.000Z`);
-    reset.setUTCDate(reset.getUTCDate() + 1);
-    return reset.toISOString();
+    const currentDay = dailyCreditDateKey(date);
+    let lower = date.getTime();
+    let upper = lower + (30 * 60 * 60 * 1000);
+
+    while (upper - lower > 1) {
+        const midpoint = Math.floor((lower + upper) / 2);
+        if (dailyCreditDateKey(new Date(midpoint)) === currentDay) {
+            lower = midpoint;
+        } else {
+            upper = midpoint;
+        }
+    }
+
+    return new Date(Math.ceil(upper / 1_000) * 1_000).toISOString();
 }
 
 function aiCreditUserKey(request) {
@@ -376,6 +459,12 @@ function aiDailyCreditLimitForPlan(plan) {
     }
 
     return aiDailyCreditLimits.free;
+}
+
+function aiDailyRequestLimitForPlan(plan) {
+    return normalizeTeacherPlan(plan) === "pro"
+        ? aiUserDailyRequestLimits.pro
+        : aiUserDailyRequestLimits.free;
 }
 
 function aiCreditBucketKey(request, day) {
@@ -550,6 +639,213 @@ function billingRecordFromWebhook(payload) {
  * @param {import('express').Request} request
  * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, policy: object, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" | "firestore" }>}
  */
+function aiRequestQuotaKeys(request, day) {
+    const userId = aiCreditUserKey(request);
+    return {
+        userId,
+        userKey: `${userId}:ai-requests:${day}`,
+        globalKey: `__educaria_platform__:ai-requests:${day}`
+    };
+}
+
+function aiDailyRequestQuotaSnapshot(day, plan, userUsed = 0, platformUsed = 0) {
+    const userLimit = aiDailyRequestLimitForPlan(plan);
+    const normalizedUserUsed = Math.max(0, Math.floor(Number(userUsed) || 0));
+    const normalizedPlatformUsed = Math.max(0, Math.floor(Number(platformUsed) || 0));
+    return {
+        enabled: aiGlobalDailyRequestLimit > 0 && userLimit > 0,
+        limit: userLimit,
+        used: normalizedUserUsed,
+        remaining: Math.max(0, userLimit - normalizedUserUsed),
+        limits: aiUserDailyRequestLimits,
+        platform: {
+            limit: aiGlobalDailyRequestLimit,
+            used: normalizedPlatformUsed,
+            remaining: Math.max(0, aiGlobalDailyRequestLimit - normalizedPlatformUsed)
+        },
+        resetAt: nextDailyCreditResetAt()
+    };
+}
+
+async function aiDailyRequestQuotaFor(request) {
+    await loadBillingStore();
+    const day = dailyCreditDateKey();
+    const plan = aiPlanForRequest(request);
+    const { userId, userKey, globalKey } = aiRequestQuotaKeys(request, day);
+    const [userBucket, platformBucket] = await Promise.all([
+        aiCreditRepository.get({ key: userKey, userId, day, plan: `requests-${plan}` }),
+        aiCreditRepository.get({
+            key: globalKey,
+            userId: "__educaria_platform__",
+            day,
+            plan: "requests-platform"
+        })
+    ]);
+    return aiDailyRequestQuotaSnapshot(day, plan, userBucket.used, platformBucket.used);
+}
+
+async function aiCreditsWithRequestQuota(request, credits) {
+    return {
+        ...credits,
+        requests: await aiDailyRequestQuotaFor(request)
+    };
+}
+
+async function reserveExactAiStoreAmount(entry) {
+    const expectedAmount = Math.max(1, Math.floor(Number(entry.amount) || 1));
+    const result = await aiCreditRepository.reserve({ ...entry, amount: expectedAmount });
+
+    if (result.reserved && result.cost === expectedAmount) {
+        return result;
+    }
+
+    if (result.reserved && result.reservationId) {
+        const refunded = await aiCreditRepository.refund({
+            key: entry.key,
+            reservationId: result.reservationId
+        });
+        return { reserved: false, cost: 0, used: refunded.used };
+    }
+
+    return result;
+}
+
+async function reserveAiDailyRequests(request, requestedCalls = 1) {
+    await loadBillingStore();
+    const day = dailyCreditDateKey();
+    const plan = aiPlanForRequest(request);
+    const userLimit = aiDailyRequestLimitForPlan(plan);
+    const amount = Math.max(1, Math.floor(Number(requestedCalls) || 1));
+    const expiresAt = nextDailyCreditResetAt();
+    const { userId, userKey, globalKey } = aiRequestQuotaKeys(request, day);
+
+    if (aiGlobalDailyRequestLimit <= 0 || userLimit <= 0) {
+        return {
+            reserved: true,
+            disabled: true,
+            reservation: null,
+            quota: await aiDailyRequestQuotaFor(request)
+        };
+    }
+
+    const platform = await reserveExactAiStoreAmount({
+        key: globalKey,
+        userId: "__educaria_platform__",
+        day,
+        plan: "requests-platform",
+        limit: aiGlobalDailyRequestLimit,
+        amount,
+        expiresAt
+    });
+    if (!platform.reserved) {
+        return {
+            reserved: false,
+            scope: "platform",
+            reservation: null,
+            quota: await aiDailyRequestQuotaFor(request)
+        };
+    }
+
+    const user = await reserveExactAiStoreAmount({
+        key: userKey,
+        userId,
+        day,
+        plan: `requests-${plan}`,
+        limit: userLimit,
+        amount,
+        expiresAt
+    });
+    if (!user.reserved) {
+        await aiCreditRepository.refund({
+            key: globalKey,
+            reservationId: platform.reservationId
+        });
+        return {
+            reserved: false,
+            scope: "user",
+            reservation: null,
+            quota: await aiDailyRequestQuotaFor(request)
+        };
+    }
+
+    return {
+        reserved: true,
+        disabled: false,
+        quota: aiDailyRequestQuotaSnapshot(day, plan, user.used, platform.used),
+        reservation: {
+            day,
+            plan,
+            amount,
+            platform: {
+                key: globalKey,
+                id: platform.reservationId,
+                limit: aiGlobalDailyRequestLimit
+            },
+            user: {
+                key: userKey,
+                id: user.reservationId,
+                limit: userLimit
+            }
+        }
+    };
+}
+
+async function refundAiDailyRequests(reservation, request) {
+    if (!reservation?.platform?.id || !reservation?.user?.id) {
+        return aiDailyRequestQuotaFor(request);
+    }
+
+    await Promise.all([
+        aiCreditRepository.refund({ key: reservation.platform.key, reservationId: reservation.platform.id }),
+        aiCreditRepository.refund({ key: reservation.user.key, reservationId: reservation.user.id })
+    ]);
+    return aiDailyRequestQuotaFor(request);
+}
+
+async function settleAiDailyRequests(reservation, actualCalls, request) {
+    if (!reservation?.platform?.id || !reservation?.user?.id) {
+        return aiDailyRequestQuotaFor(request);
+    }
+
+    const calls = Math.max(0, Math.min(
+        reservation.amount,
+        Math.floor(Number(actualCalls) || 0)
+    ));
+    if (calls <= 0) {
+        return refundAiDailyRequests(reservation, request);
+    }
+
+    await Promise.all([
+        aiCreditRepository.settle({
+            key: reservation.platform.key,
+            reservationId: reservation.platform.id,
+            amount: calls,
+            limit: reservation.platform.limit
+        }),
+        aiCreditRepository.settle({
+            key: reservation.user.key,
+            reservationId: reservation.user.id,
+            amount: calls,
+            limit: reservation.user.limit
+        })
+    ]);
+    return aiDailyRequestQuotaFor(request);
+}
+
+function aiDailyRequestLimitError(scope) {
+    if (scope === "platform") {
+        return {
+            error: "A capacidade diária de IA da plataforma foi atingida. Tente novamente após o próximo reset.",
+            code: "platform_daily_limit"
+        };
+    }
+
+    return {
+        error: "Você atingiu o limite diário de gerações com IA. O acesso volta no próximo reset.",
+        code: "user_daily_limit"
+    };
+}
+
 async function aiDailyCreditsFor(request) {
     await loadBillingStore();
     const day = dailyCreditDateKey();
@@ -557,7 +853,7 @@ async function aiDailyCreditsFor(request) {
     const key = aiCreditBucketKey(request, day);
     const userId = aiCreditUserKey(request);
     const { used } = await aiCreditRepository.get({ key, userId, day, plan });
-    return aiDailyCreditsSnapshot(day, plan, used);
+    return aiCreditsWithRequestQuota(request, aiDailyCreditsSnapshot(day, plan, used));
 }
 
 function aiDailyCreditsSnapshot(day, plan, used = 0) {
@@ -607,7 +903,10 @@ async function reserveAiDailyCredit(request, requestedCost = 1) {
         limit,
         amount: estimatedCost
     });
-    const credits = aiDailyCreditsSnapshot(day, plan, reservation.used);
+    const credits = await aiCreditsWithRequestQuota(
+        request,
+        aiDailyCreditsSnapshot(day, plan, reservation.used)
+    );
 
     if (!reservation.reserved) {
         return {
@@ -646,7 +945,7 @@ async function refundAiDailyCredit(reservation) {
     return aiDailyCreditsSnapshot(reservation.day, reservation.plan, refunded.used);
 }
 
-async function settleAiDailyCredit(reservation, requestedCost) {
+async function settleAiDailyCredit(reservation, requestedCost, request) {
     if (!reservation?.key || !reservation?.id) return null;
 
     const measuredCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
@@ -660,7 +959,12 @@ async function settleAiDailyCredit(reservation, requestedCost) {
     return {
         charged: settlement.charged,
         measuredCost: settlement.measuredCost,
-        credits: aiDailyCreditsSnapshot(reservation.day, reservation.plan, settlement.used)
+        credits: request
+            ? await aiCreditsWithRequestQuota(
+                request,
+                aiDailyCreditsSnapshot(reservation.day, reservation.plan, settlement.used)
+            )
+            : aiDailyCreditsSnapshot(reservation.day, reservation.plan, settlement.used)
     };
 }
 
@@ -695,6 +999,16 @@ setInterval(() => {
     aiRateLimitBuckets.forEach((bucket, key) => {
         if (bucket.resetAt <= now) {
             aiRateLimitBuckets.delete(key);
+        }
+    });
+
+    const providerWindowStart = now - aiRateLimitWindowMs;
+    aiProviderRateLimitBuckets.forEach((timestamps, key) => {
+        const activeTimestamps = timestamps.filter((timestamp) => timestamp > providerWindowStart);
+        if (activeTimestamps.length) {
+            aiProviderRateLimitBuckets.set(key, activeTimestamps);
+        } else {
+            aiProviderRateLimitBuckets.delete(key);
         }
     });
 
@@ -1697,7 +2011,7 @@ function fallbackJsonPrompt(schemaConfig) {
  * @param {string} action - Teacher's goal string
  * @param {string} sourceText - Source material text
  * @param {{ name: string, description: string, schema: object }} schemaConfig - Schema from {@link schemaFor}
- * @returns {Promise<{ material: object, usageMetadata: object }>} Parsed material and accumulated provider usage
+ * @returns {Promise<{ material: object, usageMetadata: object, providerRequests: number }>} Parsed material and accumulated provider usage
  * @throws {Error} If both attempts fail
  */
 async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig) {
@@ -1724,12 +2038,15 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
         }
     ];
 
+    const configuredAttempts = attempts.slice(0, aiGenerationMaxAttempts);
     let lastError = null;
     let accumulatedUsage = {};
+    let providerRequests = 0;
 
-    for (const attempt of attempts) {
+    for (const attempt of configuredAttempts) {
         let result = null;
         try {
+            providerRequests += 1;
             result = await gemini.models.generateContent({
                 model,
                 contents: attempt.contents,
@@ -1740,13 +2057,16 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
             accumulatedUsage = mergeAiUsageMetadata(accumulatedUsage, result?.usageMetadata || {});
             return {
                 material,
-                usageMetadata: accumulatedUsage
+                usageMetadata: accumulatedUsage,
+                providerRequests
             };
         } catch (error) {
             if (result?.usageMetadata) {
                 accumulatedUsage = mergeAiUsageMetadata(accumulatedUsage, result.usageMetadata);
             }
             lastError = new Error(`${attempt.label}_attempt_failed: ${aiErrorMessage(error)}`);
+            lastError.providerRequests = providerRequests;
+            lastError.usageMetadata = accumulatedUsage;
         }
     }
 
@@ -1824,9 +2144,16 @@ app.get("/api/health", (_request, response) => {
         firebaseProjectConfigured: Boolean(firebaseProjectId),
         rateLimit: {
             windowMs: aiRateLimitWindowMs,
-            max: aiRateLimitMax
+            max: aiRateLimitMax,
+            providerGlobalMax: aiGlobalRateLimitMax,
+            providerUserMax: aiUserRateLimitMax
         },
         dailyCreditLimits: aiDailyCreditLimits,
+        dailyRequestLimits: {
+            platform: aiGlobalDailyRequestLimit,
+            users: aiUserDailyRequestLimits
+        },
+        generationMaxAttempts: aiGenerationMaxAttempts,
         dailyCreditStore: aiCreditStoreType(),
         proUidAllowListSize: aiProUidAllowList.size,
         billingCheckoutConfigured: Boolean(billingCheckoutUrl),
@@ -1938,7 +2265,10 @@ app.delete("/api/account", aiRateLimit, requireAiAuth, async (request, response)
     return response.json({ ok: true });
 });
 
-app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), async (request, response) => {
+app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, upload.single("file"), async (request, response) => {
+    let creditReservation = null;
+    let requestReservation = null;
+    let providerRequests = 0;
     try {
         const materialType = String(request.body.materialType || "").trim();
         const action = String(request.body.action || "").trim();
@@ -1972,7 +2302,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
         }
 
         const estimatedReservation = estimateAiCreditReservation(sourceText, action, aiCreditUsagePolicy);
-        const creditReservation = await reserveAiDailyCredit(request, estimatedReservation);
+        creditReservation = await reserveAiDailyCredit(request, estimatedReservation);
         if (!creditReservation.reserved) {
             const credits = creditReservation.credits;
             const upgradeHint = credits.plan === "free" && credits.limits.pro > credits.limit
@@ -1984,20 +2314,36 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             });
         }
 
-        let material;
-        let measuredCharge;
-        try {
-            const generated = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
-            measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
-            material = materialType === "slides"
-                ? normalizeSlidesMaterial(generated.material)
-                : generated.material;
-        } catch (error) {
+        const dailyRequestReservation = await reserveAiDailyRequests(request, aiGenerationMaxAttempts);
+        if (!dailyRequestReservation.reserved) {
             await refundAiDailyCredit(creditReservation.reservation);
+            creditReservation = null;
+            const credits = await aiDailyCreditsFor(request);
+            return response.status(429).json({
+                ...aiDailyRequestLimitError(dailyRequestReservation.scope),
+                credits
+            });
+        }
+        requestReservation = dailyRequestReservation.reservation;
+
+        let generated;
+        try {
+            generated = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
+            providerRequests = generated.providerRequests;
+        } catch (error) {
+            providerRequests = Math.max(0, Math.floor(Number(error?.providerRequests) || 0));
             throw error;
         }
+        const measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
+        const material = materialType === "slides"
+            ? normalizeSlidesMaterial(generated.material)
+            : generated.material;
 
-        const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits);
+        const requestQuota = await settleAiDailyRequests(requestReservation, providerRequests, request);
+        requestReservation = null;
+        const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits, request);
+        creditReservation = null;
+        settlement.credits.requests = requestQuota;
         return response.json({
             ok: true,
             materialType,
@@ -2013,6 +2359,20 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             }
         });
     } catch (error) {
+        if (creditReservation?.reserved) {
+            await refundAiDailyCredit(creditReservation.reservation).catch((refundError) => {
+                console.warn("EducarIA AI credit refund failed:", refundError instanceof Error ? refundError.message : refundError);
+            });
+        }
+        if (requestReservation) {
+            const quotaAction = providerRequests > 0
+                ? settleAiDailyRequests(requestReservation, providerRequests, request)
+                : refundAiDailyRequests(requestReservation, request);
+            await quotaAction.catch((quotaError) => {
+                console.warn("EducarIA AI request quota update failed:", quotaError instanceof Error ? quotaError.message : quotaError);
+            });
+        }
+
         if (isUploadValidationError(error)) {
             return response.status(400).json({ error: "Arquivo não suportado. Envie TXT, RTF, DOCX ou PDF válidos." });
         }
@@ -2056,8 +2416,10 @@ app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.sing
     }
 });
 
-app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, response) => {
+app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, aiGenerationRateLimit, async (request, response) => {
     let creditReservation = null;
+    let requestReservation = null;
+    let providerRequests = 0;
     try {
         const title = String(request.body.title || "").trim();
         const subtitle = String(request.body.subtitle || "").trim();
@@ -2091,6 +2453,19 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
             });
         }
 
+        const dailyRequestReservation = await reserveAiDailyRequests(request, 1);
+        if (!dailyRequestReservation.reserved) {
+            await refundAiDailyCredit(creditReservation.reservation);
+            creditReservation = null;
+            const credits = await aiDailyCreditsFor(request);
+            return response.status(429).json({
+                ...aiDailyRequestLimitError(dailyRequestReservation.scope),
+                credits
+            });
+        }
+        requestReservation = dailyRequestReservation.reservation;
+
+        providerRequests = 1;
         const result = await gemini.models.generateContent({
             model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image-preview",
             contents: imagePromptForSlide({ title, subtitle, body, prompt })
@@ -2102,16 +2477,24 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
         if (!imagePart?.inlineData?.data) {
             await refundAiDailyCredit(creditReservation.reservation);
             creditReservation = null;
+            const requestQuota = await settleAiDailyRequests(requestReservation, providerRequests, request);
+            requestReservation = null;
+            const credits = await aiDailyCreditsFor(request);
+            credits.requests = requestQuota;
             return response.status(502).json({
-                error: "O Gemini não retornou imagem para este slide."
+                error: "O Gemini não retornou imagem para este slide.",
+                credits
             });
         }
 
         const measuredCharge = aiCreditsForUsage(result?.usageMetadata || {}, aiCreditUsagePolicy, {
             additionalCredits: aiCreditUsagePolicy.imageOutputCredits
         });
-        const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits);
+        const requestQuota = await settleAiDailyRequests(requestReservation, providerRequests, request);
+        requestReservation = null;
+        const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits, request);
         creditReservation = null;
+        settlement.credits.requests = requestQuota;
 
         return response.json({
             ok: true,
@@ -2129,7 +2512,17 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
         });
     } catch (error) {
         if (creditReservation?.reserved) {
-            await refundAiDailyCredit(creditReservation.reservation);
+            await refundAiDailyCredit(creditReservation.reservation).catch((refundError) => {
+                console.warn("EducarIA image credit refund failed:", refundError instanceof Error ? refundError.message : refundError);
+            });
+        }
+        if (requestReservation) {
+            const quotaAction = providerRequests > 0
+                ? settleAiDailyRequests(requestReservation, providerRequests, request)
+                : refundAiDailyRequests(requestReservation, request);
+            await quotaAction.catch((quotaError) => {
+                console.warn("EducarIA image request quota update failed:", quotaError instanceof Error ? quotaError.message : quotaError);
+            });
         }
         console.error("EducarIA image generation error:", error);
         return response.status(500).json({

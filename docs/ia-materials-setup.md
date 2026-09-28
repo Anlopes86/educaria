@@ -48,6 +48,12 @@ AI_AUTH_REQUIRED=true
 FIREBASE_PROJECT_ID=your_firebase_project_id_here
 AI_RATE_LIMIT_WINDOW_MS=60000
 AI_RATE_LIMIT_MAX=8
+AI_GLOBAL_RATE_LIMIT_MAX=4
+AI_USER_RATE_LIMIT_MAX=2
+AI_GLOBAL_DAILY_REQUEST_LIMIT=16
+AI_USER_DAILY_REQUEST_LIMIT_FREE=2
+AI_USER_DAILY_REQUEST_LIMIT_PRO=4
+AI_GENERATION_MAX_ATTEMPTS=1
 AI_USAGE_DAILY_CREDIT_LIMIT=1000
 AI_USAGE_DAILY_CREDIT_LIMIT_FREE=1000
 AI_USAGE_DAILY_CREDIT_LIMIT_PRO=4000
@@ -98,6 +104,19 @@ Cada chamada válida para `POST /api/ai/generate` faz uma reserva estimada com b
 O saldo é sempre associado ao `uid` validado no token do Firebase. Assim, cada professor tem seu próprio consumo mesmo que todos usem a mesma chave do Gemini. O mesmo usuário também mantém o mesmo saldo ao trocar de computador ou celular.
 
 A chave do Gemini e a cota contratada no Google continuam sendo compartilhadas pelo serviço inteiro. O saldo individual da EducarIA controla quanto cada usuário pode consumir, mas não cria uma cota separada dentro do Google para cada professor.
+
+Por isso, a plataforma também mantém uma cota diária de requisições ao provedor. Com uma conta Gemini limitada a `5 RPM`, `250k TPM` e `20 RPD`, a configuração recomendada para testes é:
+
+- `AI_GLOBAL_DAILY_REQUEST_LIMIT=16`: reserva 20% das 20 chamadas diárias como margem de segurança;
+- `AI_USER_DAILY_REQUEST_LIMIT_FREE=2`: impede um único professor gratuito de consumir toda a cota;
+- `AI_USER_DAILY_REQUEST_LIMIT_PRO=4`: permite uma cota maior ao plano Pro, ainda subordinada ao limite global;
+- `AI_GLOBAL_RATE_LIMIT_MAX=4`: mantém a plataforma abaixo das 5 chamadas por minuto do Gemini;
+- `AI_USER_RATE_LIMIT_MAX=2`: impede rajadas de um único professor;
+- `AI_GENERATION_MAX_ATTEMPTS=1`: evita que uma única ação consuma duas chamadas por causa de uma nova tentativa automática.
+
+As cotas diária global e individual usam reservas atômicas na mesma coleção do Firestore. Uma chamada que chegou ao Gemini é contabilizada mesmo quando a resposta do modelo falha, pois ela também consome `RPD` no provedor. Os créditos ponderados do usuário, por outro lado, são devolvidos quando não há material aproveitável.
+
+O limite diário é renovado à meia-noite no fuso usado pela cota do Gemini (`America/Los_Angeles`). A resposta de `GET /api/ai/credits` inclui `credits.requests`, com o saldo individual e o saldo global da plataforma.
 
 Em produção, use `AI_CREDIT_STORE=firestore`. O serviço grava um documento diário por usuário e faz reservas e acertos em operações atômicas. Isso impede que duas gerações simultâneas do mesmo professor gastem o mesmo saldo. Também permite executar mais de uma instância do backend sem perder a separação dos usuários.
 

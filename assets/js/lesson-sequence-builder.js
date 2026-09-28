@@ -1824,6 +1824,11 @@ function readLessonAiSourceText(button) {
 function renderLessonSequenceAiCost() {
     const blockCount = lessonSequenceState.blocks.length;
     const remaining = Number(window.educariaLatestAiCredits?.remaining ?? -1);
+    const requiredRequests = lessonSequenceState.blocks
+        .filter((block) => lessonAiSupported(block.materialType || "slides"))
+        .length;
+    const requests = window.educariaLatestAiCredits?.requests;
+    const requestRemaining = requests?.enabled ? Number(requests.remaining || 0) : -1;
 
     document.querySelectorAll("[data-ai-lesson-cost]").forEach((element) => {
         if (!blockCount) {
@@ -1832,8 +1837,13 @@ function renderLessonSequenceAiCost() {
             return;
         }
 
-        element.textContent = `Custo variável: medido pelo uso real da IA em ${blockCount} ${blockCount === 1 ? "bloco" : "blocos"}`;
-        element.dataset.state = remaining === 0 ? "insufficient" : "available";
+        const quotaLabel = requests?.enabled
+            ? ` • precisa de ${requiredRequests} ${requiredRequests === 1 ? "geração" : "gerações"}; ${requestRemaining} disponíveis hoje`
+            : "";
+        element.textContent = `Custo variável: medido pelo uso real da IA em ${blockCount} ${blockCount === 1 ? "bloco" : "blocos"}${quotaLabel}`;
+        element.dataset.state = remaining === 0 || (requestRemaining >= 0 && requestRemaining < requiredRequests)
+            ? "insufficient"
+            : "available";
     });
 }
 
@@ -1852,7 +1862,12 @@ async function generateWholeLessonSequence(button) {
     }
 
     if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
-        const hasCredits = await window.ensureEducariaAiCreditsAvailable();
+        const requiredRequests = lessonSequenceState.blocks
+            .filter((block) => lessonAiSupported(block.materialType || "slides"))
+            .length;
+        const hasCredits = await window.ensureEducariaAiCreditsAvailable({
+            requiredRequests: Math.max(1, requiredRequests)
+        });
         if (!hasCredits) {
             return;
         }

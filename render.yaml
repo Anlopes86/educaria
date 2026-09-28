@@ -32,6 +32,18 @@ services:
         value: "60000"
       - key: AI_RATE_LIMIT_MAX
         value: "8"
+      - key: AI_GLOBAL_RATE_LIMIT_MAX
+        value: "4"
+      - key: AI_USER_RATE_LIMIT_MAX
+        value: "2"
+      - key: AI_GLOBAL_DAILY_REQUEST_LIMIT
+        value: "16"
+      - key: AI_USER_DAILY_REQUEST_LIMIT_FREE
+        value: "2"
+      - key: AI_USER_DAILY_REQUEST_LIMIT_PRO
+        value: "4"
+      - key: AI_GENERATION_MAX_ATTEMPTS
+        value: "1"
       - key: AI_MAX_UPLOAD_MB
         value: "5"
       - key: AI_JSON_LIMIT

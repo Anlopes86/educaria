@@ -24,7 +24,8 @@ function cloneReservations(value) {
         if (!id || amount <= 0) return [];
         return [[id, {
             amount,
-            createdAt: String(reservation?.createdAt || new Date().toISOString())
+            createdAt: String(reservation?.createdAt || new Date().toISOString()),
+            expiresAt: String(reservation?.expiresAt || "")
         }]];
     }));
 }
@@ -55,7 +56,10 @@ function releaseExpiredReservations(bucket, ttlMs, now = Date.now()) {
 
     Object.entries(bucket.reservations || {}).forEach(([id, reservation]) => {
         const createdAt = Date.parse(reservation.createdAt);
-        const expired = !Number.isFinite(createdAt) || now - createdAt >= ttlMs;
+        const explicitExpiry = Date.parse(reservation.expiresAt);
+        const expired = Number.isFinite(explicitExpiry)
+            ? now >= explicitExpiry
+            : !Number.isFinite(createdAt) || now - createdAt >= ttlMs;
         if (expired) {
             released += nonNegativeInteger(reservation.amount);
             return;
@@ -69,7 +73,7 @@ function releaseExpiredReservations(bucket, ttlMs, now = Date.now()) {
     return true;
 }
 
-function reserveInBucket(bucket, amount, limit, reservationId, ttlMs) {
+function reserveInBucket(bucket, amount, limit, reservationId, ttlMs, expiresAt = "") {
     releaseExpiredReservations(bucket, ttlMs);
     const remaining = Math.max(0, nonNegativeInteger(limit) - bucket.used);
     if (remaining <= 0) {
@@ -80,7 +84,8 @@ function reserveInBucket(bucket, amount, limit, reservationId, ttlMs) {
     bucket.used += cost;
     bucket.reservations[reservationId] = {
         amount: cost,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        expiresAt: String(expiresAt || "")
     };
     return { reserved: true, cost, used: bucket.used, reservationId };
 }
@@ -175,13 +180,13 @@ class MemoryAiCreditStore {
         return { used: bucket.used };
     }
 
-    async reserve({ key, userId, day, plan, limit, amount, reservationId = crypto.randomUUID() }) {
+    async reserve({ key, userId, day, plan, limit, amount, reservationId = crypto.randomUUID(), expiresAt = "" }) {
         await this.load();
         const bucket = normalizeBucket(this.buckets.get(key), { userId, day, plan });
         bucket.userId = String(userId || bucket.userId);
         bucket.day = String(day || bucket.day);
         bucket.plan = String(plan || bucket.plan);
-        const result = reserveInBucket(bucket, amount, limit, reservationId, this.reservationTtlMs);
+        const result = reserveInBucket(bucket, amount, limit, reservationId, this.reservationTtlMs, expiresAt);
         if (bucket.used > 0) this.buckets.set(key, bucket);
         else this.buckets.delete(key);
         await this.persist();
@@ -385,12 +390,12 @@ class FirestoreAiCreditStore {
         });
     }
 
-    async reserve({ key, userId, day, plan, limit, amount, reservationId = crypto.randomUUID() }) {
+    async reserve({ key, userId, day, plan, limit, amount, reservationId = crypto.randomUUID(), expiresAt = "" }) {
         return this.mutate(key, { userId, day, plan }, (bucket) => {
             bucket.userId = String(userId || bucket.userId);
             bucket.day = String(day || bucket.day);
             bucket.plan = String(plan || bucket.plan);
-            const result = reserveInBucket(bucket, amount, limit, reservationId, this.reservationTtlMs);
+            const result = reserveInBucket(bucket, amount, limit, reservationId, this.reservationTtlMs, expiresAt);
             return { write: true, result };
         });
     }

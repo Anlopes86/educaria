@@ -46,13 +46,32 @@ function renderEducariaAiCredits(credits) {
         const used = Number(credits.used || 0);
         const plan = aiPlanLabel(credits.plan);
         const resetLabel = aiCreditsResetLabel(credits.resetAt);
-        element.textContent = `${remaining} de ${limit} créditos de IA disponíveis`;
-        element.title = `Plano ${plan} • ${used} usados pelo consumo real da IA${resetLabel}`;
-        element.dataset.state = remaining > 0 ? "available" : "empty";
+        const requests = credits.requests || null;
+        const requestQuotaEnabled = requests?.enabled === true;
+        const requestRemaining = Number(requests?.remaining || 0);
+        const requestLimit = Number(requests?.limit || 0);
+        const platformRemaining = Number(requests?.platform?.remaining || 0);
+        const requestLabel = requestQuotaEnabled
+            ? ` • ${requestRemaining} de ${requestLimit} ${requestLimit === 1 ? "geração" : "gerações"} hoje`
+            : "";
+        const quotaAvailable = !requestQuotaEnabled || (requestRemaining > 0 && platformRemaining > 0);
+        element.textContent = `${remaining} de ${limit} créditos de IA disponíveis${requestLabel}`;
+        element.title = requestQuotaEnabled
+            ? `Plano ${plan} • ${used} créditos usados • limite diário de ${requestLimit} ${requestLimit === 1 ? "geração" : "gerações"}${resetLabel}`
+            : `Plano ${plan} • ${used} usados pelo consumo real da IA${resetLabel}`;
+        element.dataset.state = remaining > 0 && quotaAvailable ? "available" : "empty";
     });
 }
 
 function educariaAiCreditsEmptyMessage(credits) {
+    const requests = credits?.requests || null;
+    if (requests?.enabled && Number(requests?.platform?.remaining || 0) <= 0) {
+        return "A capacidade diária de IA da plataforma foi atingida. O acesso volta no próximo reset.";
+    }
+    if (requests?.enabled && Number(requests.remaining || 0) <= 0) {
+        return "Você atingiu seu limite diário de gerações com IA. O acesso volta no próximo reset.";
+    }
+
     const plan = String(credits?.plan || "").trim().toLowerCase();
     const proLimit = Number(credits?.limits?.pro || 0);
     const currentLimit = Number(credits?.limit || 0);
@@ -105,14 +124,31 @@ async function refreshEducariaAiCredits() {
 async function ensureEducariaAiCreditsAvailable(options = {}) {
     const refresh = options.refresh !== false;
     const shouldAlert = options.alert !== false;
+    const requiredRequests = Math.max(1, Math.floor(Number(options.requiredRequests) || 1));
     const credits = refresh ? await refreshEducariaAiCredits() : educariaLatestAiCredits;
 
-    if (!credits || Number(credits.remaining) > 0) {
+    if (!credits) {
         return true;
     }
 
+    const requests = credits.requests || null;
+    const requestQuotaEnabled = requests?.enabled === true;
+    const requestRemaining = Number(requests?.remaining || 0);
+    const platformRemaining = Number(requests?.platform?.remaining || 0);
+    const hasCredits = Number(credits.remaining) > 0;
+    const hasRequests = !requestQuotaEnabled
+        || (requestRemaining >= requiredRequests && platformRemaining >= requiredRequests);
+
+    if (hasCredits && hasRequests) return true;
+
     if (shouldAlert) {
-        window.alert(educariaAiCreditsEmptyMessage(credits));
+        if (requestQuotaEnabled && hasCredits && requestRemaining > 0 && requestRemaining < requiredRequests) {
+            window.alert(`Esta ação precisa de ${requiredRequests} gerações com IA, mas você tem ${requestRemaining} disponíveis hoje.`);
+        } else if (requestQuotaEnabled && hasCredits && platformRemaining > 0 && platformRemaining < requiredRequests) {
+            window.alert("A plataforma não tem cota diária suficiente para concluir toda esta ação agora.");
+        } else {
+            window.alert(educariaAiCreditsEmptyMessage(credits));
+        }
     }
 
     return false;

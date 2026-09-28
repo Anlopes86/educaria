@@ -75,3 +75,41 @@ test("deleting an account removes only that user's credit history", async () => 
     assert.equal((await store.get(teacherB)).used, 55);
 });
 
+test("keeps daily provider reservations until their explicit reset time", async () => {
+    const store = createAiCreditStore({ type: "memory", reservationTtlMs: 1 });
+    const provider = {
+        key: "__educaria_platform__:ai-requests:2026-09-28",
+        userId: "__educaria_platform__",
+        day: "2026-09-28",
+        plan: "requests-platform"
+    };
+
+    await store.reserve({
+        ...provider,
+        limit: 16,
+        amount: 1,
+        expiresAt: new Date(Date.now() + 60_000).toISOString()
+    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    assert.equal((await store.get(provider)).used, 1);
+});
+
+test("releases a provider reservation after its explicit reset time", async () => {
+    const store = createAiCreditStore({ type: "memory", reservationTtlMs: 60_000 });
+    const provider = {
+        key: "__educaria_platform__:ai-requests:2026-09-28",
+        userId: "__educaria_platform__",
+        day: "2026-09-28",
+        plan: "requests-platform"
+    };
+
+    await store.reserve({
+        ...provider,
+        limit: 16,
+        amount: 1,
+        expiresAt: new Date(Date.now() - 1_000).toISOString()
+    });
+
+    assert.equal((await store.get(provider)).used, 0);
+});

@@ -1663,7 +1663,7 @@ function aiErrorToUserMessage(error) {
     const isServiceUnavailable = status === 503 || normalizedDetail.includes("health check");
 
     if (isQuotaError) {
-        if (status === 429 && credits && detail) {
+        if (status === 429 && detail) {
             return detail;
         }
         if (credits?.plan === "free" && Number(credits?.limits?.pro || 0) > Number(credits?.limit || 0)) {
@@ -1724,7 +1724,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action)
         }
         throw new EducariaAiRequestError(errorPayload?.error || "Não foi possível gerar o material com IA.", {
             status: response.status,
-            code: aiErrorCodeFromMessage(errorPayload?.error),
+            code: errorPayload?.code || aiErrorCodeFromMessage(errorPayload?.error),
             credits: errorPayload?.credits || null
         });
     }
