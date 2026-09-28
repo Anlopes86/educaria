@@ -825,10 +825,7 @@ async function requestLessonAiMaterial(materialType, sourceText, action) {
             materialType
         });
         if (!hasCredits) {
-            const cost = typeof window.educariaAiCostFor === "function"
-                ? window.educariaAiCostFor(materialType)
-                : 1;
-            throw new Error(`Saldo insuficiente: este bloco usa ${cost} ${cost === 1 ? "crédito" : "créditos"} de IA.`);
+            throw new Error("Seus créditos de IA acabaram por hoje.");
         }
     }
 
@@ -1824,29 +1821,19 @@ function readLessonAiSourceText(button) {
     return defaultField?.value?.trim() || "";
 }
 
-function lessonSequenceAiCost() {
-    const materialTypes = lessonSequenceState.blocks.map((block) => block.materialType || "slides");
-    if (typeof window.educariaAiTotalCost === "function") {
-        return window.educariaAiTotalCost(materialTypes);
-    }
-
-    return materialTypes.length;
-}
-
 function renderLessonSequenceAiCost() {
-    const cost = lessonSequenceAiCost();
     const blockCount = lessonSequenceState.blocks.length;
     const remaining = Number(window.educariaLatestAiCredits?.remaining ?? -1);
 
     document.querySelectorAll("[data-ai-lesson-cost]").forEach((element) => {
         if (!blockCount) {
-            element.textContent = "Adicione atividades para calcular o custo da IA";
+            element.textContent = "Adicione atividades para gerar com IA";
             element.dataset.state = "unavailable";
             return;
         }
 
-        element.textContent = `Gerar esta aula usa ${cost} ${cost === 1 ? "crédito" : "créditos"} (${blockCount} ${blockCount === 1 ? "bloco" : "blocos"})`;
-        element.dataset.state = remaining >= 0 && remaining < cost ? "insufficient" : "available";
+        element.textContent = `Custo variável: medido pelo uso real da IA em ${blockCount} ${blockCount === 1 ? "bloco" : "blocos"}`;
+        element.dataset.state = remaining === 0 ? "insufficient" : "available";
     });
 }
 
@@ -1865,11 +1852,7 @@ async function generateWholeLessonSequence(button) {
     }
 
     if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
-        const totalCost = lessonSequenceAiCost();
-        const hasCredits = await window.ensureEducariaAiCreditsAvailable({
-            cost: totalCost,
-            materialType: "lesson"
-        });
+        const hasCredits = await window.ensureEducariaAiCreditsAvailable();
         if (!hasCredits) {
             return;
         }

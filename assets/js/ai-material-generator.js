@@ -53,6 +53,7 @@ function aiReadyModalTemplate() {
                         <p id="ai-ready-modal-description">O conteúdo já está no editor. Você pode ajustar qualquer parte antes de levar para a turma.</p>
                     </div>
                 </div>
+                <p class="ai-credits-pill" data-ai-ready-credit-usage hidden></p>
                 <ul class="ai-ready-checklist" aria-label="Próximos passos">
                     <li><span><strong>Revise o conteúdo</strong><small>Textos, respostas e imagens continuam editáveis.</small></span></li>
                     <li><span><strong>Confira como ficará na TV</strong><small>O teste abre uma tela 16:9 sem sair do editor.</small></span></li>
@@ -347,7 +348,7 @@ function ensureBuilderProjectorAction() {
     actions.prepend(button);
 }
 
-function openAiReadyModal(materialType = "") {
+function openAiReadyModal(materialType = "", usageDetails = null) {
     const modal = ensureAiReadyModal();
     if (!modal) return;
     aiReadyReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -355,6 +356,15 @@ function openAiReadyModal(materialType = "") {
     modal.dataset.materialType = resolvedMaterialType;
     const presentLink = modal.querySelector("[data-ai-ready-present]");
     if (presentLink) presentLink.setAttribute("href", builderPresentationPath(resolvedMaterialType));
+    const usageLabel = modal.querySelector("[data-ai-ready-credit-usage]");
+    const charged = Number(usageDetails?.charge?.cost || 0);
+    const remaining = Number(usageDetails?.credits?.remaining ?? -1);
+    if (usageLabel) {
+        usageLabel.hidden = charged <= 0;
+        if (charged > 0) {
+            usageLabel.textContent = `Uso real desta geração: ${charged} ${charged === 1 ? "crédito" : "créditos"}${remaining >= 0 ? ` • saldo atual: ${remaining}` : ""}`;
+        }
+    }
     modal.hidden = false;
     requestAnimationFrame(() => modal.querySelector("[data-ai-ready-review]")?.focus());
 }
@@ -2138,7 +2148,7 @@ async function generateMaterial(materialType, button) {
             creditsCharged: Number(payload?.charge?.cost ?? 0),
             plan: payload?.credits?.plan || ""
         });
-        openAiReadyModal(materialType);
+        openAiReadyModal(materialType, payload);
     } catch (error) {
         const endpoint = resolveAiEndpoint();
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";

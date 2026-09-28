@@ -8,7 +8,12 @@ import multer from "multer";
 import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import { GoogleGenAI } from "@google/genai";
-import { aiCreditCostFor, buildAiCreditCosts } from "./ai-credit-policy.js";
+import {
+    aiCreditsForUsage,
+    buildAiCreditUsagePolicy,
+    estimateAiCreditReservation,
+    mergeAiUsageMetadata
+} from "./ai-credit-policy.js";
 
 function parseNonNegativeNumber(value, fallback) {
     const parsed = Number(value);
@@ -60,14 +65,17 @@ const firebaseProjectId = String(
 ).trim();
 const aiRateLimitWindowMs = Number(process.env.AI_RATE_LIMIT_WINDOW_MS || 60_000);
 const aiRateLimitMax = Number(process.env.AI_RATE_LIMIT_MAX || 8);
-const aiDailyCreditLimitDefault = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT, 5);
-const aiDailyCreditLimitFree = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_FREE, aiDailyCreditLimitDefault);
-const aiDailyCreditLimitPro = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_PRO, Math.max(aiDailyCreditLimitDefault, 20));
+const legacyAiDailyCreditLimitDefault = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT, 5);
+const legacyAiDailyCreditLimitFree = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_FREE, legacyAiDailyCreditLimitDefault);
+const legacyAiDailyCreditLimitPro = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_PRO, Math.max(legacyAiDailyCreditLimitDefault, 20));
+const aiDailyCreditLimitDefault = parseNonNegativeNumber(process.env.AI_USAGE_DAILY_CREDIT_LIMIT, legacyAiDailyCreditLimitDefault * 200);
+const aiDailyCreditLimitFree = parseNonNegativeNumber(process.env.AI_USAGE_DAILY_CREDIT_LIMIT_FREE, legacyAiDailyCreditLimitFree * 200);
+const aiDailyCreditLimitPro = parseNonNegativeNumber(process.env.AI_USAGE_DAILY_CREDIT_LIMIT_PRO, legacyAiDailyCreditLimitPro * 200);
 const aiDailyCreditLimits = {
     free: aiDailyCreditLimitFree,
     pro: aiDailyCreditLimitPro
 };
-const aiCreditCosts = buildAiCreditCosts(process.env);
+const aiCreditUsagePolicy = buildAiCreditUsagePolicy(process.env);
 const aiCreditStore = String(process.env.AI_CREDIT_STORE || "memory").trim().toLowerCase();
 const aiCreditStorePath = path.resolve(process.env.AI_CREDIT_STORE_PATH || ".data/ai-credits.json");
 const aiProUidAllowList = new Set(parseAllowedOrigins(process.env.AI_PRO_UIDS));
@@ -588,7 +596,7 @@ function billingRecordFromWebhook(payload) {
  * User is identified by Firebase UID when auth is enabled, otherwise by IP.
  * Credits reset at midnight Pacific time (UTC-8/UTC-7).
  * @param {import('express').Request} request
- * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, costs: object, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }>}
+ * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, policy: object, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" }>}
  */
 async function aiDailyCreditsFor(request) {
     await loadAiCreditFileStore();
@@ -606,7 +614,14 @@ function aiDailyCreditsSnapshot(day, plan, key) {
         day,
         plan,
         limits: aiDailyCreditLimits,
-        costs: aiCreditCosts,
+        policy: {
+            mode: aiCreditUsagePolicy.mode,
+            tokensPerCredit: aiCreditUsagePolicy.tokensPerCredit,
+            inputWeight: aiCreditUsagePolicy.inputWeight,
+            outputWeight: aiCreditUsagePolicy.outputWeight,
+            thoughtWeight: aiCreditUsagePolicy.thoughtWeight,
+            minimumCharge: aiCreditUsagePolicy.minimumCharge
+        },
         limit,
         used,
         remaining: Math.max(0, limit - used),
@@ -630,22 +645,25 @@ async function reserveAiDailyCredit(request, requestedCost = 1) {
     const plan = aiPlanForRequest(request);
     const key = aiCreditBucketKey(request, day);
     const credits = aiDailyCreditsSnapshot(day, plan, key);
-    const cost = Math.max(1, Math.floor(Number(requestedCost) || 1));
+    const estimatedCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
 
-    if (credits.remaining < cost) {
+    if (credits.remaining <= 0) {
         return {
             reserved: false,
-            cost,
+            cost: 0,
+            estimatedCost,
             credits,
             reservation: null
         };
     }
 
+    const cost = Math.min(estimatedCost, credits.remaining);
     aiDailyCreditBuckets.set(key, credits.used + cost);
     await persistAiCreditFileStore();
     return {
         reserved: true,
         cost,
+        estimatedCost,
         credits: aiDailyCreditsSnapshot(day, plan, key),
         reservation: { day, plan, key, cost }
     };
@@ -666,6 +684,32 @@ async function refundAiDailyCredit(reservation) {
 
     await persistAiCreditFileStore();
     return aiDailyCreditsSnapshot(reservation.day, reservation.plan, reservation.key);
+}
+
+async function settleAiDailyCredit(reservation, requestedCost) {
+    if (!reservation?.key) return null;
+
+    const reservedCost = Math.max(1, Math.floor(Number(reservation.cost) || 1));
+    const measuredCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
+    const currentUsed = aiDailyCreditBuckets.get(reservation.key) || 0;
+    const baseUsed = Math.max(0, currentUsed - reservedCost);
+    const limit = aiDailyCreditLimitForPlan(reservation.plan);
+    const availableForCharge = Math.max(0, limit - baseUsed);
+    const charged = Math.min(measuredCost, availableForCharge);
+    const settledUsed = baseUsed + charged;
+
+    if (settledUsed > 0) {
+        aiDailyCreditBuckets.set(reservation.key, settledUsed);
+    } else {
+        aiDailyCreditBuckets.delete(reservation.key);
+    }
+
+    await persistAiCreditFileStore();
+    return {
+        charged,
+        measuredCost,
+        credits: aiDailyCreditsSnapshot(reservation.day, reservation.plan, reservation.key)
+    };
 }
 
 /**
@@ -1710,7 +1754,7 @@ function fallbackJsonPrompt(schemaConfig) {
  * @param {string} action - Teacher's goal string
  * @param {string} sourceText - Source material text
  * @param {{ name: string, description: string, schema: object }} schemaConfig - Schema from {@link schemaFor}
- * @returns {Promise<object>} Parsed JSON material object
+ * @returns {Promise<{ material: object, usageMetadata: object }>} Parsed material and accumulated provider usage
  * @throws {Error} If both attempts fail
  */
 async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig) {
@@ -1738,17 +1782,27 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
     ];
 
     let lastError = null;
+    let accumulatedUsage = {};
 
     for (const attempt of attempts) {
+        let result = null;
         try {
-            const result = await gemini.models.generateContent({
+            result = await gemini.models.generateContent({
                 model,
                 contents: attempt.contents,
                 config: attempt.config
             });
 
-            return parseGeneratedJson(result?.text || "");
+            const material = parseGeneratedJson(result?.text || "");
+            accumulatedUsage = mergeAiUsageMetadata(accumulatedUsage, result?.usageMetadata || {});
+            return {
+                material,
+                usageMetadata: accumulatedUsage
+            };
         } catch (error) {
+            if (result?.usageMetadata) {
+                accumulatedUsage = mergeAiUsageMetadata(accumulatedUsage, result.usageMetadata);
+            }
             lastError = new Error(`${attempt.label}_attempt_failed: ${aiErrorMessage(error)}`);
         }
     }
@@ -1981,39 +2035,45 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, upload.single("file"), 
             return response.status(503).json({ error: "GEMINI_API_KEY não configurada no backend." });
         }
 
-        const generationCost = aiCreditCostFor(materialType, aiCreditCosts);
-        const creditReservation = await reserveAiDailyCredit(request, generationCost);
+        const estimatedReservation = estimateAiCreditReservation(sourceText, action, aiCreditUsagePolicy);
+        const creditReservation = await reserveAiDailyCredit(request, estimatedReservation);
         if (!creditReservation.reserved) {
             const credits = creditReservation.credits;
             const upgradeHint = credits.plan === "free" && credits.limits.pro > credits.limit
                 ? " Faça upgrade para o plano Pro para liberar mais créditos por dia."
                 : "";
             return response.status(429).json({
-                error: `Esta geração usa ${generationCost} ${generationCost === 1 ? "crédito" : "créditos"}, mas você tem ${credits.remaining}.${upgradeHint}`,
-                credits,
-                requiredCredits: generationCost
+                error: `Seus créditos de IA acabaram por hoje.${upgradeHint}`,
+                credits
             });
         }
 
-        let rawMaterial;
+        let material;
+        let measuredCharge;
         try {
-            rawMaterial = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
+            const generated = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
+            measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
+            material = materialType === "slides"
+                ? normalizeSlidesMaterial(generated.material)
+                : generated.material;
         } catch (error) {
             await refundAiDailyCredit(creditReservation.reservation);
             throw error;
         }
 
-        const material = materialType === "slides"
-            ? normalizeSlidesMaterial(rawMaterial)
-            : rawMaterial;
+        const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits);
         return response.json({
             ok: true,
             materialType,
             material,
-            credits: creditReservation.credits,
+            credits: settlement.credits,
             charge: {
                 materialType,
-                cost: generationCost
+                basis: "usage",
+                cost: settlement.charged,
+                measuredCost: settlement.measuredCost,
+                weightedTokens: measuredCharge.weightedTokens,
+                usage: measuredCharge.usage
             }
         });
     } catch (error) {
@@ -2084,13 +2144,14 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
             return response.status(503).json({ error: "GEMINI_API_KEY não configurada no backend." });
         }
 
-        const generationCost = aiCreditCostFor("image", aiCreditCosts);
-        creditReservation = await reserveAiDailyCredit(request, generationCost);
+        const imageContext = [title, subtitle, body, prompt].filter(Boolean).join(" ");
+        const estimatedReservation = estimateAiCreditReservation(imageContext, "Gerar imagem", aiCreditUsagePolicy)
+            + aiCreditUsagePolicy.imageOutputCredits;
+        creditReservation = await reserveAiDailyCredit(request, estimatedReservation);
         if (!creditReservation.reserved) {
             return response.status(429).json({
-                error: `Gerar esta imagem usa ${generationCost} créditos, mas você tem ${creditReservation.credits.remaining}.`,
-                credits: creditReservation.credits,
-                requiredCredits: generationCost
+                error: "Seus créditos de IA acabaram por hoje.",
+                credits: creditReservation.credits
             });
         }
 
@@ -2110,14 +2171,24 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, async (request, r
             });
         }
 
+        const measuredCharge = aiCreditsForUsage(result?.usageMetadata || {}, aiCreditUsagePolicy, {
+            additionalCredits: aiCreditUsagePolicy.imageOutputCredits
+        });
+        const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits);
+        creditReservation = null;
+
         return response.json({
             ok: true,
             mimeType: imagePart.inlineData.mimeType || "image/png",
             imageBase64: imagePart.inlineData.data,
-            credits: creditReservation.credits,
+            credits: settlement.credits,
             charge: {
                 materialType: "image",
-                cost: generationCost
+                basis: "usage",
+                cost: settlement.charged,
+                measuredCost: settlement.measuredCost,
+                weightedTokens: measuredCharge.weightedTokens,
+                usage: measuredCharge.usage
             }
         });
     } catch (error) {

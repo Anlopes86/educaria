@@ -14,9 +14,9 @@
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/i18n.js" defer></script>
-    <script src="../assets/js/ai-credits.js?v=20260928-1" defer></script>
+    <script src="../assets/js/ai-credits.js?v=20260928-2" defer></script>
     <script src="../assets/js/app-sidebar.js" defer></script>
-    <script src="../assets/js/settings-page.js?v=20260928-1" defer></script>
+    <script src="../assets/js/settings-page.js?v=20260928-2" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -230,11 +230,17 @@
 
                     <div class="settings-ai-cost-guide">
                         <div>
-                            <span class="platform-section-label">Uso dos créditos</span>
-                            <h3>Quanto cada geração utiliza</h3>
-                            <p>O desconto acontece somente quando a IA conclui a geração. Se houver falha, os créditos reservados são devolvidos.</p>
+                            <span class="platform-section-label">Consumo real da IA</span>
+                            <h3>O saldo acompanha o processamento</h3>
+                            <p>Conteúdos maiores, respostas mais extensas e tarefas com mais raciocínio usam mais créditos. O desconto é calculado após cada geração com os dados informados pelo próprio modelo.</p>
                         </div>
-                        <div class="settings-ai-cost-list" data-settings-ai-cost-list></div>
+                        <div class="settings-ai-cost-list">
+                            <span><strong data-settings-ai-tokens-per-credit>100</strong> tokens ponderados correspondem a 1 crédito</span>
+                            <span>Conteúdo e instruções enviados: peso <strong data-settings-ai-input-weight>1x</strong></span>
+                            <span>Resposta produzida: peso <strong data-settings-ai-output-weight>3x</strong></span>
+                            <span>Processamento e raciocínio: peso <strong data-settings-ai-thought-weight>3x</strong></span>
+                            <span><strong>Aula completa:</strong> cada bloco é medido separadamente</span>
+                        </div>
                     </div>
 
                     <form class="settings-form" data-settings-upgrade-form>

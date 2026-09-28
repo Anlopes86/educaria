@@ -1,31 +1,50 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-    DEFAULT_AI_CREDIT_COSTS,
-    aiCreditCostFor,
-    buildAiCreditCosts
+    aiCreditsForUsage,
+    buildAiCreditUsagePolicy,
+    estimateAiCreditReservation,
+    mergeAiUsageMetadata,
+    normalizeAiUsageMetadata
 } from "../ai-credit-policy.js";
 
-test("uses increasingly higher costs for more complex materials", () => {
-    assert.equal(aiCreditCostFor("wheel"), 1);
-    assert.equal(aiCreditCostFor("quiz"), 3);
-    assert.equal(aiCreditCostFor("slides"), 4);
-    assert.ok(aiCreditCostFor("wheel") < aiCreditCostFor("slides"));
-});
-
-test("supports per-format environment overrides", () => {
-    const costs = buildAiCreditCosts({
-        AI_CREDIT_COST_WHEEL: "2",
-        AI_CREDIT_COST_SLIDES: "7"
+test("charges from measured input, output and reasoning usage", () => {
+    const policy = buildAiCreditUsagePolicy({
+        AI_CREDIT_TOKENS_PER_CREDIT: "100",
+        AI_CREDIT_INPUT_WEIGHT: "1",
+        AI_CREDIT_OUTPUT_WEIGHT: "3",
+        AI_CREDIT_THOUGHT_WEIGHT: "3"
     });
+    const result = aiCreditsForUsage({
+        promptTokenCount: 500,
+        candidatesTokenCount: 200,
+        thoughtsTokenCount: 100,
+        totalTokenCount: 800
+    }, policy);
 
-    assert.equal(costs.wheel, 2);
-    assert.equal(costs.slides, 7);
-    assert.equal(costs.quiz, DEFAULT_AI_CREDIT_COSTS.quiz);
+    assert.equal(result.weightedTokens, 1400);
+    assert.equal(result.credits, 14);
 });
 
-test("rejects invalid overrides and unknown types safely cost one credit", () => {
-    const costs = buildAiCreditCosts({ AI_CREDIT_COST_QUIZ: "0" });
-    assert.equal(costs.quiz, DEFAULT_AI_CREDIT_COSTS.quiz);
-    assert.equal(aiCreditCostFor("unknown", costs), 1);
+test("normalizes and accumulates provider usage across retries", () => {
+    const merged = mergeAiUsageMetadata(
+        { promptTokenCount: 100, candidatesTokenCount: 50, totalTokenCount: 150 },
+        { promptTokenCount: 120, candidatesTokenCount: 60, thoughtsTokenCount: 20, totalTokenCount: 200 }
+    );
+    assert.deepEqual(normalizeAiUsageMetadata(merged), {
+        inputTokens: 220,
+        outputTokens: 110,
+        thoughtTokens: 20,
+        toolTokens: 0,
+        cachedInputTokens: 0,
+        totalTokens: 350
+    });
+});
+
+test("estimates a reservation from content size without using activity type", () => {
+    const policy = buildAiCreditUsagePolicy({});
+    const shortEstimate = estimateAiCreditReservation("tema curto", "", policy);
+    const longEstimate = estimateAiCreditReservation("conteúdo ".repeat(3000), "", policy);
+    assert.ok(shortEstimate > 0);
+    assert.ok(longEstimate > shortEstimate);
 });
