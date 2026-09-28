@@ -192,7 +192,7 @@ async function auditPage(pageConfig) {
             stackHtml: `<section data-quiz-question><textarea data-field="prompt">As plantas transformam energia luminosa em energia química durante a fotossíntese.</textarea><select data-field="type"><option selected>Verdadeiro ou falso</option></select><select data-field="correct"><option selected>Alternativa A</option></select><input data-option data-option-key="Alternativa A" value="Verdadeiro"><input data-option data-option-key="Alternativa B" value="Falso"><textarea data-field="explanation">A fotossíntese converte a energia da luz em energia armazenada na matéria orgânica.</textarea></section>`
         });
         const lessonMatchDraft = JSON.stringify({
-            controls: { "ligar-titulo": "Relações ecológicas", "ligar-coluna-a": "Conceito", "ligar-coluna-b": "Definição", "ligar-embaralhar": "Não", "ligar-cores": "same", "ligar-cor-unica": "#7c3aed" },
+            controls: { "ligar-titulo": "Relações ecológicas", "ligar-coluna-a": "Conceito", "ligar-coluna-b": "Definição", "ligar-embaralhar": "Não", "ligar-cores": "shuffle", "ligar-cor-unica": "#7c3aed" },
             stackHtml: `<section data-match-pair><input data-match-left value="Produtor"><input data-match-right value="Produz o próprio alimento"><input data-match-color type="color" value="#22c55e"></section><section data-match-pair><input data-match-left value="Consumidor"><input data-match-right value="Obtém energia de outros seres"><input data-match-color type="color" value="#0ea5e9"></section>`
         });
         const activityLessons = [
@@ -467,14 +467,26 @@ async function auditPage(pageConfig) {
                 updateBlockDraftControlField(blockId, 'ligar-cores', 'same');
                 updateBlockDraftControlField(blockId, 'ligar-cor-unica', '#d946ef');
                 const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
-                const draft = block?.lessonDraft ? JSON.parse(block.lessonDraft) : null;
-                const doc = new DOMParser().parseFromString('<div>' + (draft?.stackHtml || '') + '</div>', 'text/html');
+                const sameDraft = block?.lessonDraft ? JSON.parse(block.lessonDraft) : null;
+                const sameDoc = new DOMParser().parseFromString('<div>' + (sameDraft?.stackHtml || '') + '</div>', 'text/html');
+                const sameState = {
+                    mode: sameDraft?.controls?.['ligar-cores'] || '',
+                    singleColor: sameDraft?.controls?.['ligar-cor-unica'] || '',
+                    values: [...sameDoc.querySelectorAll('[data-match-color]')].map((field) => field.value.toLowerCase()),
+                    attributes: [...sameDoc.querySelectorAll('[data-match-color]')].map((field) => (field.getAttribute('value') || '').toLowerCase())
+                };
+
+                updateBlockDraftControlField(blockId, 'ligar-cores', 'shuffle');
+                const shuffleDraft = block?.lessonDraft ? JSON.parse(block.lessonDraft) : null;
+                const shuffleDoc = new DOMParser().parseFromString('<div>' + (shuffleDraft?.stackHtml || '') + '</div>', 'text/html');
                 return {
-                    exists: Boolean(block && draft),
-                    mode: draft?.controls?.['ligar-cores'] || '',
-                    singleColor: draft?.controls?.['ligar-cor-unica'] || '',
-                    values: [...doc.querySelectorAll('[data-match-color]')].map((field) => field.value.toLowerCase()),
-                    attributes: [...doc.querySelectorAll('[data-match-color]')].map((field) => (field.getAttribute('value') || '').toLowerCase())
+                    exists: Boolean(block && sameDraft && shuffleDraft),
+                    same: sameState,
+                    shuffle: {
+                        mode: shuffleDraft?.controls?.['ligar-cores'] || '',
+                        values: [...shuffleDoc.querySelectorAll('[data-match-color]')].map((field) => field.value.toLowerCase()),
+                        attributes: [...shuffleDoc.querySelectorAll('[data-match-color]')].map((field) => (field.getAttribute('value') || '').toLowerCase())
+                    }
                 };
             })()`,
             returnByValue: true
@@ -992,10 +1004,11 @@ try {
                 if (!embeddedBinaryQuizWorks) failed = true;
             }
             if (result.lessonPlayerState.embeddedMaterial === 'match') {
-                const embeddedMatchSingleColorWorks = result.lessonPlayerState.matchColors?.length === 1
-                    && result.lessonPlayerState.matchColors[0] === '#7c3aed';
-                console.log(`  embedded-match-single-color=${embeddedMatchSingleColorWorks ? "ok" : "failed"}`);
-                if (!embeddedMatchSingleColorWorks) failed = true;
+                const embeddedMatchShuffleWorks = result.lessonPlayerState.matchColors?.length === 2
+                    && result.lessonPlayerState.matchColors.includes('#f59e0b')
+                    && result.lessonPlayerState.matchColors.includes('#6366f1');
+                console.log(`  embedded-match-shuffled-colors=${embeddedMatchShuffleWorks ? "ok" : "failed"}`);
+                if (!embeddedMatchShuffleWorks) failed = true;
             }
         }
         if (result.lessonFilterJourney) {
@@ -1011,11 +1024,14 @@ try {
         }
         if (result.lessonMatchColorJourney) {
             const lessonMatchColorWorks = result.lessonMatchColorJourney.exists
-                && result.lessonMatchColorJourney.mode === 'same'
-                && result.lessonMatchColorJourney.singleColor === '#d946ef'
-                && result.lessonMatchColorJourney.values.length === 2
-                && result.lessonMatchColorJourney.values.every((color) => color === '#d946ef')
-                && result.lessonMatchColorJourney.attributes.every((color) => color === '#d946ef');
+                && result.lessonMatchColorJourney.same.mode === 'same'
+                && result.lessonMatchColorJourney.same.singleColor === '#d946ef'
+                && result.lessonMatchColorJourney.same.values.length === 2
+                && result.lessonMatchColorJourney.same.values.every((color) => color === '#d946ef')
+                && result.lessonMatchColorJourney.same.attributes.every((color) => color === '#d946ef')
+                && result.lessonMatchColorJourney.shuffle.mode === 'shuffle'
+                && new Set(result.lessonMatchColorJourney.shuffle.values).size === 2
+                && result.lessonMatchColorJourney.shuffle.values.every((color, index) => color === result.lessonMatchColorJourney.shuffle.attributes[index]);
             console.log(`  lesson-match-color-edit=${lessonMatchColorWorks ? "ok" : "failed"} state=${JSON.stringify(result.lessonMatchColorJourney)}`);
             if (!lessonMatchColorWorks) failed = true;
         }

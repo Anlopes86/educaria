@@ -1,4 +1,9 @@
 const MATCH_DRAFT_KEY = "educaria:builder:match";
+const MATCH_RUNTIME_PALETTE = ["#22c55e", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#6366f1", "#84cc16", "#f97316", "#06b6d4", "#a855f7"];
+
+function matchRuntimePaletteColor(index) {
+    return MATCH_RUNTIME_PALETTE[(index * 5 + 2) % MATCH_RUNTIME_PALETTE.length];
+}
 
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
@@ -96,7 +101,11 @@ function renderMatchApplication() {
     ]).map((pair, index) => ({
         ...pair,
         index,
-        color: colorMode === "same" ? singleColor : pair.color
+        color: colorMode === "same"
+            ? singleColor
+            : colorMode === "shuffle"
+                ? matchRuntimePaletteColor(index)
+                : pair.color
     }));
 
     controls["ligar-titulo"] = controls["ligar-titulo"] || "Ligar pontos";
