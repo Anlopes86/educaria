@@ -13,7 +13,8 @@ import {
     aiCreditsForUsage,
     buildAiCreditUsagePolicy,
     estimateAiCreditReservation,
-    mergeAiUsageMetadata
+    mergeAiUsageMetadata,
+    normalizeAiUsageMetadata
 } from "./ai-credit-policy.js";
 import { createAiCreditStore } from "./ai-credit-store.js";
 
@@ -92,11 +93,11 @@ const aiUserRateLimitMax = parseNonNegativeNumber(process.env.AI_USER_RATE_LIMIT
 const aiGenerationMaxAttempts = Math.max(1, Math.min(2, Math.floor(
     parseNonNegativeNumber(process.env.AI_GENERATION_MAX_ATTEMPTS, 1)
 )));
-const aiGlobalDailyRequestLimit = parseNonNegativeNumber(process.env.AI_GLOBAL_DAILY_REQUEST_LIMIT, 16);
-const aiUserDailyRequestLimitFree = parseNonNegativeNumber(process.env.AI_USER_DAILY_REQUEST_LIMIT_FREE, 2);
+const aiGlobalDailyRequestLimit = parseNonNegativeNumber(process.env.AI_GLOBAL_DAILY_REQUEST_LIMIT, 900);
+const aiUserDailyRequestLimitFree = parseNonNegativeNumber(process.env.AI_USER_DAILY_REQUEST_LIMIT_FREE, 900);
 const aiUserDailyRequestLimitPro = parseNonNegativeNumber(
     process.env.AI_USER_DAILY_REQUEST_LIMIT_PRO,
-    Math.max(aiUserDailyRequestLimitFree, 4)
+    Math.max(aiUserDailyRequestLimitFree, 900)
 );
 const aiUserDailyRequestLimits = {
     free: aiUserDailyRequestLimitFree,
@@ -105,14 +106,15 @@ const aiUserDailyRequestLimits = {
 const legacyAiDailyCreditLimitDefault = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT, 5);
 const legacyAiDailyCreditLimitFree = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_FREE, legacyAiDailyCreditLimitDefault);
 const legacyAiDailyCreditLimitPro = parseNonNegativeNumber(process.env.AI_DAILY_CREDIT_LIMIT_PRO, Math.max(legacyAiDailyCreditLimitDefault, 20));
-const aiDailyCreditLimitDefault = parseNonNegativeNumber(process.env.AI_USAGE_DAILY_CREDIT_LIMIT, legacyAiDailyCreditLimitDefault * 200);
-const aiDailyCreditLimitFree = parseNonNegativeNumber(process.env.AI_USAGE_DAILY_CREDIT_LIMIT_FREE, legacyAiDailyCreditLimitFree * 200);
+const aiDailyCreditLimitDefault = parseNonNegativeNumber(process.env.AI_USAGE_DAILY_CREDIT_LIMIT, 500);
+const aiDailyCreditLimitFree = parseNonNegativeNumber(process.env.AI_USAGE_DAILY_CREDIT_LIMIT_FREE, aiDailyCreditLimitDefault);
 const aiDailyCreditLimitPro = parseNonNegativeNumber(process.env.AI_USAGE_DAILY_CREDIT_LIMIT_PRO, legacyAiDailyCreditLimitPro * 200);
 const aiDailyCreditLimits = {
     free: aiDailyCreditLimitFree,
     pro: aiDailyCreditLimitPro
 };
 const aiCreditUsagePolicy = buildAiCreditUsagePolicy(process.env);
+const aiGlobalDailyTokenLimit = parseNonNegativeNumber(process.env.AI_GLOBAL_DAILY_TOKEN_LIMIT, 180_000);
 const aiCreditStoreMode = String(process.env.AI_CREDIT_STORE || "memory").trim().toLowerCase();
 const aiCreditStorePath = path.resolve(process.env.AI_CREDIT_STORE_PATH || ".data/ai-credits.json");
 const aiCreditRepository = createAiCreditStore({
@@ -126,6 +128,7 @@ const aiCreditRepository = createAiCreditStore({
     reservationTtlMs: Number(process.env.AI_CREDIT_RESERVATION_TTL_MS || 60 * 60 * 1000)
 });
 const aiProUidAllowList = new Set(parseAllowedOrigins(process.env.AI_PRO_UIDS));
+const aiUnlimitedUidAllowList = new Set(parseAllowedOrigins(process.env.AI_UNLIMITED_UIDS));
 const aiImageGenerationEnabled = String(process.env.AI_IMAGE_GENERATION_ENABLED || "").trim().toLowerCase() === "true";
 const billingCheckoutUrl = String(process.env.BILLING_CHECKOUT_URL || "").trim();
 const billingWebhookSecret = String(process.env.BILLING_WEBHOOK_SECRET || "").trim();
@@ -473,6 +476,11 @@ function aiCreditUserKey(request) {
     return request.educariaUser?.uid || request.educariaUser?.sub || request.ip || "anonymous";
 }
 
+function isAiUnlimitedUser(request) {
+    const uid = String(request.educariaUser?.uid || request.educariaUser?.sub || "").trim();
+    return Boolean(uid && aiUnlimitedUidAllowList.has(uid));
+}
+
 function normalizeTeacherPlan(value) {
     return String(value || "").trim().toLowerCase() === "pro" ? "pro" : "free";
 }
@@ -685,7 +693,7 @@ function billingRecordFromWebhook(payload) {
 /**
  * Returns the daily credit status for the user making the request.
  * User is identified by Firebase UID when auth is enabled, otherwise by IP.
- * Credits reset at midnight Pacific time (UTC-8/UTC-7).
+ * Credits reset at midnight in AI_PROVIDER_DAILY_TIME_ZONE (UTC by default).
  * @param {import('express').Request} request
  * @returns {Promise<{ day: string, plan: "free" | "pro", limits: { free: number, pro: number }, policy: object, limit: number, used: number, remaining: number, resetAt: string, store: "memory" | "file" | "firestore" }>}
  */
@@ -704,6 +712,7 @@ function aiDailyRequestQuotaSnapshot(day, plan, userUsed = 0, platformUsed = 0) 
     const normalizedPlatformUsed = Math.max(0, Math.floor(Number(platformUsed) || 0));
     return {
         enabled: aiGlobalDailyRequestLimit > 0 && userLimit > 0,
+        display: false,
         limit: userLimit,
         used: normalizedUserUsed,
         remaining: Math.max(0, userLimit - normalizedUserUsed),
@@ -715,6 +724,37 @@ function aiDailyRequestQuotaSnapshot(day, plan, userUsed = 0, platformUsed = 0) 
         },
         resetAt: nextDailyCreditResetAt()
     };
+}
+
+function aiProviderTokenQuotaKey(day) {
+    return `__educaria_platform__:ai-provider-tokens:${day}`;
+}
+
+function aiProviderTokenQuotaSnapshot(day, used = 0) {
+    const normalizedUsed = Math.max(0, Math.floor(Number(used) || 0));
+    const enabled = activeAiTextProvider() === "groq" && aiGlobalDailyTokenLimit > 0;
+    return {
+        enabled,
+        limit: aiGlobalDailyTokenLimit,
+        used: normalizedUsed,
+        remaining: enabled ? Math.max(0, aiGlobalDailyTokenLimit - normalizedUsed) : null,
+        resetAt: nextDailyCreditResetAt()
+    };
+}
+
+async function aiProviderTokenQuotaFor() {
+    const day = dailyCreditDateKey();
+    if (activeAiTextProvider() !== "groq" || aiGlobalDailyTokenLimit <= 0) {
+        return aiProviderTokenQuotaSnapshot(day, 0);
+    }
+
+    const bucket = await aiCreditRepository.get({
+        key: aiProviderTokenQuotaKey(day),
+        userId: "__educaria_platform__",
+        day,
+        plan: "provider-tokens-platform"
+    });
+    return aiProviderTokenQuotaSnapshot(day, bucket.used);
 }
 
 async function aiDailyRequestQuotaFor(request) {
@@ -735,9 +775,14 @@ async function aiDailyRequestQuotaFor(request) {
 }
 
 async function aiCreditsWithRequestQuota(request, credits) {
+    const [requests, platformTokens] = await Promise.all([
+        aiDailyRequestQuotaFor(request),
+        aiProviderTokenQuotaFor()
+    ]);
     return {
         ...credits,
-        requests: await aiDailyRequestQuotaFor(request)
+        requests,
+        platformTokens
     };
 }
 
@@ -758,6 +803,69 @@ async function reserveExactAiStoreAmount(entry) {
     }
 
     return result;
+}
+
+async function reserveAiProviderTokens(requestedTokens) {
+    const day = dailyCreditDateKey();
+    const amount = Math.max(1, Math.floor(Number(requestedTokens) || 1));
+
+    if (activeAiTextProvider() !== "groq" || aiGlobalDailyTokenLimit <= 0) {
+        return {
+            reserved: true,
+            disabled: true,
+            reservation: null,
+            quota: aiProviderTokenQuotaSnapshot(day, 0)
+        };
+    }
+
+    const key = aiProviderTokenQuotaKey(day);
+    const reserved = await reserveExactAiStoreAmount({
+        key,
+        userId: "__educaria_platform__",
+        day,
+        plan: "provider-tokens-platform",
+        limit: aiGlobalDailyTokenLimit,
+        amount,
+        expiresAt: nextDailyCreditResetAt()
+    });
+
+    return {
+        reserved: reserved.reserved,
+        disabled: false,
+        reservation: reserved.reserved ? {
+            key,
+            id: reserved.reservationId,
+            day,
+            amount,
+            limit: aiGlobalDailyTokenLimit
+        } : null,
+        quota: aiProviderTokenQuotaSnapshot(day, reserved.used)
+    };
+}
+
+async function refundAiProviderTokens(reservation) {
+    if (!reservation?.key || !reservation?.id) {
+        return aiProviderTokenQuotaFor();
+    }
+    const refunded = await aiCreditRepository.refund({
+        key: reservation.key,
+        reservationId: reservation.id
+    });
+    return aiProviderTokenQuotaSnapshot(reservation.day, refunded.used);
+}
+
+async function settleAiProviderTokens(reservation, actualTokens) {
+    if (!reservation?.key || !reservation?.id) {
+        return aiProviderTokenQuotaFor();
+    }
+    const measuredTokens = Math.max(1, Math.floor(Number(actualTokens) || 1));
+    const settled = await aiCreditRepository.settle({
+        key: reservation.key,
+        reservationId: reservation.id,
+        amount: measuredTokens,
+        limit: reservation.limit
+    });
+    return aiProviderTokenQuotaSnapshot(reservation.day, settled.used);
 }
 
 async function reserveAiDailyRequests(request, requestedCalls = 1) {
@@ -903,15 +1011,16 @@ async function aiDailyCreditsFor(request) {
     const key = aiCreditBucketKey(request, day);
     const userId = aiCreditUserKey(request);
     const { used } = await aiCreditRepository.get({ key, userId, day, plan });
-    return aiCreditsWithRequestQuota(request, aiDailyCreditsSnapshot(day, plan, used));
+    return aiCreditsWithRequestQuota(request, aiDailyCreditsSnapshot(day, plan, used, isAiUnlimitedUser(request)));
 }
 
-function aiDailyCreditsSnapshot(day, plan, used = 0) {
+function aiDailyCreditsSnapshot(day, plan, used = 0, unlimited = false) {
     const limit = aiDailyCreditLimitForPlan(plan);
     const normalizedUsed = Math.max(0, Math.floor(Number(used) || 0));
     return {
         day,
         plan,
+        unlimited: Boolean(unlimited),
         limits: aiDailyCreditLimits,
         policy: {
             mode: aiCreditUsagePolicy.mode,
@@ -923,7 +1032,7 @@ function aiDailyCreditsSnapshot(day, plan, used = 0) {
         },
         limit,
         used: normalizedUsed,
-        remaining: Math.max(0, limit - normalizedUsed),
+        remaining: unlimited ? null : Math.max(0, limit - normalizedUsed),
         resetAt: nextDailyCreditResetAt(),
         store: aiCreditStoreType()
     };
@@ -945,6 +1054,25 @@ async function reserveAiDailyCredit(request, requestedCost = 1) {
     const key = aiCreditBucketKey(request, day);
     const limit = aiDailyCreditLimitForPlan(plan);
     const estimatedCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
+
+    if (isAiUnlimitedUser(request)) {
+        return {
+            reserved: true,
+            disabled: true,
+            cost: 0,
+            estimatedCost,
+            credits: await aiCreditsWithRequestQuota(
+                request,
+                aiDailyCreditsSnapshot(day, plan, 0, true)
+            ),
+            reservation: {
+                unlimited: true,
+                day,
+                plan
+            }
+        };
+    }
+
     const reservation = await aiCreditRepository.reserve({
         key,
         userId,
@@ -984,6 +1112,9 @@ async function reserveAiDailyCredit(request, requestedCost = 1) {
 }
 
 async function refundAiDailyCredit(reservation) {
+    if (reservation?.unlimited) {
+        return aiDailyCreditsSnapshot(reservation.day, reservation.plan, 0, true);
+    }
     if (!reservation?.key || !reservation?.id) {
         return null;
     }
@@ -996,6 +1127,19 @@ async function refundAiDailyCredit(reservation) {
 }
 
 async function settleAiDailyCredit(reservation, requestedCost, request) {
+    if (reservation?.unlimited) {
+        const measuredCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
+        return {
+            charged: 0,
+            measuredCost,
+            credits: request
+                ? await aiCreditsWithRequestQuota(
+                    request,
+                    aiDailyCreditsSnapshot(reservation.day, reservation.plan, 0, true)
+                )
+                : aiDailyCreditsSnapshot(reservation.day, reservation.plan, 0, true)
+        };
+    }
     if (!reservation?.key || !reservation?.id) return null;
 
     const measuredCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
@@ -2053,6 +2197,15 @@ function fallbackJsonPrompt(schemaConfig) {
     ].join(" ");
 }
 
+function estimateProviderTokenReservation(materialType, action, sourceText) {
+    const prompt = promptFor(materialType, action, sourceText);
+    const estimatedInputTokens = Math.ceil(prompt.length / 3);
+    const estimatedOutputTokens = activeAiTextProvider() === "groq"
+        ? groqMaxCompletionTokens
+        : aiCreditUsagePolicy.estimatedOutputTokens;
+    return Math.max(1, estimatedInputTokens + estimatedOutputTokens);
+}
+
 /**
  * Calls the configured text provider to generate a structured activity.
  * Groq uses strict JSON Schema. Gemini keeps the existing schema-first strategy
@@ -2082,8 +2235,9 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
             throw error;
         }
 
+        let result = null;
         try {
-            const result = await generateGroqStructuredMaterial({
+            result = await generateGroqStructuredMaterial({
                 apiKey: groqApiKey,
                 model,
                 prompt: basePrompt,
@@ -2102,7 +2256,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
         } catch (cause) {
             const error = cause instanceof Error ? cause : new Error(String(cause || "groq_generation_failed"));
             error.providerRequests = Math.max(1, Math.floor(Number(error.providerRequests) || 1));
-            error.usageMetadata = error.usageMetadata || {};
+            error.usageMetadata = mergeAiUsageMetadata(error.usageMetadata || {}, result?.usageMetadata || {});
             throw error;
         }
     }
@@ -2248,6 +2402,7 @@ app.get("/api/health", (_request, response) => {
             providerUserMax: aiUserRateLimitMax
         },
         dailyCreditLimits: aiDailyCreditLimits,
+        globalDailyTokenLimit: aiGlobalDailyTokenLimit,
         dailyRequestLimits: {
             platform: aiGlobalDailyRequestLimit,
             users: aiUserDailyRequestLimits
@@ -2255,6 +2410,7 @@ app.get("/api/health", (_request, response) => {
         generationMaxAttempts: aiGenerationMaxAttempts,
         dailyCreditStore: aiCreditStoreType(),
         proUidAllowListSize: aiProUidAllowList.size,
+        unlimitedUidAllowListSize: aiUnlimitedUidAllowList.size,
         billingCheckoutConfigured: Boolean(billingCheckoutUrl),
         billingWebhookConfigured: Boolean(billingWebhookSecret),
         maxUploadMb,
@@ -2359,6 +2515,7 @@ app.delete("/api/account", aiRateLimit, requireAiAuth, async (request, response)
     await loadBillingStore();
     billingRecords.delete(uid);
     aiProUidAllowList.delete(uid);
+    aiUnlimitedUidAllowList.delete(uid);
 
     await Promise.all([persistBillingStore(), aiCreditRepository.deleteUser(uid)]);
     return response.json({ ok: true });
@@ -2367,6 +2524,7 @@ app.delete("/api/account", aiRateLimit, requireAiAuth, async (request, response)
 app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, upload.single("file"), async (request, response) => {
     let creditReservation = null;
     let requestReservation = null;
+    let providerTokenReservation = null;
     let providerRequests = 0;
     try {
         const materialType = String(request.body.materialType || "").trim();
@@ -2413,10 +2571,29 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             });
         }
 
-        const dailyRequestReservation = await reserveAiDailyRequests(request, aiGenerationMaxAttempts);
-        if (!dailyRequestReservation.reserved) {
+        const providerTokenEstimate = estimateProviderTokenReservation(materialType, action, sourceText);
+        const providerTokenResult = await reserveAiProviderTokens(providerTokenEstimate);
+        if (!providerTokenResult.reserved) {
             await refundAiDailyCredit(creditReservation.reservation);
             creditReservation = null;
+            const credits = await aiDailyCreditsFor(request);
+            credits.platformTokens = providerTokenResult.quota;
+            return response.status(429).json({
+                error: "A capacidade diária de IA da plataforma foi atingida. Tente novamente após o próximo reset.",
+                code: "platform_daily_token_limit",
+                credits
+            });
+        }
+        providerTokenReservation = providerTokenResult.reservation;
+
+        const dailyRequestReservation = await reserveAiDailyRequests(request, aiGenerationMaxAttempts);
+        if (!dailyRequestReservation.reserved) {
+            await Promise.all([
+                refundAiDailyCredit(creditReservation.reservation),
+                refundAiProviderTokens(providerTokenReservation)
+            ]);
+            creditReservation = null;
+            providerTokenReservation = null;
             const credits = await aiDailyCreditsFor(request);
             return response.status(429).json({
                 ...aiDailyRequestLimitError(dailyRequestReservation.scope),
@@ -2438,11 +2615,17 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             ? normalizeSlidesMaterial(generated.material)
             : generated.material;
 
+        const providerTokenQuota = await settleAiProviderTokens(
+            providerTokenReservation,
+            measuredCharge.usage.totalTokens
+        );
+        providerTokenReservation = null;
         const requestQuota = await settleAiDailyRequests(requestReservation, providerRequests, request);
         requestReservation = null;
         const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits, request);
         creditReservation = null;
         settlement.credits.requests = requestQuota;
+        settlement.credits.platformTokens = providerTokenQuota;
         return response.json({
             ok: true,
             materialType,
@@ -2463,6 +2646,15 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         if (creditReservation?.reserved) {
             await refundAiDailyCredit(creditReservation.reservation).catch((refundError) => {
                 console.warn("EducarIA AI credit refund failed:", refundError instanceof Error ? refundError.message : refundError);
+            });
+        }
+        if (providerTokenReservation) {
+            const failedUsage = normalizeAiUsageMetadata(error?.usageMetadata || {});
+            const tokenQuotaAction = failedUsage.totalTokens > 0
+                ? settleAiProviderTokens(providerTokenReservation, failedUsage.totalTokens)
+                : refundAiProviderTokens(providerTokenReservation);
+            await tokenQuotaAction.catch((quotaError) => {
+                console.warn("EducarIA provider token quota update failed:", quotaError instanceof Error ? quotaError.message : quotaError);
             });
         }
         if (requestReservation) {

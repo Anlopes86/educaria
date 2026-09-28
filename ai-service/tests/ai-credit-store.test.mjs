@@ -113,3 +113,28 @@ test("releases a provider reservation after its explicit reset time", async () =
 
     assert.equal((await store.get(provider)).used, 0);
 });
+
+test("replaces a global token reservation with the provider's measured usage", async () => {
+    const store = createAiCreditStore({ type: "memory" });
+    const platformTokens = {
+        key: "__educaria_platform__:ai-provider-tokens:2026-09-28",
+        userId: "__educaria_platform__",
+        day: "2026-09-28",
+        plan: "provider-tokens-platform"
+    };
+
+    const reservation = await store.reserve({
+        ...platformTokens,
+        limit: 180_000,
+        amount: 7_500
+    });
+    const settlement = await store.settle({
+        key: platformTokens.key,
+        reservationId: reservation.reservationId,
+        limit: 180_000,
+        amount: 1_037
+    });
+
+    assert.equal(settlement.charged, 1_037);
+    assert.equal((await store.get(platformTokens)).used, 1_037);
+});

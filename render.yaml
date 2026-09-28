@@ -51,15 +51,17 @@ services:
       - key: AI_USER_RATE_LIMIT_MAX
         value: "2"
       - key: AI_GLOBAL_DAILY_REQUEST_LIMIT
-        value: "16"
+        value: "900"
       - key: AI_USER_DAILY_REQUEST_LIMIT_FREE
-        value: "2"
+        value: "900"
       - key: AI_USER_DAILY_REQUEST_LIMIT_PRO
-        value: "4"
+        value: "900"
       - key: AI_GENERATION_MAX_ATTEMPTS
         value: "1"
       - key: AI_PROVIDER_DAILY_TIME_ZONE
         value: UTC
+      - key: AI_GLOBAL_DAILY_TOKEN_LIMIT
+        value: "180000"
       - key: AI_MAX_UPLOAD_MB
         value: "5"
       - key: AI_JSON_LIMIT
@@ -67,9 +69,9 @@ services:
       - key: AI_IMAGE_GENERATION_ENABLED
         value: "false"
       - key: AI_USAGE_DAILY_CREDIT_LIMIT
-        value: "1000"
+        value: "500"
       - key: AI_USAGE_DAILY_CREDIT_LIMIT_FREE
-        value: "1000"
+        value: "500"
       - key: AI_USAGE_DAILY_CREDIT_LIMIT_PRO
         value: "4000"
       - key: AI_CREDIT_TOKENS_PER_CREDIT
@@ -96,3 +98,5 @@ services:
         value: aiCreditUsage
       - key: AI_CREDIT_RESERVATION_TTL_MS
         value: "3600000"
+      - key: AI_UNLIMITED_UIDS
+        sync: false

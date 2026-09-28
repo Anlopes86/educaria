@@ -51,12 +51,25 @@ function renderEducariaAiCredits(credits) {
         const requestRemaining = Number(requests?.remaining || 0);
         const requestLimit = Number(requests?.limit || 0);
         const platformRemaining = Number(requests?.platform?.remaining || 0);
-        const requestLabel = requestQuotaEnabled
+        const platformTokens = credits.platformTokens || null;
+        const platformTokensAvailable = platformTokens?.enabled !== true
+            || Number(platformTokens.remaining || 0) > 0;
+        const requestQuotaVisible = requestQuotaEnabled && requests?.display !== false;
+        const requestLabel = requestQuotaVisible
             ? ` • ${requestRemaining} de ${requestLimit} ${requestLimit === 1 ? "geração" : "gerações"} hoje`
             : "";
-        const quotaAvailable = !requestQuotaEnabled || (requestRemaining > 0 && platformRemaining > 0);
+        const quotaAvailable = (!requestQuotaEnabled || (requestRemaining > 0 && platformRemaining > 0))
+            && platformTokensAvailable;
+
+        if (credits.unlimited === true) {
+            element.textContent = "Créditos de IA ilimitados para testes";
+            element.title = `Conta de testes sem limite individual${resetLabel}`;
+            element.dataset.state = quotaAvailable ? "available" : "empty";
+            return;
+        }
+
         element.textContent = `${remaining} de ${limit} créditos de IA disponíveis${requestLabel}`;
-        element.title = requestQuotaEnabled
+        element.title = requestQuotaVisible
             ? `Plano ${plan} • ${used} créditos usados • limite diário de ${requestLimit} ${requestLimit === 1 ? "geração" : "gerações"}${resetLabel}`
             : `Plano ${plan} • ${used} usados pelo consumo real da IA${resetLabel}`;
         element.dataset.state = remaining > 0 && quotaAvailable ? "available" : "empty";
@@ -64,6 +77,9 @@ function renderEducariaAiCredits(credits) {
 }
 
 function educariaAiCreditsEmptyMessage(credits) {
+    if (credits?.platformTokens?.enabled && Number(credits.platformTokens.remaining || 0) <= 0) {
+        return "A capacidade diária de IA da plataforma foi atingida. O acesso volta no próximo reset.";
+    }
     const requests = credits?.requests || null;
     if (requests?.enabled && Number(requests?.platform?.remaining || 0) <= 0) {
         return "A capacidade diária de IA da plataforma foi atingida. O acesso volta no próximo reset.";
@@ -135,11 +151,13 @@ async function ensureEducariaAiCreditsAvailable(options = {}) {
     const requestQuotaEnabled = requests?.enabled === true;
     const requestRemaining = Number(requests?.remaining || 0);
     const platformRemaining = Number(requests?.platform?.remaining || 0);
-    const hasCredits = Number(credits.remaining) > 0;
+    const platformTokensAvailable = credits?.platformTokens?.enabled !== true
+        || Number(credits.platformTokens.remaining || 0) > 0;
+    const hasCredits = credits.unlimited === true || Number(credits.remaining) > 0;
     const hasRequests = !requestQuotaEnabled
         || (requestRemaining >= requiredRequests && platformRemaining >= requiredRequests);
 
-    if (hasCredits && hasRequests) return true;
+    if (hasCredits && hasRequests && platformTokensAvailable) return true;
 
     if (shouldAlert) {
         if (requestQuotaEnabled && hasCredits && requestRemaining > 0 && requestRemaining < requiredRequests) {

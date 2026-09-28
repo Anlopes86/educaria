@@ -57,13 +57,14 @@ AI_RATE_LIMIT_WINDOW_MS=60000
 AI_RATE_LIMIT_MAX=8
 AI_GLOBAL_RATE_LIMIT_MAX=4
 AI_USER_RATE_LIMIT_MAX=2
-AI_GLOBAL_DAILY_REQUEST_LIMIT=16
-AI_USER_DAILY_REQUEST_LIMIT_FREE=2
-AI_USER_DAILY_REQUEST_LIMIT_PRO=4
+AI_GLOBAL_DAILY_REQUEST_LIMIT=900
+AI_USER_DAILY_REQUEST_LIMIT_FREE=900
+AI_USER_DAILY_REQUEST_LIMIT_PRO=900
 AI_GENERATION_MAX_ATTEMPTS=1
 AI_PROVIDER_DAILY_TIME_ZONE=UTC
-AI_USAGE_DAILY_CREDIT_LIMIT=1000
-AI_USAGE_DAILY_CREDIT_LIMIT_FREE=1000
+AI_GLOBAL_DAILY_TOKEN_LIMIT=180000
+AI_USAGE_DAILY_CREDIT_LIMIT=500
+AI_USAGE_DAILY_CREDIT_LIMIT_FREE=500
 AI_USAGE_DAILY_CREDIT_LIMIT_PRO=4000
 AI_CREDIT_TOKENS_PER_CREDIT=100
 AI_CREDIT_INPUT_WEIGHT=1
@@ -80,6 +81,7 @@ AI_CREDIT_FIRESTORE_COLLECTION=aiCreditUsage
 AI_CREDIT_RESERVATION_TTL_MS=3600000
 FIREBASE_SERVICE_ACCOUNT_JSON={"type":"service_account",...}
 AI_PRO_UIDS=uid1,uid2
+AI_UNLIMITED_UIDS=uid_do_administrador
 AI_MAX_UPLOAD_MB=5
 AI_JSON_LIMIT=2mb
 AI_IMAGE_GENERATION_ENABLED=false
@@ -90,7 +92,7 @@ ALLOWED_ORIGIN=http://127.0.0.1:5500
 
 O backend exige autenticacao por padrao e aceita chamadas de IA somente com um Firebase ID token valido no header `Authorization: Bearer ...`. O frontend dos builders ja envia esse token a partir do usuario logado. Em producao, o servico interrompe a inicializacao se a autenticacao estiver desativada, se `FIREBASE_PROJECT_ID` estiver ausente ou se `ALLOWED_ORIGIN` for permissivo.
 
-`AI_USAGE_DAILY_CREDIT_LIMIT_FREE` e `AI_USAGE_DAILY_CREDIT_LIMIT_PRO` definem os saldos diários por plano. Se as novas variáveis não existirem, os limites antigos de 5/20 gerações são convertidos automaticamente para a nova escala de 1000/4000 créditos.
+`AI_USAGE_DAILY_CREDIT_LIMIT_FREE` e `AI_USAGE_DAILY_CREDIT_LIMIT_PRO` definem os saldos diários por plano. Na fase de testes, professores gratuitos recebem 500 créditos por dia.
 
 O custo não depende do tipo da atividade. Depois que o provedor conclui a geração, o backend lê o consumo real de tokens e calcula o gasto:
 
@@ -113,18 +115,21 @@ O saldo é sempre associado ao `uid` validado no token do Firebase. Assim, cada 
 
 A chave e a cota do provedor continuam sendo compartilhadas pelo serviço inteiro. O saldo individual da EducarIA controla quanto cada usuário pode consumir, mas não cria uma cota separada no Groq para cada professor.
 
-Por isso, a plataforma também mantém uma cota diária de requisições ao provedor. Durante a migração, a configuração permanece conservadora para permitir testes reais sem colocar toda a cota gratuita em risco:
+Por isso, a plataforma mantém duas proteções globais alinhadas ao plano gratuito do Groq:
 
-- `AI_GLOBAL_DAILY_REQUEST_LIMIT=16`: mantém uma trava global conservadora durante os primeiros testes com o novo provedor;
-- `AI_USER_DAILY_REQUEST_LIMIT_FREE=2`: impede um único professor gratuito de consumir toda a cota;
-- `AI_USER_DAILY_REQUEST_LIMIT_PRO=4`: permite uma cota maior ao plano Pro, ainda subordinada ao limite global;
+- `AI_GLOBAL_DAILY_TOKEN_LIMIT=180000`: usa no máximo 90% dos 200 mil tokens diários do provedor;
+- `AI_GLOBAL_DAILY_REQUEST_LIMIT=900`: usa no máximo 90% das mil requisições diárias;
+- `AI_USER_DAILY_REQUEST_LIMIT_FREE=900`: remove, na prática, a antiga trava de duas atividades; os créditos controlam o professor;
+- `AI_USER_DAILY_REQUEST_LIMIT_PRO=900`: mantém o mesmo teto técnico, ainda subordinado ao limite global;
 - `AI_GLOBAL_RATE_LIMIT_MAX=4`: evita rajadas coletivas enquanto o comportamento do novo modelo é medido;
 - `AI_USER_RATE_LIMIT_MAX=2`: impede rajadas de um único professor;
 - `AI_GENERATION_MAX_ATTEMPTS=1`: evita que uma única ação consuma duas chamadas por causa de uma nova tentativa automática.
 
-As cotas diária global e individual usam reservas atômicas na mesma coleção do Firestore. Uma chamada que chegou ao provedor é contabilizada mesmo quando a resposta do modelo falha, pois ela também consome a cota externa. Os créditos ponderados do usuário, por outro lado, são devolvidos quando não há material aproveitável.
+As cotas usam reservas atômicas na mesma coleção do Firestore. Antes da geração, o backend reserva uma estimativa de tokens globais; quando a resposta chega, substitui a reserva pelo consumo real informado pelo Groq. Os créditos individuais são devolvidos quando não há material aproveitável.
 
-O limite diário é renovado à meia-noite no fuso definido por `AI_PROVIDER_DAILY_TIME_ZONE` (`UTC` por padrão para o Groq). A resposta de `GET /api/ai/credits` inclui `credits.requests`, com o saldo individual e o saldo global da plataforma.
+Os UIDs listados em `AI_UNLIMITED_UIDS` não têm limite individual de créditos, o que permite testes administrativos intensivos. Essas contas continuam subordinadas aos limites globais de tokens, requisições e velocidade do provedor. Nunca coloque e-mail, senha ou token de login nessa variável: use apenas o UID exibido em Firebase Authentication.
+
+O limite diário interno é renovado à meia-noite no fuso definido por `AI_PROVIDER_DAILY_TIME_ZONE` (`UTC` por padrão). A resposta de `GET /api/ai/credits` inclui `credits.requests` e `credits.platformTokens`, com os saldos globais da plataforma.
 
 ## Ativar o Groq no Render
 

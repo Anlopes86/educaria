@@ -160,10 +160,10 @@ function hydrateSettingsCreditUsage(credits) {
         element.textContent = String(credits.used ?? 0);
     });
     document.querySelectorAll("[data-settings-ai-remaining]").forEach((element) => {
-        element.textContent = String(credits.remaining ?? 0);
+        element.textContent = credits.unlimited ? "Ilimitado" : String(credits.remaining ?? 0);
     });
     document.querySelectorAll("[data-settings-ai-current-limit]").forEach((element) => {
-        element.textContent = String(credits.limit ?? 0);
+        element.textContent = credits.unlimited ? "Ilimitado" : String(credits.limit ?? 0);
     });
     document.querySelectorAll("[data-settings-ai-pro-limit]").forEach((element) => {
         element.textContent = String(credits.limits?.pro ?? credits.limit ?? 0);
