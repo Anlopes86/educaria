@@ -44,28 +44,127 @@ function escapeAttr(value) {
 function aiReadyModalTemplate() {
     return `
         <div class="platform-modal-backdrop" data-ai-ready-modal hidden>
-            <div class="platform-modal-card" role="dialog" aria-modal="true" aria-labelledby="ai-ready-modal-title" aria-describedby="ai-ready-modal-description">
-                <div class="page-section-title page-section-title--compact">
+            <div class="platform-modal-card ai-ready-modal-card" role="dialog" aria-modal="true" aria-labelledby="ai-ready-modal-title" aria-describedby="ai-ready-modal-description">
+                <div class="ai-ready-modal-head">
+                    <span class="ai-ready-modal-icon" aria-hidden="true">✓</span>
                     <div>
                         <span class="platform-section-label">Rascunho criado com IA</span>
-                        <h2 id="ai-ready-modal-title">Atividade criada. Agora revise.</h2>
+                        <h2 id="ai-ready-modal-title">Sua atividade está pronta para revisar.</h2>
+                        <p id="ai-ready-modal-description">O conteúdo já está no editor. Você pode ajustar qualquer parte antes de levar para a turma.</p>
                     </div>
-                    <p id="ai-ready-modal-description">Confira o conteúdo, ajuste o que quiser e veja o resultado na prévia antes de apresentar.</p>
                 </div>
                 <ul class="ai-ready-checklist" aria-label="Próximos passos">
-                    <li>Revise textos e respostas</li>
-                    <li>Confira a visualização da atividade</li>
-                    <li>Salve e abra em modo de apresentação</li>
+                    <li><span><strong>Revise o conteúdo</strong><small>Textos, respostas e imagens continuam editáveis.</small></span></li>
+                    <li><span><strong>Confira como ficará na TV</strong><small>O teste abre uma tela 16:9 sem sair do editor.</small></span></li>
+                    <li><span><strong>Apresente quando estiver pronto</strong><small>Você também pode voltar e continuar mais tarde.</small></span></li>
                 </ul>
-                <div class="utility-actions">
-                    <button type="button" class="platform-link-button platform-link-primary" data-ai-ready-review>Revisar atividade</button>
+                <div class="ai-ready-actions">
+                    <button type="button" class="platform-link-button platform-link-primary" data-ai-ready-review>Continuar editando</button>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-ai-ready-projector>Testar no projetor</button>
+                    <a href="#" class="ai-ready-present-link" data-ai-ready-present>Apresentar agora <span aria-hidden="true">→</span></a>
                 </div>
             </div>
         </div>
     `;
 }
 
+function projectorPreviewModalTemplate() {
+    return `
+        <div class="platform-modal-backdrop projector-preview-modal" data-projector-preview-modal hidden>
+            <section class="platform-modal-card projector-preview-card" role="dialog" aria-modal="true" aria-labelledby="projector-preview-title" aria-describedby="projector-preview-description">
+                <header class="projector-preview-head">
+                    <div>
+                        <span class="platform-section-label">Teste de projetor</span>
+                        <h2 id="projector-preview-title">Confira antes de abrir na TV</h2>
+                        <p id="projector-preview-description">Esta prévia simula uma apresentação em 16:9, o formato mais comum de TVs e projetores.</p>
+                    </div>
+                    <div class="projector-preview-head-actions">
+                        <span class="projector-preview-ratio">16:9</span>
+                        <button type="button" class="projector-preview-icon-button" data-projector-preview-refresh aria-label="Atualizar prévia" title="Atualizar prévia">↻</button>
+                        <button type="button" class="projector-preview-icon-button" data-projector-preview-close aria-label="Fechar teste de projetor" title="Fechar">×</button>
+                    </div>
+                </header>
+                <div class="projector-preview-layout">
+                    <div class="projector-preview-stage-column">
+                        <div class="projector-preview-screen" data-projector-preview-screen>
+                            <iframe class="projector-preview-frame" data-projector-preview-frame title="Prévia da atividade em formato de projetor"></iframe>
+                            <div class="projector-preview-loading" data-projector-preview-loading role="status">
+                                <span aria-hidden="true"></span>
+                                Preparando a visualização…
+                            </div>
+                        </div>
+                        <p class="projector-preview-hint">Dica: use este teste depois de textos longos ou imagens novas.</p>
+                    </div>
+                    <aside class="projector-preview-checklist" aria-label="Verificação da apresentação">
+                        <div class="projector-preview-checklist-head">
+                            <span aria-hidden="true">✓</span>
+                            <div>
+                                <strong>Verificação rápida</strong>
+                                <small>Conferimos os pontos que mais afetam a projeção.</small>
+                            </div>
+                        </div>
+                        <ul>
+                            <li data-projector-check="fit" data-state="pending"><span aria-hidden="true"></span><div><strong>Encaixe na tela</strong><small>Verificando o formato 16:9…</small></div></li>
+                            <li data-projector-check="text" data-state="pending"><span aria-hidden="true"></span><div><strong>Leitura à distância</strong><small>Verificando o texto principal…</small></div></li>
+                            <li data-projector-check="images" data-state="pending"><span aria-hidden="true"></span><div><strong>Imagens</strong><small>Verificando o carregamento…</small></div></li>
+                        </ul>
+                        <div class="projector-preview-note">
+                            <strong>Ainda quer ajustar algo?</strong>
+                            <span>Feche o teste, edite e clique em atualizar para conferir novamente.</span>
+                        </div>
+                    </aside>
+                </div>
+                <footer class="projector-preview-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-projector-preview-close>Voltar a editar</button>
+                    <a href="#" class="platform-link-button platform-link-primary" data-projector-preview-open>Abrir apresentação</a>
+                </footer>
+            </section>
+        </div>
+    `;
+}
+
 let aiReadyReturnFocus = null;
+let projectorPreviewReturnFocus = null;
+
+function currentBuilderMaterialType(fallback = "slides") {
+    return String(document.body?.dataset.materialType || fallback || "slides").trim() || "slides";
+}
+
+function builderPresentationPath(materialType = currentBuilderMaterialType()) {
+    if (typeof presentationPathForMaterial === "function") {
+        return presentationPathForMaterial(materialType);
+    }
+
+    const paths = {
+        lesson: "aula-completa-apresentacao.html",
+        quiz: "quiz-aplicacao.html",
+        flashcards: "flashcards-apresentacao.html",
+        wheel: "roleta-apresentacao.html",
+        hangman: "forca-apresentacao.html",
+        crossword: "palavras-cruzadas-apresentacao.html",
+        wordsearch: "caca-palavras-apresentacao.html",
+        memory: "jogo-memoria-apresentacao.html",
+        match: "ligar-pontos-apresentacao.html",
+        mindmap: "mapa-mental-apresentacao.html",
+        debate: "debate-guiado-apresentacao.html",
+        slides: "apresentacao.html"
+    };
+    return paths[materialType] || paths.slides;
+}
+
+function syncBuilderForPreview(materialType = currentBuilderMaterialType()) {
+    try {
+        document.activeElement?.blur?.();
+        if (typeof forceSyncDraftFromPage === "function") {
+            forceSyncDraftFromPage(materialType);
+        }
+        document.dispatchEvent(new CustomEvent("educaria-builder-preview-sync", {
+            detail: { materialType }
+        }));
+    } catch (error) {
+        console.warn("EducarIA preview sync unavailable:", error);
+    }
+}
 
 function ensureAiReadyModal() {
     let modal = document.querySelector("[data-ai-ready-modal]");
@@ -75,9 +174,22 @@ function ensureAiReadyModal() {
     return document.querySelector("[data-ai-ready-modal]");
 }
 
+function ensureProjectorPreviewModal() {
+    let modal = document.querySelector("[data-projector-preview-modal]");
+    if (modal) return modal;
+
+    document.body.insertAdjacentHTML("beforeend", projectorPreviewModalTemplate());
+    modal = document.querySelector("[data-projector-preview-modal]");
+    modal?.querySelector("[data-projector-preview-frame]")?.addEventListener("load", () => {
+        modal.querySelector("[data-projector-preview-loading]")?.setAttribute("hidden", "");
+        window.setTimeout(() => analyzeProjectorFrame(), 180);
+    });
+    return modal;
+}
+
 function closeAiReadyModal(restoreFocus = true) {
     const modal = document.querySelector("[data-ai-ready-modal]");
-    if (!modal) return;
+    if (!modal || modal.hidden) return;
     modal.hidden = true;
 
     if (restoreFocus && aiReadyReturnFocus instanceof HTMLElement) {
@@ -85,11 +197,164 @@ function closeAiReadyModal(restoreFocus = true) {
     }
 }
 
+function resizeProjectorFrame() {
+    const screen = document.querySelector("[data-projector-preview-screen]");
+    const frame = document.querySelector("[data-projector-preview-frame]");
+    if (!screen || !frame) return;
+    const scale = screen.clientWidth / 1280;
+    frame.style.transform = `scale(${Math.max(scale, 0.1)})`;
+}
+
+function setProjectorCheck(name, state, copy) {
+    const check = document.querySelector(`[data-projector-check="${name}"]`);
+    if (!check) return;
+    check.dataset.state = state;
+    const statusIcon = check.querySelector(":scope > span");
+    const statusCopy = check.querySelector("small");
+    if (statusIcon) statusIcon.textContent = state === "ok" ? "✓" : state === "warn" ? "!" : "";
+    if (statusCopy) statusCopy.textContent = copy;
+}
+
+function resetProjectorChecks() {
+    setProjectorCheck("fit", "pending", "Verificando o formato 16:9…");
+    setProjectorCheck("text", "pending", "Verificando o texto principal…");
+    setProjectorCheck("images", "pending", "Verificando o carregamento…");
+}
+
+function visibleProjectorElements(doc, selector) {
+    return [...doc.querySelectorAll(selector)].filter((element) => {
+        const style = doc.defaultView?.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        return style && style.display !== "none" && style.visibility !== "hidden" && Number(style.opacity || 1) > 0 && rect.width > 2 && rect.height > 2;
+    });
+}
+
+function analyzeProjectorFrame() {
+    const frame = document.querySelector("[data-projector-preview-frame]");
+    if (!(frame instanceof HTMLIFrameElement)) return;
+
+    try {
+        const doc = frame.contentDocument;
+        const view = frame.contentWindow;
+        if (!doc || !view) throw new Error("Preview document unavailable");
+
+        const root = doc.documentElement;
+        const body = doc.body;
+        const fitsWidth = Math.max(root.scrollWidth, body?.scrollWidth || 0) <= view.innerWidth + 5;
+        const fitsHeight = Math.max(root.scrollHeight, body?.scrollHeight || 0) <= view.innerHeight + 12;
+        if (fitsWidth && fitsHeight) {
+            setProjectorCheck("fit", "ok", "A atividade cabe inteira na tela 16:9.");
+        } else if (fitsWidth) {
+            setProjectorCheck("fit", "warn", "Há conteúdo abaixo da tela. Confira a navegação.");
+        } else {
+            setProjectorCheck("fit", "warn", "Há conteúdo ultrapassando a lateral da tela.");
+        }
+
+        const textElements = visibleProjectorElements(doc, "main h1, main h2, main h3, main [class*='title'], main [class*='question'], main [class*='prompt']")
+            .filter((element) => String(element.textContent || "").trim().length >= 3)
+            .slice(0, 80);
+        const fontSizes = textElements
+            .map((element) => Number.parseFloat(view.getComputedStyle(element).fontSize || "0"))
+            .filter((size) => Number.isFinite(size) && size > 0)
+            .sort((left, right) => left - right);
+        const largestFontSize = fontSizes.length ? fontSizes[fontSizes.length - 1] : 24;
+        const clippedText = textElements.some((element) => {
+            const style = view.getComputedStyle(element);
+            const tolerance = Math.max(8, Number.parseFloat(style.fontSize || "0") * 0.4);
+            const clipsVertically = ["hidden", "clip"].includes(style.overflowY)
+                && element.scrollHeight > element.clientHeight + tolerance;
+            const clipsHorizontally = ["hidden", "clip"].includes(style.overflowX)
+                && element.scrollWidth > element.clientWidth + tolerance;
+            return clipsVertically || clipsHorizontally;
+        });
+        if (largestFontSize >= 24 && !clippedText) {
+            setProjectorCheck("text", "ok", "O texto principal está em um tamanho confortável.");
+        } else if (clippedText) {
+            setProjectorCheck("text", "warn", "Há um texto principal cortado na tela.");
+        } else {
+            setProjectorCheck("text", "warn", "Alguns textos podem ficar pequenos vistos de longe.");
+        }
+
+        const images = visibleProjectorElements(doc, "main img[src], main picture img[src]");
+        const brokenImages = images.filter((image) => !image.complete || image.naturalWidth <= 0);
+        if (!images.length) {
+            setProjectorCheck("images", "ok", "Esta tela não depende de imagens.");
+        } else if (!brokenImages.length) {
+            setProjectorCheck("images", "ok", "Todas as imagens visíveis foram carregadas.");
+        } else {
+            setProjectorCheck("images", "warn", `${brokenImages.length} ${brokenImages.length === 1 ? "imagem não carregou" : "imagens não carregaram"}.`);
+        }
+    } catch (error) {
+        console.warn("EducarIA projector preview analysis unavailable:", error);
+        setProjectorCheck("fit", "warn", "Confira visualmente o encaixe da atividade.");
+        setProjectorCheck("text", "warn", "Confira visualmente o tamanho dos textos.");
+        setProjectorCheck("images", "warn", "Confira visualmente as imagens da atividade.");
+    }
+}
+
+function refreshProjectorPreview() {
+    const modal = ensureProjectorPreviewModal();
+    const frame = modal?.querySelector("[data-projector-preview-frame]");
+    const loading = modal?.querySelector("[data-projector-preview-loading]");
+    const materialType = modal?.dataset.materialType || currentBuilderMaterialType();
+    if (!(frame instanceof HTMLIFrameElement)) return;
+
+    syncBuilderForPreview(materialType);
+    resetProjectorChecks();
+    loading?.removeAttribute("hidden");
+    const path = builderPresentationPath(materialType);
+    const separator = path.includes("?") ? "&" : "?";
+    frame.src = `${path}${separator}projectorPreview=${Date.now()}`;
+    const openLink = modal.querySelector("[data-projector-preview-open]");
+    if (openLink) openLink.setAttribute("href", path);
+    requestAnimationFrame(resizeProjectorFrame);
+}
+
+function closeProjectorPreview(restoreFocus = true) {
+    const modal = document.querySelector("[data-projector-preview-modal]");
+    if (!modal || modal.hidden) return;
+    modal.hidden = true;
+    document.body.classList.remove("projector-preview-open");
+
+    if (restoreFocus && projectorPreviewReturnFocus instanceof HTMLElement) {
+        projectorPreviewReturnFocus.focus();
+    }
+}
+
+function openProjectorPreview(materialType = currentBuilderMaterialType()) {
+    const modal = ensureProjectorPreviewModal();
+    if (!modal) return;
+    projectorPreviewReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    modal.dataset.materialType = materialType;
+    modal.hidden = false;
+    document.body.classList.add("projector-preview-open");
+    requestAnimationFrame(() => {
+        resizeProjectorFrame();
+        modal.querySelector("[data-projector-preview-close]")?.focus();
+    });
+    refreshProjectorPreview();
+}
+
+function ensureBuilderProjectorAction() {
+    const actions = document.querySelector(".activity-editor-shell .platform-top-actions");
+    if (!actions || actions.querySelector("[data-projector-preview]")) return;
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "platform-link-button platform-link-secondary builder-projector-trigger";
+    button.dataset.projectorPreview = "";
+    button.innerHTML = '<span aria-hidden="true">▣</span> Testar no projetor';
+    actions.prepend(button);
+}
+
 function openAiReadyModal(materialType = "") {
     const modal = ensureAiReadyModal();
     if (!modal) return;
     aiReadyReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    modal.dataset.materialType = materialType;
+    const resolvedMaterialType = materialType || currentBuilderMaterialType();
+    modal.dataset.materialType = resolvedMaterialType;
+    const presentLink = modal.querySelector("[data-ai-ready-present]");
+    if (presentLink) presentLink.setAttribute("href", builderPresentationPath(resolvedMaterialType));
     modal.hidden = false;
     requestAnimationFrame(() => modal.querySelector("[data-ai-ready-review]")?.focus());
 }
@@ -1894,6 +2159,8 @@ async function generateMaterial(materialType, button) {
 }
 
 function bindAiMaterialGenerator() {
+    ensureBuilderProjectorAction();
+
     document.addEventListener("click", (event) => {
         const button = event.target.closest("[data-generate-material]");
         if (!button) return;
@@ -1920,16 +2187,73 @@ function bindAiMaterialGenerator() {
             return;
         }
 
+        const readyProjectorButton = event.target.closest("[data-ai-ready-projector]");
+        if (readyProjectorButton) {
+            const modal = readyProjectorButton.closest("[data-ai-ready-modal]");
+            const materialType = modal?.dataset.materialType || currentBuilderMaterialType();
+            const editorReturnFocus = aiReadyReturnFocus;
+            closeAiReadyModal(false);
+            openProjectorPreview(materialType);
+            if (editorReturnFocus instanceof HTMLElement) {
+                projectorPreviewReturnFocus = editorReturnFocus;
+            }
+            return;
+        }
+
+        const readyPresentLink = event.target.closest("[data-ai-ready-present]");
+        if (readyPresentLink) {
+            const modal = readyPresentLink.closest("[data-ai-ready-modal]");
+            syncBuilderForPreview(modal?.dataset.materialType || currentBuilderMaterialType());
+            return;
+        }
+
         if (event.target.matches("[data-ai-ready-modal]")) {
             closeAiReadyModal();
         }
     });
 
+    document.addEventListener("click", (event) => {
+        const previewTrigger = event.target.closest("[data-projector-preview]");
+        if (previewTrigger) {
+            event.preventDefault();
+            openProjectorPreview(currentBuilderMaterialType());
+            return;
+        }
+
+        const closeTrigger = event.target.closest("[data-projector-preview-close]");
+        if (closeTrigger) {
+            event.preventDefault();
+            closeProjectorPreview();
+            return;
+        }
+
+        const refreshTrigger = event.target.closest("[data-projector-preview-refresh]");
+        if (refreshTrigger) {
+            event.preventDefault();
+            refreshProjectorPreview();
+            return;
+        }
+
+        const openTrigger = event.target.closest("[data-projector-preview-open]");
+        if (openTrigger) {
+            const modal = openTrigger.closest("[data-projector-preview-modal]");
+            syncBuilderForPreview(modal?.dataset.materialType || currentBuilderMaterialType());
+            return;
+        }
+
+        if (event.target.matches("[data-projector-preview-modal]")) {
+            closeProjectorPreview();
+        }
+    });
+
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
+            closeProjectorPreview();
             closeAiReadyModal();
         }
     });
+
+    window.addEventListener("resize", resizeProjectorFrame, { passive: true });
 }
 
 document.addEventListener("DOMContentLoaded", bindAiMaterialGenerator);

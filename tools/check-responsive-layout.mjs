@@ -18,6 +18,7 @@ const auditFlashcardSide = process.env.EDUCARIA_AUDIT_FLASHCARD_SIDE || "front";
 const auditMindmapLayout = process.env.EDUCARIA_AUDIT_MINDMAP_LAYOUT || "Radial";
 const auditDebateFormat = process.env.EDUCARIA_AUDIT_DEBATE_FORMAT || "Dois lados";
 const auditLessonIndex = Math.max(0, Number(process.env.EDUCARIA_AUDIT_LESSON_INDEX || 0));
+const auditBuilderOverlay = process.env.EDUCARIA_AUDIT_BUILDER_OVERLAY || "";
 const auditMobile = auditWidth < 768;
 const pages = process.argv.slice(2).length
     ? process.argv.slice(2).map((page) => ({
@@ -396,6 +397,22 @@ async function auditPage(pageConfig) {
         await delay(250);
     }
 
+    if (localPagePath.endsWith("-builder.html") && auditBuilderOverlay === "projector") {
+        await waitForPageCondition(cdp, "Boolean(document.querySelector('[data-projector-preview]'))", 80);
+        await cdp.send("Runtime.evaluate", {
+            expression: "document.querySelector('[data-projector-preview]')?.click()"
+        });
+        await waitForPageCondition(cdp, "Boolean(document.querySelector('[data-projector-preview-modal]:not([hidden])') && document.querySelector('[data-projector-preview-frame]')?.contentDocument?.readyState === 'complete')", 120);
+        await delay(500);
+    } else if (localPagePath.endsWith("-builder.html") && auditBuilderOverlay === "ai-ready") {
+        await waitForPageCondition(cdp, "typeof openAiReadyModal === 'function'", 80);
+        await cdp.send("Runtime.evaluate", {
+            expression: "openAiReadyModal(document.body.dataset.materialType || 'slides')"
+        });
+        await waitForPageCondition(cdp, "Boolean(document.querySelector('[data-ai-ready-modal]:not([hidden])'))", 80);
+        await delay(180);
+    }
+
     if (auditScrollTo) {
         await cdp.send("Runtime.evaluate", {
             expression: `(() => { const target = document.querySelector(${JSON.stringify(auditScrollTo)}); if (!target) return false; target.scrollIntoView({ block: 'start' }); return true; })()`,
@@ -550,6 +567,9 @@ async function auditPage(pageConfig) {
         const presentedSlide = document.querySelector('[data-presentation-slide]');
         const binaryQuizButtons = [...document.querySelectorAll('.quiz-application-options .option-btn.is-binary')];
         const matchStageItems = [...document.querySelectorAll('.match-stage-item')];
+        const projectorModal = document.querySelector('[data-projector-preview-modal]');
+        const projectorFrame = document.querySelector('[data-projector-preview-frame]');
+        const aiReadyModal = document.querySelector('[data-ai-ready-modal]');
         return {
             viewportWidth,
             scrollWidth,
@@ -557,6 +577,29 @@ async function auditPage(pageConfig) {
             offenders,
             dashboardReady: document.body?.dataset?.dashboardReady || '',
             dashboardRuntime: typeof window.refreshTeacherDashboard,
+            dashboardRecentState: document.querySelector('[data-dashboard-recent-classes]') ? {
+                cardCount: document.querySelectorAll('.dashboard-recent-card').length,
+                visualCount: document.querySelectorAll('.dashboard-recent-visual').length,
+                editActionCount: document.querySelectorAll('.dashboard-recent-card [data-edit-lesson]').length,
+                presentActionCount: document.querySelectorAll('.dashboard-recent-card [data-present-lesson]').length
+            } : null,
+            projectorPreviewState: projectorModal ? {
+                visible: !projectorModal.hidden,
+                triggerVisible: Boolean(document.querySelector('[data-projector-preview]')),
+                framePath: projectorFrame?.getAttribute('src') || '',
+                frameWidth: projectorFrame?.contentWindow?.innerWidth || 0,
+                frameHeight: projectorFrame?.contentWindow?.innerHeight || 0,
+                checks: [...projectorModal.querySelectorAll('[data-projector-check]')].map((item) => ({
+                    name: item.dataset.projectorCheck,
+                    state: item.dataset.state,
+                    copy: item.querySelector('small')?.textContent.trim() || ''
+                }))
+            } : null,
+            aiReadyState: aiReadyModal ? {
+                visible: !aiReadyModal.hidden,
+                actionCount: aiReadyModal.querySelectorAll('[data-ai-ready-review], [data-ai-ready-projector], [data-ai-ready-present]').length,
+                presentPath: aiReadyModal.querySelector('[data-ai-ready-present]')?.getAttribute('href') || ''
+            } : null,
             hasPresentation: Boolean(document.querySelector('.presentation-shell')),
             hasPrintAction: Boolean(document.querySelector('[data-presentation-print]')),
             slideBuilderState: slideLayoutFields.length ? {
@@ -945,6 +988,31 @@ try {
         console.log(`${page.path}: viewport=${result.viewportWidth} scroll=${result.scrollWidth} overflow=${result.overflow}`);
         if (page.path.includes("plataforma/index.html")) {
             console.log(`  dashboard-ready=${result.dashboardReady || "missing"} runtime=${result.dashboardRuntime}`);
+            if (auditSeedDashboard) {
+                const dashboardRecentWorks = result.dashboardRecentState?.cardCount === 3
+                    && result.dashboardRecentState?.visualCount === 2
+                    && result.dashboardRecentState?.editActionCount === 2
+                    && result.dashboardRecentState?.presentActionCount === 2;
+                console.log(`  dashboard-recent=${dashboardRecentWorks ? "ok" : "failed"} state=${JSON.stringify(result.dashboardRecentState)}`);
+                if (!dashboardRecentWorks) failed = true;
+            }
+        }
+        if (auditBuilderOverlay === "projector" && page.path.includes("-builder.html")) {
+            const projectorWorks = result.projectorPreviewState?.visible
+                && result.projectorPreviewState?.triggerVisible
+                && result.projectorPreviewState?.frameWidth === 1280
+                && result.projectorPreviewState?.frameHeight === 720
+                && result.projectorPreviewState?.checks.length === 3
+                && result.projectorPreviewState?.checks.every((check) => check.state !== "pending");
+            console.log(`  projector-preview=${projectorWorks ? "ok" : "failed"} state=${JSON.stringify(result.projectorPreviewState)}`);
+            if (!projectorWorks) failed = true;
+        }
+        if (auditBuilderOverlay === "ai-ready" && page.path.includes("-builder.html")) {
+            const aiReadyWorks = result.aiReadyState?.visible
+                && result.aiReadyState?.actionCount === 3
+                && Boolean(result.aiReadyState?.presentPath);
+            console.log(`  ai-ready-review=${aiReadyWorks ? "ok" : "failed"} state=${JSON.stringify(result.aiReadyState)}`);
+            if (!aiReadyWorks) failed = true;
         }
         if (result.screenshotPath) console.log(`  screenshot=${result.screenshotPath}`);
         if (result.diagnostics?.length) console.log(`  browser-errors=${JSON.stringify(result.diagnostics)}`);

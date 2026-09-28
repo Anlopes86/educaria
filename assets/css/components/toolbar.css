@@ -35,6 +35,20 @@
     box-shadow: 0 18px 28px -22px rgba(15, 23, 42, 0.3);
 }
 
+.activity-editor-shell .platform-top-actions .builder-projector-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #0f5961;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 800;
+}
+
+.activity-editor-shell .platform-top-actions .builder-projector-trigger > span {
+    font-size: 0.9rem;
+}
+
 .lesson-review-shell .platform-top-actions .platform-link-button:not([data-save-target="turma.html"]) {
     color: #0f3f67;
     background: rgba(217, 242, 242, 0.92);

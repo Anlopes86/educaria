@@ -45,6 +45,25 @@ function dashboardClassInitials(className) {
     return words.slice(0, 2).map((word) => word.charAt(0)).join("").toUpperCase();
 }
 
+function dashboardRecentMaterialVisual(type) {
+    const visuals = {
+        lesson: { slug: "lesson", mark: "AU", label: "Aula completa" },
+        slides: { slug: "slides", mark: "SL", label: "Slides" },
+        quiz: { slug: "quiz", mark: "QZ", label: "Quiz" },
+        flashcards: { slug: "flashcards", mark: "FC", label: "Flashcards" },
+        memory: { slug: "memory", mark: "JM", label: "Jogo da memória" },
+        wheel: { slug: "wheel", mark: "RO", label: "Roleta" },
+        match: { slug: "match", mark: "LP", label: "Ligar pontos" },
+        mindmap: { slug: "mindmap", mark: "MM", label: "Mapa mental" },
+        debate: { slug: "debate", mark: "DB", label: "Debate guiado" },
+        wordsearch: { slug: "wordsearch", mark: "CP", label: "Caça-palavras" },
+        crossword: { slug: "crossword", mark: "PC", label: "Palavras cruzadas" },
+        hangman: { slug: "hangman", mark: "FO", label: "Força" }
+    };
+
+    return visuals[String(type || "slides")] || visuals.slides;
+}
+
 function hydrateTeacherDashboard() {
     const recentClassesRoot = document.querySelector("[data-dashboard-recent-classes]");
     const classCount = document.querySelector("[data-dashboard-class-count]");
@@ -89,18 +108,31 @@ function hydrateTeacherDashboard() {
                 const latestPath = latestLesson && typeof editorPathForLesson === "function"
                     ? editorPathForLesson(latestLesson)
                     : "turma.html#atividades-salvas";
+                const latestPresentationPath = latestLesson && typeof presentationPathForLesson === "function"
+                    ? presentationPathForLesson(latestLesson)
+                    : "apresentacao.html";
                 const recentClassName = escapeHtml(className);
                 const classInitials = escapeHtml(dashboardClassInitials(className));
                 const activityLabel = `${classLessons.length} ${classLessons.length === 1 ? dashboardTranslate("dashboard.count.activity", "atividade") : dashboardTranslate("dashboard.count.activities", "atividades")}`;
                 const lastUpdated = updatedAt
                     ? dashboardTranslate("classes.latest.updatedAt", "Atualizada em") + ` ${escapeHtml(formatLessonDate(updatedAt))}`
                     : dashboardTranslate("dashboard.recent.noUpdate", "Sem atualização");
-                const latestType = classLessons.length
-                    ? escapeHtml(classLessons[0]?.type || dashboardTranslate("dashboard.recent.activity", "Atividade"))
+                const latestVisual = dashboardRecentMaterialVisual(latestLesson?.materialType);
+                const latestType = latestLesson
+                    ? escapeHtml(typeof materialGroupLabel === "function"
+                        ? materialGroupLabel(latestLesson.materialType || "slides")
+                        : latestVisual.label)
                     : "";
+                const latestStatus = latestLesson
+                    ? escapeHtml(typeof lessonStatusLabel === "function"
+                        ? lessonStatusLabel(latestLesson.status)
+                        : (latestLesson.status === "ready" ? "Pronto para projetar" : "Rascunho"))
+                    : "";
+                const latestStatusClass = latestLesson?.status === "ready" ? "ready" : "draft";
+                const latestLessonId = latestLesson ? escapeHtml(latestLesson.id || "") : "";
                 const primaryPath = latestLesson ? escapeHtml(latestPath) : "#activity-toolkit";
                 const primaryLabel = latestLesson
-                    ? dashboardTranslate("dashboard.recent.resume", "Continuar atividade")
+                    ? dashboardTranslate("dashboard.recent.resume", "Continuar")
                     : dashboardTranslate("dashboard.recent.create", "Criar atividade");
 
                 return `
@@ -115,11 +147,21 @@ function hydrateTeacherDashboard() {
                         </div>
                         ${latestLesson ? `
                         <div class="dashboard-recent-activity">
-                            <span>${dashboardTranslate("dashboard.recent.latestLabel", "Última atividade")}</span>
-                            <strong>${latestTitle}</strong>
-                            <div>
-                                <small>${latestType}</small>
-                                <time>${escapeHtml(lastUpdated)}</time>
+                            <div class="dashboard-recent-visual dashboard-recent-visual--${latestVisual.slug}" aria-hidden="true">
+                                <strong>${latestVisual.mark}</strong>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <div class="dashboard-recent-activity-copy">
+                                <div class="dashboard-recent-activity-kicker">
+                                    <span>${dashboardTranslate("dashboard.recent.latestLabel", "Última atividade")}</span>
+                                    <em class="dashboard-recent-status dashboard-recent-status--${latestStatusClass}">${latestStatus}</em>
+                                </div>
+                                <strong>${latestTitle}</strong>
+                                <div class="dashboard-recent-activity-meta">
+                                    <small>${latestType}</small>
+                                    <time>${escapeHtml(lastUpdated)}</time>
+                                </div>
                             </div>
                         </div>
                         ` : `
@@ -130,7 +172,8 @@ function hydrateTeacherDashboard() {
                         </div>
                         `}
                         <div class="dashboard-recent-actions">
-                            <a href="${primaryPath}" class="platform-link-button platform-link-primary" data-dashboard-class-link="${recentClassName}">${primaryLabel}<span aria-hidden="true">→</span></a>
+                            <a href="${primaryPath}" class="platform-link-button platform-link-primary" data-dashboard-class-link="${recentClassName}"${latestLesson ? ` data-edit-lesson="${latestLessonId}"` : ""}>${primaryLabel}<span aria-hidden="true">→</span></a>
+                            ${latestLesson ? `<a href="${escapeHtml(latestPresentationPath)}" class="platform-link-button platform-link-secondary dashboard-recent-present" data-dashboard-class-link="${recentClassName}" data-present-lesson="${latestLessonId}">Apresentar</a>` : ""}
                             <a href="turma.html" class="dashboard-recent-class-link" data-dashboard-class-link="${recentClassName}">${dashboardTranslate("dashboard.recent.openClass", "Abrir turma")}</a>
                         </div>
                     </article>

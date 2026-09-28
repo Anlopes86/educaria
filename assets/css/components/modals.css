@@ -31,7 +31,7 @@
 .ai-ready-checklist li {
     display: flex;
     gap: 9px;
-    align-items: center;
+    align-items: flex-start;
     color: #334155;
     font-size: 0.92rem;
     font-weight: 650;
@@ -48,6 +48,437 @@
     background: rgba(34, 197, 94, 0.12);
     color: #15803d;
     font-weight: 900;
+}
+
+.ai-ready-modal-card {
+    width: min(660px, 100%);
+    gap: 20px;
+    padding: 28px;
+    background:
+        radial-gradient(circle at 100% 0, rgba(20, 184, 166, 0.11), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 250, 252, 0.985) 100%);
+}
+
+.ai-ready-modal-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 15px;
+    align-items: start;
+}
+
+.ai-ready-modal-icon {
+    display: grid;
+    width: 48px;
+    height: 48px;
+    place-items: center;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #0f766e, #14b8a6);
+    color: #ffffff;
+    font-size: 1.26rem;
+    font-weight: 950;
+    box-shadow: 0 17px 30px -20px rgba(15, 118, 110, 0.75);
+}
+
+.ai-ready-modal-head > div {
+    display: grid;
+    gap: 6px;
+}
+
+.ai-ready-modal-head h2,
+.projector-preview-head h2 {
+    margin: 0;
+    color: #0f172a;
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+}
+
+.ai-ready-modal-head h2 {
+    font-size: clamp(1.52rem, 2.6vw, 2rem);
+}
+
+.ai-ready-modal-head p,
+.projector-preview-head p {
+    margin: 0;
+    color: #64748b;
+    line-height: 1.55;
+}
+
+.ai-ready-checklist {
+    gap: 10px;
+}
+
+.ai-ready-checklist li {
+    padding: 11px 12px;
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.74);
+}
+
+.ai-ready-checklist li > span {
+    display: grid;
+    gap: 2px;
+}
+
+.ai-ready-checklist li strong {
+    color: #1e293b;
+    font-size: 0.9rem;
+}
+
+.ai-ready-checklist li small {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.ai-ready-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+}
+
+.ai-ready-actions .platform-link-button {
+    justify-content: center;
+    min-height: 46px;
+    border-radius: 14px;
+}
+
+.ai-ready-present-link {
+    grid-column: 1 / -1;
+    justify-self: center;
+    color: #0f766e;
+    font-size: 0.84rem;
+    font-weight: 850;
+    text-decoration: none;
+}
+
+.ai-ready-present-link:hover,
+.ai-ready-present-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
+body.projector-preview-open {
+    overflow: hidden;
+}
+
+.projector-preview-modal {
+    z-index: 120;
+    padding: 16px;
+    background: rgba(2, 6, 23, 0.72);
+    backdrop-filter: blur(14px);
+}
+
+.projector-preview-card {
+    width: min(1180px, 100%);
+    max-height: calc(100vh - 32px);
+    gap: 18px;
+    overflow: auto;
+    padding: 22px;
+    border-color: rgba(148, 163, 184, 0.2);
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at 5% 0, rgba(14, 165, 233, 0.08), transparent 26%),
+        #f8fafc;
+    box-shadow: 0 36px 80px -32px rgba(2, 6, 23, 0.72);
+}
+
+.projector-preview-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+}
+
+.projector-preview-head > div:first-child {
+    display: grid;
+    gap: 5px;
+    max-width: 760px;
+}
+
+.projector-preview-head h2 {
+    font-size: clamp(1.4rem, 2.2vw, 1.86rem);
+}
+
+.projector-preview-head p {
+    font-size: 0.85rem;
+}
+
+.projector-preview-head-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+}
+
+.projector-preview-ratio,
+.projector-preview-icon-button {
+    display: inline-grid;
+    min-width: 38px;
+    height: 38px;
+    place-items: center;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 11px;
+    background: #ffffff;
+    color: #334155;
+}
+
+.projector-preview-ratio {
+    min-width: 52px;
+    padding-inline: 10px;
+    color: #0369a1;
+    font-size: 0.76rem;
+    font-weight: 900;
+}
+
+.projector-preview-icon-button {
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.15rem;
+    font-weight: 800;
+}
+
+.projector-preview-icon-button:hover,
+.projector-preview-icon-button:focus-visible {
+    border-color: rgba(3, 105, 161, 0.36);
+    color: #0369a1;
+}
+
+.projector-preview-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 282px;
+    gap: 18px;
+    align-items: start;
+}
+
+.projector-preview-stage-column {
+    display: grid;
+    min-width: 0;
+    gap: 8px;
+}
+
+.projector-preview-screen {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 8px solid #111827;
+    border-radius: 14px;
+    background: #020617;
+    box-shadow:
+        0 24px 48px -28px rgba(15, 23, 42, 0.72),
+        0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+}
+
+.projector-preview-frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    border: 0;
+    background: #ffffff;
+    transform-origin: top left;
+}
+
+.projector-preview-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 12px;
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    font-weight: 750;
+}
+
+.projector-preview-loading span {
+    width: 30px;
+    height: 30px;
+    border: 3px solid rgba(255, 255, 255, 0.22);
+    border-top-color: #5eead4;
+    border-radius: 999px;
+    animation: projector-preview-spin 750ms linear infinite;
+}
+
+@keyframes projector-preview-spin {
+    to { transform: rotate(360deg); }
+}
+
+.projector-preview-hint {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.72rem;
+    text-align: center;
+}
+
+.projector-preview-checklist {
+    display: grid;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 18px;
+    background: #ffffff;
+}
+
+.projector-preview-checklist-head {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+}
+
+.projector-preview-checklist-head > span {
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    border-radius: 10px;
+    background: rgba(20, 184, 166, 0.12);
+    color: #0f766e;
+    font-weight: 950;
+}
+
+.projector-preview-checklist-head div,
+.projector-preview-checklist li div {
+    display: grid;
+    gap: 2px;
+}
+
+.projector-preview-checklist-head strong {
+    color: #172033;
+    font-size: 0.92rem;
+}
+
+.projector-preview-checklist-head small,
+.projector-preview-checklist li small {
+    color: #64748b;
+    font-size: 0.7rem;
+    line-height: 1.42;
+}
+
+.projector-preview-checklist ul {
+    display: grid;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.projector-preview-checklist li {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 9px;
+    align-items: start;
+    padding: 10px;
+    border-radius: 13px;
+    background: #f8fafc;
+}
+
+.projector-preview-checklist li > span {
+    display: grid;
+    width: 23px;
+    height: 23px;
+    place-items: center;
+    border: 2px solid #cbd5e1;
+    border-radius: 999px;
+    color: #ffffff;
+    font-size: 0.7rem;
+    font-weight: 950;
+}
+
+.projector-preview-checklist li[data-state="pending"] > span {
+    border-top-color: #0ea5e9;
+    animation: projector-preview-spin 750ms linear infinite;
+}
+
+.projector-preview-checklist li[data-state="ok"] > span {
+    border-color: #16a34a;
+    background: #16a34a;
+}
+
+.projector-preview-checklist li[data-state="warn"] > span {
+    border-color: #d97706;
+    background: #d97706;
+}
+
+.projector-preview-checklist li strong {
+    color: #334155;
+    font-size: 0.78rem;
+}
+
+.projector-preview-note {
+    display: grid;
+    gap: 3px;
+    padding: 11px;
+    border-radius: 13px;
+    background: rgba(14, 165, 233, 0.08);
+    color: #334155;
+}
+
+.projector-preview-note strong {
+    font-size: 0.74rem;
+}
+
+.projector-preview-note span {
+    color: #64748b;
+    font-size: 0.68rem;
+    line-height: 1.45;
+}
+
+.projector-preview-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.projector-preview-actions .platform-link-button {
+    justify-content: center;
+    min-width: 160px;
+}
+
+@media (max-width: 920px) {
+    .projector-preview-card {
+        overflow: auto;
+    }
+
+    .projector-preview-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .projector-preview-checklist {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+    }
+
+    .projector-preview-checklist ul {
+        grid-row: span 2;
+    }
+}
+
+@media (max-width: 620px) {
+    .ai-ready-modal-card,
+    .projector-preview-card {
+        padding: 18px;
+        border-radius: 20px;
+    }
+
+    .ai-ready-actions,
+    .projector-preview-checklist {
+        grid-template-columns: 1fr;
+    }
+
+    .projector-preview-head {
+        display: grid;
+    }
+
+    .projector-preview-actions {
+        display: grid;
+    }
 }
 
 .quiz-explanation-modal[hidden] {
