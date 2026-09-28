@@ -6,7 +6,7 @@
 @import url('./components/buttons.css');
 @import url('./components/forms.css');
 @import url('./components/filters.css');
-@import url('./components/cards.css');
+@import url('./components/cards.css?v=20260928-1');
 @import url('./components/empty-state.css');
 @import url('./components/lists.css');
 @import url('./components/modals.css?v=20260927-10');

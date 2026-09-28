@@ -361,6 +361,9 @@ async function auditPage(pageConfig) {
     if (pagePath.includes("-builder.html") && pagePath.includes("new=1")) {
         await waitForPageCondition(cdp, "Boolean(document.querySelector('.builder-start-panel') && document.querySelector('.editor-disclosure--ai[open]'))", 80);
     }
+    if (pagePath.includes("-builder.html") && pagePath.includes("focus=edit")) {
+        await waitForPageCondition(cdp, "Boolean(document.querySelector('.editor-disclosure--manual[open]') && document.querySelector('[data-builder-item-navigator]:not([hidden])'))", 80);
+    }
     if (pagePath.includes("biblioteca.html")) {
         await waitForPageCondition(cdp, "Boolean(document.querySelector('[data-library-count]')?.textContent.trim() && document.querySelector('[data-library-materials] details'))", 80);
     }
@@ -558,6 +561,9 @@ async function auditPage(pageConfig) {
         const debateFormatField = document.getElementById('debate-formato');
         const previewPane = document.querySelector('.activity-preview-pane');
         const previewStyle = previewPane ? getComputedStyle(previewPane) : null;
+        const builderNavigator = document.querySelector('[data-builder-item-navigator]');
+        const builderNavigatorButtons = [...(builderNavigator?.querySelectorAll('[data-builder-item-target]') || [])];
+        const builderCards = [...document.querySelectorAll('.activity-card-stack > .activity-content-card')];
         const lessonPlayerIframe = document.querySelector('[data-lesson-player-iframe]');
         const lessonPlayerDocument = lessonPlayerIframe?.contentDocument;
         const embeddedSlide = lessonPlayerDocument?.querySelector('[data-presentation-slide]');
@@ -697,6 +703,16 @@ async function auditPage(pageConfig) {
                 maxHeight: previewStyle.maxHeight,
                 position: previewStyle.position
             } : null,
+            builderNavigatorState: builderNavigator ? {
+                hidden: builderNavigator.hidden,
+                position: getComputedStyle(builderNavigator).position,
+                itemCount: builderNavigatorButtons.length,
+                cardCount: builderCards.length,
+                activeCount: builderNavigator.querySelectorAll('[data-builder-item-target].is-active[aria-current="true"]').length,
+                countText: builderNavigator.querySelector('[data-builder-item-count]')?.textContent.trim() || '',
+                targetsUnique: new Set(builderNavigatorButtons.map((button) => button.dataset.builderItemTarget)).size === builderNavigatorButtons.length,
+                allTargetsExist: builderNavigatorButtons.every((button) => document.getElementById(button.dataset.builderItemTarget || ''))
+            } : null,
             flashcardState: flashcardStage ? {
                 visibility: getComputedStyle(flashcardStage).visibility,
                 display: getComputedStyle(flashcardStage).display,
@@ -801,6 +817,29 @@ async function auditPage(pageConfig) {
         };
     })()`;
     const evaluation = await cdp.send("Runtime.evaluate", { expression, returnByValue: true });
+    let builderNavigatorJourney = null;
+    if (localPagePath.endsWith("-builder.html") && evaluation.result.value.builderNavigatorState && !evaluation.result.value.builderNavigatorState.hidden) {
+        const navigatorEvaluation = await cdp.send("Runtime.evaluate", {
+            expression: `(async () => {
+                const buttons = [...document.querySelectorAll('[data-builder-item-target]')];
+                const button = buttons[buttons.length - 1] || buttons[0];
+                if (!button) return { exists: false, active: false, focusedWithin: false, targetId: '' };
+                const targetId = button.dataset.builderItemTarget || '';
+                const card = document.getElementById(targetId);
+                button.click();
+                await new Promise((resolve) => setTimeout(resolve, 420));
+                return {
+                    exists: Boolean(card),
+                    active: button.classList.contains('is-active') && button.getAttribute('aria-current') === 'true',
+                    focusedWithin: Boolean(card && card.contains(document.activeElement)),
+                    targetId
+                };
+            })()`,
+            returnByValue: true,
+            awaitPromise: true
+        });
+        builderNavigatorJourney = navigatorEvaluation.result.value;
+    }
     let quizJourney = null;
     let libraryRename = null;
     const builderJourneyConfigs = {
@@ -1048,7 +1087,7 @@ async function auditPage(pageConfig) {
         topbarRestore = restoreEvaluation.result.value;
     }
     cdp.close();
-    return { ...evaluation.result.value, mobileMenu, topbarRestore, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, screenshotPath, diagnostics: cdp.diagnostics };
+    return { ...evaluation.result.value, mobileMenu, topbarRestore, builderNavigatorJourney, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, screenshotPath, diagnostics: cdp.diagnostics };
 }
 
 let failed = false;
@@ -1193,6 +1232,25 @@ try {
                 && result.previewScroll.position === "sticky";
             console.log(`  preview-scroll=${previewScrollWorks ? "ok" : "failed"}`);
             if (!previewScrollWorks) failed = true;
+        }
+        if (result.builderNavigatorState && !auditMobile) {
+            const navigatorStartsHidden = page.path.includes("new=1");
+            const builderNavigatorWorks = result.builderNavigatorState.hidden === navigatorStartsHidden
+                && result.builderNavigatorState.position === "sticky"
+                && result.builderNavigatorState.itemCount === result.builderNavigatorState.cardCount
+                && result.builderNavigatorState.itemCount > 0
+                && result.builderNavigatorState.activeCount === 1
+                && result.builderNavigatorState.targetsUnique
+                && result.builderNavigatorState.allTargetsExist;
+            console.log(`  builder-item-navigator=${builderNavigatorWorks ? "ok" : "failed"} state=${JSON.stringify(result.builderNavigatorState)}`);
+            if (!builderNavigatorWorks) failed = true;
+            if (!navigatorStartsHidden) {
+                const builderNavigatorJourneyWorks = result.builderNavigatorJourney?.exists
+                    && result.builderNavigatorJourney?.active
+                    && result.builderNavigatorJourney?.focusedWithin;
+                console.log(`  builder-item-jump=${builderNavigatorJourneyWorks ? "ok" : "failed"} state=${JSON.stringify(result.builderNavigatorJourney)}`);
+                if (!builderNavigatorJourneyWorks) failed = true;
+            }
         }
         if (auditBaseUrl) {
             console.log(`  offline-registration=${result.offlineState || "missing"}`);

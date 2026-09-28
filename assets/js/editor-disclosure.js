@@ -22,6 +22,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const focus = EDUCARIA_EDITOR_INITIAL_PARAMS.get("focus") || "";
     const shouldFocusEdit = focus === "edit";
     const isNewMaterial = EDUCARIA_EDITOR_IS_NEW;
+    const navigatorLabels = {
+        quiz: ["questão", "questões"],
+        slides: ["slide", "slides"],
+        flashcards: ["card", "cards"],
+        memory: ["par", "pares"],
+        wheel: ["opção", "opções"],
+        match: ["par", "pares"],
+        mindmap: ["tópico", "tópicos"],
+        debate: ["etapa", "etapas"],
+        wordsearch: ["palavra", "palavras"],
+        crossword: ["entrada", "entradas"],
+        hangman: ["palavra", "palavras"]
+    };
 
     function normalizeLabel(value) {
         return String(value || "")
@@ -158,6 +171,183 @@ document.addEventListener("DOMContentLoaded", () => {
         aiDisclosure.querySelector('input[type="file"]')?.addEventListener("focus", () => setStartMode(pane, "file"));
     }
 
+    function navigatorItemPreview(card) {
+        const fields = [...card.querySelectorAll("textarea, input")].filter((field) => {
+            const type = String(field.getAttribute("type") || "text").toLowerCase();
+            return !["hidden", "color", "file", "button", "submit", "checkbox", "radio"].includes(type);
+        });
+        const content = fields
+            .map((field) => String(field.value || "").replace(/\s+/g, " ").trim())
+            .find(Boolean);
+
+        if (!content) return "Ainda sem conteúdo";
+        return content.length > 52 ? `${content.slice(0, 49).trimEnd()}…` : content;
+    }
+
+    function createItemNavigator(pane, manualDisclosure) {
+        const stack = manualDisclosure?.querySelector(".activity-card-stack");
+        if (!stack || pane.querySelector("[data-builder-item-navigator]")) return null;
+
+        const materialType = document.body?.dataset.materialType || "";
+        const labels = navigatorLabels[materialType] || ["item", "itens"];
+        const navigator = document.createElement("nav");
+        navigator.className = "builder-item-navigator";
+        navigator.dataset.builderItemNavigator = "";
+        navigator.setAttribute("aria-label", "Navegar pelos itens da atividade");
+        navigator.innerHTML = `
+            <div class="builder-item-navigator-head">
+                <div>
+                    <strong>Navegue pelo conteúdo</strong>
+                    <span data-builder-item-count></span>
+                </div>
+                <small>Clique para ir direto</small>
+            </div>
+            <div class="builder-item-navigator-track" data-builder-item-track></div>
+        `;
+        manualDisclosure.before(navigator);
+
+        const track = navigator.querySelector("[data-builder-item-track]");
+        const count = navigator.querySelector("[data-builder-item-count]");
+        let cards = [];
+        let activeCard = null;
+        let renderFrame = 0;
+        let scrollFrame = 0;
+        let activeScrollLockUntil = 0;
+
+        function cardLabel(card, index) {
+            const label = String(card.querySelector(".platform-section-label")?.textContent || "").replace(/\s+/g, " ").trim();
+            return label || `${labels[0].charAt(0).toUpperCase()}${labels[0].slice(1)} ${index + 1}`;
+        }
+
+        function setActiveCard(card) {
+            if (!card || !cards.includes(card)) return;
+            activeCard = card;
+            let activeButton = null;
+            navigator.querySelectorAll("[data-builder-item-target]").forEach((button) => {
+                const isActive = button.dataset.builderItemTarget === card.id;
+                button.classList.toggle("is-active", isActive);
+                if (isActive) {
+                    activeButton = button;
+                    button.setAttribute("aria-current", "true");
+                } else {
+                    button.removeAttribute("aria-current");
+                }
+            });
+
+            if (activeButton) {
+                const buttonLeft = activeButton.offsetLeft;
+                const buttonRight = buttonLeft + activeButton.offsetWidth;
+                const visibleLeft = track.scrollLeft;
+                const visibleRight = visibleLeft + track.clientWidth;
+                if (buttonLeft < visibleLeft || buttonRight > visibleRight) {
+                    track.scrollTo({
+                        left: Math.max(0, buttonLeft - (track.clientWidth - activeButton.offsetWidth) / 2),
+                        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+                    });
+                }
+            }
+        }
+
+        function renderNavigator() {
+            renderFrame = 0;
+            cards = [...stack.children].filter((item) => item.classList?.contains("activity-content-card"));
+            navigator.hidden = !manualDisclosure.open || cards.length === 0;
+            count.textContent = `${cards.length} ${cards.length === 1 ? labels[0] : labels[1]}`;
+            const savedScrollLeft = track.scrollLeft;
+            track.replaceChildren();
+
+            if (!cards.includes(activeCard)) activeCard = cards[0] || null;
+
+            cards.forEach((card, index) => {
+                card.id = `builder-item-${materialType || "activity"}-${index + 1}`;
+                const label = cardLabel(card, index);
+                const preview = navigatorItemPreview(card);
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "builder-item-navigator-button";
+                button.dataset.builderItemTarget = card.id;
+                button.setAttribute("aria-label", `Ir para ${label}: ${preview}`);
+
+                const number = document.createElement("span");
+                number.className = "builder-item-navigator-number";
+                number.setAttribute("aria-hidden", "true");
+                number.textContent = String(index + 1).padStart(2, "0");
+
+                const copy = document.createElement("span");
+                copy.className = "builder-item-navigator-copy";
+                const title = document.createElement("strong");
+                title.textContent = label;
+                const summary = document.createElement("small");
+                summary.textContent = preview;
+                copy.append(title, summary);
+                button.append(number, copy);
+                button.addEventListener("click", () => {
+                    activeScrollLockUntil = Date.now() + 760;
+                    setActiveCard(card);
+                    card.scrollIntoView({
+                        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+                        block: "start"
+                    });
+                    window.setTimeout(() => {
+                        card.querySelector("textarea, input:not([type='hidden']), select")?.focus({ preventScroll: true });
+                    }, 240);
+                });
+                track.appendChild(button);
+            });
+
+            track.scrollLeft = savedScrollLeft;
+            if (activeCard) setActiveCard(activeCard);
+        }
+
+        function scheduleRender() {
+            if (renderFrame) window.cancelAnimationFrame(renderFrame);
+            renderFrame = window.requestAnimationFrame(renderNavigator);
+        }
+
+        function updateActiveFromScroll() {
+            scrollFrame = 0;
+            if (Date.now() < activeScrollLockUntil) return;
+            if (navigator.hidden || !cards.length) return;
+            const referenceTop = navigator.getBoundingClientRect().bottom + 16;
+            const nextCard = cards
+                .filter((card) => card.getBoundingClientRect().bottom > referenceTop)
+                .sort((left, right) => (
+                    Math.abs(left.getBoundingClientRect().top - referenceTop)
+                    - Math.abs(right.getBoundingClientRect().top - referenceTop)
+                ))[0] || cards[cards.length - 1];
+            setActiveCard(nextCard);
+        }
+
+        const mutationObserver = new MutationObserver(scheduleRender);
+        mutationObserver.observe(stack, { childList: true, subtree: true });
+        stack.addEventListener("input", scheduleRender);
+        stack.addEventListener("focusin", (event) => {
+            const card = event.target instanceof Element ? event.target.closest(".activity-content-card") : null;
+            if (card) setActiveCard(card);
+        });
+        window.addEventListener("scroll", () => {
+            if (scrollFrame) return;
+            scrollFrame = window.requestAnimationFrame(updateActiveFromScroll);
+        }, { passive: true });
+        track.addEventListener("keydown", (event) => {
+            if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+            const buttons = [...track.querySelectorAll("button")];
+            const currentIndex = buttons.indexOf(document.activeElement);
+            let nextIndex = currentIndex;
+            if (event.key === "ArrowRight") nextIndex = Math.min(buttons.length - 1, currentIndex + 1);
+            if (event.key === "ArrowLeft") nextIndex = Math.max(0, currentIndex - 1);
+            if (event.key === "Home") nextIndex = 0;
+            if (event.key === "End") nextIndex = buttons.length - 1;
+            if (buttons[nextIndex]) {
+                event.preventDefault();
+                buttons[nextIndex].focus();
+            }
+        });
+
+        renderNavigator();
+        return { navigator, render: scheduleRender };
+    }
+
     panes.forEach((pane) => {
         const disclosures = [...pane.querySelectorAll(".editor-disclosure")];
         disclosures.forEach(decorateDisclosure);
@@ -165,6 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const aiDisclosure = disclosures.find((item) => item.dataset.disclosureRole === "ai");
         const manualDisclosure = disclosures.find((item) => item.dataset.disclosureRole === "manual");
         injectStartPanel(pane, aiDisclosure, manualDisclosure);
+        const itemNavigator = createItemNavigator(pane, manualDisclosure);
 
         disclosures.forEach((item) => {
             item.open = false;
@@ -208,6 +399,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 syncDisclosureExpandedState(current);
+                if (current === manualDisclosure && itemNavigator) {
+                    itemNavigator.render();
+                }
 
                 if (!current.open) {
                     requestAnimationFrame(() => {
