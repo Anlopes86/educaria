@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="dashboard.title">Painel do Professor | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-6">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-7">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -20,7 +20,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/app-sidebar.js?v=20260928-1" defer></script>
-    <script src="../assets/js/teacher-dashboard.js?v=20260927-10" defer></script>
+    <script src="../assets/js/teacher-dashboard.js?v=20260928-1" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
@@ -117,47 +117,36 @@
                     </ol>
 
                     <div class="dashboard-hero-actions">
-                        <a href="#activity-toolkit" class="platform-link-button platform-link-primary" data-dashboard-tour-anchor="hero-action" data-i18n="dashboard.actions.createActivity">Criar atividade</a>
+                        <a href="#quick-ai-create" class="platform-link-button platform-link-primary" data-dashboard-tour-anchor="hero-action" data-i18n="dashboard.actions.createActivity">Criar atividade</a>
                         <a href="biblioteca.html" class="platform-link-button platform-link-secondary" data-i18n="dashboard.nav.library">Biblioteca</a>
                         <span class="ai-credits-pill" data-ai-credits>Créditos de IA: carregando...</span>
                     </div>
                     <button type="button" class="dashboard-guide-trigger" data-dashboard-tour-start data-i18n="dashboard.actions.quickGuide">Ver guia rápido</button>
                 </div>
 
-                <aside class="dashboard-quick-create" data-dashboard-tour-anchor="quick-create">
-                    <span class="dashboard-next-class-tag" data-i18n="dashboard.quick.tag">Comece agora</span>
-                    <strong data-i18n="dashboard.quick.title">Qual experiência você quer criar?</strong>
-                    <p data-dashboard-quick-copy data-i18n="dashboard.quick.copy">Escolha o formato e entre no editor. Lá você poderá digitar um tema, colar um texto ou enviar um arquivo.</p>
+                <aside class="dashboard-quick-create" id="quick-ai-create" data-dashboard-tour-anchor="quick-create">
+                    <span class="dashboard-next-class-tag" data-i18n="dashboard.quick.tag">Criação rápida</span>
+                    <strong data-i18n="dashboard.quick.title">Transforme um tema em uma atividade</strong>
+                    <p data-dashboard-quick-copy data-i18n="dashboard.quick.copy">Digite o que deseja ensinar e escolha a ferramenta. A IA prepara o primeiro rascunho.</p>
 
-                    <div class="dashboard-quick-create-form">
-                        <label class="dashboard-quick-field">
-                            <span data-i18n="dashboard.quick.class">Turma (opcional)</span>
-                            <select data-dashboard-quick-class>
-                                <option value="" data-i18n="dashboard.quick.personalLibrary">Biblioteca pessoal (sem turma)</option>
-                            </select>
+                    <form class="dashboard-quick-create-form" data-dashboard-quick-form>
+                        <label class="dashboard-quick-field dashboard-quick-field--topic">
+                            <span><b aria-hidden="true">1</b><span data-i18n="dashboard.quick.topic">Tópico para criação</span></span>
+                            <textarea rows="2" maxlength="600" required data-dashboard-quick-topic data-i18n-placeholder="dashboard.quick.topicPlaceholder" placeholder="Ex.: Revolução Francesa para o 8º ano"></textarea>
                         </label>
 
                         <label class="dashboard-quick-field">
-                            <span data-i18n="dashboard.quick.activity">Atividade</span>
-                            <select data-dashboard-quick-format>
-                                <option value="slides-builder.html?new=1">Slides (10-15 min)</option>
-                                <option value="quiz-builder.html?new=1">Quiz (5-8 min)</option>
-                                <option value="criar-aula.html">Aula completa (15-25 min)</option>
-                                <option value="flashcards-builder.html?new=1">Flashcards</option>
-                                <option value="jogo-memoria-builder.html?new=1">Jogo da memória</option>
-                                <option value="roleta-builder.html?new=1">Roleta</option>
-                                <option value="ligar-pontos-builder.html?new=1">Ligar pontos</option>
-                                <option value="mapa-mental-builder.html?new=1">Mapa mental</option>
-                                <option value="debate-guiado-builder.html?new=1">Debate guiado</option>
-                                <option value="caca-palavras-builder.html?new=1">Caça-palavras</option>
-                                <option value="palavras-cruzadas-builder.html?new=1">Palavras cruzadas</option>
-                                <option value="forca-builder.html?new=1">Forca</option>
-                            </select>
+                            <span><b aria-hidden="true">2</b><span data-i18n="dashboard.quick.tool">Ferramenta</span></span>
+                            <select data-dashboard-quick-format aria-label="Ferramenta"></select>
                         </label>
 
-                        <button type="button" class="platform-link-button platform-link-primary" data-dashboard-quick-open data-i18n="dashboard.actions.create">Criar</button>
-                    </div>
-                    <span class="dashboard-quick-note"><span aria-hidden="true">✦</span><span data-i18n="dashboard.quick.note">A IA prepara a base; você mantém o controle da aula.</span></span>
+                        <button type="submit" class="platform-link-button platform-link-primary dashboard-quick-generate" data-dashboard-quick-open>
+                            <span aria-hidden="true">✦</span>
+                            <span data-i18n="dashboard.quick.generate">Gerar com IA</span>
+                        </button>
+                        <p class="dashboard-quick-feedback" data-dashboard-quick-feedback role="alert" hidden></p>
+                    </form>
+                    <span class="dashboard-quick-note"><span aria-hidden="true">→</span><span data-i18n="dashboard.quick.note">Depois, revise e edite tudo no editor antes de apresentar.</span></span>
                 </aside>
             </section>
 

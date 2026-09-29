@@ -198,6 +198,7 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     }
 
     .dashboard-quick-create {
+        order: -1;
         padding: 18px;
         border-radius: 20px;
     }
@@ -915,7 +916,7 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     gap: 6px;
 }
 
-.dashboard-quick-field span {
+.dashboard-quick-field > span {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -924,23 +925,44 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     font-weight: 700;
 }
 
-.dashboard-quick-field span::before {
-    content: "";
-    width: 9px;
-    height: 9px;
+.dashboard-quick-field > span b {
+    display: inline-grid;
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    place-items: center;
     border-radius: 999px;
     background: var(--yellow-warm);
-    box-shadow: 0 0 0 4px rgba(245, 207, 107, 0.18);
+    color: #713f12;
+    box-shadow: 0 0 0 4px rgba(245, 207, 107, 0.14);
+    font-size: 0.72rem;
+    font-weight: 900;
 }
 
-.dashboard-quick-field select {
+.dashboard-quick-field select,
+.dashboard-quick-field textarea {
     width: 100%;
     min-height: 44px;
-    padding: 0 14px;
+    padding: 11px 14px;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 14px;
     background: rgba(255, 255, 255, 0.1);
     color: #ffffff;
+    font: inherit;
+    line-height: 1.45;
+}
+
+.dashboard-quick-field select {
+    padding-block: 0;
+}
+
+.dashboard-quick-field textarea {
+    min-height: 68px;
+    resize: vertical;
+}
+
+.dashboard-quick-field textarea::placeholder {
+    color: rgba(255, 255, 255, 0.64);
 }
 
 .dashboard-quick-field select option {
@@ -950,6 +972,18 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 .dashboard-quick-create-form .platform-link-button {
     width: 100%;
     justify-content: center;
+}
+
+.dashboard-quick-generate {
+    gap: 8px;
+}
+
+.dashboard-quick-feedback {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: #fecaca !important;
+    font-size: 0.8rem;
+    font-weight: 700;
 }
 
 .dashboard-section {
@@ -1083,14 +1117,18 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
     }
 
     .dashboard-quick-create-form {
-        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.15fr) auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: end;
         gap: 10px;
     }
 
+    .dashboard-quick-field--topic {
+        grid-column: 1 / -1;
+    }
+
     .dashboard-quick-create-form .platform-link-button {
         width: auto;
-        min-width: 104px;
+        min-width: 154px;
     }
 
     body.product-body.theme-overview .dashboard-toolkit-grid,
@@ -1352,20 +1390,36 @@ body.product-body.theme-overview .dashboard-quick-create p {
     line-height: 1.55;
 }
 
-body.product-body.theme-overview .dashboard-quick-field span {
+body.product-body.theme-overview .dashboard-quick-field > span {
     color: #334155;
 }
 
-body.product-body.theme-overview .dashboard-quick-field span::before {
+body.product-body.theme-overview .dashboard-quick-field > span b {
     background: #14b8a6;
+    color: #ffffff;
     box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.13);
 }
 
-body.product-body.theme-overview .dashboard-quick-field select {
+body.product-body.theme-overview .dashboard-quick-field select,
+body.product-body.theme-overview .dashboard-quick-field textarea {
     border-color: rgba(15, 118, 110, 0.16);
     background: rgba(255, 255, 255, 0.9);
     color: #0f172a;
     box-shadow: 0 8px 18px -18px rgba(15, 23, 42, 0.5);
+}
+
+body.product-body.theme-overview .dashboard-quick-field textarea::placeholder {
+    color: #94a3b8;
+}
+
+body.product-body.theme-overview .dashboard-quick-field select:focus,
+body.product-body.theme-overview .dashboard-quick-field textarea:focus {
+    outline: 3px solid rgba(20, 184, 166, 0.16);
+    border-color: rgba(13, 148, 136, 0.55);
+}
+
+body.product-body.theme-overview .dashboard-quick-feedback {
+    color: #b91c1c !important;
 }
 
 body.product-body.theme-overview .dashboard-hero-panel .dashboard-quick-create .platform-link-primary {

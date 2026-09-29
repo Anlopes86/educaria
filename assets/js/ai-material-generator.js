@@ -1,3 +1,5 @@
+const EDUCARIA_QUICK_AI_STORAGE_KEY = "educaria:quick-ai-generation";
+
 function readTextFile(file) {
     if (!file || file.type !== "text/plain") {
         return Promise.resolve("");
@@ -1968,9 +1970,9 @@ async function generateMaterialFromTemplate(materialType, button) {
     }
 }
 
-async function generateMaterial(materialType, button) {
+async function generateMaterial(materialType, button, options = {}) {
     const config = materialConfig(materialType);
-    if (!config) return;
+    if (!config) return false;
 
     const textField = document.getElementById(config.textId);
     const fileField = document.getElementById(config.fileId);
@@ -2003,7 +2005,7 @@ async function generateMaterial(materialType, button) {
 
     if (!sourceText && !file) {
         window.alert("Adicione um texto-base ou envie um arquivo para a IA estruturar.");
-        return;
+        return false;
     }
 
     const originalLabel = button.textContent;
@@ -2027,7 +2029,7 @@ async function generateMaterial(materialType, button) {
                     hasFile: Boolean(file),
                     reason: "daily_limit"
                 });
-                return;
+                return false;
             }
         }
 
@@ -2148,7 +2150,12 @@ async function generateMaterial(materialType, button) {
             creditsCharged: Number(payload?.charge?.cost ?? 0),
             plan: payload?.credits?.plan || ""
         });
-        openAiReadyModal(materialType, payload);
+        if (options.reviewAfterGeneration) {
+            reviewGeneratedMaterial(materialType);
+        } else {
+            openAiReadyModal(materialType, payload);
+        }
+        return true;
     } catch (error) {
         const endpoint = resolveAiEndpoint();
         const detail = error instanceof Error ? error.message : "Erro desconhecido.";
@@ -2166,10 +2173,59 @@ async function generateMaterial(materialType, button) {
         });
         console.warn("EducarIA AI generation error:", { endpoint, detail, error });
         window.alert(userMessage);
+        return false;
     } finally {
         button.disabled = false;
         button.textContent = originalLabel;
     }
+}
+
+function readDashboardQuickGeneration() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("quickGenerate") !== "1") return null;
+
+    params.delete("quickGenerate");
+    const query = params.toString();
+    window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+
+    try {
+        const raw = sessionStorage.getItem(EDUCARIA_QUICK_AI_STORAGE_KEY);
+        sessionStorage.removeItem(EDUCARIA_QUICK_AI_STORAGE_KEY);
+        if (!raw) return null;
+
+        const request = JSON.parse(raw);
+        const createdAt = Number(request?.createdAt || 0);
+        const isRecent = createdAt > 0 && Date.now() - createdAt < 15 * 60 * 1000;
+        if (!isRecent) return null;
+        return request;
+    } catch (error) {
+        console.warn("EducarIA quick AI request unavailable:", error);
+        return null;
+    }
+}
+
+async function consumeDashboardQuickGeneration() {
+    const request = readDashboardQuickGeneration();
+    if (!request) return;
+
+    const materialType = currentBuilderMaterialType();
+    const topic = String(request.topic || "").trim();
+    if (!topic || request.materialType !== materialType) return;
+
+    const config = materialConfig(materialType);
+    const textField = config ? document.getElementById(config.textId) : null;
+    const button = document.querySelector(`[data-generate-material="${materialType}"]`);
+    if (!textField || !button) return;
+
+    textField.value = topic;
+    textField.dispatchEvent(new Event("input", { bubbles: true }));
+    textField.dispatchEvent(new Event("change", { bubbles: true }));
+    button.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "center"
+    });
+
+    await generateMaterial(materialType, button, { reviewAfterGeneration: true });
 }
 
 function bindAiMaterialGenerator() {
@@ -2270,4 +2326,7 @@ function bindAiMaterialGenerator() {
     window.addEventListener("resize", resizeProjectorFrame, { passive: true });
 }
 
-document.addEventListener("DOMContentLoaded", bindAiMaterialGenerator);
+document.addEventListener("DOMContentLoaded", () => {
+    bindAiMaterialGenerator();
+    window.setTimeout(consumeDashboardQuickGeneration, 80);
+});

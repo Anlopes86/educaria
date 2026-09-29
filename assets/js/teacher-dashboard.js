@@ -4,23 +4,25 @@
 
 const DASHBOARD_TOUR_STORAGE_PREFIX = "educaria:dashboard-tour:";
 const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
+const DASHBOARD_QUICK_AI_STORAGE_KEY = "educaria:quick-ai-generation";
 const DASHBOARD_CORE_FORMATS = [
-    { href: "slides-builder.html?new=1", label: "Slides (10-15 min)" },
-    { href: "quiz-builder.html?new=1", label: "Quiz (5-8 min)" },
-    { href: "criar-aula.html", label: "Aula completa (15-25 min)" }
+    { href: "slides-builder.html?new=1", label: "Slides", materialType: "slides" },
+    { href: "quiz-builder.html?new=1", label: "Quiz", materialType: "quiz" },
+    { href: "criar-aula.html", label: "Aula completa" }
 ];
 const DASHBOARD_EXTRA_FORMATS = [
-    { href: "flashcards-builder.html?new=1", label: "Flashcards", category: "Revisar", description: "Retomada rápida de conceitos", icon: "⚡", tone: "teal" },
-    { href: "jogo-memoria-builder.html?new=1", label: "Jogo da memória", category: "Associar", description: "Conecte pares e significados", icon: "▦", tone: "green" },
-    { href: "roleta-builder.html?new=1", label: "Roleta", category: "Engajar", description: "Sorteie perguntas e desafios", icon: "✦", tone: "orange" },
-    { href: "ligar-pontos-builder.html?new=1", label: "Ligar pontos", category: "Praticar", description: "Relacione ideias e respostas", icon: "↔", tone: "blue" },
-    { href: "mapa-mental-builder.html?new=1", label: "Mapa mental", category: "Organizar", description: "Visualize conexões do tema", icon: "⌘", tone: "violet" },
-    { href: "debate-guiado-builder.html?new=1", label: "Debate guiado", category: "Discutir", description: "Estruture falas e argumentos", icon: "◉", tone: "rose" },
-    { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras", category: "Aquecer", description: "Explore o vocabulário da aula", icon: "⌕", tone: "mint" },
-    { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas", category: "Fixar", description: "Reforce conceitos com pistas", icon: "#", tone: "sky" },
-    { href: "forca-builder.html?new=1", label: "Forca", category: "Descobrir", description: "Revele palavras com a turma", icon: "?", tone: "yellow" }
+    { href: "flashcards-builder.html?new=1", label: "Flashcards", materialType: "flashcards", category: "Revisar", description: "Retomada rápida de conceitos", icon: "⚡", tone: "teal" },
+    { href: "jogo-memoria-builder.html?new=1", label: "Jogo da memória", materialType: "memory", category: "Associar", description: "Conecte pares e significados", icon: "▦", tone: "green" },
+    { href: "roleta-builder.html?new=1", label: "Roleta", materialType: "wheel", category: "Engajar", description: "Sorteie perguntas e desafios", icon: "✦", tone: "orange" },
+    { href: "ligar-pontos-builder.html?new=1", label: "Ligar pontos", materialType: "match", category: "Praticar", description: "Relacione ideias e respostas", icon: "↔", tone: "blue" },
+    { href: "mapa-mental-builder.html?new=1", label: "Mapa mental", materialType: "mindmap", category: "Organizar", description: "Visualize conexões do tema", icon: "⌘", tone: "violet" },
+    { href: "debate-guiado-builder.html?new=1", label: "Debate guiado", materialType: "debate", category: "Discutir", description: "Estruture falas e argumentos", icon: "◉", tone: "rose" },
+    { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras", materialType: "wordsearch", category: "Aquecer", description: "Explore o vocabulário da aula", icon: "⌕", tone: "mint" },
+    { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas", materialType: "crossword", category: "Fixar", description: "Reforce conceitos com pistas", icon: "#", tone: "sky" },
+    { href: "forca-builder.html?new=1", label: "Forca", materialType: "hangman", category: "Descobrir", description: "Revele palavras com a turma", icon: "?", tone: "yellow" }
 ];
-const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_EXTRA_FORMATS];
+const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_EXTRA_FORMATS]
+    .filter((format) => format.materialType);
 const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
 const DASHBOARD_TOUR_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
@@ -198,17 +200,10 @@ function hydrateDashboardGreeting() {
     });
 }
 
-function quickCreateActionLabel(target) {
-    if (target.split("?")[0] === "slides-builder.html") return dashboardTranslate("dashboard.actions.openSlides", "Abrir slides");
-    if (target.split("?")[0] === "quiz-builder.html") return dashboardTranslate("dashboard.actions.openQuiz", "Abrir quiz");
-    if (target === "criar-aula.html") return dashboardTranslate("dashboard.actions.buildLesson", "Montar aula");
-    return dashboardTranslate("dashboard.actions.openTool", "Abrir ferramenta");
-}
-
 function syncDashboardFormatHierarchy() {
     const quickCopy = document.querySelector("[data-dashboard-quick-copy]");
     if (quickCopy) {
-        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Escolha o formato e entre no editor. Lá você poderá digitar um tema, colar um texto ou enviar um arquivo.");
+        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Digite o que deseja ensinar e escolha a ferramenta. A IA prepara o primeiro rascunho.");
     }
 
     const toolkitSection = document.getElementById("activity-toolkit");
@@ -280,87 +275,89 @@ function syncDashboardFormatHierarchy() {
 }
 
 function hydrateQuickCreateForm() {
-    const classSelect = document.querySelector("[data-dashboard-quick-class]");
     const formatSelect = document.querySelector("[data-dashboard-quick-format]");
     const openButton = document.querySelector("[data-dashboard-quick-open]");
-    if (!classSelect || !formatSelect || !openButton) return;
+    if (!formatSelect || !openButton) return;
+    const previousValue = formatSelect.value;
 
-    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
-    const current = typeof readSelectedClass === "function" ? readSelectedClass() : "";
-
-    classSelect.disabled = false;
     formatSelect.disabled = false;
     openButton.disabled = false;
 
     formatSelect.innerHTML = DASHBOARD_QUICK_CREATE_FORMATS.map((format) => {
-        return `<option value="${format.href}">${format.label}</option>`;
+        return `<option value="${format.href}" data-material-type="${format.materialType}">${format.label}</option>`;
     }).join("");
-
-    classSelect.innerHTML = [
-        `<option value="">${dashboardTranslate("dashboard.quick.personalLibrary", "Biblioteca pessoal (sem turma)")}</option>`,
-        ...classes.map((className) => {
-            const selected = className === current ? " selected" : "";
-            return `<option value="${escapeHtml(className)}"${selected}>${escapeHtml(className)}</option>`;
-        })
-    ].join("");
-
-    classSelect.value = classes.includes(current) ? current : "";
-
-    openButton.textContent = quickCreateActionLabel(formatSelect.value);
+    if ([...formatSelect.options].some((option) => option.value === previousValue)) {
+        formatSelect.value = previousValue;
+    }
 }
 
 function bindQuickCreateForm() {
-    const syncQuickCreateButton = () => {
-        const formatSelect = document.querySelector("[data-dashboard-quick-format]");
-        const openButton = document.querySelector("[data-dashboard-quick-open]");
-        if (!formatSelect || !openButton) return;
-        openButton.textContent = quickCreateActionLabel(formatSelect.value);
-    };
+    const form = document.querySelector("[data-dashboard-quick-form]");
+    if (!form) return;
+    const topicField = form.querySelector("[data-dashboard-quick-topic]");
 
-    document.addEventListener("change", (event) => {
-        const formatSelect = event.target.closest("[data-dashboard-quick-format]");
-        const classSelect = event.target.closest("[data-dashboard-quick-class]");
-        if (formatSelect) {
-            syncQuickCreateButton();
+    topicField?.addEventListener("input", () => {
+        topicField.setCustomValidity("");
+        const feedback = form.querySelector("[data-dashboard-quick-feedback]");
+        if (feedback) feedback.hidden = true;
+    });
+
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const formatSelect = document.querySelector("[data-dashboard-quick-format]");
+        const feedback = form.querySelector("[data-dashboard-quick-feedback]");
+        const topic = topicField?.value.trim() || "";
+        const target = formatSelect?.value || "";
+        const materialType = formatSelect?.selectedOptions?.[0]?.dataset.materialType || "";
+        const className = typeof readSelectedClass === "function" ? readSelectedClass() : "";
+
+        if (feedback) feedback.hidden = true;
+        topicField?.setCustomValidity("");
+        if (topic.length < 3) {
+            topicField?.setCustomValidity(dashboardTranslate("dashboard.quick.topicRequired", "Digite um tópico para a IA criar a atividade."));
+            topicField?.reportValidity();
+            topicField?.focus();
+            return;
+        }
+        if (!target || !materialType) return;
+
+        try {
+            sessionStorage.setItem(DASHBOARD_QUICK_AI_STORAGE_KEY, JSON.stringify({
+                topic,
+                target,
+                materialType,
+                className,
+                createdAt: Date.now()
+            }));
+        } catch (error) {
+            if (feedback) {
+                feedback.textContent = dashboardTranslate("dashboard.quick.storageError", "Não foi possível iniciar a criação agora. Atualize a página e tente novamente.");
+                feedback.hidden = false;
+            }
             return;
         }
 
-        if (classSelect && typeof saveSelectedClass === "function") {
-            saveSelectedClass(classSelect.value || "");
-        }
-    });
-
-    document.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-dashboard-quick-open]");
-        if (!button) return;
-
-        const classSelect = document.querySelector("[data-dashboard-quick-class]");
-        const formatSelect = document.querySelector("[data-dashboard-quick-format]");
-        const className = classSelect?.value || "";
-        const target = formatSelect?.value || "";
-        if (!target) return;
-
-        if (typeof saveSelectedClass === "function") {
-            saveSelectedClass(className);
-        }
-
         if (typeof educariaTrack === "function") {
-            educariaTrack("quick_create_opened", {
+            educariaTrack("quick_ai_generation_started", {
                 className,
                 scope: className ? "class" : "library",
                 target,
-                label: quickCreateActionLabel(target)
+                materialType,
+                sourceChars: topic.length
             });
         }
         if (typeof window.educariaMarkMilestone === "function") {
             window.educariaMarkMilestone("activation_builder_opened", {
                 source: "dashboard_quick_create",
                 className,
-                target
+                target,
+                materialType
             });
         }
 
-        window.location.href = target;
+        const separator = target.includes("?") ? "&" : "?";
+        window.location.href = `${target}${separator}quickGenerate=1`;
     });
 }
 
@@ -486,7 +483,7 @@ function dashboardTourSteps() {
         {
             selector: '[data-dashboard-tour-anchor="quick-create"]',
             title: "Crie a primeira atividade",
-            description: "Escolha a turma e o formato. No editor, você poderá informar um tema, enviar um arquivo ou montar o conteúdo manualmente."
+            description: "Digite o tema e escolha a ferramenta. A IA prepara o rascunho e abre o editor para você revisar tudo."
         },
         {
             selector: '[data-dashboard-tour-anchor="toolkit"]',
