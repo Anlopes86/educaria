@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="dashboard.title">Painel do Professor | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-7">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-8">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -20,7 +20,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
     <script src="../assets/js/app-sidebar.js?v=20260928-1" defer></script>
-    <script src="../assets/js/teacher-dashboard.js?v=20260928-1" defer></script>
+    <script src="../assets/js/teacher-dashboard.js?v=20260928-2" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
@@ -144,9 +144,16 @@
                             <span aria-hidden="true">✦</span>
                             <span data-i18n="dashboard.quick.generate">Gerar com IA</span>
                         </button>
+                        <div class="dashboard-quick-progress" data-dashboard-quick-progress role="status" aria-live="polite" hidden>
+                            <span class="dashboard-quick-spinner" aria-hidden="true"></span>
+                            <span>
+                                <strong data-i18n="dashboard.quick.generating">Criando sua atividade...</strong>
+                                <small data-i18n="dashboard.quick.generatingNote">A IA está organizando o conteúdo. Continue nesta página.</small>
+                            </span>
+                        </div>
                         <p class="dashboard-quick-feedback" data-dashboard-quick-feedback role="alert" hidden></p>
                     </form>
-                    <span class="dashboard-quick-note"><span aria-hidden="true">→</span><span data-i18n="dashboard.quick.note">Depois, revise e edite tudo no editor antes de apresentar.</span></span>
+                    <span class="dashboard-quick-note"><span aria-hidden="true">→</span><span data-i18n="dashboard.quick.note">Ao terminar, escolha entre revisar ou apresentar.</span></span>
                 </aside>
             </section>
 

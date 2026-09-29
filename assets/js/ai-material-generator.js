@@ -1,4 +1,4 @@
-const EDUCARIA_QUICK_AI_STORAGE_KEY = "educaria:quick-ai-generation";
+const EDUCARIA_QUICK_AI_RESULT_KEY = "educaria:quick-ai-result";
 
 function readTextFile(file) {
     if (!file || file.type !== "text/plain") {
@@ -2180,52 +2180,91 @@ async function generateMaterial(materialType, button, options = {}) {
     }
 }
 
-function readDashboardQuickGeneration() {
+function readDashboardQuickResult() {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("quickGenerate") !== "1") return null;
+    if (params.get("quickApply") !== "1") return null;
+    const destination = params.get("quickDestination") === "present" ? "present" : "edit";
 
-    params.delete("quickGenerate");
+    params.delete("quickApply");
+    params.delete("quickDestination");
     const query = params.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
 
     try {
-        const raw = sessionStorage.getItem(EDUCARIA_QUICK_AI_STORAGE_KEY);
-        sessionStorage.removeItem(EDUCARIA_QUICK_AI_STORAGE_KEY);
+        const raw = sessionStorage.getItem(EDUCARIA_QUICK_AI_RESULT_KEY);
+        sessionStorage.removeItem(EDUCARIA_QUICK_AI_RESULT_KEY);
         if (!raw) return null;
 
         const request = JSON.parse(raw);
         const createdAt = Number(request?.createdAt || 0);
         const isRecent = createdAt > 0 && Date.now() - createdAt < 15 * 60 * 1000;
         if (!isRecent) return null;
-        return request;
+        return { ...request, destination };
     } catch (error) {
-        console.warn("EducarIA quick AI request unavailable:", error);
+        console.warn("EducarIA quick AI result unavailable:", error);
         return null;
     }
 }
 
-async function consumeDashboardQuickGeneration() {
-    const request = readDashboardQuickGeneration();
+function showQuickPresentationTransfer() {
+    if (document.querySelector("[data-quick-presentation-transfer]")) return;
+    document.body.classList.add("dashboard-ai-result-open");
+    document.body.insertAdjacentHTML("beforeend", `
+        <div class="platform-modal-backdrop dashboard-ai-result-modal quick-presentation-transfer" data-quick-presentation-transfer>
+            <div class="platform-modal-card quick-presentation-transfer-card" role="status" aria-live="polite">
+                <span class="dashboard-quick-spinner" aria-hidden="true"></span>
+                <div>
+                    <strong>Preparando a apresentação...</strong>
+                    <small>O conteúdo já foi criado. Estamos apenas organizando a tela para a turma.</small>
+                </div>
+            </div>
+        </div>
+    `);
+}
+
+async function consumeDashboardQuickResult() {
+    const request = readDashboardQuickResult();
     if (!request) return;
 
     const materialType = currentBuilderMaterialType();
     const topic = String(request.topic || "").trim();
-    if (!topic || request.materialType !== materialType) return;
+    if (!request.material || request.materialType !== materialType) return;
 
     const config = materialConfig(materialType);
     const textField = config ? document.getElementById(config.textId) : null;
-    const button = document.querySelector(`[data-generate-material="${materialType}"]`);
-    if (!textField || !button) return;
+    if (!config || !textField) return;
+
+    if (request.destination === "present") {
+        showQuickPresentationTransfer();
+        await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
+    }
+
+    if (typeof saveSelectedClass === "function") {
+        saveSelectedClass(String(request.className || ""));
+    }
 
     textField.value = topic;
     textField.dispatchEvent(new Event("input", { bubbles: true }));
     textField.dispatchEvent(new Event("change", { bubbles: true }));
-    button.scrollIntoView({
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-        block: "center"
-    });
+    const applied = config.apply(request.material);
+    if (!applied) {
+        document.querySelector("[data-quick-presentation-transfer]")?.remove();
+        document.body.classList.remove("dashboard-ai-result-open");
+        window.alert("A atividade foi criada, mas não foi possível preencher o editor. Tente gerar novamente pelo painel.");
+        return;
+    }
 
-    await generateMaterial(materialType, button, { reviewAfterGeneration: true });
+    await new Promise((resolve) => window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(resolve);
+    }));
+    syncBuilderForPreview(materialType);
+
+    if (request.destination === "present") {
+        window.location.replace(builderPresentationPath(materialType));
+        return;
+    }
+
+    reviewGeneratedMaterial(materialType);
 }
 
 function bindAiMaterialGenerator() {
@@ -2328,5 +2367,5 @@ function bindAiMaterialGenerator() {
 
 document.addEventListener("DOMContentLoaded", () => {
     bindAiMaterialGenerator();
-    window.setTimeout(consumeDashboardQuickGeneration, 80);
+    window.setTimeout(consumeDashboardQuickResult, 80);
 });

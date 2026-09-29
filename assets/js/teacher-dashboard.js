@@ -4,7 +4,7 @@
 
 const DASHBOARD_TOUR_STORAGE_PREFIX = "educaria:dashboard-tour:";
 const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
-const DASHBOARD_QUICK_AI_STORAGE_KEY = "educaria:quick-ai-generation";
+const DASHBOARD_QUICK_AI_RESULT_KEY = "educaria:quick-ai-result";
 const DASHBOARD_CORE_FORMATS = [
     { href: "slides-builder.html?new=1", label: "Slides", materialType: "slides" },
     { href: "quiz-builder.html?new=1", label: "Quiz", materialType: "quiz" },
@@ -27,6 +27,7 @@ const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) 
 const DASHBOARD_TOUR_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 let dashboardTourState = null;
+let dashboardQuickAiResult = null;
 
 function dashboardTranslate(key, fallback) {
     if (typeof window.educariaTranslate !== "function") return fallback;
@@ -278,6 +279,7 @@ function hydrateQuickCreateForm() {
     const formatSelect = document.querySelector("[data-dashboard-quick-format]");
     const openButton = document.querySelector("[data-dashboard-quick-open]");
     if (!formatSelect || !openButton) return;
+    if (formatSelect.closest("[data-dashboard-quick-form]")?.dataset.generating === "true") return;
     const previousValue = formatSelect.value;
 
     formatSelect.disabled = false;
@@ -291,6 +293,186 @@ function hydrateQuickCreateForm() {
     }
 }
 
+function dashboardQuickResultModalTemplate() {
+    return `
+        <div class="platform-modal-backdrop dashboard-ai-result-modal" data-dashboard-ai-result-modal hidden>
+            <section class="platform-modal-card ai-ready-modal-card dashboard-ai-result-card" role="dialog" aria-modal="true" aria-labelledby="dashboard-ai-result-title" aria-describedby="dashboard-ai-result-description">
+                <div class="ai-ready-modal-head">
+                    <span class="ai-ready-modal-icon" aria-hidden="true">✓</span>
+                    <div>
+                        <span class="platform-section-label">${escapeHtml(dashboardTranslate("dashboard.quick.result.tag", "Rascunho criado com IA"))}</span>
+                        <h2 id="dashboard-ai-result-title">${escapeHtml(dashboardTranslate("dashboard.quick.result.title", "Sua atividade está pronta."))}</h2>
+                        <p id="dashboard-ai-result-description">${escapeHtml(dashboardTranslate("dashboard.quick.result.copy", "Escolha se deseja revisar o conteúdo no editor ou abrir a apresentação agora."))}</p>
+                    </div>
+                </div>
+                <div class="dashboard-ai-result-summary">
+                    <span><small>${escapeHtml(dashboardTranslate("dashboard.quick.tool", "Ferramenta"))}</small><strong data-dashboard-ai-result-tool></strong></span>
+                    <span><small>${escapeHtml(dashboardTranslate("dashboard.quick.topic", "Tópico para criação"))}</small><strong data-dashboard-ai-result-topic></strong></span>
+                </div>
+                <p class="ai-credits-pill dashboard-ai-result-usage" data-dashboard-ai-result-usage hidden></p>
+                <div class="ai-ready-actions dashboard-ai-result-actions">
+                    <button type="button" class="platform-link-button platform-link-primary" data-dashboard-ai-result-edit>
+                        ${escapeHtml(dashboardTranslate("dashboard.quick.result.edit", "Revisar e editar"))}
+                    </button>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-dashboard-ai-result-present>
+                        ${escapeHtml(dashboardTranslate("dashboard.quick.result.present", "Apresentar agora"))}
+                    </button>
+                </div>
+            </section>
+        </div>
+    `;
+}
+
+function ensureDashboardQuickResultModal() {
+    let modal = document.querySelector("[data-dashboard-ai-result-modal]");
+    if (modal) return modal;
+    document.body.insertAdjacentHTML("beforeend", dashboardQuickResultModalTemplate());
+    return document.querySelector("[data-dashboard-ai-result-modal]");
+}
+
+function openDashboardQuickResultModal(result) {
+    const modal = ensureDashboardQuickResultModal();
+    if (!modal) return;
+    dashboardQuickAiResult = result;
+
+    const tool = modal.querySelector("[data-dashboard-ai-result-tool]");
+    const topic = modal.querySelector("[data-dashboard-ai-result-topic]");
+    const usage = modal.querySelector("[data-dashboard-ai-result-usage]");
+    if (tool) tool.textContent = result.label || "Atividade";
+    if (topic) topic.textContent = result.topic;
+
+    const charged = Number(result.payload?.charge?.cost || 0);
+    const remaining = Number(result.payload?.credits?.remaining ?? -1);
+    if (usage) {
+        usage.hidden = charged <= 0;
+        if (charged > 0) {
+            usage.textContent = `${dashboardTranslate("dashboard.quick.result.usage", "Uso desta geração")}: ${charged} ${charged === 1 ? "crédito" : "créditos"}${remaining >= 0 ? ` • ${dashboardTranslate("dashboard.quick.result.balance", "saldo")}: ${remaining}` : ""}`;
+        }
+    }
+
+    modal.hidden = false;
+    document.body.classList.add("dashboard-ai-result-open");
+    window.requestAnimationFrame(() => modal.querySelector("[data-dashboard-ai-result-edit]")?.focus());
+}
+
+function setDashboardQuickGenerating(form, isGenerating) {
+    const topicField = form.querySelector("[data-dashboard-quick-topic]");
+    const formatSelect = form.querySelector("[data-dashboard-quick-format]");
+    const button = form.querySelector("[data-dashboard-quick-open]");
+    const progress = form.querySelector("[data-dashboard-quick-progress]");
+    form.setAttribute("aria-busy", isGenerating ? "true" : "false");
+    form.dataset.generating = isGenerating ? "true" : "false";
+    if (topicField) topicField.disabled = isGenerating;
+    if (formatSelect) formatSelect.disabled = isGenerating;
+    if (button) {
+        if (!button.dataset.idleHtml) button.dataset.idleHtml = button.innerHTML;
+        button.disabled = isGenerating;
+        button.innerHTML = isGenerating
+            ? `<span class="dashboard-quick-spinner dashboard-quick-spinner--button" aria-hidden="true"></span><span>${escapeHtml(dashboardTranslate("dashboard.quick.generating", "Criando sua atividade..."))}</span>`
+            : button.dataset.idleHtml;
+    }
+    if (progress) progress.hidden = !isGenerating;
+}
+
+async function requestDashboardQuickMaterial(materialType, topic, label) {
+    if (typeof window.educariaAiEndpoint !== "function") {
+        throw new Error(dashboardTranslate("dashboard.quick.generationError", "Não foi possível conectar ao serviço de IA. Tente novamente."));
+    }
+
+    const formData = new FormData();
+    formData.append("materialType", materialType);
+    formData.append("sourceText", topic);
+    formData.append("text", topic);
+    formData.append("action", `Crie um rascunho pedagógico de ${label || "atividade"}, claro e pronto para o professor revisar e apresentar.`);
+
+    const response = await fetch(window.educariaAiEndpoint(), {
+        method: "POST",
+        headers: typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {},
+        body: formData
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (payload?.credits) {
+        document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
+            detail: { credits: payload.credits }
+        }));
+    }
+    if (!response.ok) {
+        const error = new Error(payload?.error || dashboardTranslate("dashboard.quick.generationError", "Não foi possível criar a atividade agora. Tente novamente."));
+        error.status = response.status;
+        throw error;
+    }
+    if (!payload?.material) {
+        throw new Error(dashboardTranslate("dashboard.quick.generationError", "Não foi possível criar a atividade agora. Tente novamente."));
+    }
+    return payload;
+}
+
+function dashboardQuickGenerationError(error) {
+    if (!navigator.onLine) {
+        return dashboardTranslate("dashboard.quick.offlineError", "Você está sem conexão. Reconecte-se e tente novamente.");
+    }
+    if (Number(error?.status || 0) === 401) {
+        return dashboardTranslate("dashboard.quick.sessionError", "Sua sessão expirou. Entre novamente para usar a IA.");
+    }
+    if ([400, 403, 429].includes(Number(error?.status || 0)) && error?.message) {
+        return error.message;
+    }
+    return dashboardTranslate("dashboard.quick.generationError", "Não foi possível criar a atividade agora. Tente novamente.");
+}
+
+function continueDashboardQuickResult(destination) {
+    const result = dashboardQuickAiResult;
+    if (!result) return;
+
+    try {
+        sessionStorage.setItem(DASHBOARD_QUICK_AI_RESULT_KEY, JSON.stringify({
+            topic: result.topic,
+            target: result.target,
+            materialType: result.materialType,
+            className: result.className,
+            material: result.payload.material,
+            createdAt: Date.now()
+        }));
+    } catch (error) {
+        window.alert(dashboardTranslate("dashboard.quick.storageError", "Não foi possível abrir a atividade agora. Atualize a página e tente novamente."));
+        return;
+    }
+
+    if (typeof educariaTrack === "function") {
+        educariaTrack("quick_ai_result_opened", {
+            materialType: result.materialType,
+            destination,
+            className: result.className
+        });
+    }
+    if (typeof window.educariaMarkMilestone === "function") {
+        window.educariaMarkMilestone("activation_builder_opened", {
+            source: "dashboard_quick_create",
+            className: result.className,
+            target: result.target,
+            materialType: result.materialType,
+            destination
+        });
+    }
+
+    const separator = result.target.includes("?") ? "&" : "?";
+    window.location.href = `${result.target}${separator}quickApply=1&quickDestination=${destination}`;
+}
+
+function bindDashboardQuickResultModal() {
+    document.addEventListener("click", (event) => {
+        if (event.target.closest("[data-dashboard-ai-result-edit]")) {
+            continueDashboardQuickResult("edit");
+            return;
+        }
+        if (event.target.closest("[data-dashboard-ai-result-present]")) {
+            continueDashboardQuickResult("present");
+            return;
+        }
+    });
+}
+
 function bindQuickCreateForm() {
     const form = document.querySelector("[data-dashboard-quick-form]");
     if (!form) return;
@@ -302,7 +484,7 @@ function bindQuickCreateForm() {
         if (feedback) feedback.hidden = true;
     });
 
-    form.addEventListener("submit", (event) => {
+    form.addEventListener("submit", async (event) => {
         event.preventDefault();
 
         const formatSelect = document.querySelector("[data-dashboard-quick-format]");
@@ -322,22 +504,6 @@ function bindQuickCreateForm() {
         }
         if (!target || !materialType) return;
 
-        try {
-            sessionStorage.setItem(DASHBOARD_QUICK_AI_STORAGE_KEY, JSON.stringify({
-                topic,
-                target,
-                materialType,
-                className,
-                createdAt: Date.now()
-            }));
-        } catch (error) {
-            if (feedback) {
-                feedback.textContent = dashboardTranslate("dashboard.quick.storageError", "Não foi possível iniciar a criação agora. Atualize a página e tente novamente.");
-                feedback.hidden = false;
-            }
-            return;
-        }
-
         if (typeof educariaTrack === "function") {
             educariaTrack("quick_ai_generation_started", {
                 className,
@@ -347,17 +513,41 @@ function bindQuickCreateForm() {
                 sourceChars: topic.length
             });
         }
-        if (typeof window.educariaMarkMilestone === "function") {
-            window.educariaMarkMilestone("activation_builder_opened", {
-                source: "dashboard_quick_create",
-                className,
-                target,
-                materialType
-            });
-        }
 
-        const separator = target.includes("?") ? "&" : "?";
-        window.location.href = `${target}${separator}quickGenerate=1`;
+        setDashboardQuickGenerating(form, true);
+        try {
+            if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
+                const hasCredits = await window.ensureEducariaAiCreditsAvailable({ materialType });
+                if (!hasCredits) return;
+            }
+
+            const label = formatSelect?.selectedOptions?.[0]?.textContent?.trim() || "Atividade";
+            const payload = await requestDashboardQuickMaterial(materialType, topic, label);
+            if (typeof educariaTrack === "function") {
+                educariaTrack("quick_ai_generation_succeeded", {
+                    className,
+                    materialType,
+                    sourceChars: topic.length,
+                    creditsCharged: Number(payload?.charge?.cost || 0)
+                });
+            }
+            openDashboardQuickResultModal({ topic, target, materialType, className, label, payload });
+        } catch (error) {
+            if (feedback) {
+                feedback.textContent = dashboardQuickGenerationError(error);
+                feedback.hidden = false;
+            }
+            if (typeof educariaTrack === "function") {
+                educariaTrack("quick_ai_generation_failed", {
+                    className,
+                    materialType,
+                    sourceChars: topic.length,
+                    status: Number(error?.status || 0)
+                });
+            }
+        } finally {
+            setDashboardQuickGenerating(form, false);
+        }
     });
 }
 
@@ -483,7 +673,7 @@ function dashboardTourSteps() {
         {
             selector: '[data-dashboard-tour-anchor="quick-create"]',
             title: "Crie a primeira atividade",
-            description: "Digite o tema e escolha a ferramenta. A IA prepara o rascunho e abre o editor para você revisar tudo."
+            description: "Digite o tema, escolha a ferramenta e aguarde no painel. Quando o rascunho ficar pronto, escolha entre editar ou apresentar."
         },
         {
             selector: '[data-dashboard-tour-anchor="toolkit"]',
@@ -849,6 +1039,7 @@ document.addEventListener("DOMContentLoaded", () => {
     refreshTeacherDashboard();
     bindTeacherDashboardClassLinks();
     bindQuickCreateForm();
+    bindDashboardQuickResultModal();
     bindQuickCreateRefresh();
     bindDashboardTourTrigger();
     syncAndRefreshTeacherDashboard();
