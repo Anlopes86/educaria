@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="classes.title">Turmas | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-9">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260930-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js" defer></script>
@@ -12,10 +12,10 @@
     <script src="../assets/js/firebase-config.js" defer></script>
     <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
-    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/turma-context.js?v=20260930-2" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
-    <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
-    <script src="../assets/js/classes-overview.js" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20260930-2" defer></script>
+    <script src="../assets/js/classes-overview.js?v=20260930-2" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-page="classes-overview">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
@@ -108,28 +108,14 @@
                         </article>
                     </div>
                 </div>
-                <div class="workspace-page-hero__visual" aria-hidden="true">
-                    <svg viewBox="0 0 360 260" role="img">
-                        <defs>
-                            <linearGradient id="classes-card-a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#dbeafe"/></linearGradient>
-                            <linearGradient id="classes-card-b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f0fdfa"/><stop offset="1" stop-color="#ccfbf1"/></linearGradient>
-                        </defs>
-                        <circle cx="293" cy="52" r="34" fill="#fbbf24" opacity=".9"/>
-                        <rect x="62" y="36" width="228" height="166" rx="28" fill="#172554" opacity=".2"/>
-                        <rect x="42" y="22" width="228" height="166" rx="28" fill="url(#classes-card-a)"/>
-                        <rect x="65" y="47" width="56" height="56" rx="18" fill="#2563eb"/>
-                        <circle cx="93" cy="68" r="10" fill="#fff" opacity=".95"/>
-                        <path d="M76 92c3-12 12-17 17-17s14 5 17 17" fill="#fff" opacity=".95"/>
-                        <rect x="139" y="52" width="94" height="12" rx="6" fill="#1e3a8a" opacity=".9"/>
-                        <rect x="139" y="76" width="68" height="9" rx="4.5" fill="#93c5fd"/>
-                        <rect x="65" y="124" width="168" height="14" rx="7" fill="#bfdbfe"/>
-                        <rect x="65" y="150" width="112" height="14" rx="7" fill="#dbeafe"/>
-                        <rect x="111" y="154" width="214" height="88" rx="24" fill="url(#classes-card-b)" stroke="#99f6e4" stroke-width="2"/>
-                        <circle cx="145" cy="188" r="17" fill="#0f766e"/>
-                        <path d="m138 188 5 5 10-12" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-                        <rect x="177" y="176" width="108" height="11" rx="5.5" fill="#115e59" opacity=".82"/>
-                        <rect x="177" y="199" width="78" height="9" rx="4.5" fill="#5eead4"/>
-                    </svg>
+                <div class="workspace-page-hero__visual workspace-hero-control-card">
+                    <span class="workspace-hero-control-card__tag" data-i18n="classes.hero.quickAccess">Acesso rápido</span>
+                    <strong data-i18n="classes.hero.chooseClass">Qual turma você quer consultar?</strong>
+                    <p data-i18n="classes.hero.chooseClassCopy">Selecione uma turma para destacar somente os materiais e atalhos daquele grupo.</p>
+                    <label for="classes-quick-picker" data-i18n="classes.hero.classLabel">Turma</label>
+                    <select id="classes-quick-picker" data-classes-quick-picker></select>
+                    <a href="turma.html#atividades-salvas" class="platform-link-button workspace-hero-control-card__action" data-classes-quick-open aria-disabled="true" data-i18n="classes.actions.openSelected">Abrir turma selecionada</a>
+                    <button type="button" class="workspace-hero-control-card__clear" data-classes-quick-clear hidden data-i18n="classes.actions.showAll">Mostrar todas as turmas</button>
                 </div>
             </section>
 

@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="library.title">Biblioteca | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-9">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260930-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js" defer></script>
@@ -15,10 +15,10 @@
     <script src="../assets/js/firebase-config.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/i18n.js" defer></script>
-    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/turma-context.js?v=20260930-2" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
-    <script src="../assets/js/lesson-library.js" defer></script>
-    <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
+    <script src="../assets/js/lesson-library.js?v=20260930-2" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20260930-2" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-page="library-overview">
     <a class="skip-link" href="#main-content" data-i18n="library.skip">Pular para o conteúdo principal</a>
@@ -101,24 +101,37 @@
                         <a href="turmas.html" class="platform-link-button workspace-secondary-action" data-i18n="library.nav.classes">Turmas</a>
                     </div>
                 </div>
-                <div class="workspace-page-hero__visual" aria-hidden="true">
-                    <svg viewBox="0 0 360 260" role="img">
-                        <rect x="68" y="38" width="226" height="172" rx="30" fill="#0c4a6e" opacity=".22"/>
-                        <rect x="48" y="22" width="226" height="172" rx="30" fill="#ffffff"/>
-                        <rect x="72" y="48" width="110" height="14" rx="7" fill="#075985"/>
-                        <rect x="72" y="76" width="154" height="9" rx="4.5" fill="#bae6fd"/>
-                        <rect x="72" y="102" width="50" height="58" rx="14" fill="#2563eb"/>
-                        <rect x="132" y="102" width="50" height="58" rx="14" fill="#7c3aed"/>
-                        <rect x="192" y="102" width="50" height="58" rx="14" fill="#0f766e"/>
-                        <path d="M84 121h26M84 133h18" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".9"/>
-                        <path d="M144 121h26M144 133h18" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".9"/>
-                        <path d="M204 121h26M204 133h18" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".9"/>
-                        <rect x="103" y="167" width="214" height="70" rx="22" fill="#fef3c7" stroke="#fde68a" stroke-width="2"/>
-                        <circle cx="137" cy="202" r="18" fill="#f59e0b"/>
-                        <path d="M129 202h16M137 194v16" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
-                        <rect x="170" y="188" width="105" height="11" rx="5.5" fill="#92400e" opacity=".78"/>
-                        <rect x="170" y="211" width="73" height="8" rx="4" fill="#fbbf24"/>
-                    </svg>
+                <div class="workspace-page-hero__visual workspace-hero-filter-card">
+                    <div class="workspace-hero-filter-card__head">
+                        <span data-i18n="library.filters.quickLabel">Encontre rapidamente</span>
+                        <strong data-i18n="library.filters.quickTitle">O que você quer consultar?</strong>
+                    </div>
+                    <div class="library-filter-panel" data-library-filter-panel>
+                        <div class="platform-field library-scope-field">
+                            <label for="library-scope-filter" data-i18n="library.filters.scope">Origem dos materiais</label>
+                            <select id="library-scope-filter" data-library-scope-filter></select>
+                        </div>
+                        <div class="platform-field library-search-field">
+                            <label for="library-search" data-i18n="library.filters.search">Buscar material</label>
+                            <input id="library-search" type="search" placeholder="Título, resumo ou tipo" data-library-search data-i18n-placeholder="library.filters.search.placeholder">
+                        </div>
+                        <div class="platform-field">
+                            <label for="library-status-filter" data-i18n="library.filters.status">Status</label>
+                            <select id="library-status-filter" data-library-status-filter>
+                                <option value="all" data-i18n="library.filters.status.all">Todos</option>
+                                <option value="ready" data-i18n="library.filters.status.ready">Prontos</option>
+                                <option value="draft" data-i18n="library.filters.status.draft">Rascunhos</option>
+                            </select>
+                        </div>
+                        <div class="platform-field">
+                            <label for="library-sort" data-i18n="library.filters.sort">Ordenar</label>
+                            <select id="library-sort" data-library-sort>
+                                <option value="recent" data-i18n="library.filters.sort.recent">Atualizados recentemente</option>
+                                <option value="title" data-i18n="library.filters.sort.title">Título A-Z</option>
+                                <option value="used" data-i18n="library.filters.sort.used">Mais usados</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -129,29 +142,6 @@
                         <h2 data-library-count role="status" aria-live="polite" aria-atomic="true"></h2>
                     </div>
                     <p data-i18n="library.materials.copy">Abra, edite ou apresente qualquer material salvo independentemente de turma.</p>
-                </div>
-
-                <div class="library-filter-panel" data-library-filter-panel>
-                    <div class="platform-field library-search-field">
-                        <label for="library-search" data-i18n="library.filters.search">Buscar material</label>
-                        <input id="library-search" type="search" placeholder="Título, resumo ou tipo" data-library-search data-i18n-placeholder="library.filters.search.placeholder">
-                    </div>
-                    <div class="platform-field">
-                        <label for="library-status-filter" data-i18n="library.filters.status">Status</label>
-                        <select id="library-status-filter" data-library-status-filter>
-                            <option value="all" data-i18n="library.filters.status.all">Todos</option>
-                            <option value="ready" data-i18n="library.filters.status.ready">Prontos</option>
-                            <option value="draft" data-i18n="library.filters.status.draft">Rascunhos</option>
-                        </select>
-                    </div>
-                    <div class="platform-field">
-                        <label for="library-sort" data-i18n="library.filters.sort">Ordenar</label>
-                        <select id="library-sort" data-library-sort>
-                            <option value="recent" data-i18n="library.filters.sort.recent">Atualizados recentemente</option>
-                            <option value="title" data-i18n="library.filters.sort.title">Título A-Z</option>
-                            <option value="used" data-i18n="library.filters.sort.used">Mais usados</option>
-                        </select>
-                    </div>
                 </div>
 
                 <div class="class-material-filters" data-library-material-filters role="toolbar" aria-label="Filtros da biblioteca" data-i18n-aria-label="library.filters.toolbar"></div>

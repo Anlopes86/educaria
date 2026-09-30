@@ -36,10 +36,13 @@ let lessonsSyncPromise = null;
 let lastLessonsSyncUid = "";
 let activeClassMaterialFilter = "all";
 let activeClassStatusFilter = "all";
+let activeClassSort = "recent";
+let classSearchQuery = "";
 let activeLibraryMaterialFilter = "all";
 let activeLibraryStatusFilter = "all";
 let activeLibrarySort = "recent";
 let librarySearchQuery = "";
+let activeLibraryScope = "library";
 
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
@@ -1379,6 +1382,12 @@ function classFilterSummaryLabel(filterId, statusFilterId, filteredCount, totalC
     const statusLabel = statusFilter.id === "all" ? "" : classStatusFilterLabel(statusFilter).toLowerCase();
     const statusSuffix = statusLabel ? ` ${lessonLibraryTranslate("classDetail.filters.withStatus", "com status")} ${statusLabel}` : "";
 
+    if (normalizeSearchText(classSearchQuery)) {
+        if (!filteredCount) return lessonLibraryTranslate("classDetail.filters.searchNone", "Nenhuma atividade corresponde à busca nesta turma.");
+        const noun = lessonLibraryTranslate(filteredCount === 1 ? "dashboard.count.activity" : "dashboard.count.activities", filteredCount === 1 ? "atividade" : "atividades");
+        return `${filteredCount} ${noun} ${lessonLibraryTranslate("classDetail.filters.searchFound", "encontradas pela busca nesta turma.")}`;
+    }
+
     if (filter.id === "all" && statusFilter.id === "all") {
         const noun = lessonLibraryTranslate(totalCount === 1 ? "dashboard.count.activity" : "dashboard.count.activities", totalCount === 1 ? "atividade" : "atividades");
         return `${totalCount} ${noun} ${lessonLibraryTranslate("classDetail.filters.summaryInClass", "nesta turma.")}`;
@@ -1396,20 +1405,59 @@ function classFilterSummaryLabel(filterId, statusFilterId, filteredCount, totalC
     return `${filteredCount} ${noun} ${lessonLibraryTranslate("classes.filters.summaryIn", "em")} ${location}${statusSuffix}.`;
 }
 
+function libraryScopeLabel(scope = activeLibraryScope) {
+    if (scope === "all") return lessonLibraryTranslate("library.filters.scope.all", "todos os materiais");
+    if (scope.startsWith("class:")) return scope.slice(6);
+    return lessonLibraryTranslate("library.filters.scope.library", "biblioteca pessoal");
+}
+
 function libraryFilterSummaryLabel(filterId, filteredCount, totalCount) {
     const filter = classMaterialFilterDefinition(filterId);
     const filterLabel = classMaterialFilterLabel(filter).toLowerCase();
+    const location = libraryScopeLabel();
+    if (normalizeSearchText(librarySearchQuery)) {
+        const noun = lessonLibraryTranslate(filteredCount === 1 ? "library.count.material" : "library.count.materials", filteredCount === 1 ? "material" : "materiais");
+        return `${filteredCount} ${noun} ${lessonLibraryTranslate("library.filters.searchFound", "encontrados pela busca em")} ${location}.`;
+    }
     if (filter.id === "all") {
         const noun = lessonLibraryTranslate(totalCount === 1 ? "library.count.material" : "library.count.materials", totalCount === 1 ? "material" : "materiais");
-        return `${totalCount} ${noun} ${lessonLibraryTranslate("library.filters.summaryInLibrary", "na biblioteca.")}`;
+        return `${totalCount} ${noun} ${lessonLibraryTranslate("library.filters.summaryIn", "em")} ${location}.`;
     }
 
     if (!filteredCount) {
-        return `${lessonLibraryTranslate("library.filters.summaryNone", "Sem resultados em")} ${filterLabel} ${lessonLibraryTranslate("library.filters.summaryInLibrary", "na biblioteca.")}`;
+        return `${lessonLibraryTranslate("library.filters.summaryNone", "Sem resultados em")} ${filterLabel} ${lessonLibraryTranslate("library.filters.summaryIn", "em")} ${location}.`;
     }
 
     const noun = lessonLibraryTranslate(filteredCount === 1 ? "library.count.material" : "library.count.materials", filteredCount === 1 ? "material" : "materiais");
-    return `${filteredCount} ${noun} ${lessonLibraryTranslate("classes.filters.summaryIn", "em")} ${filterLabel}.`;
+    return `${filteredCount} ${noun} ${lessonLibraryTranslate("classes.filters.summaryIn", "em")} ${filterLabel} · ${location}.`;
+}
+
+function libraryMaterialsForActiveScope() {
+    if (activeLibraryScope === "all") return readLessonsLibrary();
+    if (activeLibraryScope.startsWith("class:")) return classMaterials(activeLibraryScope.slice(6));
+    return libraryMaterials();
+}
+
+function hydrateLibraryScopeFilter(select) {
+    if (!select) return;
+    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
+    const validScopes = new Set(["library", "all", ...classes.map((className) => `class:${className}`)]);
+    if (!validScopes.has(activeLibraryScope)) activeLibraryScope = "library";
+
+    select.innerHTML = `
+        <option value="library">${escapeHtml(lessonLibraryTranslate("library.filters.scope.library", "Biblioteca pessoal"))}</option>
+        <option value="all">${escapeHtml(lessonLibraryTranslate("library.filters.scope.all", "Todos os materiais"))}</option>
+        ${classes.map((className) => `<option value="class:${escapeHtml(className)}">${escapeHtml(lessonLibraryTranslate("library.filters.scope.classPrefix", "Turma"))}: ${escapeHtml(className)}</option>`).join("")}
+    `;
+    select.value = activeLibraryScope;
+}
+
+function libraryTransferActionHtml(lesson) {
+    const lessonId = escapeHtml(lesson.id);
+    if (normalizeLessonScope(lesson) === LESSON_SCOPE_CLASS) {
+        return `<button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${lessonId}">${lessonLibraryTranslate("classDetail.actions.addToLibrary", "Adicionar à biblioteca")}</button>`;
+    }
+    return `<button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${lessonId}">${lessonLibraryTranslate("library.actions.addToClass", "Adicionar à turma")}</button>`;
 }
 
 function selectedClassFromAvailableClasses() {
@@ -1837,6 +1885,8 @@ function hydrateClassPage() {
     const filterRoot = document.querySelector("[data-class-material-filters]");
     const statusFilterRoot = document.querySelector("[data-class-status-filters]");
     const filterSummaryRoot = document.querySelector("[data-class-material-filter-summary]");
+    const searchInput = document.querySelector("[data-class-material-search]");
+    const sortSelect = document.querySelector("[data-class-material-sort]");
     if (!listRoot && !selectRoot && !filterRoot && !statusFilterRoot && !filterSummaryRoot) return;
     if (listRoot) {
         listRoot.setAttribute("aria-busy", "true");
@@ -1855,6 +1905,10 @@ function hydrateClassPage() {
     const allLessons = classMaterials(turma);
     hydrateClassFocusPanel(classes, turma, allLessons);
 
+    if (!["recent", "title", "used"].includes(activeClassSort)) activeClassSort = "recent";
+    if (searchInput && searchInput.value !== classSearchQuery) searchInput.value = classSearchQuery;
+    if (sortSelect && sortSelect.value !== activeClassSort) sortSelect.value = activeClassSort;
+
     const filterExists = CLASS_MATERIAL_FILTERS.some((filter) => filter.id === activeClassMaterialFilter);
     if (!filterExists) {
         activeClassMaterialFilter = "all";
@@ -1866,14 +1920,18 @@ function hydrateClassPage() {
     }
 
     const statusFilteredLessons = classStatusFilterApply(allLessons, activeClassStatusFilter);
-    let filteredLessons = classMaterialFilterApply(statusFilteredLessons, activeClassMaterialFilter);
+    let filteredLessons = classMaterialFilterApply(statusFilteredLessons, activeClassMaterialFilter)
+        .filter((lesson) => lessonMatchesLibrarySearch(lesson, classSearchQuery));
+    filteredLessons = sortLibraryMaterials(filteredLessons, activeClassSort);
     if (allLessons.length && !statusFilteredLessons.length && activeClassStatusFilter !== "all") {
         activeClassStatusFilter = "all";
-        filteredLessons = classMaterialFilterApply(allLessons, activeClassMaterialFilter);
+        filteredLessons = classMaterialFilterApply(allLessons, activeClassMaterialFilter)
+            .filter((lesson) => lessonMatchesLibrarySearch(lesson, classSearchQuery));
+        filteredLessons = sortLibraryMaterials(filteredLessons, activeClassSort);
     }
-    if (allLessons.length && !filteredLessons.length && activeClassMaterialFilter !== "all") {
+    if (allLessons.length && !filteredLessons.length && activeClassMaterialFilter !== "all" && !normalizeSearchText(classSearchQuery)) {
         activeClassMaterialFilter = "all";
-        filteredLessons = classStatusFilterApply(allLessons, activeClassStatusFilter);
+        filteredLessons = sortLibraryMaterials(classStatusFilterApply(allLessons, activeClassStatusFilter), activeClassSort);
     }
 
     if (filterRoot) {
@@ -2006,12 +2064,15 @@ function hydrateClassPage() {
 
     if (!filteredLessons.length) {
         const filter = classMaterialFilterDefinition(activeClassMaterialFilter);
+        const hasSearch = Boolean(normalizeSearchText(classSearchQuery));
         if (listRoot) {
             listRoot.innerHTML = `
                 <article class="lesson-history-card">
                     <span class="route-tag">${lessonLibraryTranslate("classes.filters.tag", "Filtro")}: ${classMaterialFilterLabel(filter)}</span>
                     <h3>${lessonLibraryTranslate("classDetail.empty.noFilterActivityTitle", "Nenhuma atividade neste filtro")}</h3>
-                    <p>${lessonLibraryTranslate("classDetail.empty.noFilterActivityCopy", "Troque o filtro para ver outros formatos salvos nesta turma.")}</p>
+                    <p>${hasSearch
+                        ? lessonLibraryTranslate("classDetail.empty.searchCopy", "Revise a busca ou apague o texto para visualizar outras atividades da turma.")
+                        : lessonLibraryTranslate("classDetail.empty.noFilterActivityCopy", "Troque o filtro para ver outros formatos salvos nesta turma.")}</p>
                 </article>
             `;
         }
@@ -2318,6 +2379,13 @@ function bindClassPageRefresh() {
 function bindLibraryFilterControls() {
     document.addEventListener("input", (event) => {
         const target = event.target instanceof Element ? event.target : null;
+        const classSearchInput = target?.closest("[data-class-material-search]");
+        if (classSearchInput) {
+            classSearchQuery = classSearchInput.value || "";
+            hydrateClassPage();
+            return;
+        }
+
         const searchInput = target?.closest("[data-library-search]");
         if (!searchInput) return;
 
@@ -2327,6 +2395,23 @@ function bindLibraryFilterControls() {
 
     document.addEventListener("change", (event) => {
         const target = event.target instanceof Element ? event.target : null;
+        const classSortSelect = target?.closest("[data-class-material-sort]");
+        if (classSortSelect) {
+            activeClassSort = classSortSelect.value || "recent";
+            hydrateClassPage();
+            return;
+        }
+
+        const scopeFilter = target?.closest("[data-library-scope-filter]");
+        if (scopeFilter) {
+            activeLibraryScope = scopeFilter.value || "library";
+            if (activeLibraryScope.startsWith("class:") && typeof saveSelectedClass === "function") {
+                saveSelectedClass(activeLibraryScope.slice(6));
+            }
+            hydrateLibraryPage();
+            return;
+        }
+
         const statusFilter = target?.closest("[data-library-status-filter]");
         if (statusFilter) {
             activeLibraryStatusFilter = statusFilter.value || "all";
@@ -2350,14 +2435,17 @@ function hydrateLibraryPage() {
     const searchInput = document.querySelector("[data-library-search]");
     const statusFilter = document.querySelector("[data-library-status-filter]");
     const sortSelect = document.querySelector("[data-library-sort]");
+    const scopeFilter = document.querySelector("[data-library-scope-filter]");
     if (!root && !countNode && !filterRoot && !filterSummaryRoot) return;
     if (root) {
         root.setAttribute("aria-busy", "true");
     }
 
-    const lessons = libraryMaterials();
+    hydrateLibraryScopeFilter(scopeFilter);
+    const lessons = libraryMaterialsForActiveScope();
     if (countNode) {
-        countNode.textContent = `${lessons.length} ${lessonLibraryTranslate(lessons.length === 1 ? "library.count.savedMaterial" : "library.count.savedMaterials", lessons.length === 1 ? "material salvo" : "materiais salvos")}`;
+        const noun = lessonLibraryTranslate(lessons.length === 1 ? "library.count.material" : "library.count.materials", lessons.length === 1 ? "material" : "materiais");
+        countNode.textContent = `${lessons.length} ${noun} · ${libraryScopeLabel()}`;
     }
 
     const filterExists = CLASS_MATERIAL_FILTERS.some((filter) => filter.id === activeLibraryMaterialFilter);
@@ -2425,11 +2513,12 @@ function hydrateLibraryPage() {
 
     if (!root) return;
     if (!lessons.length) {
+        const classScope = activeLibraryScope.startsWith("class:");
         root.innerHTML = `
             <article class="lesson-history-card">
-                <span class="route-tag">${lessonLibraryTranslate("library.empty.label", "Biblioteca vazia")}</span>
-                <h3>${lessonLibraryTranslate("library.empty.title", "Nenhum material salvo na biblioteca ainda")}</h3>
-                <p>${lessonLibraryTranslate("library.empty.copy", "Use Salvar na biblioteca em qualquer atividade para montar seu acervo reutilizável.")}</p>
+                <span class="route-tag">${classScope ? lessonLibraryTranslate("library.empty.classLabel", "Turma sem atividades") : lessonLibraryTranslate("library.empty.label", "Biblioteca vazia")}</span>
+                <h3>${classScope ? lessonLibraryTranslate("library.empty.classTitle", "Nenhum material salvo nesta turma") : lessonLibraryTranslate("library.empty.title", "Nenhum material salvo na biblioteca ainda")}</h3>
+                <p>${classScope ? lessonLibraryTranslate("library.empty.classCopy", "Crie uma atividade para esta turma ou escolha outra origem no filtro acima.") : lessonLibraryTranslate("library.empty.copy", "Use Salvar na biblioteca em qualquer atividade para montar seu acervo reutilizável.")}</p>
             </article>
         `;
         root.setAttribute("aria-busy", "false");
@@ -2494,7 +2583,7 @@ function hydrateLibraryPage() {
                                 <div class="lesson-history-actions">
                                     <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
                                     <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-present-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
-                                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("library.actions.addToClass", "Adicionar a turma")}</button>
+                                    ${libraryTransferActionHtml(lesson)}
                                     <button type="button" class="platform-link-button platform-link-secondary" data-rename-lesson="${escapeHtml(lesson.id)}">Renomear</button>
                                     <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("library.actions.delete", "Excluir")}</button>
                                 </div>
@@ -2535,6 +2624,7 @@ document.addEventListener("educaria-auth-changed", () => {
 document.addEventListener("educaria-classes-updated", () => {
     hydrateClassCards();
     hydrateClassPage();
+    hydrateLibraryPage();
 });
 
 document.addEventListener("educaria-lessons-updated", () => {

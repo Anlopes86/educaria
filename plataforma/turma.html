@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="classDetail.title">Turma | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-9">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260930-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -12,10 +12,11 @@
     <script src="../assets/js/firebase-config.js"></script>
     <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
-    <script src="../assets/js/turma-context.js" defer></script>
-    <script src="../assets/js/lesson-library.js" defer></script>
-    <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
+    <script src="../assets/js/turma-context.js?v=20260930-2" defer></script>
+    <script src="../assets/js/lesson-library.js?v=20260930-2" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20260930-2" defer></script>
     <script src="../assets/js/class-format-picker.js" defer></script>
+    <script src="../assets/js/class-detail.js?v=20260930-2" defer></script>
 </head>
 <body class="product-body theme-class" data-requires-auth="true" data-class-page-ready="false" data-page="class-detail">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
@@ -88,9 +89,25 @@
         </aside>
 
         <main id="main-content" class="app-content" tabindex="-1">
-            <section class="app-page-intro class-page-intro">
-                <div class="app-page-intro__content">
+            <section class="class-detail-hero">
+                <div class="class-detail-hero__copy">
+                    <span class="workspace-page-eyebrow" data-i18n="classDetail.hero.label">Turma selecionada</span>
                     <h1 data-class-title>Turma</h1>
+                    <p data-class-profile-notes data-i18n="classDetail.profile.notesEmpty">Adicione informações úteis sobre esta turma.</p>
+                    <div class="class-detail-profile-chips" aria-label="Informações da turma">
+                        <span><b aria-hidden="true">⌂</b><span data-class-profile-school>Escola não informada</span></span>
+                        <span><b aria-hidden="true">◇</b><span data-class-profile-subject>Disciplina não informada</span></span>
+                        <span><b aria-hidden="true">●</b><span data-class-profile-students>Número de alunos não informado</span></span>
+                    </div>
+                </div>
+                <div class="class-detail-hero__controls">
+                    <span class="class-detail-control-tag" data-i18n="classDetail.hero.quickAccess">Acesso rápido</span>
+                    <label for="class-detail-picker" data-i18n="classDetail.hero.chooseClass">Escolha a turma</label>
+                    <select id="class-detail-picker" data-class-detail-picker></select>
+                    <div class="class-detail-hero__actions">
+                        <button type="button" class="platform-link-button platform-link-primary" data-class-profile-edit data-i18n="classDetail.profile.edit">Editar dados da turma</button>
+                        <a href="index.html#activity-toolkit" class="platform-link-button platform-link-secondary" data-i18n="dashboard.nav.createActivity">Criar atividade</a>
+                    </div>
                 </div>
             </section>
 
@@ -139,12 +156,67 @@
                     <p data-i18n="classDetail.activities.copy">Ficam aqui apenas os materiais da turma selecionada, agrupados por formato para facilitar retomada, edição e apresentação.</p>
                 </div>
 
+                <div class="class-activity-toolbar">
+                    <div class="platform-field class-activity-search">
+                        <label for="class-activity-search" data-i18n="classDetail.filters.search">Buscar atividade</label>
+                        <input id="class-activity-search" type="search" placeholder="Título, resumo ou tipo" data-class-material-search data-i18n-placeholder="classDetail.filters.searchPlaceholder">
+                    </div>
+                    <div class="platform-field">
+                        <label for="class-activity-sort" data-i18n="classDetail.filters.sort">Ordenar</label>
+                        <select id="class-activity-sort" data-class-material-sort>
+                            <option value="recent" data-i18n="library.filters.sort.recent">Atualizados recentemente</option>
+                            <option value="title" data-i18n="library.filters.sort.title">Título A-Z</option>
+                            <option value="used" data-i18n="library.filters.sort.used">Mais usados</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="class-material-filters" data-class-material-filters role="toolbar" aria-label="Filtros de materiais da turma" data-i18n-aria-label="classDetail.filters.toolbar"></div>
                 <div class="class-material-filters class-status-filters" data-class-status-filters role="toolbar" aria-label="Filtros de status da turma" data-i18n-aria-label="classDetail.statusFilters.toolbar"></div>
                 <p class="class-material-filter-summary" data-class-material-filter-summary role="status" aria-live="polite" aria-atomic="true" hidden></p>
                 <div class="class-activity-groups" data-saved-lessons aria-live="polite" aria-busy="false"></div>
             </section>
         </main>
+    </div>
+
+    <div class="platform-modal-backdrop class-profile-modal" data-class-profile-modal hidden>
+        <section class="platform-modal-card class-profile-modal-card" role="dialog" aria-modal="true" aria-labelledby="class-profile-title">
+            <div class="class-profile-modal-head">
+                <div>
+                    <span class="platform-section-label" data-i18n="classDetail.profile.label">Informações da turma</span>
+                    <h2 id="class-profile-title" data-i18n="classDetail.profile.title">Editar dados da turma</h2>
+                    <p data-i18n="classDetail.profile.copy">Esses dados ajudam a identificar rapidamente cada grupo.</p>
+                </div>
+                <button type="button" class="class-profile-close" data-class-profile-close aria-label="Fechar">×</button>
+            </div>
+            <form class="class-profile-form" data-class-profile-form>
+                <div class="platform-field class-profile-field--wide">
+                    <label for="class-profile-name" data-i18n="classDetail.profile.name">Nome da turma</label>
+                    <input id="class-profile-name" type="text" maxlength="100" required data-class-profile-name>
+                </div>
+                <div class="platform-field">
+                    <label for="class-profile-school" data-i18n="classDetail.profile.school">Escola</label>
+                    <input id="class-profile-school" type="text" maxlength="120" placeholder="Ex.: Escola Municipal Aurora" data-class-profile-school-input data-i18n-placeholder="classDetail.profile.schoolPlaceholder">
+                </div>
+                <div class="platform-field">
+                    <label for="class-profile-subject" data-i18n="classDetail.profile.subject">Disciplina</label>
+                    <input id="class-profile-subject" type="text" maxlength="80" placeholder="Ex.: História" data-class-profile-subject-input data-i18n-placeholder="classDetail.profile.subjectPlaceholder">
+                </div>
+                <div class="platform-field">
+                    <label for="class-profile-students" data-i18n="classDetail.profile.studentCount">Número de alunos</label>
+                    <input id="class-profile-students" type="number" min="0" max="500" inputmode="numeric" data-class-profile-students-input>
+                </div>
+                <div class="platform-field class-profile-field--wide">
+                    <label for="class-profile-notes" data-i18n="classDetail.profile.notes">Observações</label>
+                    <textarea id="class-profile-notes" rows="3" maxlength="500" placeholder="Ex.: turma participativa, aulas às terças e quintas" data-class-profile-notes-input data-i18n-placeholder="classDetail.profile.notesPlaceholder"></textarea>
+                </div>
+                <p class="sidebar-feedback class-profile-feedback" data-class-profile-feedback role="alert" hidden></p>
+                <div class="class-profile-form-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-class-profile-close data-i18n="common.cancel">Cancelar</button>
+                    <button type="submit" class="platform-link-button platform-link-primary" data-i18n="classDetail.profile.save">Salvar alterações</button>
+                </div>
+            </form>
+        </section>
     </div>
 </body>
 </html>

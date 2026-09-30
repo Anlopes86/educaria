@@ -7,6 +7,7 @@ const CLASSES_OVERVIEW_FILTERS = [
 ];
 
 let activeClassesOverviewFilter = "all";
+let activeClassesOverviewSelection = "all";
 
 function classesTranslate(key, fallback) {
     if (typeof window !== "undefined" && typeof window.educariaTranslate === "function") {
@@ -117,8 +118,10 @@ function renderClassesOverviewFilters(root, cards) {
     if (!root) return;
     if (!Array.isArray(cards) || !cards.length) {
         root.innerHTML = "";
+        root.hidden = true;
         return;
     }
+    root.hidden = false;
 
     root.innerHTML = CLASSES_OVERVIEW_FILTERS.map((filter) => {
         const count = classesOverviewFilterCount(cards, filter.id);
@@ -139,6 +142,34 @@ function renderClassesOverviewFilters(root, cards) {
     }).join("");
 }
 
+function hydrateClassesQuickPicker(classes) {
+    const picker = document.querySelector("[data-classes-quick-picker]");
+    const openLink = document.querySelector("[data-classes-quick-open]");
+    const clearButton = document.querySelector("[data-classes-quick-clear]");
+    if (!picker && !openLink && !clearButton) return;
+
+    if (activeClassesOverviewSelection !== "all" && !classes.includes(activeClassesOverviewSelection)) {
+        activeClassesOverviewSelection = "all";
+    }
+
+    if (picker) {
+        picker.innerHTML = `
+            <option value="all">${classesTranslate("classes.filters.allClasses", "Todas as turmas")}</option>
+            ${classes.map((className) => `<option value="${escapeHtml(className)}">${escapeHtml(className)}</option>`).join("")}
+        `;
+        picker.value = activeClassesOverviewSelection;
+        picker.disabled = !classes.length;
+    }
+
+    const hasSelection = activeClassesOverviewSelection !== "all";
+    if (openLink) {
+        openLink.setAttribute("aria-disabled", hasSelection ? "false" : "true");
+        openLink.classList.toggle("is-disabled", !hasSelection);
+        openLink.tabIndex = hasSelection ? 0 : -1;
+    }
+    if (clearButton) clearButton.hidden = !hasSelection;
+}
+
 function hydrateClassesOverviewPage() {
     const root = document.querySelector("[data-classes-overview-grid]");
     const classCount = document.querySelector("[data-classes-overview-count]");
@@ -153,6 +184,7 @@ function hydrateClassesOverviewPage() {
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
     const cards = classesOverviewCards(classes);
     const lessons = cards.flatMap((card) => card.classLessons);
+    hydrateClassesQuickPicker(classes);
 
     if (classCount) classCount.textContent = `${classes.length}`;
     if (activityCount) activityCount.textContent = `${lessons.filter((lesson) => (lesson.materialType || "slides") !== "lesson").length}`;
@@ -162,12 +194,15 @@ function hydrateClassesOverviewPage() {
         activeClassesOverviewFilter = "all";
     }
 
-    let filteredCards = classesOverviewFilterApply(cards, activeClassesOverviewFilter);
-    if (cards.length && !filteredCards.length && activeClassesOverviewFilter !== "all") {
+    const scopedCards = activeClassesOverviewSelection === "all"
+        ? cards
+        : cards.filter((card) => card.className === activeClassesOverviewSelection);
+    let filteredCards = classesOverviewFilterApply(scopedCards, activeClassesOverviewFilter);
+    if (scopedCards.length && !filteredCards.length && activeClassesOverviewFilter !== "all") {
         activeClassesOverviewFilter = "all";
-        filteredCards = [...cards];
+        filteredCards = [...scopedCards];
     }
-    renderClassesOverviewFilters(filterRoot, cards);
+    renderClassesOverviewFilters(filterRoot, scopedCards);
 
     if (filterSummary) {
         if (!cards.length) {
@@ -175,7 +210,7 @@ function hydrateClassesOverviewPage() {
             filterSummary.textContent = "";
         } else {
             filterSummary.hidden = false;
-            filterSummary.textContent = classesOverviewFilterSummaryLabel(activeClassesOverviewFilter, filteredCards.length, cards.length);
+            filterSummary.textContent = classesOverviewFilterSummaryLabel(activeClassesOverviewFilter, filteredCards.length, scopedCards.length);
         }
     }
 
@@ -263,6 +298,20 @@ function bindClassesOverviewActions() {
     };
 
     document.addEventListener("click", (event) => {
+        const quickOpen = event.target.closest("[data-classes-quick-open]");
+        if (quickOpen && activeClassesOverviewSelection === "all") {
+            event.preventDefault();
+            document.querySelector("[data-classes-quick-picker]")?.focus();
+            return;
+        }
+
+        const clearSelection = event.target.closest("[data-classes-quick-clear]");
+        if (clearSelection) {
+            activeClassesOverviewSelection = "all";
+            hydrateClassesOverviewPage();
+            return;
+        }
+
         const filterTrigger = event.target.closest("[data-classes-overview-filter]");
         if (filterTrigger) {
             event.preventDefault();
@@ -322,6 +371,19 @@ function bindClassesOverviewActions() {
                 });
             }
         }
+    });
+
+    document.querySelector("[data-classes-quick-picker]")?.addEventListener("change", (event) => {
+        activeClassesOverviewSelection = event.currentTarget.value || "all";
+        if (activeClassesOverviewSelection !== "all" && typeof saveSelectedClass === "function") {
+            saveSelectedClass(activeClassesOverviewSelection);
+        }
+        if (typeof educariaTrack === "function") {
+            educariaTrack("classes_quick_selection_changed", {
+                className: activeClassesOverviewSelection === "all" ? "" : activeClassesOverviewSelection
+            });
+        }
+        hydrateClassesOverviewPage();
     });
 }
 

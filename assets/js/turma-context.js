@@ -4,6 +4,7 @@ function escapeHtml(value) {
 
 const TURMA_CONTEXT_KEY = "educaria:selectedClass";
 const TURMA_LIST_KEY = "educaria:classList";
+const TURMA_PROFILES_KEY = "educaria:classProfiles";
 const EDUCARIA_RESET_KEY = "educaria:reset:empty-state-v1";
 const DEFAULT_CLASSES = [];
 const TURMA_REMOTE_COLLECTION = "platform";
@@ -49,9 +50,71 @@ function firebaseClassesRef() {
         .doc(TURMA_REMOTE_DOC);
 }
 
+function normalizeClassProfile(className, profile = {}) {
+    const normalizedName = normalizeClassLabel(className);
+    if (!normalizedName) return null;
+
+    const studentCount = Number.parseInt(profile.studentCount, 10);
+    return {
+        school: String(profile.school || "").trim().slice(0, 120),
+        subject: String(profile.subject || "").trim().slice(0, 80),
+        studentCount: Number.isFinite(studentCount) ? Math.min(500, Math.max(0, studentCount)) : 0,
+        notes: String(profile.notes || "").trim().slice(0, 500),
+        updatedAt: String(profile.updatedAt || "").trim()
+    };
+}
+
+function normalizeClassProfiles(profiles) {
+    if (!profiles || typeof profiles !== "object" || Array.isArray(profiles)) return {};
+    return Object.entries(profiles).reduce((result, [className, profile]) => {
+        const normalizedName = normalizeClassLabel(className);
+        const normalizedProfile = normalizeClassProfile(normalizedName, profile);
+        if (normalizedName && normalizedProfile) result[normalizedName] = normalizedProfile;
+        return result;
+    }, {});
+}
+
+function readStoredClassProfiles() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(scopedStorageKey(TURMA_PROFILES_KEY)) || "{}");
+        return normalizeClassProfiles(parsed);
+    } catch (error) {
+        console.warn("EducarIA class profiles unavailable:", error);
+        return {};
+    }
+}
+
+function writeClassProfilesLocally(profiles, source = "local", notify = true) {
+    const normalized = normalizeClassProfiles(profiles);
+    try {
+        localStorage.setItem(scopedStorageKey(TURMA_PROFILES_KEY), JSON.stringify(normalized));
+    } catch (error) {
+        console.warn("EducarIA class profiles unavailable:", error);
+    }
+    if (notify) emitClassesUpdated(source);
+    return normalized;
+}
+
+function mergeClassProfiles(remoteProfiles, localProfiles) {
+    const remote = normalizeClassProfiles(remoteProfiles);
+    const local = normalizeClassProfiles(localProfiles);
+    const merged = { ...remote };
+
+    Object.entries(local).forEach(([className, profile]) => {
+        const remoteTimestamp = Date.parse(remote[className]?.updatedAt || "") || 0;
+        const localTimestamp = Date.parse(profile.updatedAt || "") || 0;
+        if (!remote[className] || localTimestamp >= remoteTimestamp) merged[className] = profile;
+    });
+    return merged;
+}
+
 function readRemoteClassesPayload(snapshot) {
-    if (!snapshot?.exists) return [];
-    return uniqueClassList(snapshot.data()?.classes || []);
+    if (!snapshot?.exists) return { classes: [], profiles: {} };
+    const data = snapshot.data() || {};
+    return {
+        classes: uniqueClassList(data.classes || []),
+        profiles: normalizeClassProfiles(data.profiles || {})
+    };
 }
 
 function ensureEmptyStartState() {
@@ -103,17 +166,23 @@ async function syncClassesWithFirebase() {
         try {
             const localClasses = getAvailableClasses();
             const snapshot = await ref.get();
-            const remoteClasses = readRemoteClassesPayload(snapshot);
+            const remotePayload = readRemoteClassesPayload(snapshot);
+            const remoteClasses = remotePayload.classes;
+            const localProfiles = readStoredClassProfiles();
+            const mergedProfiles = mergeClassProfiles(remotePayload.profiles, localProfiles);
             const mergedClasses = uniqueClassList([...remoteClasses, ...localClasses]);
 
+            writeClassProfilesLocally(mergedProfiles, "firebase", false);
             writeClassListLocally(mergedClasses, "firebase");
 
             const remoteChanged = mergedClasses.length !== remoteClasses.length
-                || mergedClasses.some((item, index) => item !== remoteClasses[index]);
+                || mergedClasses.some((item, index) => item !== remoteClasses[index])
+                || JSON.stringify(mergedProfiles) !== JSON.stringify(remotePayload.profiles);
 
             if (remoteChanged || lastClassesSyncUid !== uid) {
                 await ref.set({
                     classes: mergedClasses,
+                    profiles: mergedProfiles,
                     updatedAt: new Date().toISOString()
                 }, { merge: true });
             }
@@ -140,6 +209,71 @@ function saveClassList(classes) {
 function getAvailableClasses() {
     const merged = [...DEFAULT_CLASSES, ...readStoredClasses()];
     return uniqueClassList(merged);
+}
+
+function getClassProfile(className) {
+    const turma = normalizeClassLabel(className);
+    return turma ? (readStoredClassProfiles()[turma] || normalizeClassProfile(turma)) : null;
+}
+
+function saveClassProfile(className, details = {}) {
+    const turma = normalizeClassLabel(className);
+    if (!turma) return null;
+
+    const profiles = readStoredClassProfiles();
+    const profile = normalizeClassProfile(turma, {
+        ...(profiles[turma] || {}),
+        ...details,
+        updatedAt: new Date().toISOString()
+    });
+    writeClassProfilesLocally({ ...profiles, [turma]: profile });
+    syncClassesWithFirebase();
+    return profile;
+}
+
+function renameClass(currentName, nextName, details = {}) {
+    const current = normalizeClassLabel(currentName);
+    const next = normalizeClassLabel(nextName);
+    const classes = getAvailableClasses();
+    if (!current || !next) return { ok: false, error: "Digite um nome válido para a turma." };
+    if (current !== next && classes.some((item) => item !== current && normalizeClassLabel(item).toLowerCase() === next.toLowerCase())) {
+        return { ok: false, error: "Já existe uma turma com esse nome." };
+    }
+
+    const profiles = readStoredClassProfiles();
+    const nextProfiles = { ...profiles };
+    delete nextProfiles[current];
+    nextProfiles[next] = normalizeClassProfile(next, {
+        ...(profiles[current] || {}),
+        ...details,
+        updatedAt: new Date().toISOString()
+    });
+    writeClassProfilesLocally(nextProfiles, "rename", false);
+
+    if (current !== next && typeof readLessonsLibrary === "function" && typeof writeLessonsLibrary === "function") {
+        const now = new Date().toISOString();
+        const lessons = readLessonsLibrary().map((lesson) => {
+            if (lesson.className !== current) return lesson;
+            return { ...lesson, className: next, updatedAt: now };
+        });
+        writeLessonsLibrary(lessons, { source: "class-renamed" });
+    }
+
+    const nextClasses = classes.map((item) => item === current ? next : item);
+    saveSelectedClass(next);
+    writeClassListLocally(nextClasses, "rename");
+
+    const ref = firebaseClassesRef();
+    if (ref) {
+        ref.set({
+            classes: nextClasses,
+            profiles: nextProfiles,
+            updatedAt: new Date().toISOString()
+        }, { merge: true }).catch((error) => {
+            console.warn("EducarIA class rename sync unavailable:", error);
+        });
+    }
+    return { ok: true, className: next, profile: nextProfiles[next] };
 }
 
 function saveSelectedClass(value) {

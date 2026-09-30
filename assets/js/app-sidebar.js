@@ -320,6 +320,9 @@ function createSidebarClass() {
     }
 
     saveSelectedClass(composedName);
+    if (typeof saveClassProfile === "function") {
+        saveClassProfile(composedName, { subject });
+    }
     if (typeof educariaTrack === "function") {
         educariaTrack("class_created", {
             source: "sidebar",
