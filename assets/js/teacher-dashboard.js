@@ -23,11 +23,82 @@ const DASHBOARD_EXTRA_FORMATS = [
 ];
 const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_EXTRA_FORMATS]
     .filter((format) => format.materialType);
+const DASHBOARD_QUICK_OPTION_CONFIGS = {
+    slides: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.slides", label: "Quantidade de slides", min: 1, max: 20, value: 8, instruction: (value) => `Gerar ${value} slides.` }
+    ],
+    quiz: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.questions", label: "Quantidade de perguntas", min: 1, max: 30, value: 8, instruction: (value) => `Gerar ${value} perguntas.` },
+        {
+            key: "format",
+            type: "select",
+            labelKey: "dashboard.quick.quizFormat",
+            label: "Formato das perguntas",
+            value: "mixed",
+            options: [
+                { value: "mixed", labelKey: "dashboard.quick.value.mixed", label: "Misto", instruction: "Formato desejado: misto, combinando múltipla escolha, verdadeiro ou falso e perguntas abertas." },
+                { value: "choice", labelKey: "dashboard.quick.value.choice", label: "Múltipla escolha", instruction: "Formato desejado: apenas questões de múltipla escolha." },
+                { value: "open", labelKey: "dashboard.quick.value.open", label: "Perguntas abertas", instruction: "Formato desejado: apenas perguntas abertas." },
+                { value: "true-false", labelKey: "dashboard.quick.value.trueFalse", label: "Verdadeiro ou falso", instruction: "Formato desejado: apenas questões de verdadeiro ou falso." }
+            ]
+        }
+    ],
+    flashcards: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.cards", label: "Quantidade de cards", min: 2, max: 24, value: 12, instruction: (value) => `Gerar ${value} cards.` }
+    ],
+    memory: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.pairs", label: "Quantidade de pares", min: 2, max: 16, value: 6, instruction: (value) => `Gerar ${value} pares.` }
+    ],
+    wheel: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.items", label: "Quantidade de itens", min: 2, max: 20, value: 8, instruction: (value) => `Gerar ${value} espaços.` }
+    ],
+    match: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.pairs", label: "Quantidade de pares", min: 2, max: 16, value: 6, instruction: (value) => `Gerar ${value} pares.` }
+    ],
+    mindmap: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.topics", label: "Quantidade de tópicos", min: 2, max: 10, value: 4, instruction: (value) => `Gerar ${value} tópicos.` },
+        {
+            key: "layout",
+            type: "select",
+            labelKey: "dashboard.quick.mapLayout",
+            label: "Organização inicial",
+            value: "radial",
+            options: [
+                { value: "radial", labelKey: "dashboard.quick.value.radial", label: "Radial", instruction: "Leitura desejada: Radial." },
+                { value: "topics", labelKey: "dashboard.quick.value.topics", label: "Em tópicos", instruction: "Leitura desejada: Tópicos." }
+            ]
+        }
+    ],
+    debate: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.steps", label: "Quantidade de etapas", min: 2, max: 8, value: 3, instruction: (value) => `Gerar ${value} etapas.` },
+        {
+            key: "format",
+            type: "select",
+            labelKey: "dashboard.quick.debateFormat",
+            label: "Formato do debate",
+            value: "two-sides",
+            options: [
+                { value: "two-sides", labelKey: "dashboard.quick.value.twoSides", label: "Dois lados", instruction: "Formato desejado: Dois lados." },
+                { value: "guided-circle", labelKey: "dashboard.quick.value.guidedCircle", label: "Roda guiada", instruction: "Formato desejado: Roda guiada." }
+            ]
+        }
+    ],
+    wordsearch: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.words", label: "Quantidade de palavras", min: 4, max: 20, value: 8, instruction: (value) => `Gerar ${value} palavras para o caça-palavras.` }
+    ],
+    crossword: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.entries", label: "Quantidade de entradas", min: 4, max: 12, value: 8, instruction: (value) => `Gerar ${value} entradas.` }
+    ],
+    hangman: [
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.words", label: "Quantidade de palavras", min: 2, max: 16, value: 6, instruction: (value) => `Gerar ${value} palavras com dicas.` }
+    ]
+};
 const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
 const DASHBOARD_TOUR_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 let dashboardTourState = null;
 let dashboardQuickAiResult = null;
+const dashboardQuickOptionState = new Map();
 
 function dashboardTranslate(key, fallback) {
     if (typeof window.educariaTranslate !== "function") return fallback;
@@ -291,6 +362,120 @@ function hydrateQuickCreateForm() {
     if ([...formatSelect.options].some((option) => option.value === previousValue)) {
         formatSelect.value = previousValue;
     }
+    renderDashboardQuickOptions(formatSelect.selectedOptions?.[0]?.dataset.materialType || "");
+}
+
+function readDashboardQuickOptionValues(root) {
+    if (!root) return {};
+    return [...root.querySelectorAll("[data-dashboard-quick-option]")].reduce((values, field) => {
+        values[field.dataset.dashboardQuickOption] = field.value;
+        return values;
+    }, {});
+}
+
+function rememberDashboardQuickOptions() {
+    const root = document.querySelector("[data-dashboard-quick-options]");
+    const materialType = root?.dataset.materialType || "";
+    if (!root || !materialType) return;
+    dashboardQuickOptionState.set(materialType, readDashboardQuickOptionValues(root));
+}
+
+function renderDashboardQuickOptions(materialType) {
+    const root = document.querySelector("[data-dashboard-quick-options]");
+    if (!root) return;
+
+    if (root.dataset.materialType === materialType) {
+        dashboardQuickOptionState.set(materialType, readDashboardQuickOptionValues(root));
+    }
+
+    const fields = DASHBOARD_QUICK_OPTION_CONFIGS[materialType] || [];
+    root.dataset.materialType = materialType;
+    if (!fields.length) {
+        root.innerHTML = "";
+        root.hidden = true;
+        return;
+    }
+
+    const rememberedValues = dashboardQuickOptionState.get(materialType) || {};
+    const fieldsHtml = fields.map((field) => {
+        const label = dashboardTranslate(field.labelKey, field.label);
+        const rememberedValue = rememberedValues[field.key];
+
+        if (field.type === "select") {
+            const selectedValue = field.options.some((option) => option.value === rememberedValue)
+                ? rememberedValue
+                : field.value;
+            const options = field.options.map((option) => {
+                const selected = option.value === selectedValue ? " selected" : "";
+                return `<option value="${escapeHtml(option.value)}"${selected}>${escapeHtml(dashboardTranslate(option.labelKey, option.label))}</option>`;
+            }).join("");
+            return `
+                <label class="dashboard-quick-option-field">
+                    <span>${escapeHtml(label)}</span>
+                    <select data-dashboard-quick-option="${escapeHtml(field.key)}">${options}</select>
+                </label>
+            `;
+        }
+
+        const parsedValue = Number.parseInt(rememberedValue, 10);
+        const value = Number.isFinite(parsedValue)
+            ? Math.min(field.max, Math.max(field.min, parsedValue))
+            : field.value;
+        return `
+            <label class="dashboard-quick-option-field">
+                <span>${escapeHtml(label)}</span>
+                <input type="number" min="${field.min}" max="${field.max}" step="1" value="${value}" inputmode="numeric" data-dashboard-quick-option="${escapeHtml(field.key)}">
+            </label>
+        `;
+    }).join("");
+
+    root.hidden = false;
+    root.innerHTML = `
+        <div class="dashboard-quick-options-heading">
+            <b aria-hidden="true">3</b>
+            <span>
+                <strong>${escapeHtml(dashboardTranslate("dashboard.quick.options", "Opções básicas"))}</strong>
+                <small>${escapeHtml(dashboardTranslate("dashboard.quick.optionsNote", "Só o essencial para estruturar o rascunho"))}</small>
+            </span>
+        </div>
+        <div class="dashboard-quick-options-grid dashboard-quick-options-grid--${fields.length}">
+            ${fieldsHtml}
+        </div>
+    `;
+}
+
+function collectDashboardQuickOptions(form, materialType) {
+    const fields = DASHBOARD_QUICK_OPTION_CONFIGS[materialType] || [];
+    const values = {};
+    const instructions = [];
+
+    fields.forEach((field) => {
+        const input = form.querySelector(`[data-dashboard-quick-option="${field.key}"]`);
+        if (!input) return;
+
+        if (field.type === "select") {
+            const option = field.options.find((item) => item.value === input.value) || field.options[0];
+            values[field.key] = option.value;
+            instructions.push(option.instruction);
+            return;
+        }
+
+        const parsedValue = Number.parseInt(input.value, 10);
+        const value = Number.isFinite(parsedValue)
+            ? Math.min(field.max, Math.max(field.min, parsedValue))
+            : field.value;
+        input.value = String(value);
+        values[field.key] = value;
+        instructions.push(field.instruction(value));
+    });
+
+    dashboardQuickOptionState.set(materialType, values);
+    return {
+        values,
+        instructions,
+        requestedCount: Number(values.count || 0),
+        variant: String(values.format || values.layout || "")
+    };
 }
 
 function dashboardQuickResultModalTemplate() {
@@ -364,6 +549,9 @@ function setDashboardQuickGenerating(form, isGenerating) {
     form.dataset.generating = isGenerating ? "true" : "false";
     if (topicField) topicField.disabled = isGenerating;
     if (formatSelect) formatSelect.disabled = isGenerating;
+    form.querySelectorAll("[data-dashboard-quick-option]").forEach((field) => {
+        field.disabled = isGenerating;
+    });
     if (button) {
         if (!button.dataset.idleHtml) button.dataset.idleHtml = button.innerHTML;
         button.disabled = isGenerating;
@@ -374,7 +562,7 @@ function setDashboardQuickGenerating(form, isGenerating) {
     if (progress) progress.hidden = !isGenerating;
 }
 
-async function requestDashboardQuickMaterial(materialType, topic, label) {
+async function requestDashboardQuickMaterial(materialType, topic, label, generationOptions) {
     if (typeof window.educariaAiEndpoint !== "function") {
         throw new Error(dashboardTranslate("dashboard.quick.generationError", "Não foi possível conectar ao serviço de IA. Tente novamente."));
     }
@@ -383,7 +571,8 @@ async function requestDashboardQuickMaterial(materialType, topic, label) {
     formData.append("materialType", materialType);
     formData.append("sourceText", topic);
     formData.append("text", topic);
-    formData.append("action", `Crie um rascunho pedagógico de ${label || "atividade"}, claro e pronto para o professor revisar e apresentar.`);
+    const optionInstructions = generationOptions?.instructions?.join(" ") || "";
+    formData.append("action", `Crie um rascunho pedagógico de ${label || "atividade"}, claro e pronto para o professor revisar e apresentar. ${optionInstructions}`.trim());
 
     const response = await fetch(window.educariaAiEndpoint(), {
         method: "POST",
@@ -477,6 +666,7 @@ function bindQuickCreateForm() {
     const form = document.querySelector("[data-dashboard-quick-form]");
     if (!form) return;
     const topicField = form.querySelector("[data-dashboard-quick-topic]");
+    const formatSelect = form.querySelector("[data-dashboard-quick-format]");
 
     topicField?.addEventListener("input", () => {
         topicField.setCustomValidity("");
@@ -484,10 +674,14 @@ function bindQuickCreateForm() {
         if (feedback) feedback.hidden = true;
     });
 
+    formatSelect?.addEventListener("change", () => {
+        rememberDashboardQuickOptions();
+        renderDashboardQuickOptions(formatSelect.selectedOptions?.[0]?.dataset.materialType || "");
+    });
+
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        const formatSelect = document.querySelector("[data-dashboard-quick-format]");
         const feedback = form.querySelector("[data-dashboard-quick-feedback]");
         const topic = topicField?.value.trim() || "";
         const target = formatSelect?.value || "";
@@ -503,6 +697,7 @@ function bindQuickCreateForm() {
             return;
         }
         if (!target || !materialType) return;
+        const generationOptions = collectDashboardQuickOptions(form, materialType);
 
         if (typeof educariaTrack === "function") {
             educariaTrack("quick_ai_generation_started", {
@@ -510,7 +705,9 @@ function bindQuickCreateForm() {
                 scope: className ? "class" : "library",
                 target,
                 materialType,
-                sourceChars: topic.length
+                sourceChars: topic.length,
+                requestedCount: generationOptions.requestedCount,
+                generationVariant: generationOptions.variant
             });
         }
 
@@ -522,16 +719,18 @@ function bindQuickCreateForm() {
             }
 
             const label = formatSelect?.selectedOptions?.[0]?.textContent?.trim() || "Atividade";
-            const payload = await requestDashboardQuickMaterial(materialType, topic, label);
+            const payload = await requestDashboardQuickMaterial(materialType, topic, label, generationOptions);
             if (typeof educariaTrack === "function") {
                 educariaTrack("quick_ai_generation_succeeded", {
                     className,
                     materialType,
                     sourceChars: topic.length,
+                    requestedCount: generationOptions.requestedCount,
+                    generationVariant: generationOptions.variant,
                     creditsCharged: Number(payload?.charge?.cost || 0)
                 });
             }
-            openDashboardQuickResultModal({ topic, target, materialType, className, label, payload });
+            openDashboardQuickResultModal({ topic, target, materialType, className, label, payload, generationOptions });
         } catch (error) {
             if (feedback) {
                 feedback.textContent = dashboardQuickGenerationError(error);
@@ -542,6 +741,8 @@ function bindQuickCreateForm() {
                     className,
                     materialType,
                     sourceChars: topic.length,
+                    requestedCount: generationOptions.requestedCount,
+                    generationVariant: generationOptions.variant,
                     status: Number(error?.status || 0)
                 });
             }
