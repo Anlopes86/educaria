@@ -111,6 +111,14 @@ function ensureSidebarProfile() {
         } else {
             profile.querySelector(".dashboard-avatar")?.setAttribute("data-sidebar-avatar", "");
         }
+
+        if (!profile.querySelector(".app-sidebar-profile-home")) {
+            const home = document.createElement("span");
+            home.className = "app-sidebar-profile-home";
+            home.setAttribute("aria-hidden", "true");
+            home.innerHTML = `<span class="sidebar-nav-icon">${SIDEBAR_ICONS.dashboard}</span>`;
+            profile.append(home);
+        }
     });
 }
 
@@ -438,6 +446,22 @@ function bindSidebarToggles() {
     });
 }
 
+function bindSidebarPanelOpeners() {
+    document.addEventListener("click", (event) => {
+        const trigger = event.target.closest("[data-open-sidebar-panel]");
+        if (!trigger) return;
+
+        const key = String(trigger.dataset.openSidebarPanel || "").trim();
+        const panel = document.querySelector(`[data-sidebar-panel="${key}"]`);
+        if (!key || !panel) return;
+
+        event.preventDefault();
+        openSidebarPanel(key);
+        setMobileSidebarOpen(true);
+        window.requestAnimationFrame(() => panel.querySelector("input, select, button, a")?.focus());
+    });
+}
+
 function hydrateSidebarTeacher() {
     const teacherName = sidebarTeacherName();
     document.querySelectorAll("[data-sidebar-teacher]").forEach((element) => {
@@ -523,6 +547,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bindSidebarClassLinks();
     bindSidebarCreateClass();
     bindSidebarToggles();
+    bindSidebarPanelOpeners();
 });
 
 document.addEventListener("educaria-auth-changed", () => {

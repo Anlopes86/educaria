@@ -7,35 +7,27 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="library.title">Biblioteca | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-6">
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-9">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js" defer></script>
     <script src="../assets/js/storage-scope.js" defer></script>
-    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/firebase-config.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
-    <script src="../assets/js/app-sidebar.js?v=20260928-1" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-page="library-overview">
     <a class="skip-link" href="#main-content" data-i18n="library.skip">Pular para o conteúdo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
-            <a href="../index.html" class="platform-brand app-sidebar-brand">
-                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo" width="48" height="48">
-                <div>
-                    <span>EducarIA</span>
-                    <strong data-i18n="library.brand.section">Biblioteca</strong>
-                </div>
-            </a>
-
-            <div class="app-sidebar-profile">
+            <a href="index.html" class="app-sidebar-profile app-sidebar-profile-link" aria-label="Voltar ao painel do professor">
                 <strong data-sidebar-teacher>Professor</strong>
                 <span data-sidebar-institution>Conta educacional</span>
-            </div>
+            </a>
             <nav class="app-sidebar-nav" aria-label="Navegação principal" data-i18n-aria-label="library.nav.main">
                 <a href="index.html" class="sidebar-nav-link" data-i18n="library.nav.dashboard">Painel</a>
 
@@ -94,23 +86,49 @@
             </nav>
 
             <div class="app-sidebar-footer">
-                <button type="button" class="platform-link-button platform-link-secondary" data-logout data-i18n="library.actions.logout">Sair</button>
+                <button type="button" class="platform-link-button platform-link-secondary sidebar-logout-button" data-logout data-i18n="library.actions.logout">Sair</button>
             </div>
         </aside>
 
-        <main id="main-content" class="app-content" tabindex="-1">
+        <main id="main-content" class="app-content workspace-page workspace-page--library" tabindex="-1">
+            <section class="workspace-page-hero workspace-page-hero--library">
+                <div class="workspace-page-hero__copy">
+                    <span class="workspace-page-eyebrow" data-i18n="library.hero.label">Seu acervo</span>
+                    <h1 data-i18n="library.hero.title">Materiais prontos para usar de novo</h1>
+                    <p data-i18n="library.hero.copy">Encontre, edite e apresente tudo o que você salvou, sem precisar começar do zero.</p>
+                    <div class="workspace-page-actions">
+                        <a href="index.html#activity-toolkit" class="platform-link-button workspace-primary-action" data-i18n="library.actions.createActivity">Criar atividade</a>
+                        <a href="turmas.html" class="platform-link-button workspace-secondary-action" data-i18n="library.nav.classes">Turmas</a>
+                    </div>
+                </div>
+                <div class="workspace-page-hero__visual" aria-hidden="true">
+                    <svg viewBox="0 0 360 260" role="img">
+                        <rect x="68" y="38" width="226" height="172" rx="30" fill="#0c4a6e" opacity=".22"/>
+                        <rect x="48" y="22" width="226" height="172" rx="30" fill="#ffffff"/>
+                        <rect x="72" y="48" width="110" height="14" rx="7" fill="#075985"/>
+                        <rect x="72" y="76" width="154" height="9" rx="4.5" fill="#bae6fd"/>
+                        <rect x="72" y="102" width="50" height="58" rx="14" fill="#2563eb"/>
+                        <rect x="132" y="102" width="50" height="58" rx="14" fill="#7c3aed"/>
+                        <rect x="192" y="102" width="50" height="58" rx="14" fill="#0f766e"/>
+                        <path d="M84 121h26M84 133h18" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+                        <path d="M144 121h26M144 133h18" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+                        <path d="M204 121h26M204 133h18" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+                        <rect x="103" y="167" width="214" height="70" rx="22" fill="#fef3c7" stroke="#fde68a" stroke-width="2"/>
+                        <circle cx="137" cy="202" r="18" fill="#f59e0b"/>
+                        <path d="M129 202h16M137 194v16" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+                        <rect x="170" y="188" width="105" height="11" rx="5.5" fill="#92400e" opacity=".78"/>
+                        <rect x="170" y="211" width="73" height="8" rx="4" fill="#fbbf24"/>
+                    </svg>
+                </div>
+            </section>
+
             <section class="focus-card library-overview-panel">
-                <div class="page-section-title">
+                <div class="page-section-title workspace-section-title">
                     <div>
                         <span class="platform-section-label" data-i18n="library.materials.label">Materiais</span>
                         <h2 data-library-count role="status" aria-live="polite" aria-atomic="true"></h2>
                     </div>
                     <p data-i18n="library.materials.copy">Abra, edite ou apresente qualquer material salvo independentemente de turma.</p>
-                </div>
-
-                <div class="utility-actions">
-                    <a href="index.html#activity-toolkit" class="platform-link-button platform-link-primary" data-i18n="library.actions.createActivity">Criar atividade</a>
-                    <a href="index.html" class="platform-link-button platform-link-secondary" data-i18n="library.actions.backDashboard">Voltar para o painel</a>
                 </div>
 
                 <div class="library-filter-panel" data-library-filter-panel>

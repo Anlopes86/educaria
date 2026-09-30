@@ -22,7 +22,7 @@
     height: 100vh;
     padding: 22px 16px 18px;
     display: grid;
-    grid-template-rows: auto auto 1fr auto;
+    grid-template-rows: auto 1fr auto;
     gap: 16px;
     min-height: 0;
     border-right: 1px solid rgba(148, 163, 184, 0.12);
@@ -69,7 +69,7 @@
 
 .app-sidebar-profile {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
     padding: 12px;
@@ -77,6 +77,41 @@
     border: 1px solid rgba(148, 163, 184, 0.14);
     background: rgba(255, 255, 255, 0.045);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.app-sidebar-profile-link {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.app-sidebar-profile-link:hover,
+.app-sidebar-profile-link:focus-visible {
+    border-color: rgba(125, 211, 252, 0.3);
+    background: rgba(59, 130, 246, 0.13);
+    box-shadow: inset 3px 0 0 #38bdf8, 0 16px 30px -24px rgba(56, 189, 248, 0.7);
+    transform: translateY(-1px);
+}
+
+.app-sidebar-profile-link:focus-visible {
+    outline: 3px solid rgba(125, 211, 252, 0.28);
+    outline-offset: 2px;
+}
+
+.app-sidebar-profile-home {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: rgba(125, 211, 252, 0.1);
+    color: #7dd3fc;
+}
+
+.app-sidebar-profile-home .sidebar-nav-icon {
+    width: 17px;
+    height: 17px;
 }
 
 .app-sidebar-profile-copy {
@@ -364,7 +399,7 @@ body.product-body.theme-overview .app-sidebar-brand {
 }
 
 body.product-body.theme-overview .dashboard-sidebar-profile {
-    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr) auto;
     gap: 12px;
     padding: 12px;
     border-radius: 17px;
@@ -502,7 +537,7 @@ body.product-body.theme-overview .sidebar-nav-link--primary.is-active {
         color: inherit;
     }
 
-    .app-sidebar-brand {
+    .app-sidebar-profile {
         padding-right: 52px;
     }
 

@@ -4,36 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="settings.title">Configurações | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-6">
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-storage-compat.js"></script>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-9">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-storage-compat.js" defer></script>
     <script src="../assets/js/storage-scope.js" defer></script>
-    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/firebase-config.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
-    <script src="../assets/js/app-sidebar.js?v=20260928-1" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
     <script src="../assets/js/settings-page.js?v=20260928-3" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
-            <a href="../index.html" class="platform-brand app-sidebar-brand">
-                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo" width="48" height="48">
-                <div>
-                    <span>EducarIA</span>
-                    <strong data-i18n="settings.brand.section">Configurações</strong>
-                </div>
-            </a>
-
-            <div class="app-sidebar-profile">
+            <a href="index.html" class="app-sidebar-profile app-sidebar-profile-link" aria-label="Voltar ao painel do professor">
                 <strong data-sidebar-teacher>Professor</strong>
                 <span data-sidebar-institution>Conta educacional</span>
-            </div>
+            </a>
 
             <nav class="app-sidebar-nav" aria-label="Navegação principal" data-i18n-aria-label="settings.nav.main">
                 <a href="index.html" class="sidebar-nav-link" data-i18n="settings.nav.dashboard">Painel</a>
@@ -92,20 +84,44 @@
             </nav>
 
             <div class="app-sidebar-footer">
-                <button type="button" class="platform-link-button platform-link-secondary" data-logout data-i18n="settings.actions.logout">Sair</button>
+                <button type="button" class="platform-link-button platform-link-secondary sidebar-logout-button" data-logout data-i18n="settings.actions.logout">Sair</button>
             </div>
         </aside>
 
-        <main id="main-content" class="app-content" tabindex="-1">
-            <section class="app-page-intro">
-                <div class="app-page-intro__content">
-                    <h1 data-i18n="settings.hero.title">Configurações da conta</h1>
-                    <p data-i18n="settings.hero.copy">Atualize seus dados principais, mantenha sua escola correta e altere sua senha quando precisar.</p>
+        <main id="main-content" class="app-content workspace-page workspace-page--settings" tabindex="-1">
+            <section class="workspace-page-hero workspace-page-hero--settings">
+                <div class="workspace-page-hero__copy">
+                    <span class="workspace-page-eyebrow" data-i18n="settings.brand.section">Configurações</span>
+                    <h1 data-i18n="settings.hero.title">Sua conta, do seu jeito</h1>
+                    <p data-i18n="settings.hero.copy">Ajuste perfil, idioma, segurança e créditos de IA em um só lugar.</p>
+                    <nav class="settings-section-nav" aria-label="Atalhos das configurações">
+                        <a href="#settings-profile" data-i18n="settings.profile.label">Perfil</a>
+                        <a href="#settings-plan" data-i18n="settings.plan.label">Plano</a>
+                        <a href="#settings-security" data-i18n="settings.security.label">Segurança</a>
+                        <a href="#settings-data" data-i18n="settings.data.label">Seus dados</a>
+                    </nav>
+                </div>
+                <div class="workspace-page-hero__visual" aria-hidden="true">
+                    <svg viewBox="0 0 360 260" role="img">
+                        <circle cx="290" cy="55" r="37" fill="#c4b5fd" opacity=".65"/>
+                        <rect x="47" y="26" width="242" height="184" rx="30" fill="#ffffff"/>
+                        <rect x="72" y="54" width="94" height="12" rx="6" fill="#4c1d95" opacity=".86"/>
+                        <rect x="72" y="83" width="172" height="8" rx="4" fill="#ddd6fe"/>
+                        <path d="M78 121h152" stroke="#c4b5fd" stroke-width="8" stroke-linecap="round"/>
+                        <circle cx="137" cy="121" r="16" fill="#7c3aed" stroke="#fff" stroke-width="5"/>
+                        <path d="M78 159h152" stroke="#bae6fd" stroke-width="8" stroke-linecap="round"/>
+                        <circle cx="192" cy="159" r="16" fill="#0284c7" stroke="#fff" stroke-width="5"/>
+                        <rect x="116" y="184" width="205" height="56" rx="20" fill="#ecfdf5" stroke="#a7f3d0" stroke-width="2"/>
+                        <circle cx="146" cy="212" r="15" fill="#059669"/>
+                        <path d="m139 212 5 5 9-11" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="174" y="202" width="109" height="10" rx="5" fill="#065f46" opacity=".75"/>
+                        <rect x="174" y="220" width="72" height="7" rx="3.5" fill="#6ee7b7"/>
+                    </svg>
                 </div>
             </section>
 
-            <section class="settings-grid">
-                <article class="focus-card settings-summary-card">
+            <section class="settings-grid" id="settings-profile">
+                <article class="focus-card settings-card settings-card--identity settings-summary-card">
                     <span class="platform-section-label" data-i18n="settings.profile.label">Perfil</span>
                     <h2 data-settings-teacher-name>Professor</h2>
                     <p data-settings-teacher-email>email@exemplo.com</p>
@@ -125,7 +141,7 @@
                     </label>
                 </article>
 
-                <article class="focus-card">
+                <article class="focus-card settings-card settings-card--profile">
                     <div class="page-section-title">
                         <div>
                             <span class="platform-section-label" data-i18n="settings.profile.edit.label">Dados pessoais</span>
@@ -161,7 +177,7 @@
             </section>
 
             <section class="settings-grid settings-grid--security">
-                <article class="focus-card">
+                <article class="focus-card settings-card settings-card--security" id="settings-security">
                     <div class="page-section-title">
                         <div>
                             <span class="platform-section-label" data-i18n="settings.security.label">Segurança</span>
@@ -195,7 +211,7 @@
                     </form>
                 </article>
 
-                <article class="focus-card">
+                <article class="focus-card settings-card settings-card--plan" id="settings-plan">
                     <div class="page-section-title">
                         <div>
                             <span class="platform-section-label" data-i18n="settings.plan.label">Plano</span>
@@ -257,7 +273,7 @@
                     </form>
                 </article>
 
-                <article class="focus-card">
+                <article class="focus-card settings-card settings-card--pilot">
                     <div class="page-section-title">
                         <div>
                             <span class="platform-section-label" data-i18n="settings.pilot.label">Programa piloto</span>
@@ -282,7 +298,7 @@
                     <p class="settings-feedback" data-settings-pilot-feedback hidden></p>
                 </article>
 
-                <article class="focus-card">
+                <article class="focus-card settings-card settings-card--data" id="settings-data">
                     <div class="page-section-title">
                         <div>
                             <span class="platform-section-label" data-i18n="settings.data.label">Seus dados</span>
@@ -296,7 +312,7 @@
                     <p class="settings-feedback" data-settings-account-feedback hidden></p>
                 </article>
 
-                <article class="focus-card settings-danger-card">
+                <article class="focus-card settings-card settings-card--danger settings-danger-card">
                     <div class="page-section-title">
                         <div>
                             <span class="platform-section-label" data-i18n="settings.delete.label">Zona de risco</span>

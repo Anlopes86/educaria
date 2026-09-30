@@ -4,35 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="classes.title">Turmas | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-6">
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-9">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js" defer></script>
     <script src="../assets/js/storage-scope.js" defer></script>
-    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/firebase-config.js" defer></script>
     <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
-    <script src="../assets/js/app-sidebar.js?v=20260928-1" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
     <script src="../assets/js/classes-overview.js" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-page="classes-overview">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
-            <a href="../index.html" class="platform-brand app-sidebar-brand">
-                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo" width="48" height="48">
-                <div>
-                    <span>EducarIA</span>
-                    <strong data-i18n="classes.brand.section">Turmas</strong>
-                </div>
-            </a>
-
-            <div class="app-sidebar-profile">
+            <a href="index.html" class="app-sidebar-profile app-sidebar-profile-link" aria-label="Voltar ao painel do professor">
                 <strong data-sidebar-teacher>Professor</strong>
                 <span data-sidebar-institution>Conta educacional</span>
-            </div>
+            </a>
 
             <nav class="app-sidebar-nav" aria-label="Navegação principal" data-i18n-aria-label="dashboard.nav.main">
                 <a href="index.html" class="sidebar-nav-link" data-i18n="dashboard.nav.dashboard">Painel</a>
@@ -91,44 +83,68 @@
             </nav>
 
             <div class="app-sidebar-footer">
-                <button type="button" class="platform-link-button platform-link-secondary" data-logout data-i18n="dashboard.actions.logout">Sair</button>
+                <button type="button" class="platform-link-button platform-link-secondary sidebar-logout-button" data-logout data-i18n="dashboard.actions.logout">Sair</button>
             </div>
         </aside>
 
-        <main id="main-content" class="app-content" tabindex="-1">
-            <section class="focus-card">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label" data-i18n="classes.hero.label">Turmas do professor</span>
-                        <h2 data-i18n="classes.hero.title">Cards por turma</h2>
+        <main id="main-content" class="app-content workspace-page workspace-page--classes" tabindex="-1">
+            <section class="workspace-page-hero workspace-page-hero--classes">
+                <div class="workspace-page-hero__copy">
+                    <span class="workspace-page-eyebrow" data-i18n="classes.hero.label">Suas turmas</span>
+                    <h1 data-i18n="classes.hero.title">Organize cada turma e continue de onde parou</h1>
+                    <p data-i18n="classes.hero.copy">Veja o que já foi criado, retome a atividade mais recente ou comece um novo material com a turma certa selecionada.</p>
+                    <div class="workspace-page-actions">
+                        <button type="button" class="platform-link-button workspace-primary-action" data-open-sidebar-panel="create-class" data-i18n="dashboard.nav.createClass">Criar turma</button>
+                        <a href="index.html#activity-toolkit" class="platform-link-button workspace-secondary-action" data-i18n="dashboard.nav.createActivity">Criar atividade</a>
                     </div>
-                    <p data-i18n="classes.hero.copy">Use "Ver materiais" para abrir o acervo da turma ou "Criar material" para ir direto ao painel de ferramentas já com a turma selecionada.</p>
+                    <div class="workspace-hero-stats" role="status" aria-live="polite" aria-atomic="true">
+                        <article>
+                            <strong data-classes-overview-count>0</strong>
+                            <span data-i18n="dashboard.kpi.classes">turmas</span>
+                        </article>
+                        <article>
+                            <strong data-classes-overview-activities>0</strong>
+                            <span data-i18n="dashboard.kpi.activities">atividades</span>
+                        </article>
+                    </div>
+                </div>
+                <div class="workspace-page-hero__visual" aria-hidden="true">
+                    <svg viewBox="0 0 360 260" role="img">
+                        <defs>
+                            <linearGradient id="classes-card-a" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#dbeafe"/></linearGradient>
+                            <linearGradient id="classes-card-b" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f0fdfa"/><stop offset="1" stop-color="#ccfbf1"/></linearGradient>
+                        </defs>
+                        <circle cx="293" cy="52" r="34" fill="#fbbf24" opacity=".9"/>
+                        <rect x="62" y="36" width="228" height="166" rx="28" fill="#172554" opacity=".2"/>
+                        <rect x="42" y="22" width="228" height="166" rx="28" fill="url(#classes-card-a)"/>
+                        <rect x="65" y="47" width="56" height="56" rx="18" fill="#2563eb"/>
+                        <circle cx="93" cy="68" r="10" fill="#fff" opacity=".95"/>
+                        <path d="M76 92c3-12 12-17 17-17s14 5 17 17" fill="#fff" opacity=".95"/>
+                        <rect x="139" y="52" width="94" height="12" rx="6" fill="#1e3a8a" opacity=".9"/>
+                        <rect x="139" y="76" width="68" height="9" rx="4.5" fill="#93c5fd"/>
+                        <rect x="65" y="124" width="168" height="14" rx="7" fill="#bfdbfe"/>
+                        <rect x="65" y="150" width="112" height="14" rx="7" fill="#dbeafe"/>
+                        <rect x="111" y="154" width="214" height="88" rx="24" fill="url(#classes-card-b)" stroke="#99f6e4" stroke-width="2"/>
+                        <circle cx="145" cy="188" r="17" fill="#0f766e"/>
+                        <path d="m138 188 5 5 10-12" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="177" y="176" width="108" height="11" rx="5.5" fill="#115e59" opacity=".82"/>
+                        <rect x="177" y="199" width="78" height="9" rx="4.5" fill="#5eead4"/>
+                    </svg>
+                </div>
+            </section>
+
+            <section class="focus-card workspace-content-panel">
+                <div class="page-section-title workspace-section-title">
+                    <div>
+                        <span class="platform-section-label" data-i18n="classes.summary.label">Visão geral</span>
+                        <h2 data-i18n="classes.summary.title">Escolha uma turma para continuar</h2>
+                    </div>
+                    <p data-i18n="classes.summary.copy">Os filtros ajudam a encontrar rapidamente turmas com atividades, quizzes ou apresentações.</p>
                 </div>
 
                 <div class="class-material-filters" data-classes-overview-filters role="toolbar" aria-label="Filtros de turmas" data-i18n-aria-label="classes.filters.toolbar"></div>
                 <p class="class-material-filter-summary" data-classes-overview-filter-summary role="status" aria-live="polite" aria-atomic="true" hidden></p>
                 <div class="class-dashboard-grid" data-classes-overview-grid aria-live="polite" aria-busy="false"></div>
-            </section>
-
-<section class="focus-card dashboard-panel">
-                <div class="page-section-title">
-                    <div>
-                        <span class="platform-section-label" data-i18n="classes.summary.label">Resumo</span>
-                        <h2 data-i18n="classes.summary.title">Visão geral das turmas</h2>
-                    </div>
-                    <p data-i18n="classes.summary.copy">Cada card abaixo mostra o volume de materiais já criados e oferece o próximo passo mais útil para a turma.</p>
-                </div>
-
-                <div class="teacher-dashboard-kpis dashboard-overview-kpis" role="status" aria-live="polite" aria-atomic="true">
-                    <article class="teacher-dashboard-kpi">
-                        <strong data-classes-overview-count>0</strong>
-                        <span data-i18n="dashboard.kpi.classes">turmas</span>
-                    </article>
-                    <article class="teacher-dashboard-kpi">
-                        <strong data-classes-overview-activities>0</strong>
-                        <span data-i18n="dashboard.kpi.activities">atividades</span>
-                    </article>
-                </div>
             </section>
         </main>
     </div>

@@ -2472,7 +2472,7 @@ function hydrateLibraryPage() {
         const count = groupItems.length;
 
         return `
-            <details class="editor-disclosure lesson-group-section lesson-group-disclosure" open>
+            <details class="editor-disclosure lesson-group-section lesson-group-disclosure" data-material-type="${escapeHtml(key)}" open>
                 <summary>
                     <span>${materialGroupLabel(key)}</span>
                     <small>${count} ${lessonLibraryTranslate(count === 1 ? "library.count.material" : "library.count.materials", count === 1 ? "material" : "materiais")}</small>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="classDetail.title">Turma | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-6">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260928-9">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -14,25 +14,17 @@
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/lesson-library.js" defer></script>
-    <script src="../assets/js/app-sidebar.js?v=20260928-1" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
     <script src="../assets/js/class-format-picker.js" defer></script>
 </head>
 <body class="product-body theme-class" data-requires-auth="true" data-class-page-ready="false" data-page="class-detail">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
-            <a href="index.html" class="platform-brand app-sidebar-brand">
-                <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo" width="48" height="48">
-                <div>
-                    <span>EducarIA</span>
-                    <strong data-i18n="classDetail.brand.section">Turma</strong>
-                </div>
-            </a>
-
-            <div class="app-sidebar-profile">
+            <a href="index.html" class="app-sidebar-profile app-sidebar-profile-link" aria-label="Voltar ao painel do professor">
                 <strong data-sidebar-teacher>Professor</strong>
                 <span data-sidebar-institution>Conta educacional</span>
-            </div>
+            </a>
 
             <nav class="app-sidebar-nav" aria-label="Navegação principal" data-i18n-aria-label="dashboard.nav.main">
                 <a href="index.html" class="sidebar-nav-link" data-i18n="dashboard.nav.dashboard">Painel</a>
@@ -91,7 +83,7 @@
             </nav>
 
             <div class="app-sidebar-footer">
-                <button type="button" class="platform-link-button platform-link-secondary" data-logout data-i18n="dashboard.actions.logout">Sair</button>
+                <button type="button" class="platform-link-button platform-link-secondary sidebar-logout-button" data-logout data-i18n="dashboard.actions.logout">Sair</button>
             </div>
         </aside>
 

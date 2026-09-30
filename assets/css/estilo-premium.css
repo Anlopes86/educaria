@@ -20,7 +20,7 @@
 @import url('./components/lesson-sequence.css?v=20260927-5');
 @import url('./components/previews.css');
 @import url('./components/toolbar.css');
-@import url('./layouts/app-shell.css?v=20260928-1');
+@import url('./layouts/app-shell.css?v=20260928-2');
 @import url('./pages/classes-overview.css');
 @import url('./pages/landing.css?v=20260928-1');
 @import url('./pages/home.css');
@@ -29,6 +29,7 @@
 @import url('./pages/auth.css');
 @import url('./pages/settings.css');
 @import url('./pages/library.css');
+@import url('./pages/section-overviews.css?v=20260928-1');
 @import url('./pages/legal.css');
 @import url('./components/mobile.css?v=20260928-2');
 
