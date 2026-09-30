@@ -201,9 +201,13 @@ function renderWordsearchApplication() {
             const availableWidth = Math.max(1, shell.clientWidth - horizontalPadding);
             const availableHeight = Math.max(1, shell.clientHeight - verticalPadding);
             const cellSizeByHeight = Math.max(1, (availableHeight - gap * (rows - 1)) / rows);
-            const widthByHeight = cellSizeByHeight * cols + gap * (cols - 1);
-            const fittedWidth = Math.max(1, Math.min(availableWidth, widthByHeight));
+            const cellSizeByWidth = Math.max(1, (availableWidth - gap * (cols - 1)) / cols);
+            const fittedCellSize = Math.min(cellSizeByHeight, cellSizeByWidth);
+            const fittedWidth = Math.max(1, fittedCellSize * cols + gap * (cols - 1));
+            const fittedHeight = Math.max(1, fittedCellSize * rows + gap * (rows - 1));
             inner.style.width = `${Math.floor(fittedWidth)}px`;
+            inner.style.height = `${Math.floor(fittedHeight)}px`;
+            inner.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
         });
     }
 

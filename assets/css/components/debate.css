@@ -636,6 +636,56 @@ body.presentation-controls-idle.debate-presentation-shell .debate-floating-contr
     gap: 8px;
 }
 
+@media (max-height: 640px) {
+    .debate-stage-card h1 {
+        font-size: 1.45rem;
+    }
+
+    .debate-stage-content {
+        grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+        gap: 10px;
+    }
+
+    .debate-stage-card.debate-stage-card--dense .debate-stage-sides {
+        gap: 7px;
+    }
+
+    .debate-stage-card.debate-stage-card--dense .debate-stage-side {
+        gap: 4px;
+        padding: 7px 10px;
+    }
+
+    .debate-stage-card.debate-stage-card--dense .debate-stage-side .platform-section-label,
+    .debate-stage-card.debate-stage-card--dense .debate-stage-side-prompt {
+        display: none;
+    }
+
+    .debate-stage-card.debate-stage-card--dense .debate-stage-team-badge {
+        width: 24px;
+        height: 24px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+    }
+
+    .debate-stage-card.debate-stage-card--dense .debate-stage-side strong {
+        font-size: 0.9rem;
+        line-height: 1.12;
+    }
+
+    .debate-stage-card.debate-stage-card--dense .debate-stage-step {
+        gap: 8px;
+    }
+
+    .debate-stage-card.debate-stage-card--dense .debate-stage-step h2 {
+        font-size: 1.25rem;
+    }
+
+    .debate-stage-card.debate-stage-card--dense .debate-stage-step h3 {
+        font-size: 1rem;
+        line-height: 1.3;
+    }
+}
+
 @media (max-width: 1024px) {
     .debate-stage-card {
         grid-template-rows: auto auto auto minmax(0, 1fr);

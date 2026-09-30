@@ -13,10 +13,10 @@
 @import url('./components/feedback.css');
 @import url('./components/offline-status.css');
 @import url('./components/navigation.css');
-@import url('./components/presentation.css?v=20260927-12');
+@import url('./components/presentation.css?v=20260930-1');
 @import url('./components/presentation-stages.css?v=20260928-2');
-@import url('./components/presentation-activities.css?v=20260927-12');
-@import url('./components/debate.css');
+@import url('./components/presentation-activities.css?v=20260930-1');
+@import url('./components/debate.css?v=20260930-1');
 @import url('./components/lesson-sequence.css?v=20260927-5');
 @import url('./components/previews.css');
 @import url('./components/toolbar.css');

@@ -430,11 +430,15 @@ function renderPresentation(slides, draft = {}) {
             : 0;
         const shellGap = shellStyles ? parseFloat(shellStyles.rowGap || shellStyles.gap || 0) : 0;
         const frameGap = frameStyles ? parseFloat(frameStyles.rowGap || frameStyles.gap || 0) : 0;
-        const topbarHeight = topbar?.offsetHeight || 0;
+        const topbarHeight = document.body.classList.contains("presentation-topbar-collapsed")
+            ? 0
+            : topbar?.offsetHeight || 0;
         const controlsPosition = controls ? getComputedStyle(controls).position : "";
         const controlsHeight = controlsPosition === "fixed" ? 0 : controls?.offsetHeight || 0;
         const frameWidth = frame?.clientWidth || window.innerWidth;
-        const stageHeight = Math.max(320, window.innerHeight - shellPadding - shellGap - topbarHeight - frameGap - controlsHeight - 20);
+        const availableStageHeight = window.innerHeight - shellPadding - shellGap - topbarHeight - frameGap - controlsHeight - 20;
+        const minimumStageHeight = Math.min(320, Math.max(220, Math.floor(window.innerHeight * 0.42)));
+        const stageHeight = Math.max(minimumStageHeight, availableStageHeight);
         const stageWidth = Math.max(320, frameWidth - 8);
 
         viewport = {
@@ -442,8 +446,8 @@ function renderPresentation(slides, draft = {}) {
             stageWidth
         };
 
-        document.documentElement.style.setProperty("--presentation-stage-height", `${stageHeight}px`);
-        document.documentElement.style.setProperty("--presentation-stage-width", `${stageWidth}px`);
+        shell?.style.setProperty("--presentation-stage-height", `${stageHeight}px`);
+        shell?.style.setProperty("--presentation-stage-width", `${stageWidth}px`);
         document.body.classList.toggle("presentation-page--compact", stageHeight < 620 || frameWidth < 1180);
     };
 
@@ -593,7 +597,7 @@ function renderPresentation(slides, draft = {}) {
     persistState();
     paint();
 
-    window.addEventListener("resize", () => {
+    const scheduleViewportUpdate = () => {
         if (resizeFrame) {
             window.cancelAnimationFrame(resizeFrame);
         }
@@ -602,7 +606,10 @@ function renderPresentation(slides, draft = {}) {
             updateViewportMetrics();
             paint();
         });
-    });
+    };
+
+    window.addEventListener("resize", scheduleViewportUpdate);
+    document.addEventListener("educaria-presentation-layout-change", scheduleViewportUpdate);
 }
 
 function renderPresentationEmptyState() {

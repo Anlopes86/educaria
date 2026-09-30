@@ -202,6 +202,94 @@ body.presentation-topbar-collapsed .presentation-topbar-restore {
     box-shadow: 0 18px 34px -28px rgba(15, 23, 42, 0.3);
 }
 
+@media (max-width: 1180px), (max-height: 720px) {
+    .presentation-topbar:not(.presentation-topbar--minimal) {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 8px;
+        min-height: 56px;
+        padding: 7px 9px;
+        border-radius: 18px;
+    }
+
+    .presentation-topbar:not(.presentation-topbar--minimal) .presentation-brand {
+        gap: 7px;
+        padding: 4px 6px;
+        border-radius: 15px;
+    }
+
+    .presentation-topbar:not(.presentation-topbar--minimal) .presentation-brand span {
+        display: none;
+    }
+
+    .presentation-topbar:not(.presentation-topbar--minimal) .presentation-brand strong {
+        max-width: 18rem;
+        overflow: hidden;
+        font-size: 0.84rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .presentation-topbar:not(.presentation-topbar--minimal) .platform-brand-mark {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+    }
+
+    .presentation-topbar:not(.presentation-topbar--minimal) .platform-top-actions {
+        justify-self: end;
+        min-width: 0;
+        max-width: 100%;
+        gap: 5px;
+        padding: 4px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+
+    .presentation-topbar:not(.presentation-topbar--minimal) .platform-top-actions > * {
+        flex: 0 0 auto;
+    }
+
+    .presentation-topbar:not(.presentation-topbar--minimal) .platform-link-button,
+    .presentation-topbar:not(.presentation-topbar--minimal) .presentation-chrome-button {
+        min-height: 34px;
+        padding-inline: 9px;
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+}
+
+@media (max-height: 640px) {
+    .presentation-shell {
+        gap: 8px;
+        padding-top: 6px;
+        padding-bottom: 7px;
+    }
+
+    .presentation-page .presentation-shell--lesson {
+        padding-top: 6px;
+    }
+
+    .presentation-page .presentation-frame--solo {
+        gap: 8px;
+    }
+}
+
+@media (max-width: 1120px) {
+    .presentation-topbar:not(.presentation-topbar--minimal) {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .presentation-topbar:not(.presentation-topbar--minimal) .presentation-brand {
+        display: none;
+    }
+
+    .presentation-topbar:not(.presentation-topbar--minimal) .platform-top-actions {
+        width: 100%;
+        justify-self: stretch;
+    }
+}
+
 .presentation-frame,
 .flashcards-stage-shell,
 .quiz-application-stage {

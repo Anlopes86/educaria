@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slides | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260930-3">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260930-4">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -23,9 +23,9 @@
     <script src="../assets/js/editor-disclosure.js?v=20260930-1" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20260928-4" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20260930-1" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
-    <script src="../assets/js/slide-theme-controls.js" defer></script>
+    <script src="../assets/js/slide-theme-controls.js?v=20260930-1" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="slides" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -128,6 +128,14 @@
                                     <option>Mais inspirador</option>
                                 </select>
                             </div>
+                            <div class="platform-field platform-field-wide slide-ai-visual-mode">
+                                <label for="slides-visual-mode">Visual dos slides</label>
+                                <select id="slides-visual-mode" aria-describedby="slides-visual-mode-help">
+                                    <option value="standard">Padrão EducarIA — visual consistente</option>
+                                    <option value="ai">Personalizado pela IA — combina com o tema</option>
+                                </select>
+                                <small id="slides-visual-mode-help" class="platform-field-help" data-slides-visual-mode-help>Usa uma identidade visual segura e previsível, pronta para projeção.</small>
+                            </div>
                             <div class="platform-field platform-field-wide">
                                 <label for="slides-objetivo">Objetivo da aula</label>
                                 <input id="slides-objetivo" type="text" value="" placeholder="Ex.: introduzir o tema, revisar conteúdo, preparar debate">
@@ -159,6 +167,7 @@
                                     <option value="vibrante">Vibrante</option>
                                     <option value="minimalista">Minimalista</option>
                                     <option value="infantil">Infantil</option>
+                                    <option value="ia-personalizado" disabled>Personalizado pela IA</option>
                                 </select>
                             </div>
                             <div class="platform-field">

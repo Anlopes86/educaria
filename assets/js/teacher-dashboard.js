@@ -25,7 +25,17 @@ const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_
     .filter((format) => format.materialType);
 const DASHBOARD_QUICK_OPTION_CONFIGS = {
     slides: [
-        { key: "count", type: "number", labelKey: "dashboard.quick.count.slides", label: "Quantidade de slides", min: 1, max: 20, value: 8, instruction: (value) => `Gerar ${value} slides.` }
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.slides", label: "Quantidade de slides", min: 1, max: 20, value: 8, instruction: (value) => `Gerar ${value} slides.` },
+        {
+            key: "visualMode",
+            type: "select",
+            label: "Visual dos slides",
+            value: "standard",
+            options: [
+                { value: "standard", label: "Padrão EducarIA", instruction: "Modo visual: padrão EducarIA, consistente e previsível." },
+                { value: "ai", label: "Personalizado pela IA", instruction: "Modo visual: personalizado pela IA de acordo com o tema." }
+            ]
+        }
     ],
     quiz: [
         { key: "count", type: "number", labelKey: "dashboard.quick.count.questions", label: "Quantidade de perguntas", min: 1, max: 30, value: 8, instruction: (value) => `Gerar ${value} perguntas.` },
@@ -474,7 +484,7 @@ function collectDashboardQuickOptions(form, materialType) {
         values,
         instructions,
         requestedCount: Number(values.count || 0),
-        variant: String(values.format || values.layout || "")
+        variant: String(values.format || values.layout || values.visualMode || "")
     };
 }
 
@@ -593,6 +603,9 @@ async function requestDashboardQuickMaterial(materialType, topic, label, generat
     }
     if (!payload?.material) {
         throw new Error(dashboardTranslate("dashboard.quick.generationError", "Não foi possível criar a atividade agora. Tente novamente."));
+    }
+    if (materialType === "slides") {
+        payload.material.visual_mode = generationOptions?.values?.visualMode === "ai" ? "ai" : "standard";
     }
     return payload;
 }

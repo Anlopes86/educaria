@@ -37,8 +37,18 @@ function slideThemeFields() {
         font: document.getElementById("slides-tema-fonte"),
         accent: document.getElementById("slides-tema-accent"),
         bg: document.getElementById("slides-tema-bg"),
-        text: document.getElementById("slides-tema-text")
+        text: document.getElementById("slides-tema-text"),
+        visualMode: document.getElementById("slides-visual-mode"),
+        visualModeHelp: document.querySelector("[data-slides-visual-mode-help]")
     };
+}
+
+function syncSlideVisualModeHelp() {
+    const fields = slideThemeFields();
+    if (!fields.visualModeHelp) return;
+    fields.visualModeHelp.textContent = fields.visualMode?.value === "ai"
+        ? "A IA escolherá uma paleta ligada ao assunto e variará os slides com a mesma identidade visual. Você poderá editar tudo depois."
+        : "Usa uma identidade visual segura e previsível, pronta para projeção.";
 }
 
 function setSelectValueByText(select, desiredText) {
@@ -86,10 +96,15 @@ function bindSlideThemeControls() {
     if (!fields.preset) return;
 
     syncThemePresetToControls();
+    syncSlideVisualModeHelp();
 
     fields.preset.addEventListener("change", () => {
         syncThemePresetToControls();
+        const summary = document.querySelector("[data-ai-slide-theme-summary]");
+        if (summary && fields.preset.value !== "ia-personalizado") summary.hidden = true;
     });
+
+    fields.visualMode?.addEventListener("change", syncSlideVisualModeHelp);
 
     document.addEventListener("click", (event) => {
         const button = event.target.closest("[data-apply-slides-theme]");

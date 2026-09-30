@@ -1248,16 +1248,47 @@ const quizSchema = {
 const slidesSchema = {
     type: "object",
     additionalProperties: false,
-    required: ["title", "slides"],
+    required: ["title", "visual_theme", "slides"],
     properties: {
         title: { type: "string" },
+        visual_theme: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+                "name",
+                "rationale",
+                "font",
+                "accent",
+                "secondary_accent",
+                "background",
+                "alternate_background",
+                "text",
+                "contrast_background",
+                "contrast_text"
+            ],
+            properties: {
+                name: { type: "string" },
+                rationale: { type: "string" },
+                font: {
+                    type: "string",
+                    enum: ["Destaque moderno", "Leitura limpa", "Serifada clássica"]
+                },
+                accent: { type: "string" },
+                secondary_accent: { type: "string" },
+                background: { type: "string" },
+                alternate_background: { type: "string" },
+                text: { type: "string" },
+                contrast_background: { type: "string" },
+                contrast_text: { type: "string" }
+            }
+        },
         slides: {
             type: "array",
             minItems: 1,
             items: {
                 type: "object",
                 additionalProperties: false,
-                required: ["type", "title", "body"],
+                required: ["type", "title", "body", "visual_variant"],
                 properties: {
                     type: {
                         type: "string",
@@ -1268,6 +1299,10 @@ const slidesSchema = {
                     body: { type: "string" },
                     teacher_notes: { type: "string" },
                     image_prompt: { type: "string" },
+                    visual_variant: {
+                        type: "string",
+                        enum: ["hero", "light", "alternate", "question", "contrast"]
+                    },
                     layout: {
                         type: "string",
                         enum: ["stack", "split"]
@@ -1963,6 +1998,24 @@ function promptFor(materialType, action, sourceText) {
         ].join("\n\n");
     }
 
+    const wantsPersonalizedVisual = /visual\s+(personalizado|tematico|temático)|personalizar\s+o\s+visual|modo\s+visual:\s*personalizado/i.test(action);
+    const slideVisualInstructions = wantsPersonalizedVisual
+        ? [
+            "Modo visual escolhido: personalizado pela IA de acordo com o tema.",
+            "Crie visual_theme com uma paleta coerente com o assunto, a disciplina e o público da aula.",
+            "Use somente cores hexadecimais completas no formato #RRGGBB.",
+            "Mantenha contraste forte para projeção: texto escuro em fundos claros e texto claro em fundos escuros.",
+            "Escolha no máximo duas cores de destaque relacionadas entre si; evite arco-íris, combinações aleatórias e estereótipos visuais do tema.",
+            "Explique a escolha em rationale com uma frase curta e útil para o professor.",
+            "Varie visual_variant com intenção: hero na abertura, light e alternate no desenvolvimento, question nas perguntas e contrast no fechamento.",
+            "A variação deve parecer parte do mesmo tema; não crie uma identidade diferente em cada slide."
+        ]
+        : [
+            "Modo visual escolhido: padrão EducarIA.",
+            "Preencha visual_theme com uma paleta moderna, sóbria e de alto contraste, pois o editor aplicará o padrão visual da plataforma.",
+            "Use visual_variant de acordo com a função de cada slide, sem depender dele para transmitir o conteúdo."
+        ];
+
     return [
         "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
         "Responda apenas em JSON compatível com o schema fornecido.",
@@ -1987,6 +2040,7 @@ function promptFor(materialType, action, sourceText) {
         "Não prometa nem gere imagens. Deixe image_prompt vazio; o professor poderá enviar uma imagem real depois.",
         "Escolha tipos de slide com intenção visual: cover na abertura, question para provocar participação e closing no encerramento.",
         "Varie a composição entre título forte, síntese em tópicos e pergunta de discussão; não transforme todos os slides na mesma lista.",
+        ...slideVisualInstructions,
         "Organize a sequência com começo, desenvolvimento e fechamento.",
         `Objetivo do professor: ${action || "Estruturar slides a partir do material enviado."}`,
         "Regras adicionais:",
@@ -2046,6 +2100,90 @@ function normalizeSlideBody(body, slideType) {
     return normalizedLines.join("\n");
 }
 
+const DEFAULT_SLIDE_VISUAL_THEME = Object.freeze({
+    name: "EducarIA moderno",
+    rationale: "Paleta clara e contrastante para leitura confortável em projeção.",
+    font: "Destaque moderno",
+    accent: "#0ea5e9",
+    secondary_accent: "#7c3aed",
+    background: "#eff6ff",
+    alternate_background: "#f0fdfa",
+    text: "#0f172a",
+    contrast_background: "#102a43",
+    contrast_text: "#f8fafc"
+});
+
+function normalizeHexColor(value, fallback) {
+    const color = String(value || "").trim();
+    return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : fallback;
+}
+
+function hexColorLuminance(value) {
+    const color = normalizeHexColor(value, "#000000").slice(1);
+    const channels = [0, 2, 4].map((offset) => {
+        const channel = Number.parseInt(color.slice(offset, offset + 2), 16) / 255;
+        return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
+}
+
+function slideColorContrast(first, second) {
+    const lighter = Math.max(hexColorLuminance(first), hexColorLuminance(second));
+    const darker = Math.min(hexColorLuminance(first), hexColorLuminance(second));
+    return (lighter + 0.05) / (darker + 0.05);
+}
+
+function readableSlideText(background, proposed, fallbackDark = "#0f172a", fallbackLight = "#f8fafc") {
+    const safeBackground = normalizeHexColor(background, "#ffffff");
+    const safeProposed = normalizeHexColor(proposed, fallbackDark);
+    if (slideColorContrast(safeBackground, safeProposed) >= 4.5) return safeProposed;
+
+    const candidates = [fallbackDark, fallbackLight];
+    return candidates.sort((left, right) => (
+        slideColorContrast(safeBackground, right) - slideColorContrast(safeBackground, left)
+    ))[0];
+}
+
+function normalizeSlideVisualTheme(theme) {
+    const source = theme && typeof theme === "object" ? theme : {};
+    const background = normalizeHexColor(source.background, DEFAULT_SLIDE_VISUAL_THEME.background);
+    const text = readableSlideText(background, source.text, DEFAULT_SLIDE_VISUAL_THEME.text, DEFAULT_SLIDE_VISUAL_THEME.contrast_text);
+    const proposedAlternate = normalizeHexColor(source.alternate_background, DEFAULT_SLIDE_VISUAL_THEME.alternate_background);
+    const alternateBackground = slideColorContrast(proposedAlternate, text) >= 4.5
+        ? proposedAlternate
+        : background;
+    const contrastBackground = normalizeHexColor(source.contrast_background, DEFAULT_SLIDE_VISUAL_THEME.contrast_background);
+    const contrastText = readableSlideText(
+        contrastBackground,
+        source.contrast_text,
+        DEFAULT_SLIDE_VISUAL_THEME.text,
+        DEFAULT_SLIDE_VISUAL_THEME.contrast_text
+    );
+    const allowedFonts = new Set(["Destaque moderno", "Leitura limpa", "Serifada clássica"]);
+
+    return {
+        name: trimWords(source.name || DEFAULT_SLIDE_VISUAL_THEME.name, 6),
+        rationale: trimWords(source.rationale || DEFAULT_SLIDE_VISUAL_THEME.rationale, 24),
+        font: allowedFonts.has(source.font) ? source.font : DEFAULT_SLIDE_VISUAL_THEME.font,
+        accent: normalizeHexColor(source.accent, DEFAULT_SLIDE_VISUAL_THEME.accent),
+        secondary_accent: normalizeHexColor(source.secondary_accent, DEFAULT_SLIDE_VISUAL_THEME.secondary_accent),
+        background,
+        alternate_background: alternateBackground,
+        text,
+        contrast_background: contrastBackground,
+        contrast_text: contrastText
+    };
+}
+
+function normalizeSlideVisualVariant(value, slideType, index) {
+    const allowedVariants = new Set(["hero", "light", "alternate", "question", "contrast"]);
+    if (allowedVariants.has(value)) return value;
+    if (slideType === "cover") return "hero";
+    if (slideType === "question") return "question";
+    if (slideType === "closing") return "contrast";
+    return index % 2 === 0 ? "light" : "alternate";
+}
+
 /**
  * Post-processes a Gemini-generated slides object to enforce display constraints:
  * trims body text to max lines/words by slide type, caps teacher_notes at 22 words,
@@ -2060,6 +2198,7 @@ function normalizeSlidesMaterial(material) {
 
     return {
         ...material,
+        visual_theme: normalizeSlideVisualTheme(material.visual_theme),
         slides: material.slides.map((slide, index, slides) => {
             const slideType = slide?.type || (index === 0 ? "cover" : index === slides.length - 1 ? "closing" : "content");
             const layout = slide?.image_prompt ? "split" : "stack";
@@ -2069,6 +2208,7 @@ function normalizeSlidesMaterial(material) {
                 type: slideType,
                 body: normalizeSlideBody(slide?.body, slideType),
                 teacher_notes: trimWords(slide?.teacher_notes || "", 22),
+                visual_variant: normalizeSlideVisualVariant(slide?.visual_variant, slideType, index),
                 layout
             };
         })

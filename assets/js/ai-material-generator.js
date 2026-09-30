@@ -782,6 +782,110 @@ function applyQuizFromStructuredData(payload) {
     return true;
 }
 
+const DEFAULT_AI_SLIDE_THEME = Object.freeze({
+    name: "EducarIA moderno",
+    rationale: "Paleta clara e contrastante para leitura confortável em projeção.",
+    font: "Destaque moderno",
+    accent: "#0ea5e9",
+    secondary_accent: "#7c3aed",
+    background: "#eff6ff",
+    alternate_background: "#f0fdfa",
+    text: "#0f172a",
+    contrast_background: "#102a43",
+    contrast_text: "#f8fafc"
+});
+
+function safeSlideThemeColor(value, fallback) {
+    const color = String(value || "").trim();
+    return /^#[0-9a-f]{6}$/i.test(color) ? color.toLowerCase() : fallback;
+}
+
+function normalizeAiSlideTheme(theme) {
+    const source = theme && typeof theme === "object" ? theme : {};
+    const allowedFonts = new Set(["Destaque moderno", "Leitura limpa", "Serifada clássica"]);
+    return {
+        name: String(source.name || DEFAULT_AI_SLIDE_THEME.name).trim() || DEFAULT_AI_SLIDE_THEME.name,
+        rationale: String(source.rationale || DEFAULT_AI_SLIDE_THEME.rationale).trim() || DEFAULT_AI_SLIDE_THEME.rationale,
+        font: allowedFonts.has(source.font) ? source.font : DEFAULT_AI_SLIDE_THEME.font,
+        accent: safeSlideThemeColor(source.accent, DEFAULT_AI_SLIDE_THEME.accent),
+        secondary_accent: safeSlideThemeColor(source.secondary_accent, DEFAULT_AI_SLIDE_THEME.secondary_accent),
+        background: safeSlideThemeColor(source.background, DEFAULT_AI_SLIDE_THEME.background),
+        alternate_background: safeSlideThemeColor(source.alternate_background, DEFAULT_AI_SLIDE_THEME.alternate_background),
+        text: safeSlideThemeColor(source.text, DEFAULT_AI_SLIDE_THEME.text),
+        contrast_background: safeSlideThemeColor(source.contrast_background, DEFAULT_AI_SLIDE_THEME.contrast_background),
+        contrast_text: safeSlideThemeColor(source.contrast_text, DEFAULT_AI_SLIDE_THEME.contrast_text)
+    };
+}
+
+function aiSlideVisualFor(theme, type, index, variant) {
+    if (type === "cover" || type === "closing" || ["hero", "contrast"].includes(variant)) {
+        return {
+            accent: type === "closing" ? theme.secondary_accent : theme.accent,
+            background: theme.contrast_background,
+            text: theme.contrast_text
+        };
+    }
+
+    if (type === "question" || variant === "question") {
+        return {
+            accent: theme.secondary_accent,
+            background: theme.alternate_background,
+            text: theme.text
+        };
+    }
+
+    const useAlternate = variant === "alternate" || (variant !== "light" && index % 2 !== 0);
+    return {
+        accent: useAlternate ? theme.secondary_accent : theme.accent,
+        background: useAlternate ? theme.alternate_background : theme.background,
+        text: theme.text
+    };
+}
+
+function renderAiSlideThemeSummary(theme, isPersonalized) {
+    const themeBody = document.querySelector(".editor-disclosure--theme .editor-disclosure-body");
+    if (!themeBody) return;
+
+    let summary = themeBody.querySelector("[data-ai-slide-theme-summary]");
+    if (!summary) {
+        summary = document.createElement("section");
+        summary.className = "slide-ai-theme-summary";
+        summary.dataset.aiSlideThemeSummary = "";
+        summary.innerHTML = `
+            <div class="slide-ai-theme-summary__copy">
+                <span>Visual criado pela IA</span>
+                <strong data-ai-slide-theme-name></strong>
+                <p data-ai-slide-theme-rationale></p>
+            </div>
+            <div class="slide-ai-theme-swatches" aria-label="Cores do visual personalizado">
+                <i data-ai-slide-theme-swatch="contrast" title="Fundo de destaque"></i>
+                <i data-ai-slide-theme-swatch="accent" title="Cor principal"></i>
+                <i data-ai-slide-theme-swatch="secondary" title="Cor secundária"></i>
+                <i data-ai-slide-theme-swatch="background" title="Fundo claro"></i>
+            </div>
+        `;
+        themeBody.prepend(summary);
+    }
+
+    summary.hidden = !isPersonalized;
+    if (!isPersonalized) return;
+
+    const name = summary.querySelector("[data-ai-slide-theme-name]");
+    const rationale = summary.querySelector("[data-ai-slide-theme-rationale]");
+    if (name) name.textContent = theme.name;
+    if (rationale) rationale.textContent = theme.rationale;
+    const swatches = {
+        contrast: theme.contrast_background,
+        accent: theme.accent,
+        secondary: theme.secondary_accent,
+        background: theme.background
+    };
+    Object.entries(swatches).forEach(([key, color]) => {
+        const swatch = summary.querySelector(`[data-ai-slide-theme-swatch="${key}"]`);
+        if (swatch) swatch.style.backgroundColor = color;
+    });
+}
+
 function slideVisualFor(type, index) {
     if (type === "cover") {
         return { accent: "#2dd4bf", background: "#102a43", text: "#f8fafc" };
@@ -807,6 +911,26 @@ function applySlidesFromStructuredData(payload) {
     const cards = ensureCardCount("[data-slides-stack]", "[data-slide-card]", slides.length);
     if (!cards.length) return false;
 
+    const visualModeField = document.getElementById("slides-visual-mode");
+    const requestedVisualMode = String(payload?.visual_mode || visualModeField?.value || "standard").toLowerCase();
+    const usePersonalizedVisual = requestedVisualMode === "ai";
+    const aiTheme = normalizeAiSlideTheme(payload?.visual_theme);
+    if (visualModeField) visualModeField.value = usePersonalizedVisual ? "ai" : "standard";
+
+    const themePreset = document.getElementById("slides-tema-visual");
+    const themeFont = document.getElementById("slides-tema-fonte");
+    const themeAccent = document.getElementById("slides-tema-accent");
+    const themeBackground = document.getElementById("slides-tema-bg");
+    const themeText = document.getElementById("slides-tema-text");
+    if (usePersonalizedVisual) {
+        if (themePreset) themePreset.value = "ia-personalizado";
+        if (themeFont) setSelectByText(themeFont, aiTheme.font);
+        if (themeAccent) themeAccent.value = aiTheme.accent;
+        if (themeBackground) themeBackground.value = aiTheme.background;
+        if (themeText) themeText.value = aiTheme.text;
+    }
+    renderAiSlideThemeSummary(aiTheme, usePersonalizedVisual);
+
     slides.forEach((slide, index) => {
         const card = cards[index];
         const title = card.querySelector('[data-field="slide-title"]');
@@ -816,11 +940,14 @@ function applySlidesFromStructuredData(payload) {
         const imagePrompt = card.querySelector('[data-field="slide-image-prompt"]');
         const imageUrl = card.querySelector('[data-field="slide-image-url"]');
         const layout = card.querySelector('[data-field="slide-layout"]');
+        const font = card.querySelector('[data-field="slide-font"]');
         const accentColor = card.querySelector('[data-field="slide-accent-color"]');
         const slideColor = card.querySelector('[data-field="slide-color"]');
         const textColor = card.querySelector('[data-field="slide-text-color"]');
         const slideType = slide.type || (index === 0 ? "cover" : index === slides.length - 1 ? "closing" : "content");
-        const visual = slideVisualFor(slideType, index);
+        const visual = usePersonalizedVisual
+            ? aiSlideVisualFor(aiTheme, slideType, index, slide.visual_variant)
+            : slideVisualFor(slideType, index);
 
         if (title) title.value = slide.title || "";
         if (subtitle) subtitle.value = slide.subtitle || "";
@@ -830,6 +957,7 @@ function applySlidesFromStructuredData(payload) {
         if (accentColor) accentColor.value = visual.accent;
         if (slideColor) slideColor.value = visual.background;
         if (textColor) textColor.value = visual.text;
+        if (font && usePersonalizedVisual) setSelectByText(font, aiTheme.font);
         card.dataset.slideType = slideType;
 
         if (imageMode) {
@@ -1789,6 +1917,7 @@ function materialConfig(materialType) {
             audienceId: "slides-publico",
             toneId: "slides-tom",
             objectiveId: "slides-objetivo",
+            visualModeId: "slides-visual-mode",
             apply: applySlidesFromStructuredData,
             fallback: buildFallbackSlides
         };
@@ -1985,6 +2114,7 @@ async function generateMaterial(materialType, button, options = {}) {
     const audienceField = config.audienceId ? document.getElementById(config.audienceId) : null;
     const toneField = config.toneId ? document.getElementById(config.toneId) : null;
     const objectiveField = config.objectiveId ? document.getElementById(config.objectiveId) : null;
+    const visualModeField = config.visualModeId ? document.getElementById(config.visualModeId) : null;
     const subjectField = config.subjectId ? document.getElementById(config.subjectId) : null;
     const file = fileField?.files?.[0] || null;
     const typedText = textField?.value.trim() || "";
@@ -1999,6 +2129,7 @@ async function generateMaterial(materialType, button, options = {}) {
     const audienceText = audienceField ? String(audienceField.value || "").trim() : "";
     const toneText = toneField ? toneField.options[toneField.selectedIndex].text.trim() : "";
     const objectiveText = objectiveField ? String(objectiveField.value || "").trim() : "";
+    const visualMode = visualModeField ? String(visualModeField.value || "standard").trim() : "standard";
     const subjectText = subjectField ? String(subjectField.value || "").trim() : "";
     const classText = config.classId ? String(document.getElementById(config.classId)?.value || "").trim() : "";
     const requestedCount = Number(countText) || undefined;
@@ -2054,6 +2185,9 @@ async function generateMaterial(materialType, button, options = {}) {
                 classText ? `Turma: ${classText}.` : "",
                 toneText ? `Tom desejado: ${toneText}.` : "",
                 detailText ? `Nível de detalhamento: ${detailText}.` : "",
+                visualMode === "ai"
+                    ? "Modo visual: personalizado pela IA de acordo com o tema."
+                    : "Modo visual: padrão EducarIA, consistente e previsível.",
                 imagePrefText ? `Uso de imagens: ${imagePrefText}.` : ""
             ].filter(Boolean).join(" ")
                 : materialType === "flashcards"
@@ -2135,6 +2269,9 @@ async function generateMaterial(materialType, button, options = {}) {
         }
 
         const payload = await requestStructuredMaterial(materialType, sourceText, file, generationHints);
+        if (materialType === "slides" && payload?.material) {
+            payload.material.visual_mode = visualMode === "ai" ? "ai" : "standard";
+        }
         const applied = config.apply(payload?.material);
         if (!applied) {
             throw new Error("A resposta da IA não trouxe dados suficientes para preencher o editor.");

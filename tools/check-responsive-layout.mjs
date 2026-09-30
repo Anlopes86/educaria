@@ -860,6 +860,53 @@ async function auditPage(pageConfig) {
         const journeySubjectId = journeyConfig.subject;
         const journeyGradeId = journeyConfig.grade;
         let structuredGeneration = null;
+        if (builderJourneyType === "slides") {
+            await waitForPageCondition(cdp, "typeof applySlidesFromStructuredData === 'function'");
+            const generationEvaluation = await cdp.send("Runtime.evaluate", {
+                expression: `(() => {
+                    if (typeof applySlidesFromStructuredData !== 'function') return { ok: false, generator: typeof applySlidesFromStructuredData };
+                    const applied = applySlidesFromStructuredData({
+                        title: 'Revolucao Industrial',
+                        visual_mode: 'ai',
+                        visual_theme: {
+                            name: 'Industria e vapor',
+                            rationale: 'Paleta inspirada em metal, carvao e energia a vapor.',
+                            font: 'Serifada clássica',
+                            accent: '#f59e0b',
+                            secondary_accent: '#0ea5e9',
+                            background: '#fff7ed',
+                            alternate_background: '#e0f2fe',
+                            text: '#1e293b',
+                            contrast_background: '#292524',
+                            contrast_text: '#fafaf9'
+                        },
+                        slides: [
+                            { type: 'cover', title: 'Revolucao Industrial', subtitle: 'Mudancas no trabalho', body: 'Uma nova forma de produzir', teacher_notes: '', image_prompt: '', visual_variant: 'hero', layout: 'stack' },
+                            { type: 'content', title: 'A maquina a vapor', subtitle: '', body: 'Energia e mecanizacao', teacher_notes: '', image_prompt: '', visual_variant: 'alternate', layout: 'stack' },
+                            { type: 'closing', title: 'O que mudou?', subtitle: '', body: 'Compare permanencias e rupturas', teacher_notes: '', image_prompt: '', visual_variant: 'contrast', layout: 'stack' }
+                        ]
+                    });
+                    const cards = [...document.querySelectorAll('[data-slide-card]')];
+                    return {
+                        ok: Boolean(
+                            applied
+                            && cards.length === 3
+                            && document.getElementById('slides-visual-mode')?.value === 'ai'
+                            && document.getElementById('slides-tema-visual')?.value === 'ia-personalizado'
+                            && cards[0].querySelector('[data-field="slide-color"]')?.value.toLowerCase() === '#292524'
+                            && cards[1].querySelector('[data-field="slide-color"]')?.value.toLowerCase() === '#e0f2fe'
+                            && !document.querySelector('[data-ai-slide-theme-summary]')?.hidden
+                        ),
+                        applied: Boolean(applied),
+                        count: cards.length,
+                        visualMode: document.getElementById('slides-visual-mode')?.value || '',
+                        preset: document.getElementById('slides-tema-visual')?.value || ''
+                    };
+                })()`,
+                returnByValue: true
+            });
+            structuredGeneration = generationEvaluation.result.value;
+        }
         if (builderJourneyType === "hangman") {
             await waitForPageCondition(cdp, "typeof applyHangmanFromStructuredData === 'function' && typeof applyHangmanTemplateData === 'function'");
             const generationEvaluation = await cdp.send("Runtime.evaluate", {
@@ -1264,7 +1311,7 @@ try {
                 && result.quizJourney.grade === "7º ano"
                 && result.quizJourney.recovered
                 && result.quizJourney.explicitReady
-                && (!["hangman", "wheel", "match"].includes(result.quizJourney.journeyType) || result.quizJourney.structuredGeneration?.ok);
+                && (!["slides", "hangman", "wheel", "match"].includes(result.quizJourney.journeyType) || result.quizJourney.structuredGeneration?.ok);
             console.log(`  ${result.quizJourney.journeyType}-autosave=${journeyWorks ? "ok" : "failed"}`);
             if (!journeyWorks) {
                 failed = true;

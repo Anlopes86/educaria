@@ -1526,6 +1526,45 @@
     }
 }
 
+@media (max-height: 640px) {
+    .mind-stage-branch--radial {
+        width: clamp(124px, 23%, 160px);
+        min-height: 54px;
+        gap: 3px;
+        padding: 6px 9px;
+        border-radius: 15px;
+    }
+
+    .mind-stage-branch--radial strong {
+        font-size: 0.86rem;
+    }
+
+    .mind-stage-branch--radial em {
+        font-size: 0.68rem;
+        -webkit-line-clamp: 1;
+    }
+
+    .mind-stage-map.is-radial .mind-stage-central {
+        width: clamp(154px, 29%, 190px);
+        min-height: 86px;
+        gap: 4px;
+        padding: 10px 14px;
+        border-width: 4px;
+    }
+
+    .mind-stage-map.is-radial .mind-stage-central span {
+        font-size: 0.62rem;
+    }
+
+    .mind-stage-map.is-radial .mind-stage-central h2 {
+        font-size: 1rem;
+    }
+
+    .mind-stage-map.is-radial .mind-stage-central p {
+        font-size: 0.68rem;
+    }
+}
+
 @media print {
     .memory-stage-card,
     .wheel-stage-card,

@@ -18,6 +18,8 @@
     ];
 
     let idleTimer = 0;
+    let layoutFrame = 0;
+    let layoutTimer = 0;
 
     function isEditableTarget(target) {
         return target?.closest?.("input, textarea, select, [contenteditable='true'], [data-inline-editable]");
@@ -39,6 +41,31 @@
         }, IDLE_DELAY_MS);
     }
 
+    function syncPresentationViewport() {
+        const shell = document.querySelector(".presentation-shell");
+        const topbar = shell?.querySelector(":scope > .presentation-topbar");
+        if (!shell) return;
+
+        const styles = getComputedStyle(shell);
+        const padding = parseFloat(styles.paddingTop || 0) + parseFloat(styles.paddingBottom || 0);
+        const gap = parseFloat(styles.rowGap || styles.gap || 0);
+        const topbarHeight = document.body.classList.contains("presentation-topbar-collapsed")
+            ? 0
+            : topbar?.offsetHeight || 0;
+        const availableHeight = window.innerHeight - padding - gap - topbarHeight;
+        const minimumHeight = Math.min(320, Math.max(220, Math.floor(window.innerHeight * 0.42)));
+
+        shell.style.setProperty("--presentation-stage-height", `${Math.max(minimumHeight, availableHeight)}px`);
+        document.dispatchEvent(new CustomEvent("educaria-presentation-layout-change"));
+    }
+
+    function queuePresentationViewportSync() {
+        window.cancelAnimationFrame(layoutFrame);
+        window.clearTimeout(layoutTimer);
+        layoutFrame = window.requestAnimationFrame(syncPresentationViewport);
+        layoutTimer = window.setTimeout(syncPresentationViewport, 220);
+    }
+
     async function toggleFullscreen(button) {
         try {
             if (document.fullscreenElement) {
@@ -58,6 +85,7 @@
         document.body.classList.toggle("presentation-topbar-collapsed", !isPinned);
         button?.setAttribute("aria-pressed", isPinned ? "false" : "true");
         showPresentationChrome();
+        queuePresentationViewportSync();
     }
 
     function addTopbarRestoreAction() {
@@ -137,6 +165,16 @@
         addPresentationChromeActions();
         addTopbarRestoreAction();
         showPresentationChrome();
+        queuePresentationViewportSync();
+
+        const topbar = document.querySelector(".presentation-shell > .presentation-topbar");
+        if (topbar && "ResizeObserver" in window) {
+            const topbarObserver = new ResizeObserver(queuePresentationViewportSync);
+            topbarObserver.observe(topbar);
+        }
+
+        window.addEventListener("resize", queuePresentationViewportSync, { passive: true });
+        window.visualViewport?.addEventListener("resize", queuePresentationViewportSync, { passive: true });
 
         ["mousemove", "pointerdown", "focusin", "touchstart", "keydown"].forEach((eventName) => {
             document.addEventListener(eventName, showPresentationChrome, { passive: true });
@@ -147,6 +185,7 @@
                 "aria-pressed",
                 document.fullscreenElement ? "true" : "false"
             );
+            queuePresentationViewportSync();
         });
 
         document.addEventListener("keydown", (event) => {
