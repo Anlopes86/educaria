@@ -36,6 +36,73 @@ document.addEventListener("DOMContentLoaded", () => {
         hangman: ["palavra", "palavras"]
     };
 
+    function injectEditorJourney() {
+        const context = document.querySelector(".activity-editor-context");
+        if (!context || context.querySelector("[data-editor-journey]")) return;
+
+        const materialType = document.body?.dataset.materialType || "";
+        const activeLesson = typeof readActiveLesson === "function" ? readActiveLesson() : null;
+        const isReviewing = shouldFocusEdit || activeLesson?.materialType === materialType;
+
+        const journey = document.createElement("aside");
+        journey.className = "editor-journey";
+        journey.dataset.editorJourney = "";
+        journey.setAttribute("aria-label", "Etapas para preparar a atividade");
+        journey.innerHTML = `
+            <div class="editor-journey__head">
+                <strong>Seu caminho até a sala</strong>
+                <span>Etapa de edição</span>
+            </div>
+            <ol>
+                <li class="${isReviewing ? "is-done" : "is-current"}"${isReviewing ? "" : ' aria-current="step"'}>
+                    <span class="editor-journey__number" aria-hidden="true">${isReviewing ? "✓" : "1"}</span>
+                    <span class="editor-journey__copy">
+                        <strong>Prepare o conteúdo</strong>
+                        <small>Use um tema, texto ou arquivo.</small>
+                    </span>
+                    <span class="editor-journey__state">${isReviewing ? "Base" : "Agora"}</span>
+                </li>
+                <li${isReviewing ? ' class="is-current" aria-current="step"' : ""}>
+                    <span class="editor-journey__number" aria-hidden="true">2</span>
+                    <span class="editor-journey__copy">
+                        <strong>Revise e personalize</strong>
+                        <small>Confira a prévia enquanto ajusta.</small>
+                    </span>
+                    <span class="editor-journey__state">${isReviewing ? "Agora" : "Depois"}</span>
+                </li>
+                <li>
+                    <span class="editor-journey__number" aria-hidden="true">3</span>
+                    <span class="editor-journey__copy">
+                        <strong>Salve ou apresente</strong>
+                        <small>Leve a atividade pronta para a sala.</small>
+                    </span>
+                    <span class="editor-journey__state">Depois</span>
+                </li>
+            </ol>
+        `;
+        context.appendChild(journey);
+    }
+
+    function markEditorJourneyAsReviewing() {
+        const items = document.querySelectorAll("[data-editor-journey] li");
+        if (items.length < 2) return;
+
+        items[0].classList.remove("is-current");
+        items[0].classList.add("is-done");
+        items[0].removeAttribute("aria-current");
+        const firstNumber = items[0].querySelector(".editor-journey__number");
+        const firstState = items[0].querySelector(".editor-journey__state");
+        if (firstNumber) firstNumber.textContent = "✓";
+        if (firstState) firstState.textContent = "Base";
+
+        items[1].classList.add("is-current");
+        items[1].setAttribute("aria-current", "step");
+        const secondState = items[1].querySelector(".editor-journey__state");
+        if (secondState) secondState.textContent = "Agora";
+    }
+
+    injectEditorJourney();
+
     function normalizeLabel(value) {
         return String(value || "")
             .normalize("NFD")
@@ -78,6 +145,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
+    function scrollEditorElement(element, behavior = "smooth") {
+        if (!(element instanceof Element)) return;
+        const top = Math.max(0, element.getBoundingClientRect().top + window.scrollY - 14);
+        window.scrollTo({ top, left: 0, behavior });
+    }
+
     function setStartMode(pane, mode) {
         pane.querySelectorAll("[data-builder-start-mode]").forEach((button) => {
             const isActive = button.dataset.builderStartMode === mode;
@@ -95,13 +168,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (options.mode) setStartMode(pane, options.mode);
+        if (target.dataset.disclosureRole === "manual") markEditorJourneyAsReviewing();
 
         requestAnimationFrame(() => {
             if (options.scroll) {
-                target.scrollIntoView({
-                    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                    block: "start"
-                });
+                scrollEditorElement(
+                    target,
+                    window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+                );
             }
 
             if (options.focusSelector) {
@@ -284,10 +358,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 button.addEventListener("click", () => {
                     activeScrollLockUntil = Date.now() + 760;
                     setActiveCard(card);
-                    card.scrollIntoView({
-                        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-                        block: "start"
-                    });
+                    scrollEditorElement(
+                        card,
+                        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+                    );
                     window.setTimeout(() => {
                         card.querySelector("textarea, input:not([type='hidden']), select")?.focus({ preventScroll: true });
                     }, 240);
@@ -370,7 +444,10 @@ document.addEventListener("DOMContentLoaded", () => {
             openDisclosure(pane, manualDisclosure, { mode: "manual" });
             requestAnimationFrame(() => {
                 if (shouldFocusEdit) {
-                    manualDisclosure.scrollIntoView({ behavior: "smooth", block: "start" });
+                    scrollEditorElement(
+                        manualDisclosure,
+                        window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+                    );
                 }
             });
         } else if ((isNewMaterial || !isEditingSavedMaterial) && aiDisclosure) {
@@ -418,6 +495,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (current.dataset.disclosureRole === "manual") setStartMode(pane, "manual");
+                if (current.dataset.disclosureRole === "manual") markEditorJourneyAsReviewing();
                 if (current.dataset.disclosureRole === "ai" && !pane.querySelector("[data-builder-start-mode].is-active")) {
                     setStartMode(pane, "topic");
                 }
