@@ -44,7 +44,10 @@ async function signIn() {
     });
     if (!response.ok) throw new Error(`Probe sign-in failed (${response.status}).`);
     const body = await response.json();
-    if (body.localId !== uid || !body.idToken) throw new Error("Unexpected probe identity.");
+    if (!body.idToken) throw new Error("Missing probe ID token.");
+    // signInWithCustomToken need not return localId. Validate the signed identity.
+    const identity = await auth.verifyIdToken(body.idToken, true);
+    if (identity.uid !== uid) throw new Error("Unexpected probe identity.");
     return body.idToken;
 }
 const api = (route, token, options = {}) => fetch(baseUrl + route, {

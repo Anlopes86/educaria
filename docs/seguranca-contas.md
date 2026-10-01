@@ -1,4 +1,18 @@
-# Segurança das contas — implementação local
+# Segurança das contas
+
+## Estado da publicação — 01/10/2026
+
+Frontend e API publicados no commit `1f67d17e72cfe718795661dc4f4ada7d38e28726`. O [workflow do GitHub Pages](https://github.com/Anlopes86/educaria/actions/runs/36899684424) e o deploy do Render terminaram com sucesso.
+
+As regras do Firestore foram publicadas e conferidas no ruleset `2cf691c5-b10d-446a-a216-999b5070c9b0`. A versão anterior (`eff135a5-57f7-46b3-91ab-7020ddcd1128`) permanece disponível para rollback, com backup local em `.data/security-release-backups/`. Os perfis antigos não tinham `role`/`plan`; a regra agora aceita os padrões seguros sem migrar dados de professores.
+
+A validação autenticada em produção confirmou 12 verificações: API com sessão válida, exclusão desativada, leitura/edição do próprio perfil legado, negação de acesso a outra conta e de alteração do próprio plano, bloqueio de exclusão em Firestore/API e rejeição de contas desabilitadas, sessões revogadas e usuários removidos. Usou uma conta temporária sem email e documentos fictícios, todos removidos ao final. Não houve geração de IA.
+
+**Exclusão automática ainda desativada**, comprovada por resposta 503 com `deletion_unavailable`. O bucket configurado `educaria-f46b2.firebasestorage.app` retorna 404 e não existe release de regras Storage. Não foi criado bucket, alterado IAM nem ativado faturamento/TTL. O painel do Render exige login para continuar a configuração de ambiente.
+
+Observação: o worker tolera um bucket comprovadamente inexistente (404), pois não há arquivos a remover. Isso não obriga a contratar Storage para excluir perfis e materiais embutidos no Firestore. Antes da ativação, confirmar a configuração pretendida, o bucket exato e testar o fluxo completo com uma conta descartável. Nunca tratar erro 403 como bucket ausente.
+
+Testes locais/CI desta publicação: 33 backend + 39 interface/persistência + 6 emuladores, incluindo compatibilidade de perfis legados. As seções abaixo descrevem implementação e procedimentos, com histórico da preparação local no final.
 
 ## Sessões da API
 
