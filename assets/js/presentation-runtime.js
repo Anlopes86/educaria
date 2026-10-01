@@ -67,6 +67,7 @@ function parseSlideCards(stackHtml) {
 
         return {
             index,
+            sourceIndex: index,
             slideType,
             title: title || `Slide ${index + 1}`,
             subtitle,
@@ -83,7 +84,26 @@ function parseSlideCards(stackHtml) {
     }).filter(Boolean).map((slide, index) => ({ ...slide, index }));
 }
 
-function serializeSlideCards(slides) {
+function serializeSlideCards(slides, originalStackHtml = "") {
+    if (originalStackHtml) {
+        const doc = new DOMParser().parseFromString(`<div>${originalStackHtml}</div>`, "text/html");
+        const cards = [...doc.querySelectorAll("[data-slide-card]")];
+        if (cards.length) {
+            slides.forEach((slide, index) => {
+                const card = cards[slide.sourceIndex ?? index];
+                if (!card) return;
+                // Inline presentation editing changes text only. Preserve the editor's
+                // upload controls, design options, metadata and even unfinished cards.
+                for (const [name, value] of [["slide-title", slide.title], ["slide-subtitle", slide.subtitle], ["slide-body", slide.body]]) {
+                    const field = card.querySelector(`[data-field="${name}"]`);
+                    if (!field) continue;
+                    if (field.tagName === "TEXTAREA") field.textContent = value || "";
+                    else field.setAttribute("value", value || "");
+                }
+            });
+            return doc.body.firstElementChild.innerHTML;
+        }
+    }
     return slides.map((slide, index) => `
         <section class="platform-question-card activity-content-card" data-slide-card data-slide-type="${escapeHtml(slide.slideType || "content")}">
             <div class="platform-form-grid">
@@ -401,7 +421,7 @@ function renderPresentation(slides, draft = {}) {
     const state = {
         ...draft,
         slides: slides.map((slide, index) => ({ ...slide, index })),
-        stackHtml: serializeSlideCards(slides)
+        stackHtml: draft.stackHtml || serializeSlideCards(slides)
     };
 
     slideTitle.dataset.inlineEditable = "slide:title";
@@ -413,7 +433,7 @@ function renderPresentation(slides, draft = {}) {
 
     const persistState = () => {
         state.slides = state.slides.map((slide, index) => ({ ...slide, index }));
-        state.stackHtml = serializeSlideCards(state.slides);
+        state.stackHtml = serializeSlideCards(state.slides, state.stackHtml);
         writeSlidesDraft(state);
     };
 
@@ -594,7 +614,6 @@ function renderPresentation(slides, draft = {}) {
     });
 
     updateViewportMetrics();
-    persistState();
     paint();
 
     const scheduleViewportUpdate = () => {

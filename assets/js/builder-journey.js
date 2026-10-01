@@ -194,6 +194,7 @@ function educariaBuilderJourneyConfig() {
     }
 
     function persistBeforeLeaving() {
+        if (window.educariaQuickImportPending) return;
         if (!builderHasMeaningfulContent()) return;
         try {
             if (typeof forceSyncDraftFromPage === "function") forceSyncDraftFromPage(materialType);
@@ -211,6 +212,7 @@ function educariaBuilderJourneyConfig() {
 
     async function runAutosave(reason = "editing") {
         window.clearTimeout(autosaveTimer);
+        if (window.educariaQuickImportPending) return;
         if (!builderHasMeaningfulContent() || typeof autosaveCurrentLesson !== "function") {
             setSaveStatus("local", "Comece a editar para salvar");
             return;
@@ -227,11 +229,15 @@ function educariaBuilderJourneyConfig() {
         setSaveStatus("saving", "Salvando…");
         try {
             const result = await autosaveCurrentLesson(materialType);
-            lastSavedFingerprint = builderFingerprint();
+            // Never acknowledge edits made while this save was awaiting the network.
+            lastSavedFingerprint = fingerprint;
+            const changedWhileSaving = builderFingerprint() !== fingerprint;
+            if (changedWhileSaving) autosaveQueued = true;
             const remoteReady = Boolean(result?.synced);
             setSaveStatus(
-                remoteReady ? "saved" : "local",
-                remoteReady ? "Salvo na nuvem" : "Salvo neste dispositivo — sincronização pendente"
+                changedWhileSaving ? "saving" : (remoteReady ? "saved" : "local"),
+                changedWhileSaving ? "Alterações pendentes…"
+                    : (remoteReady ? "Salvo na nuvem" : "Salvo neste dispositivo — sincronização pendente")
             );
             trackJourney(`${materialType}_autosave_succeeded`, {
                 reason,
@@ -241,7 +247,7 @@ function educariaBuilderJourneyConfig() {
             });
             document.dispatchEvent(new CustomEvent("educaria-builder-autosaved", { detail: result }));
         } catch (error) {
-            setSaveStatus("error", "Não foi possível salvar — seu rascunho continua neste dispositivo");
+            setSaveStatus("error", "Não foi possível salvar — mantenha esta página aberta");
             trackJourney(`${materialType}_autosave_failed`, { reason });
         } finally {
             autosaveRunning = false;
@@ -325,10 +331,11 @@ function educariaBuilderJourneyConfig() {
         }
 
         window.addEventListener("online", async () => {
-            if (typeof syncLessonsWithFirebase !== "function") return;
-            setSaveStatus("saving", "Sincronizando…");
-            await syncLessonsWithFirebase();
-            setSaveStatus("saved", "Salvo na nuvem");
+            await runAutosave("connection-restored");
+        });
+        document.addEventListener("educaria-retry-save", () => runAutosave("retry"));
+        document.addEventListener("educaria-storage-error", () => {
+            setSaveStatus("error", "Não foi possível salvar — mantenha esta página aberta");
         });
         window.addEventListener("pagehide", persistBeforeLeaving);
         document.addEventListener("educaria-auth-changed", () => scheduleAutosave("authentication"));

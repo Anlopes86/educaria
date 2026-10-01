@@ -42,3 +42,31 @@
     color: #14532d;
     background: rgba(220, 252, 231, 0.95);
 }
+.storage-save-warning {
+    position: sticky;
+    top: 12px;
+    z-index: 100;
+    display: grid;
+    gap: 8px;
+    margin: 12px 0;
+    padding: 18px;
+    border: 1px solid #b45309;
+    border-radius: 16px;
+    background: #fffbeb;
+    color: #78350f;
+    box-shadow: 0 8px 24px #78350f14;
+    font-size: 0.95rem;
+}
+
+.storage-save-warning[hidden] { display: none; }
+.storage-save-warning > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.storage-save-warning button {
+    padding: 10px 14px;
+    border: 1px solid #92400e;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #78350f;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}

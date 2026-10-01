@@ -1156,6 +1156,25 @@ body.dashboard-ai-result-open {
 
 .dashboard-ai-result-card {
     width: min(680px, 100%);
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+}
+
+[data-dashboard-ai-result-resume] {
+    margin-top: 12px;
+    white-space: normal;
+}
+
+[data-dashboard-ai-result-storage] {
+    margin: 0;
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.dashboard-ai-result-actions [data-dashboard-ai-result-later] {
+    grid-column: 1 / -1;
+    justify-self: center;
 }
 
 .dashboard-ai-result-summary {

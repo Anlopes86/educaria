@@ -226,6 +226,27 @@ function buildColorField(name, labelText, value) {
 }
 
 function normalizeSlideImageControls(card) {
+    // Older presentation versions saved a simplified card without upload controls.
+    // Restore those controls without replacing the teacher's existing content.
+    if (!card.querySelector('[data-field="slide-image-mode"]')) {
+        const field = document.createElement("div");
+        field.className = "platform-field";
+        field.innerHTML = '<label>Imagem</label><select data-field="slide-image-mode"></select>';
+        (card.querySelector(".platform-form-grid") || card).appendChild(field);
+    }
+    if (!card.querySelector("[data-open-resource]")) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.openResource = "";
+        button.className = "platform-link-button platform-link-secondary";
+        card.appendChild(button);
+    }
+    if (!card.querySelector("[data-image-panel]")) {
+        const panel = document.createElement("div");
+        panel.className = "resource-panel";
+        panel.dataset.imagePanel = "";
+        card.appendChild(panel);
+    }
     const imageMode = card.querySelector('[data-field="slide-image-mode"]');
     const imageUrl = card.querySelector('[data-field="slide-image-url"]');
     const layout = card.querySelector('[data-field="slide-layout"]');
@@ -345,8 +366,12 @@ function saveBuilderState(config) {
 
     try {
         localStorage.setItem(config.key, JSON.stringify(state));
+        document.dispatchEvent(new CustomEvent("educaria-storage-saved", { detail: { key: config.key } }));
+        return { saved: true };
     } catch (error) {
         console.warn("EducarIA local persistence unavailable:", error);
+        document.dispatchEvent(new CustomEvent("educaria-storage-error", { detail: { error, key: config.key } }));
+        return { saved: false, error };
     }
 }
 

@@ -2652,12 +2652,24 @@ app.delete("/api/account", aiRateLimit, requireAiAuth, async (request, response)
         return response.status(401).json({ error: "Login necessário para excluir a conta." });
     }
 
+    const authenticatedAt = Number(request.educariaUser?.auth_time);
+    const now = Math.floor(Date.now() / 1000);
+    if (!Number.isFinite(authenticatedAt) || authenticatedAt > now + 60 || now - authenticatedAt > 300) {
+        return response.status(401).json({
+            code: "recent_login_required",
+            error: "Confirme sua senha novamente para concluir a exclusão da conta."
+        });
+    }
+
     await loadBillingStore();
     billingRecords.delete(uid);
     aiProUidAllowList.delete(uid);
     aiUnlimitedUidAllowList.delete(uid);
 
-    await Promise.all([persistBillingStore(), aiCreditRepository.deleteUser(uid)]);
+    // This endpoint cannot prove that the browser will complete Firebase account deletion.
+    // Keep the existing, expiring usage ledger: clearing it here would reset a live user's
+    // quota. Daily accounting naturally expires independently of profile/content cleanup.
+    await persistBillingStore();
     return response.json({ ok: true });
 });
 

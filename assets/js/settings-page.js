@@ -473,14 +473,38 @@ async function deleteSettingsBackendState() {
     }
 }
 
-function clearSettingsLocalAccountData() {
-    const preservedKeys = new Set(["educaria:firebase:config", "educaria:i18n:language"]);
+function clearSettingsLocalAccountData(deletedUid) {
+    const uid = String(deletedUid || "").trim();
+    if (!uid) return;
+    const actorId = uid.toLowerCase();
+    const scope = actorId.replace(/[^a-z0-9_-]+/g, "-");
     const keys = [];
     for (let index = 0; index < localStorage.length; index += 1) {
         const key = localStorage.key(index);
-        if (key?.startsWith("educaria:") && !preservedKeys.has(key)) keys.push(key);
+        if (!key?.startsWith("educaria:")) continue;
+        if (key.endsWith(`:${scope}`) || key.startsWith(`educaria:milestone:${actorId}:`)
+            || key === `educaria:dashboard-tour:${actorId}`) keys.push(key);
     }
     keys.forEach((key) => localStorage.removeItem(key));
+
+    let cachedTeacher = null;
+    try {
+        cachedTeacher = JSON.parse(localStorage.getItem(SETTINGS_TEACHER_CACHE_KEY) || "null");
+    } catch (error) {
+        console.warn("EducarIA teacher cache could not be read during cleanup.");
+    }
+    if (cachedTeacher?.uid === uid) {
+        localStorage.removeItem(SETTINGS_TEACHER_CACHE_KEY);
+        localStorage.removeItem(SETTINGS_SESSION_KEY);
+    }
+    try {
+        const events = JSON.parse(localStorage.getItem("educaria:analytics:events") || "[]");
+        if (Array.isArray(events)) {
+            localStorage.setItem("educaria:analytics:events", JSON.stringify(events.filter((event) => event.teacherUid !== uid)));
+        }
+    } catch (error) {
+        console.warn("EducarIA local analytics cleanup unavailable.");
+    }
 }
 
 async function handleSettingsDeleteSubmit(event) {
@@ -518,14 +542,19 @@ async function handleSettingsDeleteSubmit(event) {
 
         updateSettingsFeedback(feedback, "Excluindo arquivos e materiais... Não feche esta página.", "warning");
         await deleteSettingsRemoteData(services, user.uid);
+        await user.reauthenticateWithCredential(credential);
         await deleteSettingsBackendState();
         await user.reauthenticateWithCredential(credential);
         await user.delete();
-        clearSettingsLocalAccountData();
+        try {
+            clearSettingsLocalAccountData(user.uid);
+        } catch (error) {
+            console.warn("EducarIA local account cleanup unavailable.");
+        }
         window.location.replace("../login.html?accountDeleted=1");
     } catch (error) {
         console.warn("EducarIA account deletion unavailable:", error);
-        let message = "Não foi possível concluir a exclusão. Nenhuma nova tentativa será feita automaticamente.";
+        let message = "A exclusão não foi concluída. Parte dos dados pode já ter sido removida. Confirme sua senha e tente novamente para concluir.";
         if (error?.code === "auth/wrong-password" || error?.code === "auth/invalid-credential") {
             message = "A senha informada está incorreta.";
         } else if (error?.code === "auth/too-many-requests") {

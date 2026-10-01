@@ -33,7 +33,8 @@ const CLASS_STATUS_FILTERS = [
 ];
 
 let lessonsSyncPromise = null;
-let lastLessonsSyncUid = "";
+let lessonsSyncOwner = "";
+const lessonSyncQueues = new Map();
 let activeClassMaterialFilter = "all";
 let activeClassStatusFilter = "all";
 let activeClassSort = "recent";
@@ -144,7 +145,7 @@ function sortLessonsByUpdatedAt(lessons) {
 }
 
 function normalizeLessonRecord(lesson) {
-    if (!lesson || typeof lesson !== "object") return null;
+    if (!lesson || typeof lesson !== "object" || lesson.deletedAt) return null;
 
     const materialType = String(lesson.materialType || "slides").trim() || "slides";
     const className = String(lesson.className || "").trim();
@@ -185,8 +186,53 @@ function normalizeLessonRecord(lesson) {
         subject: String(lesson.subject || "").trim().slice(0, 120),
         grade: String(lesson.grade || "").trim().slice(0, 80),
         sourceMode: ["topic", "file", "manual", "mixed"].includes(lesson.sourceMode) ? lesson.sourceMode : "manual",
-        draft: typeof lesson.draft === "string" ? lesson.draft : ""
+        draft: typeof lesson.draft === "string" ? lesson.draft : "",
+        syncRevision: String(lesson.syncRevision || ""),
+        conflictOf: String(lesson.conflictOf || ""),
+        _pendingSync: Boolean(lesson._pendingSync)
     };
+}
+
+function lessonContentFingerprint(record) {
+    const normalized = normalizeLessonRecord(record);
+    if (!normalized) return "";
+    const { syncRevision, _pendingSync, ...content } = normalized;
+    return JSON.stringify(content);
+}
+
+function lessonEditableFingerprint(record) {
+    const normalized = normalizeLessonRecord(record);
+    if (!normalized) return "";
+    const { syncRevision, _pendingSync, updatedAt, lastOpenedAt, lastPresentedAt, lastUsedAt, usageCount, ...content } = normalized;
+    return JSON.stringify(content);
+}
+
+function lessonRemoteRecord(record) {
+    const { _pendingSync, ...remote } = normalizeLessonRecord(record);
+    return remote;
+}
+
+function lessonSyncContextIsCurrent(uid) {
+    return (typeof readCurrentTeacher === "function" ? readCurrentTeacher()?.uid : "") === uid;
+}
+
+function recoverDeletedLesson(record) {
+    return {
+        ...record,
+        id: `${record.id}-recovered-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        title: `${record.title} (edição recuperada)`,
+        conflictOf: record.id,
+        syncRevision: "",
+        _pendingSync: true
+    };
+}
+
+function notifyLessonStorageError(error, key = scopedStorageKey(LESSONS_LIBRARY_KEY)) {
+    document.dispatchEvent(new CustomEvent("educaria-storage-error", { detail: { error, key } }));
+}
+
+function notifyLessonStorageSaved(key) {
+    document.dispatchEvent(new CustomEvent("educaria-storage-saved", { detail: { key } }));
 }
 
 function mergeLessonRecords(localLessons, remoteLessons) {
@@ -257,8 +303,11 @@ function writeDeletedLessonIds(ids) {
 
     try {
         localStorage.setItem(scopedStorageKey(DELETED_LESSONS_KEY), JSON.stringify(normalized));
+        notifyLessonStorageSaved(scopedStorageKey(DELETED_LESSONS_KEY));
     } catch (error) {
         console.warn("EducarIA deleted lessons unavailable:", error);
+        notifyLessonStorageError(error, scopedStorageKey(DELETED_LESSONS_KEY));
+        throw error;
     }
 
     return normalized;
@@ -289,12 +338,25 @@ function readLessonsLibrary() {
 }
 
 function writeLessonsLibrary(lessons, options = {}) {
-    const normalized = mergeLessonRecords(Array.isArray(lessons) ? lessons : [], []);
+    const existing = new Map(readLessonsLibrary().map((lesson) => [lesson.id, lesson]));
+    const normalized = mergeLessonRecords(Array.isArray(lessons) ? lessons : [], []).map((lesson) => {
+        if (options.source === "firebase") return lesson;
+        const previous = existing.get(lesson.id);
+        return {
+            ...lesson,
+            syncRevision: lesson.syncRevision || previous?.syncRevision || "",
+            _pendingSync: lesson._pendingSync || previous?._pendingSync
+                || lessonContentFingerprint(lesson) !== lessonContentFingerprint(previous)
+        };
+    });
 
     try {
         localStorage.setItem(scopedStorageKey(LESSONS_LIBRARY_KEY), JSON.stringify(normalized));
+        notifyLessonStorageSaved(scopedStorageKey(LESSONS_LIBRARY_KEY));
     } catch (error) {
         console.warn("EducarIA lessons unavailable:", error);
+        notifyLessonStorageError(error);
+        throw error;
     }
 
     emitLessonsUpdated(options.source || "local");
@@ -335,7 +397,7 @@ function updateLessonRecordById(id, updater, options = {}) {
     const nextLessons = lessons.filter((lesson) => lesson.id !== lessonId);
     nextLessons.unshift(nextRecord);
     writeLessonsLibrary(nextLessons, options);
-    return nextRecord;
+    return readLessonsLibrary().find((lesson) => lesson.id === nextRecord.id) || nextRecord;
 }
 
 function markLessonOpened(id) {
@@ -417,58 +479,82 @@ async function syncLessonsWithFirebase() {
     const collection = firebaseLessonsCollection();
 
     if (!uid || !collection) {
-        lastLessonsSyncUid = "";
-        return readLessonsLibrary();
+        return { synced: false, lessons: readLessonsLibrary() };
     }
 
-    if (lessonsSyncPromise) return lessonsSyncPromise;
+    if (lessonsSyncPromise) {
+        if (lessonsSyncOwner === uid) return lessonsSyncPromise;
+        await lessonsSyncPromise;
+        return syncLessonsWithFirebase();
+    }
+    lessonsSyncOwner = uid;
 
     lessonsSyncPromise = (async () => {
         try {
-            const localLessons = readLessonsLibrary();
-            const deletedIds = readDeletedLessonIds();
-            const snapshot = await collection.get();
-            const remoteLessons = [];
-
+            // This snapshot is only a concurrency guard, never the source of local edits.
+            const beforeRead = new Map(readLessonsLibrary().map((lesson) => [lesson.id, lesson]));
+            const snapshot = await collection.get({ source: "server" });
+            if (!lessonSyncContextIsCurrent(uid)) return { synced: false };
+            const remoteLessons = new Map();
             snapshot.forEach((doc) => {
-                if (deletedIds.includes(doc.id)) return;
-                const normalized = normalizeLessonRecord({ id: doc.id, ...doc.data() });
-                if (normalized) {
-                    remoteLessons.push(normalized);
+                remoteLessons.set(doc.id, { ...doc.data(), id: doc.id });
+            });
+            const deletedIds = new Set(readDeletedLessonIds());
+            const current = new Map(readLessonsLibrary().map((lesson) => [lesson.id, lesson]));
+            remoteLessons.forEach((remote, id) => {
+                if (deletedIds.has(id)) return;
+                const local = current.get(id);
+                // A direct autosave may have committed while the collection read was pending.
+                if (local && local.syncRevision !== beforeRead.get(id)?.syncRevision) return;
+                if (remote.deletedAt) {
+                    if (local?._pendingSync) {
+                        const recovered = recoverDeletedLesson(local);
+                        current.set(recovered.id, recovered);
+                        if (readActiveLessonId() === id) writeActiveLessonId(recovered.id);
+                    }
+                    current.delete(id);
+                } else if (!local || (!local._pendingSync && local.syncRevision)) {
+                    current.set(id, normalizeLessonRecord(remote));
                 }
             });
+            deletedIds.forEach((id) => current.delete(id));
+            writeLessonsLibrary([...current.values()], { skipSync: true, source: "firebase" });
 
-            const mergedLessons = mergeLessonRecords(localLessons, remoteLessons);
-            const remoteNeedsRefresh = lastLessonsSyncUid !== uid
-                || deletedIds.length > 0
-                || !lessonsAreEqual(remoteLessons, mergedLessons);
-
-            writeLessonsLibrary(mergedLessons, { skipSync: true, source: "firebase" });
-
-            if (deletedIds.length) {
-                await Promise.all(deletedIds.map(async (lessonId) => {
-                    try {
-                        await collection.doc(lessonId).delete();
-                    } catch (error) {
-                        console.warn("EducarIA lesson delete unavailable:", error);
-                    }
-                }));
-                writeDeletedLessonIds([]);
+            let synced = true;
+            for (const lessonId of deletedIds) {
+                try {
+                    // Keep a tombstone so an offline device cannot resurrect the old ID.
+                    await collection.firestore.runTransaction(async (transaction) => {
+                        const ref = collection.doc(lessonId);
+                        const doc = await transaction.get(ref);
+                        if (!lessonSyncContextIsCurrent(uid)) throw new Error("lesson_account_changed");
+                        if (!doc.data()?.deletedAt) {
+                            transaction.set(ref, { id: lessonId, deletedAt: new Date().toISOString() });
+                        }
+                    });
+                    if (!lessonSyncContextIsCurrent(uid)) return { synced: false };
+                    clearDeletedLessonId(lessonId);
+                } catch (error) {
+                    synced = false;
+                    console.warn("EducarIA lesson delete pending:", error);
+                }
             }
-
-            if (remoteNeedsRefresh) {
-                await Promise.all(mergedLessons.map((lesson) => {
-                    return collection.doc(lesson.id).set(lesson, { merge: true });
-                }));
+            for (const lesson of readLessonsLibrary()) {
+                if (!lessonSyncContextIsCurrent(uid)) return { synced: false };
+                if (lesson._pendingSync || !lesson.syncRevision) {
+                    const result = await syncLessonRecordWithFirebase(lesson);
+                    if (!result.synced) synced = false;
+                }
             }
-
-            lastLessonsSyncUid = uid;
-            return mergedLessons;
+            if (!lessonSyncContextIsCurrent(uid)) return { synced: false };
+            const latest = readLessonsLibrary();
+            return { synced: synced && !readDeletedLessonIds().length && !latest.some((lesson) => lesson._pendingSync), lessons: latest };
         } catch (error) {
             console.warn("EducarIA lessons sync unavailable:", error);
-            return readLessonsLibrary();
+            return { synced: false, error, lessons: readLessonsLibrary() };
         } finally {
             lessonsSyncPromise = null;
+            lessonsSyncOwner = "";
         }
     })();
 
@@ -476,19 +562,79 @@ async function syncLessonsWithFirebase() {
 }
 
 async function syncLessonRecordWithFirebase(record) {
-    const normalized = normalizeLessonRecord(record);
+    if (!record) return { record: null, synced: false };
+    const uid = typeof readCurrentTeacher === "function" ? readCurrentTeacher()?.uid : "";
     const collection = firebaseLessonsCollection();
-    if (!normalized || !collection || navigator.onLine === false) {
-        return { record: normalized, synced: false };
+    if (!uid || !collection || navigator.onLine === false) {
+        return { record, synced: false };
     }
-
+    const queueKey = `${uid}:${record.id}`;
+    const previous = lessonSyncQueues.get(queueKey) || Promise.resolve();
+    const pending = previous.catch(() => {}).then(async () => {
+        if (!lessonSyncContextIsCurrent(uid)) return { record, synced: false };
+        const local = readLessonsLibrary().find((lesson) => lesson.id === record.id);
+        if (!local || readDeletedLessonIds().includes(record.id)) return { record, synced: false };
+        const revision = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const conflictId = `${local.id}-conflict-${revision}`;
+        try {
+            const result = await collection.firestore.runTransaction(async (transaction) => {
+                const ref = collection.doc(local.id);
+                const snapshot = await transaction.get(ref);
+                if (!lessonSyncContextIsCurrent(uid)) throw new Error("lesson_account_changed");
+                const data = snapshot.exists ? snapshot.data() : null;
+                if (data?.deletedAt) return { deleted: true };
+                const remote = data ? normalizeLessonRecord({ ...data, id: local.id }) : null;
+                if (remote && lessonContentFingerprint(remote) === lessonContentFingerprint(local)) {
+                    // Legacy documents acquire a revision once; otherwise this is a read-only save.
+                    if (remote.syncRevision) return { record: remote };
+                }
+                let backup = null;
+                if (remote && lessonEditableFingerprint(remote) !== lessonEditableFingerprint(local)
+                    && (!local.syncRevision || local.syncRevision !== remote.syncRevision)) {
+                    backup = { ...remote, id: conflictId, title: `${remote.title} (versão preservada)`,
+                        conflictOf: local.id, syncRevision: revision, _pendingSync: false };
+                    transaction.set(collection.doc(conflictId), lessonRemoteRecord(backup));
+                }
+                const saved = { ...local, syncRevision: revision, _pendingSync: false };
+                transaction.set(ref, lessonRemoteRecord(saved));
+                return { record: saved, backup };
+            });
+            if (!lessonSyncContextIsCurrent(uid)) return { record: local, synced: false };
+            const latest = readLessonsLibrary();
+            const current = latest.find((lesson) => lesson.id === local.id);
+            if (readDeletedLessonIds().includes(local.id)) return { record: local, synced: false };
+            if (result.deleted) {
+                const remaining = latest.filter((lesson) => lesson.id !== local.id);
+                if (current?._pendingSync) {
+                    const recovered = recoverDeletedLesson(current);
+                    remaining.push(recovered);
+                    if (readActiveLessonId() === local.id) writeActiveLessonId(recovered.id);
+                }
+                writeLessonsLibrary(remaining, { skipSync: true, source: "firebase" });
+                return { record: local, synced: false, error: new Error("lesson_deleted_remotely") };
+            }
+            const unchanged = current && lessonContentFingerprint(current) === lessonContentFingerprint(local);
+            const reconciled = latest.map((lesson) => {
+                if (lesson.id !== local.id) return lesson;
+                return unchanged ? result.record : { ...lesson, syncRevision: result.record.syncRevision, _pendingSync: true };
+            });
+            if (result.backup) reconciled.push(result.backup);
+            writeLessonsLibrary(reconciled, { skipSync: true, source: "firebase" });
+            if (result.backup) {
+                document.dispatchEvent(new CustomEvent("educaria-lesson-conflict", { detail: { lessonId: local.id } }));
+            }
+            return { record: result.record, synced: Boolean(unchanged), conflict: Boolean(result.backup) };
+        } catch (error) {
+            console.warn("EducarIA lesson autosave unavailable:", error);
+            return { record: local, synced: false, error };
+        }
+    });
+    lessonSyncQueues.set(queueKey, pending);
     try {
-        await collection.doc(normalized.id).set(normalized, { merge: true });
-        clearDeletedLessonId(normalized.id);
-        return { record: normalized, synced: true };
-    } catch (error) {
-        console.warn("EducarIA lesson autosave unavailable:", error);
-        return { record: normalized, synced: false, error };
+        return await pending;
+    } finally {
+        if (lessonSyncQueues.get(queueKey) === pending) lessonSyncQueues.delete(queueKey);
     }
 }
 
@@ -530,10 +676,14 @@ function readActiveLessonId() {
 }
 
 function writeActiveLessonId(id) {
+    const key = scopedStorageKey(ACTIVE_LESSON_KEY);
     try {
-        localStorage.setItem(scopedStorageKey(ACTIVE_LESSON_KEY), id);
+        localStorage.setItem(key, id);
+        notifyLessonStorageSaved(key);
     } catch (error) {
         console.warn("EducarIA active lesson unavailable:", error);
+        notifyLessonStorageError(error, key);
+        throw error;
     }
 }
 
@@ -577,14 +727,17 @@ function writeCurrentDraftByType(type, rawDraft) {
 
     try {
         localStorage.setItem(draftKeyForType(type), rawDraft);
+        notifyLessonStorageSaved(draftKeyForType(type));
     } catch (error) {
         console.warn("EducarIA draft unavailable:", error);
+        notifyLessonStorageError(error, draftKeyForType(type));
+        throw error;
     }
 }
 
-function forceSyncDraftFromPage(type) {
+function captureDraftFromPage(type) {
     const stack = document.querySelector(stackSelectorForType(type));
-    if (!stack) return;
+    if (!stack) return "";
 
     const materialize = typeof persistMaterializedFields === "function" ? persistMaterializedFields : null;
     if (materialize) {
@@ -613,11 +766,12 @@ function forceSyncDraftFromPage(type) {
         }));
     }
 
-    try {
-        localStorage.setItem(draftKeyForType(type), JSON.stringify(draftPayload));
-    } catch (error) {
-        console.warn("EducarIA draft unavailable:", error);
-    }
+    return JSON.stringify(draftPayload);
+}
+
+function forceSyncDraftFromPage(type) {
+    const draft = captureDraftFromPage(type);
+    if (draft) writeCurrentDraftByType(type, draft);
 }
 
 function parseDraftHtml(rawDraft) {
@@ -1094,7 +1248,7 @@ function persistLessonRecord(record, options = {}) {
     const nextLessons = lessons.filter((lesson) => lesson.id !== normalizedRecord.id);
     nextLessons.unshift(normalizedRecord);
     clearDeletedLessonId(normalizedRecord.id);
-    writeLessonsLibrary(nextLessons, options);
+    const savedLessons = writeLessonsLibrary(nextLessons, options);
     writeActiveLessonId(normalizedRecord.id);
     if (normalizedRecord.className) {
         updateCurrentClass(normalizedRecord.className);
@@ -1102,7 +1256,7 @@ function persistLessonRecord(record, options = {}) {
     if (typeof setCurrentMaterialType === "function") {
         setCurrentMaterialType(normalizedRecord.materialType || "slides");
     }
-    return normalizedRecord;
+    return savedLessons.find((lesson) => lesson.id === normalizedRecord.id);
 }
 
 async function autosaveCurrentLesson(preferredType = "quiz") {
@@ -1766,10 +1920,12 @@ function bindSaveLessonAction() {
     const buttons = document.querySelectorAll("[data-save-lesson]");
     if (!buttons.length) return;
 
-        buttons.forEach((button) => {
-            button.addEventListener("click", async (event) => {
-                event.preventDefault();
-                button.setAttribute("aria-busy", "true");
+    buttons.forEach((button) => {
+        button.addEventListener("click", async (event) => {
+            event.preventDefault();
+            if (button.getAttribute("aria-busy") === "true") return;
+            button.setAttribute("aria-busy", "true");
+            try {
                 const material = button.dataset.saveMaterial || "";
                 const previousLessonsCount = readLessonsLibrary().length;
                 if (material && typeof setCurrentMaterialType === "function") {
@@ -1822,8 +1978,14 @@ function bindSaveLessonAction() {
                     });
                 }
                 window.location.href = button.dataset.saveTarget || "turma.html";
-            });
+            } catch (error) {
+                console.warn("EducarIA explicit save failed:", error);
+                showLibraryToast("Não foi possível salvar. Mantenha esta página aberta e tente novamente.");
+            } finally {
+                button.removeAttribute("aria-busy");
+            }
         });
+    });
 }
 
 function hydrateBuilderCommonActions() {
@@ -1864,8 +2026,14 @@ function hydrateBuilderCommonActions() {
 
 function deleteLessonAndRefresh(id) {
     if (!id) return;
-    removeLessonById(id);
-    window.location.reload();
+    try {
+        removeLessonById(id);
+        hydrateLibraryPage();
+        hydrateClassPage();
+        showLibraryToast("Atividade removida. A exclusão será sincronizada quando houver conexão.");
+    } catch (error) {
+        showLibraryToast("Não foi possível registrar a exclusão. Tente novamente.");
+    }
 }
 
 function hydrateCompletionSummary() {
@@ -2656,5 +2824,76 @@ window.addEventListener("pageshow", (event) => {
     if (event.persisted) {
         syncLessonsWithFirebase();
     }
+});
+
+window.addEventListener("online", () => syncLessonsWithFirebase());
+
+// Persistent warnings apply to every editor, including those without the journey toolbar.
+const lessonStorageFailures = new Set();
+
+function showLessonStorageWarning() {
+    let warning = document.querySelector("[data-storage-warning]");
+    if (!warning) {
+        warning = document.createElement("aside");
+        warning.className = "storage-save-warning";
+        warning.dataset.storageWarning = "";
+        warning.setAttribute("role", "alert");
+        warning.innerHTML = '<strong>Não foi possível salvar neste dispositivo.</strong><span>Mantenha esta página aberta. Tente novamente ou baixe uma cópia do rascunho para não perder o conteúdo.</span><div><button type="button" data-storage-retry>Tentar novamente</button><button type="button" data-storage-download>Baixar rascunho</button></div>';
+        (document.querySelector("main") || document.body).prepend(warning);
+        warning.querySelector("[data-storage-retry]").addEventListener("click", async () => {
+            const type = document.body.dataset.materialType;
+            try {
+                if (type && (type === "lesson" || document.querySelector(stackSelectorForType(type)))) {
+                    if (type === "lesson" && typeof saveLessonSequenceToClass === "function") {
+                        saveLessonSequenceToClass(readActiveLesson()?.scope || LESSON_SCOPE_LIBRARY);
+                        await syncLessonsWithFirebase();
+                    } else {
+                        await autosaveCurrentLesson(type);
+                    }
+                    document.dispatchEvent(new CustomEvent("educaria-retry-save"));
+                } else {
+                    await syncLessonsWithFirebase();
+                }
+            } catch (error) {
+                console.warn("EducarIA save retry failed:", error);
+            }
+        });
+        warning.querySelector("[data-storage-download]").addEventListener("click", () => {
+            const type = document.body.dataset.materialType;
+            const draft = type === "lesson" && typeof lessonSequenceState !== "undefined"
+                ? JSON.stringify(lessonSequenceState) : captureDraftFromPage(type || "slides");
+            const payload = { schema: "educaria-draft-recovery/v1", materialType: type, createdAt: new Date().toISOString(), draft };
+            const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `educaria-rascunho-${Date.now()}.json`;
+            link.click();
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        });
+    }
+    warning.hidden = false;
+}
+
+document.addEventListener("educaria-storage-error", (event) => {
+    lessonStorageFailures.add(event.detail?.key || "unknown");
+    showLessonStorageWarning();
+});
+
+document.addEventListener("educaria-storage-saved", (event) => {
+    lessonStorageFailures.delete(event.detail?.key || "unknown");
+    if (!lessonStorageFailures.size) {
+        const warning = document.querySelector("[data-storage-warning]");
+        if (warning) warning.hidden = true;
+    }
+});
+
+document.addEventListener("educaria-lesson-conflict", () => {
+    showLibraryToast("Havia outra versão na nuvem. Uma cópia foi preservada junto ao material para conferência.");
+});
+
+window.addEventListener("beforeunload", (event) => {
+    if (!lessonStorageFailures.size) return;
+    event.preventDefault();
+    event.returnValue = "";
 });
 

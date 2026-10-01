@@ -1,8 +1,6 @@
 const SLIDE_UPLOAD_MODE = "Enviar imagem";
 const SLIDE_NO_IMAGE_MODE = "Sem imagem";
-const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
-const MAX_IMAGE_WIDTH = 1600;
-const MAX_IMAGE_HEIGHT = 1000;
+const slideUploadVersions = new WeakMap();
 
 function panelFor(card) {
     return card?.querySelector("[data-image-panel]") || null;
@@ -38,63 +36,17 @@ function setUploadStatus(card, message, tone = "neutral") {
     status.dataset.tone = tone;
 }
 
-function fitImageDimensions(width, height) {
-    const scale = Math.min(1, MAX_IMAGE_WIDTH / width, MAX_IMAGE_HEIGHT / height);
-    return {
-        width: Math.max(1, Math.round(width * scale)),
-        height: Math.max(1, Math.round(height * scale))
-    };
-}
-
-function readImageFile(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => resolve(String(reader.result || "")), { once: true });
-        reader.addEventListener("error", () => reject(new Error("Não foi possível ler a imagem.")), { once: true });
-        reader.readAsDataURL(file);
-    });
-}
-
-function loadImage(dataUrl) {
-    return new Promise((resolve, reject) => {
-        const image = new Image();
-        image.addEventListener("load", () => resolve(image), { once: true });
-        image.addEventListener("error", () => reject(new Error("O arquivo não contém uma imagem válida.")), { once: true });
-        image.src = dataUrl;
-    });
-}
-
-async function optimizeImage(file) {
-    if (!file.type.match(/^image\/(?:jpeg|png|webp)$/)) {
-        throw new Error("Envie uma imagem JPG, PNG ou WebP.");
-    }
-
-    if (file.size > MAX_UPLOAD_BYTES) {
-        throw new Error("A imagem deve ter no máximo 8 MB.");
-    }
-
-    const original = await readImageFile(file);
-    const image = await loadImage(original);
-    const dimensions = fitImageDimensions(image.naturalWidth, image.naturalHeight);
-    const canvas = document.createElement("canvas");
-    canvas.width = dimensions.width;
-    canvas.height = dimensions.height;
-
-    const context = canvas.getContext("2d");
-    if (!context) return original;
-
-    context.drawImage(image, 0, 0, dimensions.width, dimensions.height);
-    return canvas.toDataURL("image/webp", 0.84);
-}
-
 async function handleLocalUpload(card, file, input) {
     if (!file) return;
+    const version = (slideUploadVersions.get(card) || 0) + 1;
+    slideUploadVersions.set(card, version);
 
     setUploadStatus(card, "Preparando imagem...");
     if (input) input.disabled = true;
 
     try {
-        const optimizedUrl = await optimizeImage(file);
+        const optimizedUrl = await window.educariaImages.optimize(file);
+        if (!card.isConnected || slideUploadVersions.get(card) !== version) return;
         const readableName = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim();
         updateHiddenField(card, "slide-image-prompt", readableName || "Imagem enviada pelo professor");
         updateHiddenField(card, "slide-image-url", optimizedUrl);
@@ -104,6 +56,7 @@ async function handleLocalUpload(card, file, input) {
         dispatchBuilderContentChange("input");
         dispatchBuilderContentChange("change");
     } catch (error) {
+        if (!card.isConnected || slideUploadVersions.get(card) !== version) return;
         setUploadStatus(card, error.message || "Não foi possível adicionar a imagem.", "error");
         if (input) input.value = "";
     } finally {
@@ -120,6 +73,7 @@ function bindSlideImageTools() {
             if (!card || !panel) return;
 
             if (modeSelect.value === SLIDE_NO_IMAGE_MODE) {
+                slideUploadVersions.set(card, (slideUploadVersions.get(card) || 0) + 1);
                 clearImageSelection(card);
                 panel.hidden = true;
                 dispatchBuilderContentChange("input");

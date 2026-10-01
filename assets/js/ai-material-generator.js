@@ -1,4 +1,4 @@
-const EDUCARIA_QUICK_AI_RESULT_KEY = "educaria:quick-ai-result";
+let dashboardQuickImportRunning = false;
 
 function readTextFile(file) {
     if (!file || file.type !== "text/plain") {
@@ -2321,26 +2321,31 @@ function readDashboardQuickResult() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("quickApply") !== "1") return null;
     const destination = params.get("quickDestination") === "present" ? "present" : "edit";
+    const request = window.educariaGenerationRecovery?.get(params.get("quickResult"));
+    return request ? { ...request, destination } : null;
+}
 
-    params.delete("quickApply");
-    params.delete("quickDestination");
+function clearDashboardQuickResultQuery() {
+    const params = new URLSearchParams(window.location.search);
+    ["new", "quickApply", "quickResult", "quickDestination"].forEach((key) => params.delete(key));
     const query = params.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+}
 
-    try {
-        const raw = sessionStorage.getItem(EDUCARIA_QUICK_AI_RESULT_KEY);
-        sessionStorage.removeItem(EDUCARIA_QUICK_AI_RESULT_KEY);
-        if (!raw) return null;
-
-        const request = JSON.parse(raw);
-        const createdAt = Number(request?.createdAt || 0);
-        const isRecent = createdAt > 0 && Date.now() - createdAt < 15 * 60 * 1000;
-        if (!isRecent) return null;
-        return { ...request, destination };
-    } catch (error) {
-        console.warn("EducarIA quick AI result unavailable:", error);
-        return null;
+function showQuickImportError(message) {
+    document.querySelector("[data-quick-presentation-transfer]")?.remove();
+    document.body.classList.remove("dashboard-ai-result-open");
+    let warning = document.querySelector("[data-quick-import-error]");
+    if (!warning) {
+        warning = document.createElement("section");
+        warning.dataset.quickImportError = "";
+        warning.className = "platform-builder-card";
+        warning.setAttribute("role", "alert");
+        warning.innerHTML = '<p></p><button type="button" class="platform-link-button platform-link-primary">Tentar abrir novamente</button> <a class="platform-link-button platform-link-secondary" href="index.html">Voltar ao painel</a>';
+        warning.querySelector("button").addEventListener("click", consumeDashboardQuickResult);
+        (document.querySelector("main") || document.body).prepend(warning);
     }
+    warning.querySelector("p").textContent = message;
 }
 
 function showQuickPresentationTransfer() {
@@ -2360,48 +2365,65 @@ function showQuickPresentationTransfer() {
 }
 
 async function consumeDashboardQuickResult() {
+    if (dashboardQuickImportRunning || new URLSearchParams(window.location.search).get("quickApply") !== "1") return;
     const request = readDashboardQuickResult();
-    if (!request) return;
-
-    const materialType = currentBuilderMaterialType();
-    const topic = String(request.topic || "").trim();
-    if (!request.material || request.materialType !== materialType) return;
-
-    const config = materialConfig(materialType);
-    const textField = config ? document.getElementById(config.textId) : null;
-    if (!config || !textField) return;
-
-    if (request.destination === "present") {
-        showQuickPresentationTransfer();
-        await new Promise((resolve) => window.requestAnimationFrame(() => resolve()));
-    }
-
-    if (typeof saveSelectedClass === "function") {
-        saveSelectedClass(String(request.className || ""));
-    }
-
-    textField.value = topic;
-    textField.dispatchEvent(new Event("input", { bubbles: true }));
-    textField.dispatchEvent(new Event("change", { bubbles: true }));
-    const applied = config.apply(request.material);
-    if (!applied) {
-        document.querySelector("[data-quick-presentation-transfer]")?.remove();
-        document.body.classList.remove("dashboard-ai-result-open");
-        window.alert("A atividade foi criada, mas não foi possível preencher o editor. Tente gerar novamente pelo painel.");
+    if (!request) {
+        showQuickImportError("Este resultado não está disponível nesta conta e neste navegador. Volte ao painel para retomar suas atividades prontas.");
         return;
     }
-
-    await new Promise((resolve) => window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(resolve);
-    }));
-    syncBuilderForPreview(materialType);
-
-    if (request.destination === "present") {
-        window.location.replace(builderPresentationPath(materialType));
-        return;
+    dashboardQuickImportRunning = true;
+    const recovery = window.educariaGenerationRecovery;
+    try {
+        const materialType = currentBuilderMaterialType();
+        const config = materialConfig(materialType);
+        const textField = config ? document.getElementById(config.textId) : null;
+        if (request.materialType !== materialType || !config || !textField) throw new Error("Editor incompatível.");
+        const id = recovery.lessonId(request);
+        const existing = readLessonsLibrary().find((lesson) => lesson.id === id);
+        if (existing) {
+            // A reload/retry after saving must not replace the teacher's later edits.
+            activateLessonById(id);
+            recovery.complete(request.id, existing);
+            clearDashboardQuickResultQuery();
+            window.location.replace(request.destination === "present" ? builderPresentationPath(materialType) : window.location.href);
+            return;
+        }
+        if (request.destination === "present") showQuickPresentationTransfer();
+        writeActiveLessonId("");
+        if (typeof saveSelectedClass === "function") saveSelectedClass(String(request.className || ""));
+        const classField = config.classId ? document.getElementById(config.classId) : null;
+        if (classField) {
+            if (request.className && ![...classField.options].some((option) => option.value === request.className)) {
+                classField.add(new Option(request.className, request.className));
+            }
+            classField.value = request.className || "";
+        }
+        textField.value = String(request.topic || "").trim();
+        textField.dispatchEvent(new Event("input", { bubbles: true }));
+        if (!config.apply(request.material)) throw new Error("Conteúdo não aplicado.");
+        await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+        if (recovery.currentUid() !== request.ownerUid) throw new Error("A conta foi alterada.");
+        const scope = request.className ? "class" : "library";
+        const record = { ...buildLessonRecord(materialType, scope), id, className: request.className || "", scope };
+        const saved = persistLessonRecord(record, { skipSync: true, source: "quick-ai-recovery" });
+        if (!saved?.draft) throw new Error("Rascunho não salvo.");
+        recovery.complete(request.id, saved);
+        clearDashboardQuickResultQuery();
+        window.educariaQuickImportPending = false;
+        document.querySelector("[data-quick-import-error]")?.remove();
+        // The durable local record owns recovery from here, including offline cloud sync.
+        void syncLessonRecordWithFirebase(saved).catch(() => {});
+        if (request.destination === "present") {
+            window.location.replace(builderPresentationPath(materialType));
+            return;
+        }
+        reviewGeneratedMaterial(materialType);
+        document.dispatchEvent(new CustomEvent("educaria-retry-save"));
+    } catch {
+        showQuickImportError("A atividade já foi gerada e continua guardada no painel. Não foi possível concluir a abertura ou o salvamento. Tente abrir novamente; isso não usa a IA nem gasta novos créditos.");
+    } finally {
+        dashboardQuickImportRunning = false;
     }
-
-    reviewGeneratedMaterial(materialType);
 }
 
 function bindAiMaterialGenerator() {
@@ -2506,3 +2528,5 @@ document.addEventListener("DOMContentLoaded", () => {
     bindAiMaterialGenerator();
     window.setTimeout(consumeDashboardQuickResult, 80);
 });
+
+document.addEventListener("educaria-auth-changed", consumeDashboardQuickResult);

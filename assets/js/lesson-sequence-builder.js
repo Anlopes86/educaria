@@ -465,6 +465,36 @@ function updateBlockDraftControlField(blockId, controlKey, value) {
     refreshLessonSequencePanels(blockId);
 }
 
+async function uploadLessonSlideImage(fileField) {
+    const file = fileField.files?.[0];
+    if (!file) return;
+    const blockId = fileField.dataset.blockDraftFile || "";
+    const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
+    if (!block) return;
+    const originalDraft = block.lessonDraft;
+    const status = document.createElement("p");
+    status.setAttribute("role", "status");
+    status.textContent = "Preparando imagem…";
+    fileField.after(status);
+    fileField.disabled = true;
+    try {
+        const dataUrl = await window.educariaImages.optimize(file);
+        // A closed/re-rendered editor or an edited block must not receive a stale upload.
+        if (!fileField.isConnected || block.lessonDraft !== originalDraft) return;
+        updateBlockDraftStackField(
+            blockId, fileField.dataset.draftItemSelector || "", Number(fileField.dataset.draftItemIndex || 0),
+            fileField.dataset.draftFileSelector || "", Number(fileField.dataset.draftFileOccurrence || 0), dataUrl
+        );
+        showLibraryToast("Imagem preparada e adicionada ao slide.");
+    } catch (error) {
+        status.textContent = error.message || "Não foi possível adicionar a imagem.";
+        status.setAttribute("role", "alert");
+    } finally {
+        fileField.disabled = false;
+        fileField.value = "";
+    }
+}
+
 function updateBlockDraftStackField(blockId, itemSelector, itemIndex, fieldSelector, occurrenceIndex, value) {
     const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
     if (!block) return;
@@ -515,8 +545,21 @@ function updateBlockDraftStackField(blockId, itemSelector, itemIndex, fieldSelec
         if (selectorKey.includes("slide-image-url") && String(safeValue || "").trim()) {
             const modeField = section.querySelector('[data-field="slide-image-mode"]');
             if (modeField) {
-                modeField.value = "Upload";
-                modeField.setAttribute("value", "Upload");
+                if (modeField.tagName === "SELECT") {
+                    let uploadOption = [...modeField.options].find((option) => ["Upload", "Enviar imagem"].includes(option.value));
+                    if (!uploadOption) {
+                        uploadOption = doc.createElement("option");
+                        uploadOption.textContent = "Enviar imagem";
+                        modeField.appendChild(uploadOption);
+                    }
+                    [...modeField.options].forEach((option) => {
+                        option.selected = option === uploadOption;
+                        option.toggleAttribute("selected", option === uploadOption);
+                    });
+                } else {
+                    modeField.value = "Enviar imagem";
+                    modeField.setAttribute("value", "Enviar imagem");
+                }
             }
         }
     }
@@ -585,10 +628,14 @@ function readLessonSequenceDraft() {
 }
 
 function writeLessonSequenceDraft(state) {
+    const key = scopedStorageKey(LESSON_SEQUENCE_DRAFT_KEY);
     try {
-        localStorage.setItem(scopedStorageKey(LESSON_SEQUENCE_DRAFT_KEY), JSON.stringify(state));
+        localStorage.setItem(key, JSON.stringify(state));
+        notifyLessonStorageSaved(key);
     } catch (error) {
         console.warn("EducarIA lesson draft unavailable:", error);
+        notifyLessonStorageError(error, key);
+        throw error;
     }
 }
 
@@ -2777,48 +2824,7 @@ function bindLessonSequenceEvents() {
 
         const fileField = event.target.closest("[data-block-draft-file]");
         if (fileField) {
-            const file = fileField.files?.[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = () => {
-                const dataUrl = typeof reader.result === "string" ? reader.result : "";
-                const inlineRoot = fileField.closest(".lesson-sequence-inline-editor-item");
-                const urlField = inlineRoot?.querySelector('[data-block-draft-field][data-draft-field-selector="[data-field=\\"slide-image-url\\"]"]');
-                if (urlField) {
-                    urlField.value = dataUrl;
-                }
-
-                updateBlockDraftStackField(
-                    fileField.dataset.blockDraftFile || "",
-                    fileField.dataset.draftItemSelector || "",
-                    Number(fileField.dataset.draftItemIndex || 0),
-                    fileField.dataset.draftFileSelector || "",
-                    Number(fileField.dataset.draftFileOccurrence || 0),
-                    dataUrl
-                );
-
-                const modeSelector = fileField.dataset.draftFileModeSelector || "";
-                if (modeSelector) {
-                    updateBlockDraftStackField(
-                        fileField.dataset.blockDraftFile || "",
-                        fileField.dataset.draftItemSelector || "",
-                        Number(fileField.dataset.draftItemIndex || 0),
-                        modeSelector,
-                        0,
-                        "Upload"
-                    );
-                }
-
-                const blockId = fileField.dataset.blockDraftFile || "";
-                if (blockId) {
-                    const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
-                    if (block?.lessonDraft && typeof writeCurrentDraftByType === "function") {
-                        writeCurrentDraftByType(lessonBlockMaterialType(block), block.lessonDraft);
-                    }
-                }
-            };
-            reader.readAsDataURL(file);
+            void uploadLessonSlideImage(fileField);
             return;
         }
 

@@ -2,6 +2,7 @@ import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { checkQuickRecovery, checkImageUpload } from "./browser-recovery-checks.mjs";
 
 const chromePath = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const root = path.resolve(import.meta.dirname, "..");
@@ -19,6 +20,8 @@ const auditMindmapLayout = process.env.EDUCARIA_AUDIT_MINDMAP_LAYOUT || "Radial"
 const auditDebateFormat = process.env.EDUCARIA_AUDIT_DEBATE_FORMAT || "Dois lados";
 const auditLessonIndex = Math.max(0, Number(process.env.EDUCARIA_AUDIT_LESSON_INDEX || 0));
 const auditBuilderOverlay = process.env.EDUCARIA_AUDIT_BUILDER_OVERLAY || "";
+const auditStorageFailure = process.env.EDUCARIA_AUDIT_STORAGE_FAILURE === "1";
+const auditRecovery = process.env.EDUCARIA_AUDIT_RECOVERY === "1";
 const auditMobile = auditWidth < 768;
 const pages = process.argv.slice(2).length
     ? process.argv.slice(2).map((page) => ({
@@ -174,6 +177,7 @@ async function auditPage(pageConfig) {
             ? ` localStorage.setItem('educaria:classList:layout-audit', JSON.stringify(['8º Ano A', '6º Ano B', 'Inglês - 9º Ano'])); localStorage.setItem('educaria:lessons:layout-audit', JSON.stringify([{ id: 'dashboard-slides-audit', className: '8º Ano A', scope: 'class', title: 'Sistema solar: movimentos e descobertas', type: 'Slides', materialType: 'slides', createdAt: new Date(Date.now() - 7200000).toISOString(), updatedAt: new Date(Date.now() - 3600000).toISOString(), status: 'draft', draft: '' }, { id: 'dashboard-quiz-audit', className: '6º Ano B', scope: 'class', title: 'Quiz sobre frações equivalentes', type: 'Quiz', materialType: 'quiz', createdAt: new Date(Date.now() - 172800000).toISOString(), updatedAt: new Date(Date.now() - 86400000).toISOString(), status: 'ready', draft: '' }]));`
             : "";
         const blockedUrls = ["*gstatic.com/firebasejs/*"];
+        if (auditRecovery) blockedUrls.push("*onrender.com/*");
         if (pagePath.includes("criar-aula.html") || pagePath.includes("aula-completa-apresentacao.html")) {
             blockedUrls.push("*auth-flow.js*");
         }
@@ -424,6 +428,27 @@ async function auditPage(pageConfig) {
         await delay(180);
     }
 
+    let storageFailureJourney = null;
+    if (auditStorageFailure && localPagePath.endsWith("-builder.html")) {
+        const storageFailure = await cdp.send("Runtime.evaluate", {
+            expression: `(() => {
+                const original = Storage.prototype.setItem;
+                window.__auditRestoreStorage = () => { Storage.prototype.setItem = original; };
+                Storage.prototype.setItem = function(key, value) {
+                    if (String(key).startsWith('educaria:builder:') || String(key).startsWith('educaria:lessons')) {
+                        throw new DOMException('Audit storage quota exceeded', 'QuotaExceededError');
+                    }
+                    return original.call(this, key, value);
+                };
+                const outcome = saveBuilderState(builderConfig());
+                const warning = document.querySelector('[data-storage-warning]');
+                return { failed: outcome.saved === false, visible: Boolean(warning && !warning.hidden),
+                    recoveryAvailable: Boolean(warning?.querySelector('[data-storage-download]')) };
+            })()`, returnByValue: true
+        });
+        storageFailureJourney = storageFailure.result.value;
+    }
+
     let screenshotPath = "";
     if (auditScreenshotDir) {
         await fs.mkdir(auditScreenshotDir, { recursive: true });
@@ -438,6 +463,17 @@ async function auditPage(pageConfig) {
             .replace(/^-|-$/g, "") || "pagina";
         screenshotPath = path.join(auditScreenshotDir, `${screenshotName}-${auditWidth}x${auditHeight}.png`);
         await fs.writeFile(screenshotPath, Buffer.from(screenshot.data, "base64"));
+    }
+
+    if (storageFailureJourney) {
+        const recovery = await cdp.send("Runtime.evaluate", {
+            expression: `(() => {
+                window.__auditRestoreStorage();
+                const result = saveBuilderState(builderConfig());
+                return result.saved && document.querySelector('[data-storage-warning]')?.hidden;
+            })()`, returnByValue: true
+        });
+        storageFailureJourney.recovered = recovery.result.value;
     }
 
     let lessonFilterJourney = null;
@@ -1133,8 +1169,14 @@ async function auditPage(pageConfig) {
         });
         topbarRestore = restoreEvaluation.result.value;
     }
+    let recoveryJourney = null;
+    let imageUploadJourney = null;
+    if (auditRecovery && localPagePath === "plataforma/index.html") recoveryJourney = await checkQuickRecovery(cdp, url, auditScreenshotDir);
+    if (auditRecovery && ["plataforma/slides-builder.html", "plataforma/criar-aula.html"].includes(localPagePath)) {
+        imageUploadJourney = await checkImageUpload(cdp, localPagePath.endsWith("criar-aula.html"));
+    }
     cdp.close();
-    return { ...evaluation.result.value, mobileMenu, topbarRestore, builderNavigatorJourney, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, screenshotPath, diagnostics: cdp.diagnostics };
+    return { ...evaluation.result.value, mobileMenu, topbarRestore, builderNavigatorJourney, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, storageFailureJourney, recoveryJourney, imageUploadJourney, screenshotPath, diagnostics: cdp.diagnostics };
 }
 
 let failed = false;
@@ -1143,6 +1185,14 @@ try {
     for (const page of pages) {
         const result = await auditPage(page);
         console.log(`${page.path}: viewport=${result.viewportWidth} scroll=${result.scrollWidth} overflow=${result.overflow}`);
+        if (result.recoveryJourney) console.log(`  quick-ai-recovery=ok ${JSON.stringify(result.recoveryJourney)}`);
+        if (result.imageUploadJourney) console.log(`  image-upload=ok ${JSON.stringify(result.imageUploadJourney)}`);
+        if (result.storageFailureJourney) {
+            const storageWorks = result.storageFailureJourney.failed && result.storageFailureJourney.visible
+                && result.storageFailureJourney.recoveryAvailable && result.storageFailureJourney.recovered;
+            console.log(`  storage-failure-recovery=${storageWorks ? "ok" : "failed"} state=${JSON.stringify(result.storageFailureJourney)}`);
+            if (!storageWorks) failed = true;
+        }
         if (page.path.includes("plataforma/index.html")) {
             console.log(`  dashboard-ready=${result.dashboardReady || "missing"} runtime=${result.dashboardRuntime}`);
             if (auditSeedDashboard) {

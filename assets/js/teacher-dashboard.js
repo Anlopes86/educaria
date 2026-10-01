@@ -4,7 +4,6 @@
 
 const DASHBOARD_TOUR_STORAGE_PREFIX = "educaria:dashboard-tour:";
 const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
-const DASHBOARD_QUICK_AI_RESULT_KEY = "educaria:quick-ai-result";
 const DASHBOARD_CORE_FORMATS = [
     { href: "slides-builder.html?new=1", label: "Slides", materialType: "slides" },
     { href: "quiz-builder.html?new=1", label: "Quiz", materialType: "quiz" },
@@ -505,6 +504,7 @@ function dashboardQuickResultModalTemplate() {
                     <span><small>${escapeHtml(dashboardTranslate("dashboard.quick.topic", "Tópico para criação"))}</small><strong data-dashboard-ai-result-topic></strong></span>
                 </div>
                 <p class="ai-credits-pill dashboard-ai-result-usage" data-dashboard-ai-result-usage hidden></p>
+                <p data-dashboard-ai-result-storage role="status"></p>
                 <div class="ai-ready-actions dashboard-ai-result-actions">
                     <button type="button" class="platform-link-button platform-link-primary" data-dashboard-ai-result-edit>
                         ${escapeHtml(dashboardTranslate("dashboard.quick.result.edit", "Revisar e editar"))}
@@ -512,6 +512,8 @@ function dashboardQuickResultModalTemplate() {
                     <button type="button" class="platform-link-button platform-link-secondary" data-dashboard-ai-result-present>
                         ${escapeHtml(dashboardTranslate("dashboard.quick.result.present", "Apresentar agora"))}
                     </button>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-dashboard-ai-result-download hidden>Baixar cópia de segurança</button>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-dashboard-ai-result-later>Continuar depois</button>
                 </div>
             </section>
         </div>
@@ -536,15 +538,19 @@ function openDashboardQuickResultModal(result) {
     if (tool) tool.textContent = result.label || "Atividade";
     if (topic) topic.textContent = result.topic;
 
-    const charged = Number(result.payload?.charge?.cost || 0);
-    const remaining = Number(result.payload?.credits?.remaining ?? -1);
+    const charged = Number(result.cost || 0);
     if (usage) {
         usage.hidden = charged <= 0;
         if (charged > 0) {
-            usage.textContent = `${dashboardTranslate("dashboard.quick.result.usage", "Uso desta geração")}: ${charged} ${charged === 1 ? "crédito" : "créditos"}${remaining >= 0 ? ` • ${dashboardTranslate("dashboard.quick.result.balance", "saldo")}: ${remaining}` : ""}`;
+            usage.textContent = `Uso desta geração: ${charged} ${charged === 1 ? "crédito" : "créditos"}. Retomar não gasta novos créditos.`;
         }
     }
 
+    const saved = window.educariaGenerationRecovery?.isDurable(result);
+    modal.querySelector("[data-dashboard-ai-result-storage]").textContent = saved
+        ? "Resultado guardado neste navegador. Você pode retomá-lo neste painel, mesmo após atualizar a página."
+        : "Não foi possível guardar o resultado neste navegador. Não feche nem atualize a página. Baixe uma cópia de segurança ou libere espaço e tente abrir o editor novamente.";
+    modal.querySelector("[data-dashboard-ai-result-download]").hidden = Boolean(saved);
     modal.hidden = false;
     document.body.classList.add("dashboard-ai-result-open");
     window.requestAnimationFrame(() => modal.querySelector("[data-dashboard-ai-result-edit]")?.focus());
@@ -572,7 +578,7 @@ function setDashboardQuickGenerating(form, isGenerating) {
     if (progress) progress.hidden = !isGenerating;
 }
 
-async function requestDashboardQuickMaterial(materialType, topic, label, generationOptions) {
+async function requestDashboardQuickMaterial(materialType, topic, label, generationOptions, ownerUid) {
     if (typeof window.educariaAiEndpoint !== "function") {
         throw new Error(dashboardTranslate("dashboard.quick.generationError", "Não foi possível conectar ao serviço de IA. Tente novamente."));
     }
@@ -584,14 +590,20 @@ async function requestDashboardQuickMaterial(materialType, topic, label, generat
     const optionInstructions = generationOptions?.instructions?.join(" ") || "";
     formData.append("action", `Crie um rascunho pedagógico de ${label || "atividade"}, claro e pronto para o professor revisar e apresentar. ${optionInstructions}`.trim());
 
+    const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {};
+    if (ownerUid !== window.educariaGenerationRecovery?.currentUid()) {
+        const error = new Error("A conta foi alterada. Entre novamente antes de gerar a atividade.");
+        error.status = 401;
+        throw error;
+    }
     const response = await fetch(window.educariaAiEndpoint(), {
         method: "POST",
-        headers: typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {},
+        headers,
         body: formData
     });
     const payload = await response.json().catch(() => ({}));
 
-    if (payload?.credits) {
+    if (payload?.credits && ownerUid === window.educariaGenerationRecovery?.currentUid()) {
         document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
             detail: { credits: payload.credits }
         }));
@@ -626,18 +638,14 @@ function dashboardQuickGenerationError(error) {
 function continueDashboardQuickResult(destination) {
     const result = dashboardQuickAiResult;
     if (!result) return;
-
-    try {
-        sessionStorage.setItem(DASHBOARD_QUICK_AI_RESULT_KEY, JSON.stringify({
-            topic: result.topic,
-            target: result.target,
-            materialType: result.materialType,
-            className: result.className,
-            material: result.payload.material,
-            createdAt: Date.now()
-        }));
-    } catch (error) {
-        window.alert(dashboardTranslate("dashboard.quick.storageError", "Não foi possível abrir a atividade agora. Atualize a página e tente novamente."));
+    const recovery = window.educariaGenerationRecovery;
+    if (result.ownerUid !== recovery?.currentUid()) {
+        closeDashboardQuickResultModal();
+        restoreDashboardQuickResults(true);
+        return;
+    }
+    if (!recovery.save(result)) {
+        openDashboardQuickResultModal(result);
         return;
     }
 
@@ -652,18 +660,69 @@ function continueDashboardQuickResult(destination) {
         window.educariaMarkMilestone("activation_builder_opened", {
             source: "dashboard_quick_create",
             className: result.className,
-            target: result.target,
+            target: recovery.editorUrl(result, destination),
             materialType: result.materialType,
             destination
         });
     }
 
-    const separator = result.target.includes("?") ? "&" : "?";
-    window.location.href = `${result.target}${separator}quickApply=1&quickDestination=${destination}`;
+    window.location.href = recovery.editorUrl(result, destination);
+}
+
+function closeDashboardQuickResultModal() {
+    const modal = document.querySelector("[data-dashboard-ai-result-modal]");
+    if (modal) modal.hidden = true;
+    document.body.classList.remove("dashboard-ai-result-open");
+    restoreDashboardQuickResults();
+    document.querySelector("[data-dashboard-ai-result-resume]:not([hidden]), [data-dashboard-quick-topic]")?.focus();
+}
+
+function restoreDashboardQuickResults(autoOpen = false) {
+    const recovery = window.educariaGenerationRecovery;
+    if (!recovery) return;
+    if (dashboardQuickAiResult?.ownerUid !== recovery.currentUid()) {
+        dashboardQuickAiResult = null;
+        const modal = document.querySelector("[data-dashboard-ai-result-modal]");
+        if (modal) modal.hidden = true;
+        document.body.classList.remove("dashboard-ai-result-open");
+    }
+    const pending = recovery.list();
+    let resume = document.querySelector("[data-dashboard-ai-result-resume]");
+    if (!resume) {
+        resume = document.createElement("button");
+        resume.type = "button";
+        resume.className = "platform-link-button platform-link-secondary";
+        resume.dataset.dashboardAiResultResume = "";
+        document.querySelector("[data-dashboard-quick-form]")?.after(resume);
+    }
+    resume.hidden = !pending.length;
+    resume.textContent = pending.length > 1 ? `Retomar atividades prontas (${pending.length})` : "Retomar atividade pronta — sem gerar novamente";
+    if (autoOpen && pending.length && document.querySelector("[data-dashboard-ai-result-modal]")?.hidden !== false) {
+        openDashboardQuickResultModal(pending[0]);
+    }
 }
 
 function bindDashboardQuickResultModal() {
     document.addEventListener("click", (event) => {
+        if (event.target.closest("[data-dashboard-ai-result-resume]")) {
+            const pending = window.educariaGenerationRecovery?.list() || [];
+            if (pending.length) openDashboardQuickResultModal(pending[0]);
+            return;
+        }
+        if (event.target.closest("[data-dashboard-ai-result-later]")) {
+            closeDashboardQuickResultModal();
+            return;
+        }
+        if (event.target.closest("[data-dashboard-ai-result-download]")) {
+            if (dashboardQuickAiResult?.ownerUid !== window.educariaGenerationRecovery?.currentUid()) return;
+            const url = URL.createObjectURL(new Blob([JSON.stringify(dashboardQuickAiResult, null, 2)], { type: "application/json" }));
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "educaria-atividade-gerada.json";
+            link.click();
+            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+            return;
+        }
         if (event.target.closest("[data-dashboard-ai-result-edit]")) {
             continueDashboardQuickResult("edit");
             return;
@@ -672,6 +731,23 @@ function bindDashboardQuickResultModal() {
             continueDashboardQuickResult("present");
             return;
         }
+    });
+    document.addEventListener("keydown", (event) => {
+        const modal = document.querySelector("[data-dashboard-ai-result-modal]");
+        if (!modal || modal.hidden) return;
+        if (event.key === "Escape") { event.preventDefault(); closeDashboardQuickResultModal(); }
+        if (event.key !== "Tab") return;
+        const buttons = [...modal.querySelectorAll("button:not([hidden]):not([disabled])")];
+        const first = buttons[0];
+        const last = buttons.at(-1);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    });
+    window.addEventListener("beforeunload", (event) => {
+        if (!document.querySelector('[data-dashboard-quick-form][data-generating="true"]')
+            && !window.educariaGenerationRecovery?.hasUnsaved()) return;
+        event.preventDefault();
+        event.returnValue = "";
     });
 }
 
@@ -694,6 +770,7 @@ function bindQuickCreateForm() {
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (form.dataset.generating === "true") return;
 
         const feedback = form.querySelector("[data-dashboard-quick-feedback]");
         const topic = topicField?.value.trim() || "";
@@ -710,6 +787,11 @@ function bindQuickCreateForm() {
             return;
         }
         if (!target || !materialType) return;
+        const ownerUid = window.educariaGenerationRecovery?.currentUid();
+        if (!ownerUid) {
+            if (feedback) { feedback.textContent = "Entre na sua conta para criar e guardar a atividade."; feedback.hidden = false; }
+            return;
+        }
         const generationOptions = collectDashboardQuickOptions(form, materialType);
 
         if (typeof educariaTrack === "function") {
@@ -732,7 +814,10 @@ function bindQuickCreateForm() {
             }
 
             const label = formatSelect?.selectedOptions?.[0]?.textContent?.trim() || "Atividade";
-            const payload = await requestDashboardQuickMaterial(materialType, topic, label, generationOptions);
+            if (ownerUid !== window.educariaGenerationRecovery.currentUid()) return;
+            const payload = await requestDashboardQuickMaterial(materialType, topic, label, generationOptions, ownerUid);
+            const result = window.educariaGenerationRecovery.create({ ownerUid, topic, materialType, className, label, payload });
+            window.educariaGenerationRecovery.save(result);
             if (typeof educariaTrack === "function") {
                 educariaTrack("quick_ai_generation_succeeded", {
                     className,
@@ -743,7 +828,10 @@ function bindQuickCreateForm() {
                     creditsCharged: Number(payload?.charge?.cost || 0)
                 });
             }
-            openDashboardQuickResultModal({ topic, target, materialType, className, label, payload, generationOptions });
+            if (ownerUid === window.educariaGenerationRecovery.currentUid()) {
+                restoreDashboardQuickResults();
+                openDashboardQuickResultModal(result);
+            }
         } catch (error) {
             if (feedback) {
                 feedback.textContent = dashboardQuickGenerationError(error);
@@ -1257,8 +1345,10 @@ document.addEventListener("DOMContentLoaded", () => {
     bindQuickCreateRefresh();
     bindDashboardTourTrigger();
     syncAndRefreshTeacherDashboard();
+    restoreDashboardQuickResults(true);
 
     window.setTimeout(() => {
+        if (window.educariaGenerationRecovery?.list().length) return;
         if (!shouldAutoStartDashboardTour()) return;
         startDashboardTour(false, "auto");
     }, 480);
@@ -1266,6 +1356,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.addEventListener("educaria-auth-changed", () => {
     syncAndRefreshTeacherDashboard();
+    restoreDashboardQuickResults(true);
 });
 
 document.addEventListener("educaria-classes-updated", () => {
@@ -1278,5 +1369,6 @@ document.addEventListener("educaria-language-changed", () => {
 
 window.addEventListener("pageshow", () => {
     syncAndRefreshTeacherDashboard();
+    restoreDashboardQuickResults(true);
 });
 
