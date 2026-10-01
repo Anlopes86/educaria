@@ -17,6 +17,8 @@ import {
     normalizeAiUsageMetadata
 } from "./ai-credit-policy.js";
 import { createAiCreditStore } from "./ai-credit-store.js";
+import { createFirebaseServices, verifyActiveSession, sessionErrorResponse } from "./firebase-admin-services.js";
+import { createDeletionManager, createFirestoreDeletionStore, createDeletionActions } from "./account-deletion.js";
 
 function parseNonNegativeNumber(value, fallback) {
     const parsed = Number(value);
@@ -133,11 +135,27 @@ const aiImageGenerationEnabled = String(process.env.AI_IMAGE_GENERATION_ENABLED 
 const billingCheckoutUrl = String(process.env.BILLING_CHECKOUT_URL || "").trim();
 const billingWebhookSecret = String(process.env.BILLING_WEBHOOK_SECRET || "").trim();
 const billingStorePath = path.resolve(process.env.BILLING_STORE_PATH || ".data/billing-events.json");
-const firebaseCertUrl = "https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com";
-const firebaseCertCache = {
-    expiresAt: 0,
-    certs: {}
-};
+const getFirebaseServices = createFirebaseServices();
+const accountDeletionEnabled = String(process.env.ACCOUNT_DELETION_ENABLED || "false") === "true";
+if (accountDeletionEnabled && (!aiAuthRequired || !process.env.FIREBASE_STORAGE_BUCKET)) {
+    throw new Error("Account deletion requires authentication and FIREBASE_STORAGE_BUCKET.");
+}
+const accountDeletion = createDeletionManager({
+    store: createFirestoreDeletionStore(getFirebaseServices),
+    actions: createDeletionActions(getFirebaseServices, async (uid) => {
+        await loadBillingStore();
+        billingRecords.delete(uid);
+        aiProUidAllowList.delete(uid);
+        aiUnlimitedUidAllowList.delete(uid);
+        // Never erase the usage ledger: deletion must not be a way to reset quotas.
+        await persistBillingStore();
+    }),
+    report: (code) => console.warn(`EducarIA: ${code}`)
+});
+function resumeAccountDeletions() {
+    if (!accountDeletionEnabled) return;
+    void accountDeletion.run().catch(() => console.warn("EducarIA: account_deletion_worker_unavailable"));
+}
 const aiRateLimitBuckets = new Map();
 const aiProviderRateLimitBuckets = new Map();
 const billingRecords = new Map();
@@ -244,115 +262,10 @@ app.use((_request, response, next) => {
 });
 app.use(express.json({ limit: process.env.AI_JSON_LIMIT || "2mb" }));
 
-function base64UrlDecode(value) {
-    const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
-    const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
-    return Buffer.from(`${normalized}${padding}`, "base64");
-}
-
-function parseJwtPart(value) {
-    return JSON.parse(base64UrlDecode(value).toString("utf8"));
-}
-
 function tokenFromAuthorizationHeader(request) {
     const header = request.get("authorization") || "";
     const match = header.match(/^Bearer\s+(.+)$/i);
     return match ? match[1].trim() : "";
-}
-
-function parseMaxAge(cacheControl) {
-    const match = String(cacheControl || "").match(/max-age=(\d+)/i);
-    return match ? Number(match[1]) : 3600;
-}
-
-/**
- * Fetches and in-memory-caches Firebase public signing certificates.
- * Respects the Cache-Control max-age from Google's endpoint; refreshes 60 s early.
- * @returns {Promise<Record<string, string>>} Map of key-id → PEM certificate
- * @throws {Error} If the Google endpoint returns a non-2xx response
- */
-async function firebasePublicCerts() {
-    const now = Date.now();
-    if (firebaseCertCache.expiresAt > now && Object.keys(firebaseCertCache.certs).length) {
-        return firebaseCertCache.certs;
-    }
-
-    const response = await fetch(firebaseCertUrl);
-    if (!response.ok) {
-        throw new Error(`firebase_cert_fetch_failed_${response.status}`);
-    }
-
-    const certs = await response.json();
-    const maxAge = parseMaxAge(response.headers.get("cache-control"));
-    firebaseCertCache.certs = certs || {};
-    firebaseCertCache.expiresAt = now + Math.max(60, maxAge - 60) * 1000;
-    return firebaseCertCache.certs;
-}
-
-/**
- * Verifies a Firebase ID token (RS256 JWT) without the Firebase Admin SDK.
- * Checks format, algorithm, audience, issuer, subject, expiry, issued-at, and RSA signature.
- * @param {string} idToken - Raw JWT from the client's Authorization header
- * @returns {Promise<object>} Decoded JWT payload (includes `sub`, `uid`, `email`, etc.)
- * @throws {Error} Descriptive error code string if any validation step fails
- */
-async function verifyFirebaseIdToken(idToken) {
-    if (!firebaseProjectId) {
-        throw new Error("firebase_project_id_missing");
-    }
-
-    const parts = String(idToken || "").split(".");
-    if (parts.length !== 3) {
-        throw new Error("invalid_token_format");
-    }
-
-    const [encodedHeader, encodedPayload, encodedSignature] = parts;
-    const header = parseJwtPart(encodedHeader);
-    const payload = parseJwtPart(encodedPayload);
-
-    if (header.alg !== "RS256" || !header.kid) {
-        throw new Error("invalid_token_header");
-    }
-
-    const issuer = `https://securetoken.google.com/${firebaseProjectId}`;
-    const now = Math.floor(Date.now() / 1000);
-    const leewaySeconds = 60;
-
-    if (payload.aud !== firebaseProjectId) {
-        throw new Error("invalid_token_audience");
-    }
-
-    if (payload.iss !== issuer) {
-        throw new Error("invalid_token_issuer");
-    }
-
-    if (!payload.sub || typeof payload.sub !== "string" || payload.sub.length > 128) {
-        throw new Error("invalid_token_subject");
-    }
-
-    if (typeof payload.exp !== "number" || payload.exp <= now - leewaySeconds) {
-        throw new Error("token_expired");
-    }
-
-    if (typeof payload.iat !== "number" || payload.iat > now + leewaySeconds) {
-        throw new Error("invalid_token_issued_at");
-    }
-
-    const certs = await firebasePublicCerts();
-    const cert = certs[header.kid];
-    if (!cert) {
-        throw new Error("token_certificate_not_found");
-    }
-
-    const verifier = crypto.createVerify("RSA-SHA256");
-    verifier.update(`${encodedHeader}.${encodedPayload}`);
-    verifier.end();
-
-    if (!verifier.verify(cert, base64UrlDecode(encodedSignature))) {
-        throw new Error("invalid_token_signature");
-    }
-
-    return payload;
 }
 
 /**
@@ -570,11 +483,10 @@ async function loadBillingStore() {
         });
     } catch (error) {
         if (error?.code !== "ENOENT") {
-            console.warn("EducarIA billing store could not be loaded:", error instanceof Error ? error.message : error);
+            throw new Error("billing_store_unavailable");
         }
-    } finally {
-        billingStoreLoaded = true;
     }
+    billingStoreLoaded = true;
 }
 
 async function persistBillingStore() {
@@ -583,16 +495,16 @@ async function persistBillingStore() {
         records: [...billingRecords.values()]
     }, null, 2);
 
-    billingStoreWriteQueue = billingStoreWriteQueue.then(async () => {
+    const write = billingStoreWriteQueue.catch(() => {}).then(async () => {
         await fs.mkdir(path.dirname(billingStorePath), { recursive: true });
         const tempPath = `${billingStorePath}.${process.pid}.tmp`;
         await fs.writeFile(tempPath, payload, "utf8");
         await fs.rename(tempPath, billingStorePath);
-    }).catch((error) => {
-        console.warn("EducarIA billing store could not be saved:", error instanceof Error ? error.message : error);
     });
-
-    return billingStoreWriteQueue;
+    // Recover the queue for future writes, but propagate this write's failure.
+    // Account deletion must never report completion after a failed cleanup.
+    billingStoreWriteQueue = write.catch(() => {});
+    return write;
 }
 
 async function markBillingPlan(record) {
@@ -600,6 +512,9 @@ async function markBillingPlan(record) {
     const normalized = normalizeBillingRecord(record);
     if (!normalized) {
         throw new Error("billing_uid_missing");
+    }
+    if ((await getFirebaseServices().db.collection("accountDeletionJobs").doc(normalized.uid).get()).exists) {
+        throw new Error("billing_account_deleting");
     }
 
     billingRecords.set(normalized.uid, normalized);
@@ -1180,11 +1095,12 @@ async function requireAiAuth(request, response, next) {
     }
 
     try {
-        request.educariaUser = await verifyFirebaseIdToken(idToken);
+        request.educariaUser = await verifyActiveSession(idToken, getFirebaseServices);
         next();
     } catch (error) {
-        console.warn("EducarIA AI auth rejected:", error instanceof Error ? error.message : error);
-        return response.status(401).json({ error: "Sessão inválida ou expirada. Entre novamente para usar a IA." });
+        const result = sessionErrorResponse(error);
+        if (result.status === 503) console.warn("EducarIA: session_verification_unavailable");
+        return response.status(result.status).json(result.body);
     }
 }
 
@@ -2516,8 +2432,6 @@ async function extractTextFromFile(file) {
 }
 
 app.get("/api/health", (_request, response) => {
-    loadBillingStore();
-
     if (process.env.NODE_ENV === "production") {
         response.json({ ok: true, service: "educaria-ai" });
         return;
@@ -2647,30 +2561,32 @@ app.get("/api/ai/credits", aiRateLimit, requireAiAuth, async (request, response)
 });
 
 app.delete("/api/account", aiRateLimit, requireAiAuth, async (request, response) => {
-    const uid = String(request.educariaUser?.uid || request.educariaUser?.sub || "").trim();
-    if (!uid) {
-        return response.status(401).json({ error: "Login necessário para excluir a conta." });
+    if (!accountDeletionEnabled) {
+        return response.status(503).json({ code: "deletion_unavailable", error: "A exclusão está temporariamente indisponível. Nenhum dado foi removido por esta solicitação." });
     }
-
-    const authenticatedAt = Number(request.educariaUser?.auth_time);
-    const now = Math.floor(Date.now() / 1000);
-    if (!Number.isFinite(authenticatedAt) || authenticatedAt > now + 60 || now - authenticatedAt > 300) {
-        return response.status(401).json({
-            code: "recent_login_required",
-            error: "Confirme sua senha novamente para concluir a exclusão da conta."
+    try {
+        const result = await accountDeletion.start(request.educariaUser, request.body);
+        response.status(202).json(result);
+        resumeAccountDeletions();
+    } catch (error) {
+        const known = [400, 401, 409].includes(error?.status);
+        response.status(known ? error.status : 503).json({
+            code: known ? error.code : "deletion_uncertain",
+            error: known ? error.message : "Não foi possível confirmar a solicitação. Consulte o acompanhamento antes de tentar novamente."
         });
     }
+});
 
-    await loadBillingStore();
-    billingRecords.delete(uid);
-    aiProUidAllowList.delete(uid);
-    aiUnlimitedUidAllowList.delete(uid);
-
-    // This endpoint cannot prove that the browser will complete Firebase account deletion.
-    // Keep the existing, expiring usage ledger: clearing it here would reset a live user's
-    // quota. Daily accounting naturally expires independently of profile/content cleanup.
-    await persistBillingStore();
-    return response.json({ ok: true });
+// A receipt allows status reads only. It cannot create, resume or retarget a job.
+app.post("/api/account/deletion-status", aiRateLimit, async (request, response) => {
+    try {
+        const result = await accountDeletion.status(request.body?.uid, request.body?.receipt);
+        response.json(result);
+    } catch (error) {
+        response.status(error?.status === 404 ? 404 : 503).json({
+            error: error?.status === 404 ? "Solicitação não encontrada neste navegador." : "Acompanhamento temporariamente indisponível. Tente novamente."
+        });
+    }
 });
 
 app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, upload.single("file"), async (request, response) => {
@@ -3020,4 +2936,6 @@ app.use((error, _request, response, next) => {
 
 app.listen(port, () => {
     console.log(`EducarIA AI service listening on http://localhost:${port}`);
+    resumeAccountDeletions();
 });
+if (accountDeletionEnabled) setInterval(resumeAccountDeletions, 15_000).unref();

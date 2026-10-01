@@ -6,7 +6,8 @@ service cloud.firestore {
     }
 
     function isOwner(teacherId) {
-      return signedIn() && request.auth.uid == teacherId;
+      return signedIn() && request.auth.uid == teacherId
+        && !exists(/databases/$(database)/documents/accountDeletionJobs/$(teacherId));
     }
 
     function validNewTeacher() {
@@ -20,8 +21,10 @@ service cloud.firestore {
     }
 
     function protectedTeacherFieldsUnchanged() {
-      return request.resource.data.role == resource.data.role
-        && request.resource.data.plan == resource.data.plan;
+      // Legacy profiles omitted these fields. Permit their safe defaults without
+      // letting the browser assign itself an elevated role or paid plan.
+      return request.resource.data.get('role', 'teacher') == resource.data.get('role', 'teacher')
+        && request.resource.data.get('plan', 'free') == resource.data.get('plan', 'free');
     }
 
     match /teachers/{teacherId} {

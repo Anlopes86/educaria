@@ -416,95 +416,8 @@ async function handleSettingsPasswordSubmit(event) {
     }
 }
 
-async function deleteSettingsCollection(collectionRef, beforeDelete = null) {
-    while (true) {
-        const snapshot = await collectionRef.limit(400).get();
-        if (snapshot.empty) return;
-
-        if (beforeDelete) {
-            for (const document of snapshot.docs) {
-                await beforeDelete(document);
-            }
-        }
-
-        const batch = collectionRef.firestore.batch();
-        snapshot.docs.forEach((document) => batch.delete(document.ref));
-        await batch.commit();
-        if (snapshot.size < 400) return;
-    }
-}
-
-async function deleteSettingsStorageTree(reference) {
-    const contents = await reference.listAll();
-    await Promise.all(contents.items.map((item) => item.delete()));
-    for (const prefix of contents.prefixes) {
-        await deleteSettingsStorageTree(prefix);
-    }
-}
-
-async function deleteSettingsRemoteData(services, uid) {
-    if (services.storage) {
-        await deleteSettingsStorageTree(services.storage.ref(`teachers/${uid}`));
-    }
-
-    const teacherRef = services.db.collection("teachers").doc(uid);
-    await deleteSettingsCollection(teacherRef.collection("classes"), async (classDocument) => {
-        await deleteSettingsCollection(classDocument.ref.collection("materials"));
-    });
-    await deleteSettingsCollection(teacherRef.collection("lessons"));
-    await deleteSettingsCollection(teacherRef.collection("platform"));
-    await deleteSettingsCollection(teacherRef.collection("productAnalyticsEvents"));
-    await teacherRef.delete();
-}
-
-async function deleteSettingsBackendState() {
-    const endpoint = typeof window.educariaAiEndpoint === "function"
-        ? window.educariaAiEndpoint("/api/account")
-        : "";
-    if (!endpoint) throw new Error("account_endpoint_unavailable");
-
-    const response = await fetch(endpoint, {
-        method: "DELETE",
-        headers: typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {}
-    });
-    if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload?.error || "account_backend_delete_failed");
-    }
-}
-
 function clearSettingsLocalAccountData(deletedUid) {
-    const uid = String(deletedUid || "").trim();
-    if (!uid) return;
-    const actorId = uid.toLowerCase();
-    const scope = actorId.replace(/[^a-z0-9_-]+/g, "-");
-    const keys = [];
-    for (let index = 0; index < localStorage.length; index += 1) {
-        const key = localStorage.key(index);
-        if (!key?.startsWith("educaria:")) continue;
-        if (key.endsWith(`:${scope}`) || key.startsWith(`educaria:milestone:${actorId}:`)
-            || key === `educaria:dashboard-tour:${actorId}`) keys.push(key);
-    }
-    keys.forEach((key) => localStorage.removeItem(key));
-
-    let cachedTeacher = null;
-    try {
-        cachedTeacher = JSON.parse(localStorage.getItem(SETTINGS_TEACHER_CACHE_KEY) || "null");
-    } catch (error) {
-        console.warn("EducarIA teacher cache could not be read during cleanup.");
-    }
-    if (cachedTeacher?.uid === uid) {
-        localStorage.removeItem(SETTINGS_TEACHER_CACHE_KEY);
-        localStorage.removeItem(SETTINGS_SESSION_KEY);
-    }
-    try {
-        const events = JSON.parse(localStorage.getItem("educaria:analytics:events") || "[]");
-        if (Array.isArray(events)) {
-            localStorage.setItem("educaria:analytics:events", JSON.stringify(events.filter((event) => event.teacherUid !== uid)));
-        }
-    } catch (error) {
-        console.warn("EducarIA local analytics cleanup unavailable.");
-    }
+    window.educariaAccountDeletion.clearLocalData(deletedUid);
 }
 
 async function handleSettingsDeleteSubmit(event) {
@@ -540,25 +453,29 @@ async function handleSettingsDeleteSubmit(event) {
         const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
         await user.reauthenticateWithCredential(credential);
 
-        updateSettingsFeedback(feedback, "Excluindo arquivos e materiais... Não feche esta página.", "warning");
-        await deleteSettingsRemoteData(services, user.uid);
-        await user.reauthenticateWithCredential(credential);
-        await deleteSettingsBackendState();
-        await user.reauthenticateWithCredential(credential);
-        await user.delete();
+        updateSettingsFeedback(feedback, "Registrando a solicitação de exclusão…", "warning");
+        await window.educariaAccountDeletion.start(user, services.auth);
         try {
             clearSettingsLocalAccountData(user.uid);
         } catch (error) {
             console.warn("EducarIA local account cleanup unavailable.");
         }
-        window.location.replace("../login.html?accountDeleted=1");
+        // Do not sign out another account if the active user changed while awaiting.
+        if (services.auth.currentUser?.uid === user.uid) await services.auth.signOut().catch(() => {});
+        window.location.replace("../exclusao-conta.html");
     } catch (error) {
-        console.warn("EducarIA account deletion unavailable:", error);
-        let message = "A exclusão não foi concluída. Parte dos dados pode já ter sido removida. Confirme sua senha e tente novamente para concluir.";
+        if (error?.deletionPending) {
+            window.location.replace("../exclusao-conta.html");
+            return;
+        }
+        console.warn("EducarIA account deletion request unavailable.");
+        let message = error?.message || "Não foi possível solicitar a exclusão. Tente novamente em instantes.";
         if (error?.code === "auth/wrong-password" || error?.code === "auth/invalid-credential") {
             message = "A senha informada está incorreta.";
         } else if (error?.code === "auth/too-many-requests") {
             message = "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+        } else if (error?.name === "QuotaExceededError") {
+            message = "Libere espaço neste navegador para guardar o comprovante antes de solicitar a exclusão.";
         }
         updateSettingsFeedback(feedback, message, "error");
         [...form.elements].forEach((element) => {

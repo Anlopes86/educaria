@@ -11,6 +11,7 @@
     <script src="assets/js/firebase-config.js"></script>
     <script src="assets/js/i18n.js" defer></script>
     <script src="assets/js/auth-flow.js" defer></script>
+    <script src="assets/js/account-deletion-client.js?v=20260930-1" defer></script>
 </head>
 <body class="product-body theme-auth" data-auth-page="true" data-auth-screen="login">
     <a class="skip-link" href="#main-content" data-i18n="auth.skip">Pular para o conteúdo principal</a>
@@ -46,6 +47,7 @@
             </div>
 
             <form class="auth-form" data-login-form>
+                <a href="exclusao-conta.html" data-account-deletion-link hidden>Acompanhar solicitação de exclusão da conta</a>
                 <div class="platform-field">
                     <label for="login-email" data-i18n="auth.fields.email">Email</label>
                     <input id="login-email" name="email" type="email" autocomplete="email" required placeholder="professor@escola.com.br" data-i18n-placeholder="auth.fields.email.placeholder">

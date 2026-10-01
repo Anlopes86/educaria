@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 
 const source = await fs.readFile(new URL("../../assets/js/lesson-library.js", import.meta.url), "utf8");
 const settingsSource = await fs.readFile(new URL("../../assets/js/settings-page.js", import.meta.url), "utf8");
+const deletionClientSource = await fs.readFile(new URL("../../assets/js/account-deletion-client.js", import.meta.url), "utf8");
 const draftSource = await fs.readFile(new URL("../../assets/js/local-persistence.js", import.meta.url), "utf8");
 const sample = (title = "Original", extra = {}) => ({
     id: "lesson-test", title, materialType: "quiz", scope: "library", draft: "{}",
@@ -256,7 +257,8 @@ test("account cleanup removes only the deleted teacher's local data", () => {
     localStorage.setItem("educaria:auth:teacher-cache", JSON.stringify({ uid: "teacher-a" }));
     localStorage.setItem("educaria:auth:session", "test-a@example.com");
     localStorage.setItem("educaria:analytics:events", JSON.stringify([{ teacherUid: "teacher-a" }, { teacherUid: "teacher-b" }]));
-    const context = vm.createContext({ localStorage, SETTINGS_TEACHER_CACHE_KEY: "educaria:auth:teacher-cache", SETTINGS_SESSION_KEY: "educaria:auth:session" });
+    const context = vm.createContext({ localStorage, window: {}, document: { querySelectorAll: () => [] } });
+    vm.runInContext(deletionClientSource, context);
     const start = settingsSource.indexOf("function clearSettingsLocalAccountData(");
     const end = settingsSource.indexOf("async function handleSettingsDeleteSubmit", start);
     vm.runInContext(settingsSource.slice(start, end), context);

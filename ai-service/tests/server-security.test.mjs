@@ -14,12 +14,23 @@ const delay = (milliseconds) => new Promise((resolve) => setTimeout(resolve, mil
 function productionEnvironment(overrides = {}) {
     return {
         ...process.env,
+        DOTENV_CONFIG_PATH: path.join(serviceRoot, "tests", "no-real-env"),
         NODE_ENV: "production",
         PORT: String(port),
         AI_AUTH_REQUIRED: "true",
         FIREBASE_PROJECT_ID: "educaria-test",
+        FIREBASE_SERVICE_ACCOUNT_JSON: "",
+        FIREBASE_SERVICE_ACCOUNT_JSON_BASE64: "",
+        GOOGLE_APPLICATION_CREDENTIALS: "",
+        FIREBASE_AUTH_EMULATOR_HOST: "",
+        FIRESTORE_EMULATOR_HOST: "",
+        ACCOUNT_DELETION_ENABLED: "false",
+        AI_CREDIT_STORE: "memory",
+        AI_UNLIMITED_UIDS: "",
+        AI_PRO_UIDS: "",
         ALLOWED_ORIGIN: "https://app.educaria.test",
         GEMINI_API_KEY: "",
+        GROQ_API_KEY: "",
         BILLING_CHECKOUT_URL: "",
         BILLING_WEBHOOK_SECRET: "",
         ...overrides

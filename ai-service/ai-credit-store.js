@@ -240,7 +240,9 @@ function parseCredentials(rawJson, rawBase64) {
         || (rawBase64 ? Buffer.from(String(rawBase64), "base64").toString("utf8") : "");
     if (!source) return undefined;
 
-    const parsed = JSON.parse(source);
+    let parsed;
+    try { parsed = JSON.parse(source); }
+    catch { throw new Error("Invalid Firebase credentials: provide the service account JSON content, not its filename."); }
     if (typeof parsed.private_key === "string") {
         parsed.private_key = parsed.private_key.replace(/\\n/g, "\n");
     }

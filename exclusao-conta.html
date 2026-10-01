@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>Exclusão da conta | EducarIA</title>
+    <link rel="stylesheet" href="assets/css/estilo-premium.css?v=20260930-1">
+    <link rel="stylesheet" href="assets/css/account-deletion.css">
+    <script src="assets/js/ai-endpoint-config.js" defer></script>
+    <script src="assets/js/account-deletion-client.js" defer></script>
+    <script src="assets/js/account-deletion-status.js" defer></script>
+</head>
+<body class="product-body theme-auth">
+    <main class="account-deletion-shell">
+        <a href="index.html" class="auth-brand" aria-label="EducarIA — página inicial"><strong>Educar<span>IA</span></strong></a>
+        <section class="account-deletion-card" aria-labelledby="deletion-title">
+            <span class="platform-section-label">Sua conta, seus dados</span>
+            <h1 id="deletion-title">Acompanhamento da exclusão</h1>
+            <p data-deletion-status role="status" aria-live="polite">Conferindo sua solicitação…</p>
+            <p data-deletion-help>O andamento é consultado com um comprovante salvo neste navegador, sem precisar entrar na conta.</p>
+            <button class="platform-link-button platform-link-primary" data-deletion-refresh type="button">Atualizar andamento</button>
+            <a class="auth-home-link" href="login.html" data-deletion-login>Voltar ao login</a>
+        </section>
+        <noscript>Ative o JavaScript para acompanhar a solicitação. Não inicie outra exclusão enquanto não confirmar a situação da anterior.</noscript>
+    </main>
+</body>
+</html>

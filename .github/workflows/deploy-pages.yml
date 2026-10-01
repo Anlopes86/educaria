@@ -19,7 +19,26 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+  firebase-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm ci --prefix ai-service
+      - run: npm ci --prefix firebase
+      - name: Validate Firebase isolation in local emulators
+        run: npm test --prefix firebase
+        env:
+          FIREBASE_CLI_DISABLE_UPDATE_CHECK: 'true'
+
   deploy:
+    needs: firebase-security
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -46,6 +65,7 @@ jobs:
           node --test tools/tests/*.test.mjs
           npm audit --prefix ai-service --omit=dev --audit-level=moderate
           CHROME_PATH=/usr/bin/google-chrome node tools/check-responsive-layout.mjs
+          CHROME_PATH=/usr/bin/google-chrome node tools/check-responsive-layout.mjs exclusao-conta.html
           CHROME_PATH=/usr/bin/google-chrome EDUCARIA_AUDIT_STORAGE_FAILURE=1 node tools/check-responsive-layout.mjs 'auth:plataforma/quiz-builder.html?new=1'
           CHROME_PATH=/usr/bin/google-chrome EDUCARIA_AUDIT_RECOVERY=1 EDUCARIA_AUDIT_DISABLE_DASHBOARD_TOUR=1 node tools/check-responsive-layout.mjs auth:plataforma/index.html auth:plataforma/slides-builder.html auth:plataforma/criar-aula.html
           CHROME_PATH=/usr/bin/google-chrome node tools/check-responsive-layout.mjs 'auth:plataforma/quiz-builder.html?new=1' 'auth:plataforma/slides-builder.html?new=1' 'auth:plataforma/flashcards-builder.html?new=1' 'auth:plataforma/jogo-memoria-builder.html?new=1' 'auth:plataforma/forca-builder.html?new=1' 'auth:plataforma/roleta-builder.html?new=1' 'auth:plataforma/ligar-pontos-builder.html?new=1'

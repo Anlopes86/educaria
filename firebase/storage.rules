@@ -6,7 +6,8 @@ service firebase.storage {
     }
 
     function isOwner(teacherId) {
-      return signedIn() && request.auth.uid == teacherId;
+      return signedIn() && request.auth.uid == teacherId
+        && !firestore.exists(/databases/(default)/documents/accountDeletionJobs/$(teacherId));
     }
 
     function allowedTeacherUpload() {

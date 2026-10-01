@@ -41,9 +41,9 @@ As imagens **continuam embutidas no rascunho**. A redução não aumenta os limi
 
 ## Conta e consumo de IA
 
-O endpoint de limpeza exige `auth_time` recente. Ele não apaga mais os registros de consumo: a conta Firebase ainda é excluída pelo fluxo autenticado no navegador, e acionar apenas a limpeza do backend não pode renovar a cota.
+O novo endpoint de exclusão exige `auth_time` recente, confirmação explícita e protocolo versionado. Registra uma solicitação persistente antes de executar a limpeza pelo servidor; o navegador apenas acompanha o andamento. Não apaga os registros de consumo nem renova a cota. A implementação e a ordem de ativação estão em [Segurança das contas](seguranca-contas.md).
 
-O ciclo de exclusão completo ainda precisa ser coordenado pelo servidor em uma próxima etapa. A validação geral de tokens revogados/desabilitados e um processo retomável de exclusão também continuam pendentes. Não tratar o endpoint atual como uma operação atômica de remoção de toda a conta.
+O backend usa `verifyIdToken(token, true)` do Firebase Admin SDK, rejeitando sessões revogadas, desabilitadas ou de usuários removidos. Uma falha de serviço retorna 503 e não é confundida com uma senha/sessão inválida. A nova exclusão fica desativada por padrão até validar regras e permissões na publicação; implementar localmente não significa que o recurso está ativo em produção.
 
 Os limites continuam renovando conforme o dia da política existente. A remoção física de documentos de consumo é uma configuração distinta: o armazenamento Firestore já escreve `expiresAt`; conferir em produção a política TTL correspondente e a retenção adequada. Não foi alterada a configuração cloud nem feita limpeza de contas reais.
 
@@ -53,7 +53,7 @@ A limpeza local remove apenas chaves do UID excluído e seus eventos de uso, pre
 
 O workflow cria um artefato com `tools/build-pages.mjs`: somente arquivos versionados e explicitamente públicos de `assets`, `img`, `plataforma` e páginas-raiz. Não inclui backend, dependências do servidor, ferramentas, relatórios nem configurações locais. A lista deve ser revisada quando surgir um novo tipo de asset público.
 
-O service worker passa a usar a versão `v8` do cache. Após o deploy, recarregar abas antigas antes de verificar o novo comportamento. O deploy do frontend não substitui o deploy do serviço no Render. Os módulos novos e suas referências HTML precisam fazer parte do mesmo commit antes da publicação; o build ignora arquivos não versionados.
+O service worker passa a usar a versão `v9` do cache. Após o deploy, recarregar abas antigas antes de verificar o novo comportamento. O deploy do frontend não substitui o deploy do serviço no Render. Os módulos novos e suas referências HTML precisam fazer parte do mesmo commit antes da publicação; o build ignora arquivos não versionados.
 
 ## Validação
 

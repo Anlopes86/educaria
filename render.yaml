@@ -36,6 +36,11 @@ services:
         value: "true"
       - key: FIREBASE_PROJECT_ID
         value: educaria-f46b2
+      # Enable only after deploying/testing the deletion-lock rules and IAM.
+      - key: ACCOUNT_DELETION_ENABLED
+        value: "false"
+      - key: FIREBASE_STORAGE_BUCKET
+        value: educaria-f46b2.firebasestorage.app
       - key: FIREBASE_SERVICE_ACCOUNT_JSON_BASE64
         sync: false
       - key: ALLOWED_ORIGIN

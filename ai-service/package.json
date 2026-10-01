@@ -8,11 +8,15 @@
     "start": "node server.js",
     "test": "node --test tests/*.test.mjs"
   },
+  "overrides": {
+    "gaxios@6": { "uuid": "^11.1.1" }
+  },
   "dependencies": {
     "@google/genai": "^1.50.0",
     "cors": "^2.8.5",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "firebase-admin": "^14.5.0",
     "google-auth-library": "^10.6.2",
     "mammoth": "^1.8.0",
     "multer": "^2.1.1",
