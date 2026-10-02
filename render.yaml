@@ -36,9 +36,10 @@ services:
         value: "true"
       - key: FIREBASE_PROJECT_ID
         value: educaria-f46b2
-      # Enable only after deploying/testing the deletion-lock rules and IAM.
+      # Manage this release switch in the dashboard after validating rules/IAM.
+      # Preserve that choice on future Blueprint syncs; server defaults to false.
       - key: ACCOUNT_DELETION_ENABLED
-        value: "false"
+        sync: false
       - key: FIREBASE_STORAGE_BUCKET
         value: educaria-f46b2.firebasestorage.app
       - key: FIREBASE_SERVICE_ACCOUNT_JSON_BASE64

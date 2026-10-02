@@ -1,5 +1,27 @@
 # Segurança das contas
 
+## Ativação em produção — 02/10/2026
+
+`ACCOUNT_DELETION_ENABLED=true` foi configurado no serviço `educaria-api-anlopes86` após confirmar ausência de solicitações pendentes, permissões Admin e regras publicadas. O [deploy da configuração](https://dashboard.render.com/web/srv-datbe9navr4c73csctog/deploys/dep-davrfq2d0e5s7393qe70) ficou Live, reutilizando o código validado `1f67d17`.
+
+O teste `ai-service/tools/production-deletion-smoke.mjs` passou em **23 verificações**: rejeição de clientes antigos, confirmação explícita, UID obtido do token (ignorando UID alheio no corpo), bloqueio imediato na API/Firestore, comprovante sem sessão, rejeição de comprovante incorreto, execução das cinco etapas pelo worker real, remoção de Auth/perfil/subcoleções (inclusive abaixo de documento pai inexistente), preservação de outra conta fictícia e do registro de consumo. Todos os dados de teste foram removidos; nenhuma conta real foi alterada e não houve geração de IA.
+
+O bucket continua inexistente (404): o teste validou esse caminho, **não** remoção de arquivos em Storage real. Antes de adicionar Storage, publicar/testar suas regras de bloqueio e permissões entre serviços. Nenhum plano pago, bucket, permissão IAM ou política TTL foi ativado nesta operação. TTL dos comprovantes concluídos segue pendente de configuração; `expiresAt` sozinho não apaga documentos.
+
+O switch de ativação fica com `sync: false` no Blueprint para preservar a decisão do painel em futuras publicações ([semântica oficial do Render](https://render.com/docs/blueprint-spec#prompting-for-secret-values)). Em novas instalações, iniciar desativado até validar as dependências; o servidor continua com padrão `false`. Para suspender novas solicitações e o worker, definir `false` e publicar a configuração no painel, sem remover os jobs/bloqueios existentes. Ao reativar, o worker retoma as etapas pendentes.
+
+### Revalidação controlada
+
+Usar apenas um caminho local de credencial; nunca seu conteúdo no terminal/chat. Os scripts recusam UID existente como argumento e nunca enviam segredos para os logs:
+
+```text
+node ai-service/tools/firebase-preflight.mjs CAMINHO_DA_CREDENCIAL
+node ai-service/tools/production-security-smoke.mjs CAMINHO_DA_CREDENCIAL --create-disposable-probe --expect-deletion-enabled
+node ai-service/tools/production-deletion-smoke.mjs CAMINHO_DA_CREDENCIAL --create-and-delete-disposable-probe
+```
+
+O teste completo só roda se não houver jobs pendentes. Se falhar depois de tentar registrar a solicitação, preserva o bloqueio e informa somente os identificadores fictícios para investigação; não executa uma limpeza que dispute com o worker. A remoção dos fixtures após sucesso acontece somente depois de confirmar o fim do job. Executar os testes de produção separadamente para respeitar a limitação por IP.
+
 ## Estado da publicação — 01/10/2026
 
 Frontend e API publicados no commit `1f67d17e72cfe718795661dc4f4ada7d38e28726`. O [workflow do GitHub Pages](https://github.com/Anlopes86/educaria/actions/runs/36899684424) e o deploy do Render terminaram com sucesso.
@@ -8,7 +30,7 @@ As regras do Firestore foram publicadas e conferidas no ruleset `2cf691c5-b10d-4
 
 A validação autenticada em produção confirmou 12 verificações: API com sessão válida, exclusão desativada, leitura/edição do próprio perfil legado, negação de acesso a outra conta e de alteração do próprio plano, bloqueio de exclusão em Firestore/API e rejeição de contas desabilitadas, sessões revogadas e usuários removidos. Usou uma conta temporária sem email e documentos fictícios, todos removidos ao final. Não houve geração de IA.
 
-**Exclusão automática ainda desativada**, comprovada por resposta 503 com `deletion_unavailable`. O bucket configurado `educaria-f46b2.firebasestorage.app` retorna 404 e não existe release de regras Storage. Não foi criado bucket, alterado IAM nem ativado faturamento/TTL. O painel do Render exige login para continuar a configuração de ambiente.
+Na publicação inicial, a **exclusão automática permaneceu desativada**, comprovada por resposta 503 com `deletion_unavailable`. O bucket configurado `educaria-f46b2.firebasestorage.app` retornou 404 e não havia release de regras Storage. Não foi criado bucket, alterado IAM nem ativado faturamento/TTL. A ativação posterior está registrada acima.
 
 Observação: o worker tolera um bucket comprovadamente inexistente (404), pois não há arquivos a remover. Isso não obriga a contratar Storage para excluir perfis e materiais embutidos no Firestore. Antes da ativação, confirmar a configuração pretendida, o bucket exato e testar o fluxo completo com uma conta descartável. Nunca tratar erro 403 como bucket ausente.
 
@@ -37,7 +59,7 @@ Os registros de consumo permanecem com a retenção própria (`aiCreditUsage.exp
 
 Arquivos exportados, caches em outros dispositivos, backups e versões mantidas por políticas de soft delete/retention do provedor não são apagados pelo navegador nem devem ser anunciados como apagamento físico imediato. A cobrança ainda usa arquivo local no backend: múltiplas instâncias e webhooks concorrentes exigem migrar essa fonte de estado para armazenamento transacional antes de escalar cobrança real.
 
-## Ordem de ativação (pendente; não executada em produção)
+## Checklist para novas ativações
 
 1. Rodar testes e revisar o diff. Validar em projeto de teste com contas e conteúdo descartáveis, incluindo token revogado/desabilitado e reinício após falha.
 2. Conferir `FIREBASE_PROJECT_ID`, credencial da conta de serviço, banco `(default)` dos professores e `FIREBASE_STORAGE_BUCKET`. Não colar credenciais em chat, logs ou Git. Não ativar plano pago automaticamente.

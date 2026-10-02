@@ -38,6 +38,10 @@ try {
             return { ok: true };
         }),
         check("firestoreLookup", async () => { await db.doc(`accountDeletionJobs/${probeUid}`).get(); return { ok: true }; }),
+        check("pendingDeletions", async () => {
+            const snapshot = await db.collection("accountDeletionJobs").where("pending", "==", true).count().get();
+            return { ok: true, count: snapshot.data().count };
+        }),
         check("teacherSchema", async () => {
             const snapshot = await db.collection("teachers").select("role", "plan").limit(1000).get();
             return { ok: true, checked: snapshot.size, limitReached: snapshot.size === 1000,

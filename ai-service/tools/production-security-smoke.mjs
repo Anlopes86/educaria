@@ -13,6 +13,8 @@ const projectId = "educaria-f46b2";
 const baseUrl = "https://educaria-api-anlopes86.onrender.com";
 const credentialPath = process.argv[2];
 if (!credentialPath || process.argv[3] !== "--create-disposable-probe") throw new Error("Explicit disposable-probe flag required.");
+const expectDeletionEnabled = process.argv[4] === "--expect-deletion-enabled";
+if (process.argv[4] && !expectDeletionEnabled) throw new Error("Unexpected smoke-test option.");
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST || process.env.FIRESTORE_EMULATOR_HOST) throw new Error("Unexpected emulator override.");
 let credentials;
 try {
@@ -64,8 +66,12 @@ try {
     const creditsResponse = await expectResponse("authenticated_api", await api("/api/ai/credits", token), 200);
     const credits = await creditsResponse.json();
     if (credits?.credits?.store !== "firestore") throw new Error("Production credits are not using Firestore.");
-    const deletionResponse = await expectResponse("account_deletion_disabled", await api("/api/account", token, { method: "DELETE" }), 503);
-    if ((await deletionResponse.json()).code !== "deletion_unavailable") throw new Error("Deletion flag was not confirmed.");
+    // Empty legacy request can never start deletion, regardless of the feature flag.
+    const deletionResponse = await expectResponse(expectDeletionEnabled ? "legacy_deletion_rejected" : "account_deletion_disabled",
+        await api("/api/account", token, { method: "DELETE" }), expectDeletionEnabled ? 400 : 503);
+    if ((await deletionResponse.json()).code !== (expectDeletionEnabled ? "invalid_deletion_request" : "deletion_unavailable")) {
+        throw new Error("Deletion flag was not confirmed.");
+    }
 
     // Only own disposable documents. Mark content cleanup before the first write.
     createdContent = true;
