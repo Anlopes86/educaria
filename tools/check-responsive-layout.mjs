@@ -1067,20 +1067,33 @@ async function auditPage(pageConfig) {
             expression: `(() => {
                 const button = document.querySelector('[data-save-lesson][data-save-scope="library"]');
                 if (!button) return false;
-                button.dataset.saveTarget = '#audit-saved';
                 button.click();
                 return true;
             })()`
         });
+        await waitForPageCondition(cdp, "Boolean(document.querySelector('[data-lesson-destinations][open]'))");
+        const destinationEvaluation = await cdp.send("Runtime.evaluate", {
+            expression: `(() => {
+                const modal = document.querySelector('[data-lesson-destinations][open]');
+                const selected = [...(modal?.querySelectorAll('[data-destination-choice]:checked') || [])];
+                const button = modal?.querySelector('[data-destination-save]');
+                const librarySelected = selected.length === 1 && selected[0].dataset.scope === 'library';
+                const confirmed = Boolean(modal && librarySelected && button && !button.disabled);
+                if (confirmed) button.click();
+                return { opened: Boolean(modal), librarySelected, confirmed };
+            })()`,
+            returnByValue: true
+        });
+        quizJourney.destinationSelection = destinationEvaluation.result.value;
         await delay(350);
         const readyEvaluation = await cdp.send("Runtime.evaluate", {
             expression: `(() => {
                 const lesson = typeof readActiveLesson === 'function' ? readActiveLesson() : null;
-                return lesson?.status || '';
+                return Boolean(lesson?.status === 'ready' && lesson?.scope === 'library');
             })()`,
             returnByValue: true
         });
-        quizJourney.explicitReady = readyEvaluation.result.value === "ready";
+        quizJourney.explicitReady = readyEvaluation.result.value === true;
     }
     if (pagePath.includes("biblioteca.html")) {
         await cdp.send("Runtime.evaluate", {
@@ -1360,6 +1373,7 @@ try {
                 && result.quizJourney.subject === "Ciências"
                 && result.quizJourney.grade === "7º ano"
                 && result.quizJourney.recovered
+                && result.quizJourney.destinationSelection?.confirmed
                 && result.quizJourney.explicitReady
                 && (!["slides", "hangman", "wheel", "match"].includes(result.quizJourney.journeyType) || result.quizJourney.structuredGeneration?.ok);
             console.log(`  ${result.quizJourney.journeyType}-autosave=${journeyWorks ? "ok" : "failed"}`);
