@@ -21,7 +21,7 @@
                 <button type="button" class="platform-link-button platform-link-secondary" data-inline-edit-toggle aria-pressed="false">Editar aqui</button>
                 <a href="turma.html" class="platform-link-button platform-link-primary">Voltar para a turma</a>
             </div>
-            <p class="presentation-inline-edit-note" data-inline-edit-note hidden>Edite os textos dos segmentos direto na roleta. O salvamento acontece automaticamente.</p>
+            <p class="presentation-inline-edit-note" data-inline-edit-note hidden>Edite os textos na lista de opções. O salvamento acontece automaticamente.</p>
         </header>
 
         <section class="wheel-stage-shell wheel-stage-shell--full">
@@ -30,8 +30,9 @@
                     <div class="wheel-stage-pointer"></div>
                     <div class="wheel-stage-svg" data-wheel-stage-svg></div>
                 </div>
-                <div class="wheel-stage-footer">
-                    <div class="wheel-stage-result" data-wheel-stage-result>Aguardando giro</div>
+                <div class="wheel-stage-footer wheel-stage-panel">
+                    <div class="wheel-stage-result" data-wheel-stage-result role="status" aria-live="polite">Aguardando giro</div>
+                    <ol class="wheel-stage-options" data-wheel-stage-options aria-label="Opções da roleta"></ol>
                     <button type="button" class="platform-link-button platform-link-primary wheel-stage-spin-button" data-wheel-spin>Girar roleta</button>
                 </div>
             </article>

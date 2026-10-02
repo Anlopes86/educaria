@@ -205,6 +205,26 @@ function renderCrosswordApplication() {
         if (downRoot) downRoot.innerHTML = buildRuntimeClueMarkup(puzzle.downEntries, solvedIds);
     }
 
+    let boardResizeFrame = 0;
+    function fitBoardToAvailableSpace() {
+        const shell = boardRoot?.closest(".crossword-board-shell--stage");
+        if (!shell) return;
+        window.cancelAnimationFrame(boardResizeFrame);
+        boardResizeFrame = window.requestAnimationFrame(() => {
+            const grid = boardRoot.querySelector(".crossword-grid");
+            if (!grid) return;
+            const style = getComputedStyle(shell);
+            const gap = parseFloat(getComputedStyle(grid).columnGap) || 0;
+            const width = shell.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+            const height = shell.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+            const cell = Math.max(shell.classList.contains("is-zoomed") ? 36 : 1, Math.min((width - gap * (puzzle.cols - 1)) / puzzle.cols, (height - gap * (puzzle.rows - 1)) / puzzle.rows));
+            grid.style.width = `${Math.floor(cell * puzzle.cols + gap * (puzzle.cols - 1))}px`;
+            grid.style.height = `${Math.floor(cell * puzzle.rows + gap * (puzzle.rows - 1))}px`;
+            grid.style.gridTemplateRows = `repeat(${puzzle.rows}, minmax(0, 1fr))`;
+            grid.style.setProperty("--crossword-letter-size", `${Math.max(8, Math.min(28, cell * 0.62))}px`);
+        });
+    }
+
     function paintBoard() {
         if (!boardRoot) return;
         boardRoot.innerHTML = api.buildBoardMarkup(puzzle, {
@@ -214,6 +234,7 @@ function renderCrosswordApplication() {
             correctCells,
             incorrectCells
         });
+        fitBoardToAvailableSpace();
 
         if (!revealAnswers && activeCellKey) {
             window.requestAnimationFrame(() => {
@@ -276,6 +297,17 @@ function renderCrosswordApplication() {
     renderClues();
     paintBoard();
     resetNote();
+    if (typeof ResizeObserver === "function" && boardRoot) {
+        const shell = boardRoot.closest(".crossword-board-shell--stage");
+        if (shell) new ResizeObserver(fitBoardToAvailableSpace).observe(shell);
+    }
+    window.addEventListener("resize", fitBoardToAvailableSpace, { passive: true });
+    document.querySelector("[data-puzzle-zoom]")?.addEventListener("click", (event) => {
+        const zoomed = boardRoot?.closest(".crossword-board-shell--stage")?.classList.toggle("is-zoomed");
+        event.currentTarget.textContent = zoomed ? "Ver grade inteira" : "Ampliar grade";
+        event.currentTarget.setAttribute("aria-pressed", String(Boolean(zoomed)));
+        fitBoardToAvailableSpace();
+    });
 
     boardRoot?.addEventListener("focusin", (event) => {
         const input = event.target.closest("[data-crossword-input]");

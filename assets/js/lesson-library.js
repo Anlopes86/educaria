@@ -153,7 +153,7 @@ function normalizeLessonRecord(lesson) {
     const updatedAt = isoTimestampOrEmpty(lesson.updatedAt) || new Date().toISOString();
     const createdAt = isoTimestampOrEmpty(lesson.createdAt) || updatedAt;
     const normalizedType = materialType === "hangman"
-        ? "Força"
+        ? "Forca"
         : (String(lesson.type || materialGroupLabel(materialType)).trim() || materialGroupLabel(materialType));
     const baseRecord = {
         title: String(lesson.title || "").trim() || "Material sem título",
@@ -430,6 +430,47 @@ function markLessonReady(id) {
     return updateLessonStatus(id, LESSON_STATUS_READY);
 }
 
+function newLessonRecordId() {
+    return `lesson-${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
+}
+
+// Persist the whole selection in one local write before starting cloud requests.
+function saveLessonToDestinations(source, destinations, { updateSource = true, markReady = false } = {}) {
+    if (!source || !destinations.length) throw new Error("Escolha pelo menos um destino.");
+    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
+    const unique = new Map();
+    destinations.forEach((destination) => {
+        const scope = destination.scope;
+        const className = scope === LESSON_SCOPE_CLASS ? String(destination.className || "").trim() : "";
+        if (![LESSON_SCOPE_LIBRARY, LESSON_SCOPE_CLASS].includes(scope) || (scope === LESSON_SCOPE_CLASS && !classes.includes(className))) {
+            throw new Error("Uma das turmas não está mais disponível. Reabra a seleção de destinos.");
+        }
+        unique.set(`${scope}:${className}`, { scope, className });
+    });
+    const lessons = readLessonsLibrary();
+    const existing = lessons.find((lesson) => lesson.id === source.id);
+    const now = new Date().toISOString();
+    const records = [...unique.values()].map(({ scope, className }) => {
+        const updatesExisting = updateSource && existing && normalizeLessonScope(existing) === scope && existing.className === className;
+        return {
+            ...source, scope, className,
+            id: updatesExisting ? existing.id : newLessonRecordId(),
+            createdAt: updatesExisting ? existing.createdAt : now,
+            updatedAt: now,
+            status: markReady ? LESSON_STATUS_READY : source.status,
+            syncRevision: updatesExisting ? existing.syncRevision : "",
+            conflictOf: updatesExisting ? existing.conflictOf : "",
+            lastOpenedAt: updatesExisting ? existing.lastOpenedAt : "",
+            lastPresentedAt: updatesExisting ? existing.lastPresentedAt : "",
+            lastUsedAt: updatesExisting ? existing.lastUsedAt : "",
+            usageCount: updatesExisting ? existing.usageCount : 0
+        };
+    });
+    const ids = new Set(records.map((record) => record.id));
+    const saved = writeLessonsLibrary([...records, ...lessons.filter((lesson) => !ids.has(lesson.id))], { skipSync: true, source: "explicit-save" });
+    return records.map((record) => saved.find((item) => item.id === record.id));
+}
+
 function duplicateLessonToClass(id, targetClass) {
     const lesson = readLessonsLibrary().find((item) => item.id === id);
     const turma = String(targetClass || "").trim();
@@ -438,7 +479,7 @@ function duplicateLessonToClass(id, targetClass) {
     const now = new Date().toISOString();
     const copy = {
         ...lesson,
-        id: `lesson-${Date.now()}`,
+        id: newLessonRecordId(),
         className: turma,
         scope: LESSON_SCOPE_CLASS,
         createdAt: now,
@@ -459,7 +500,7 @@ function addLessonToLibrary(id) {
     const now = new Date().toISOString();
     const copy = {
         ...lesson,
-        id: `lesson-${Date.now()}`,
+        id: newLessonRecordId(),
         className: "",
         scope: LESSON_SCOPE_LIBRARY,
         createdAt: now,
@@ -999,89 +1040,142 @@ function markClassPageReady() {
     document.body.dataset.classPageReady = "true";
 }
 
-function duplicateModalTemplate() {
-    return `
-        <div class="platform-modal-backdrop" data-duplicate-modal hidden>
-            <div class="platform-modal-card" role="dialog" aria-modal="true" aria-labelledby="duplicate-lesson-title">
-                <div class="page-section-title page-section-title--compact">
-                    <div>
-                        <span class="platform-section-label">Duplicar atividade</span>
-                        <h2 id="duplicate-lesson-title">Para qual turma você quer duplicar?</h2>
-                    </div>
-                    <p data-duplicate-modal-summary>Escolha a turma de destino para criar uma cópia desta atividade.</p>
-                </div>
-                <div class="platform-field">
-                    <label for="duplicate-lesson-class">Turma de destino</label>
-                    <select id="duplicate-lesson-class" data-duplicate-modal-select></select>
-                </div>
-                <p class="sidebar-feedback" data-duplicate-modal-feedback hidden></p>
+let lessonDestinationSession = null;
+
+function ensureLessonDestinationModal() {
+    let modal = document.querySelector("[data-lesson-destinations]");
+    if (modal) return modal;
+    document.body.insertAdjacentHTML("beforeend", `
+        <dialog class="lesson-destination-dialog" data-lesson-destinations aria-labelledby="lesson-destination-title">
+            <div class="platform-modal-card lesson-destination-card">
+                <header><span class="platform-section-label">Organize seu material</span>
+                    <h2 id="lesson-destination-title">Onde você quer salvar?</h2>
+                    <p data-destination-material></p>
+                </header>
+                <label class="platform-field">Buscar turma<input type="search" data-destination-search placeholder="Nome da turma" autocomplete="off"></label>
+                <fieldset class="lesson-destination-choices"><legend>Selecione os destinos</legend><div data-destination-choices></div></fieldset>
+                <p data-destination-empty hidden>Nenhuma turma encontrada. Você pode salvar na biblioteca.</p>
+                <p class="lesson-destination-note">Cada turma recebe uma cópia independente. Editar uma cópia não altera as outras.</p>
+                <p data-destination-summary role="status" aria-live="polite"></p>
+                <ul class="lesson-destination-results" data-destination-results aria-live="polite" hidden></ul>
                 <div class="utility-actions">
-                    <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-modal-cancel>Cancelar</button>
-                    <button type="button" class="platform-link-button platform-link-primary" data-duplicate-modal-confirm>Confirmar</button>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-destination-close>Cancelar</button>
+                    <button type="button" class="platform-link-button platform-link-primary" data-destination-save>Salvar nos destinos selecionados</button>
                 </div>
             </div>
-        </div>
-    `;
+        </dialog>`);
+    modal = document.querySelector("[data-lesson-destinations]");
+    modal.querySelector("[data-destination-close]").addEventListener("click", () => modal.close());
+    modal.querySelector("[data-destination-save]").addEventListener("click", confirmLessonDestinations);
+    modal.addEventListener("change", () => updateLessonDestinationSummary(modal));
+    modal.addEventListener("cancel", (event) => { if (lessonDestinationSession?.busy) event.preventDefault(); });
+    modal.addEventListener("close", () => { lessonDestinationSession = null; });
+    modal.querySelector("[data-destination-search]").addEventListener("input", (event) => {
+        const search = normalizeSearchText(event.target.value);
+        const rows = [...modal.querySelectorAll("[data-destination-class-row]")];
+        rows.forEach((row) => { row.hidden = !normalizeSearchText(row.textContent).includes(search); });
+        modal.querySelector("[data-destination-empty]").hidden = rows.some((row) => !row.hidden);
+    });
+    return modal;
 }
 
-function ensureDuplicateModal() {
-    let modal = document.querySelector("[data-duplicate-modal]");
-    if (modal) return modal;
-    document.body.insertAdjacentHTML("beforeend", duplicateModalTemplate());
-    return document.querySelector("[data-duplicate-modal]");
+function updateLessonDestinationSummary(modal) {
+    if (lessonDestinationSession?.records) return;
+    const chosen = [...modal.querySelectorAll("[data-destination-choice]:checked")];
+    const library = chosen.some((input) => input.dataset.scope === LESSON_SCOPE_LIBRARY);
+    const classes = chosen.length - Number(library);
+    const destinations = [library ? "biblioteca pessoal" : "", classes ? `${classes} ${classes === 1 ? "turma" : "turmas"}` : ""].filter(Boolean);
+    modal.querySelector("[data-destination-summary]").textContent = destinations.length ? `Salvar em: ${destinations.join(" e ")}.` : "Escolha pelo menos um destino.";
+    modal.querySelector("[data-destination-save]").disabled = !chosen.length;
+}
+
+function openLessonDestinationModal(source, options = {}) {
+    const modal = ensureLessonDestinationModal();
+    if (modal.open) return;
+    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
+    const updateSource = options.updateSource !== false;
+    const initialClass = source.className || currentClassName();
+    const libraryChecked = updateSource && (options.initialScope === LESSON_SCOPE_LIBRARY || normalizeLessonScope(source) === LESSON_SCOPE_LIBRARY);
+    const choice = (scope, className, checked) => {
+        const updates = updateSource && scope === normalizeLessonScope(source) && className === source.className && readLessonsLibrary().some((item) => item.id === source.id);
+        return `<label class="lesson-destination-choice" ${scope === LESSON_SCOPE_CLASS ? "data-destination-class-row" : ""}>
+            <input type="checkbox" data-destination-choice data-scope="${scope}" value="${escapeHtml(className)}" ${checked ? "checked" : ""}>
+            <span>${escapeHtml(scope === LESSON_SCOPE_LIBRARY ? "Biblioteca pessoal" : className)}${updates ? "<small>Atualiza este material</small>" : ""}</span>
+        </label>`;
+    };
+    modal.querySelector("[data-destination-choices]").innerHTML = choice(LESSON_SCOPE_LIBRARY, "", libraryChecked) + classes.map((name) => choice(LESSON_SCOPE_CLASS, name, updateSource && options.initialScope !== LESSON_SCOPE_LIBRARY && name === initialClass)).join("");
+    modal.querySelector("[data-destination-material]").textContent = source.title;
+    modal.querySelector("[data-destination-search]").value = "";
+    modal.querySelector("[data-destination-search]").disabled = false;
+    modal.querySelector("[data-destination-empty]").hidden = classes.length > 0;
+    const results = modal.querySelector("[data-destination-results]");
+    results.hidden = true;
+    results.innerHTML = "";
+    modal.querySelector("[data-destination-close]").textContent = "Cancelar";
+    modal.querySelector("[data-destination-close]").disabled = false;
+    modal.querySelector("[data-destination-save]").textContent = "Salvar nos destinos selecionados";
+    lessonDestinationSession = { source, updateSource, markReady: Boolean(options.markReady), uid: typeof readCurrentTeacher === "function" ? readCurrentTeacher()?.uid : "", records: null, synced: new Set(), busy: false };
+    updateLessonDestinationSummary(modal);
+    modal.showModal();
+}
+
+async function confirmLessonDestinations() {
+    const session = lessonDestinationSession;
+    const modal = document.querySelector("[data-lesson-destinations]");
+    if (!session || session.busy || !modal?.open) return;
+    const feedback = modal.querySelector("[data-destination-summary]");
+    if (!lessonSyncContextIsCurrent(session.uid)) {
+        feedback.textContent = "Sua sessão mudou. Feche esta janela e entre novamente antes de salvar.";
+        return;
+    }
+    const save = modal.querySelector("[data-destination-save]");
+    const close = modal.querySelector("[data-destination-close]");
+    session.busy = true;
+    save.disabled = close.disabled = true;
+    save.setAttribute("aria-busy", "true");
+    try {
+        if (!session.records) {
+            const destinations = [...modal.querySelectorAll("[data-destination-choice]:checked")].map((input) => ({ scope: input.dataset.scope, className: input.value }));
+            session.records = saveLessonToDestinations(session.source, destinations, session);
+            modal.querySelectorAll("input").forEach((input) => { input.disabled = true; });
+            if (session.updateSource) {
+                const active = session.records.find((record) => record.id === session.source.id) || session.records[0];
+                activateLessonById(active.id);
+            }
+            if (typeof window.educariaEvaluateActivationMilestones === "function") window.educariaEvaluateActivationMilestones("save_lesson_action", { markCompletion: true });
+        }
+        feedback.textContent = "Material salvo neste computador. Confirmando o salvamento na sua conta…";
+        save.textContent = "Salvando…";
+        for (const record of session.records) {
+            if (!lessonSyncContextIsCurrent(session.uid)) break;
+            if (session.synced.has(record.id)) continue;
+            const result = await syncLessonRecordWithFirebase(record);
+            if (result.synced) session.synced.add(record.id);
+        }
+        if (!lessonSyncContextIsCurrent(session.uid)) { modal.close(); return; }
+        const results = modal.querySelector("[data-destination-results]");
+        results.hidden = false;
+        results.innerHTML = session.records.map((record) => `<li><strong>${escapeHtml(record.className || "Biblioteca pessoal")}</strong><span>${session.synced.has(record.id) ? "✓ Salvo na conta" : "Salvo neste computador · sincronização pendente"}</span></li>`).join("");
+        const complete = session.synced.size === session.records.length;
+        feedback.textContent = complete ? "Pronto! Material salvo em todos os destinos selecionados." : "Há cópias aguardando sincronização. Você pode tentar novamente; não serão criadas cópias extras.";
+        save.textContent = complete ? "Salvo na conta" : "Tentar sincronizar novamente";
+        save.disabled = complete;
+        close.textContent = "Concluir";
+    } catch (error) {
+        console.warn("EducarIA destination save failed:", error);
+        feedback.textContent = session.records ? "As cópias estão neste computador. Não foi possível confirmar a sincronização." : "Não foi possível salvar. Mantenha esta página aberta e tente novamente.";
+        save.textContent = session.records ? "Tentar sincronizar novamente" : "Tentar salvar novamente";
+        save.disabled = false;
+    } finally {
+        session.busy = false;
+        close.disabled = false;
+        save.removeAttribute("aria-busy");
+    }
 }
 
 function openDuplicateModal(lessonId) {
-    const modal = ensureDuplicateModal();
-    const select = modal?.querySelector("[data-duplicate-modal-select]");
-    const summary = modal?.querySelector("[data-duplicate-modal-summary]");
-    const feedback = modal?.querySelector("[data-duplicate-modal-feedback]");
-    const lesson = readLessonsLibrary().find((item) => item.id === lessonId);
-    const current = currentClassName();
-    const classes = typeof getAvailableClasses === "function" ? getAvailableClasses().filter((item) => item !== current) : [];
-    if (!modal || !select || !lesson) return;
-
-    modal.dataset.duplicateLessonId = lessonId;
-    if (summary) {
-        summary.textContent = `Você vai criar uma cópia de "${lesson.title}" em outra turma.`;
-    }
-    if (feedback) {
-        feedback.hidden = true;
-        feedback.textContent = "";
-    }
-
-    select.innerHTML = classes.length
-        ? classes.map((className) => `<option value="${escapeHtml(className)}">${escapeHtml(className)}</option>`).join("")
-        : `<option value="">Nenhuma outra turma disponível</option>`;
-    select.disabled = !classes.length;
-    modal.hidden = false;
-}
-
-function closeDuplicateModal() {
-    const modal = document.querySelector("[data-duplicate-modal]");
-    if (!modal) return;
-    modal.hidden = true;
-    modal.dataset.duplicateLessonId = "";
-}
-
-function confirmDuplicateModal() {
-    const modal = document.querySelector("[data-duplicate-modal]");
-    const select = modal?.querySelector("[data-duplicate-modal-select]");
-    const feedback = modal?.querySelector("[data-duplicate-modal-feedback]");
-    if (!modal || !select) return;
-
-    const lessonId = modal.dataset.duplicateLessonId || "";
-    const targetClass = select.value || "";
-    if (!targetClass) {
-        if (feedback) {
-            feedback.hidden = false;
-            feedback.textContent = "Escolha uma turma para continuar.";
-        }
-        return;
-    }
-
-    duplicateLessonToClass(lessonId, targetClass);
-    closeDuplicateModal();
+    const source = readLessonsLibrary().find((item) => item.id === lessonId);
+    if (source) openLessonDestinationModal(source, { updateSource: false });
 }
 
 function renameModalTemplate() {
@@ -1216,7 +1310,7 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
 
     return {
         id: lessonId,
-        className: scope === LESSON_SCOPE_CLASS ? turma : "",
+        className: scope === LESSON_SCOPE_CLASS ? (existing?.id === lessonId ? existing.className : turma) : "",
         scope,
         title: summary.title,
         summary: summary.summary,
@@ -1375,7 +1469,7 @@ function materialGroupLabel(type) {
     if (type === "quiz") return "Quiz";
     if (type === "flashcards") return "Flashcards";
     if (type === "wheel") return "Roleta";
-    if (type === "hangman") return "Força";
+    if (type === "hangman") return "Forca";
     if (type === "crossword") return "Palavras cruzadas";
     if (type === "wordsearch") return "Caça-palavras";
     if (type === "memory") return "Jogo da memória";
@@ -1917,72 +2011,21 @@ function hydrateClassCards() {
 }
 
 function bindSaveLessonAction() {
-    const buttons = document.querySelectorAll("[data-save-lesson]");
-    if (!buttons.length) return;
-
-    buttons.forEach((button) => {
-        button.addEventListener("click", async (event) => {
+    document.querySelectorAll("[data-save-lesson]").forEach((button) => {
+        button.addEventListener("click", (event) => {
             event.preventDefault();
-            if (button.getAttribute("aria-busy") === "true") return;
-            button.setAttribute("aria-busy", "true");
             try {
-                const material = button.dataset.saveMaterial || "";
-                const previousLessonsCount = readLessonsLibrary().length;
-                if (material && typeof setCurrentMaterialType === "function") {
-                    setCurrentMaterialType(material);
-                }
-                if (material === "lesson" && typeof saveLessonSequenceToClass === "function") {
-                    const saveMode = button.dataset.saveScope || LESSON_SCOPE_CLASS;
-                    saveLessonSequenceToClass(saveMode);
-                    if (typeof window.educariaEvaluateActivationMilestones === "function") {
-                        window.educariaEvaluateActivationMilestones("save_lesson_sequence", {
-                            markCompletion: true
-                        });
-                    }
-                    window.location.href = button.dataset.saveTarget || "turma.html";
-                    return;
-                }
-                const saveMode = button.dataset.saveScope || LESSON_SCOPE_CLASS;
-                const savedRecord = saveMode === LESSON_SCOPE_LIBRARY
-                    ? saveCurrentLessonToLibrary(material, { skipSync: true, source: "explicit-save" })
-                    : saveCurrentLessonToClass(material, { skipSync: true, source: "explicit-save" });
-                const finalizedRecord = savedRecord
-                    ? updateLessonRecordById(savedRecord.id, (lesson) => ({
-                        ...lesson,
-                        status: LESSON_STATUS_READY
-                    }), { skipSync: true, source: "explicit-save" })
-                    : null;
-                const remoteSave = await syncLessonRecordWithFirebase(finalizedRecord || savedRecord);
-                if (typeof educariaTrack === "function") {
-                    educariaTrack("lesson_saved", {
-                        materialType: finalizedRecord?.materialType || savedRecord?.materialType || material || "slides",
-                        scope: saveMode,
-                        target: button.dataset.saveTarget || "",
-                        synced: remoteSave.synced
-                    });
-                }
-
-                const lessonsCount = readLessonsLibrary().length;
-                const createdFirstActivity = lessonsCount > 0 && previousLessonsCount === 0;
-                if (createdFirstActivity && typeof window.educariaMarkMilestone === "function") {
-                    window.educariaMarkMilestone("activation_first_activity_saved", {
-                        source: "save_lesson_action",
-                        materialType: savedRecord?.materialType || material || "slides",
-                        scope: saveMode,
-                        lessonsCount
-                    });
-                }
-                if (typeof window.educariaEvaluateActivationMilestones === "function") {
-                    window.educariaEvaluateActivationMilestones("save_lesson_action", {
-                        markCompletion: true
-                    });
-                }
-                window.location.href = button.dataset.saveTarget || "turma.html";
+                const material = button.dataset.saveMaterial || document.body.dataset.materialType || "slides";
+                const initialScope = button.dataset.saveScope || LESSON_SCOPE_CLASS;
+                const active = material === "lesson" && typeof activeLessonSequenceRecord === "function"
+                    ? activeLessonSequenceRecord() : readActiveLesson();
+                const scope = active?.materialType === material ? normalizeLessonScope(active) : initialScope;
+                const record = material === "lesson" && typeof buildLessonSequenceRecord === "function"
+                    ? buildLessonSequenceRecord(scope) : buildLessonRecord(material, scope);
+                openLessonDestinationModal(record, { initialScope, markReady: true });
             } catch (error) {
-                console.warn("EducarIA explicit save failed:", error);
-                showLibraryToast("Não foi possível salvar. Mantenha esta página aberta e tente novamente.");
-            } finally {
-                button.removeAttribute("aria-busy");
+                console.warn("EducarIA prepare save failed:", error);
+                showLibraryToast("Não foi possível preparar o salvamento. Mantenha esta página aberta e tente novamente.");
             }
         });
     });
@@ -2500,21 +2543,6 @@ function bindLessonActivationLinks() {
     }
 
     document.addEventListener("click", (event) => {
-        if (event.target.closest("[data-duplicate-modal-cancel]")) {
-            closeDuplicateModal();
-            return;
-        }
-
-        if (event.target.closest("[data-duplicate-modal-confirm]")) {
-            confirmDuplicateModal();
-            return;
-        }
-
-        if (event.target.matches("[data-duplicate-modal]")) {
-            closeDuplicateModal();
-            return;
-        }
-
         if (event.target.closest("[data-rename-modal-cancel]")) {
             closeRenameModal();
             return;

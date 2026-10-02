@@ -2967,24 +2967,24 @@ function loadInitialLessonSequence() {
     lessonSequenceState = normalizeLessonSequenceState(localDraft);
 }
 
-function saveLessonSequenceToLibrary(scope = "class") {
+function buildLessonSequenceRecord(scope = "class") {
     syncBlocksWithSavedMaterials();
     persistLessonSequence();
 
     const turma = currentTurmaName();
-    const lessons = readLessonsLibrary();
     const activeLesson = activeLessonSequenceRecord();
     const lessonId = activeLesson && ((activeLesson.scope || (activeLesson.className ? "class" : "library")) === scope)
         ? activeLesson.id
-        : `lesson-${Date.now()}`;
+        : newLessonRecordId();
     const rawDraft = JSON.stringify(lessonSequenceState);
     const summary = typeof summarizeLessonSequenceDraft === "function"
         ? summarizeLessonSequenceDraft(rawDraft)
         : { title: lessonSequenceState.title || "Aula completa", summary: `${lessonSequenceState.blocks.length} blocos`, type: "Aula completa", materialType: "lesson" };
 
     const record = {
+        ...(activeLesson?.id === lessonId ? activeLesson : {}),
         id: lessonId,
-        className: scope === "class" ? (turma || "Turma") : "",
+        className: scope === "class" ? (activeLesson?.id === lessonId ? activeLesson.className : (turma || "Turma")) : "",
         scope,
         title: summary.title,
         summary: summary.summary,
@@ -2994,7 +2994,13 @@ function saveLessonSequenceToLibrary(scope = "class") {
         draft: rawDraft
     };
 
-    const nextLessons = lessons.filter((lesson) => lesson.id !== lessonId);
+    return record;
+}
+
+function saveLessonSequenceToLibrary(scope = "class") {
+    const record = buildLessonSequenceRecord(scope);
+    const lessonId = record.id;
+    const nextLessons = readLessonsLibrary().filter((lesson) => lesson.id !== lessonId);
     nextLessons.unshift(record);
     writeLessonsLibrary(nextLessons);
     writeActiveLessonId(lessonId);

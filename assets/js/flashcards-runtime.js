@@ -131,7 +131,7 @@ function fitFlashcardFaceContent(face) {
     const title = face.querySelector("strong");
     if (!title) return;
 
-    if (face.clientWidth < 220 || face.clientHeight < 220) {
+    if (face.clientWidth < 1 || face.clientHeight < 1) {
         return false;
     }
 
@@ -145,7 +145,7 @@ function fitFlashcardFaceContent(face) {
         : density === "compact"
             ? Math.min(face.clientWidth * 0.16, face.clientHeight * 0.21, 100)
             : Math.min(face.clientWidth * 0.2, face.clientHeight * 0.26, 128);
-    const minTitleSize = density === "dense" ? 32 : density === "compact" ? 38 : 48;
+    const minTitleSize = density === "dense" ? 28 : density === "compact" ? 32 : 40;
     const initialTitleSize = Math.max(minTitleSize, Math.round(maxTitleSize));
     const maxExampleSize = exampleVisible ? Math.min(face.clientWidth * 0.038, 28) : 0;
     const minExampleSize = 18;
@@ -345,6 +345,8 @@ function renderFlashcardsPresentation(cards, controls = {}) {
 
     document.addEventListener("keydown", (event) => {
         if (event.defaultPrevented) return;
+        if (event.ctrlKey || event.metaKey || event.altKey || event.target?.closest?.("input, textarea, select, [contenteditable='true']")) return;
+        if ((event.key === " " || event.key === "Enter") && event.target?.closest?.("button, a, [role='button']")) return;
         if (event.key === "ArrowLeft") {
             event.preventDefault();
             if (currentIndex === 0) return;

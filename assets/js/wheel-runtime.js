@@ -137,20 +137,18 @@ function buildWheelDiscSvg(segments) {
 function buildWheelLabels(segments, editEnabled = false) {
     const slice = (Math.PI * 2) / segments.length;
     const labelRadius = segments.length >= 10 ? 35 : segments.length >= 7 ? 33 : 31;
-    const maxChars = segments.length >= 10 ? 8 : segments.length >= 7 ? 10 : 13;
-    const fontClass = segments.length >= 10 ? "is-compact" : segments.length >= 7 ? "is-regular" : "is-wide";
+    const numbered = editEnabled || segments.length > 6 || segments.some((segment) => segment.text.length > 18);
 
     return segments.map((segment, index) => {
         const midAngle = -Math.PI / 2 + index * slice + slice / 2;
         const x = 50 + Math.cos(midAngle) * labelRadius;
         const y = 50 + Math.sin(midAngle) * labelRadius;
-        const labelContent = editEnabled
-            ? escapeWheelText(segment.text)
-            : wrapWheelLabel(segment.text, maxChars, 4).map((line) => `<span>${escapeWheelText(line)}</span>`).join("");
-        const editableAttrs = editEnabled ? ` data-inline-editable="segment:${index}"` : "";
+        const labelContent = numbered
+            ? String((segment.index ?? index) + 1)
+            : wrapWheelLabel(segment.text, 12, 2).map((line) => `<span>${escapeWheelText(line)}</span>`).join("");
 
         return `
-            <div class="wheel-stage-label ${fontClass}" style="left:${x}%;top:${y}%;"${editableAttrs}>
+            <div class="wheel-stage-label ${numbered ? "is-number" : "is-wide"}" style="left:${x}%;top:${y}%;" title="${escapeWheelText(segment.text)}">
                 ${labelContent}
             </div>
         `;
@@ -177,6 +175,7 @@ function renderWheelApplication() {
 
     const resultRoot = document.querySelector("[data-wheel-stage-result]");
     const svgRoot = document.querySelector("[data-wheel-stage-svg]");
+    const optionsRoot = document.querySelector("[data-wheel-stage-options]");
     const spinButtons = document.querySelectorAll("[data-wheel-spin]");
     const shouldEliminateWinner = (controls["roleta-eliminacao"] || "Nao") === "Sim";
 
@@ -227,6 +226,9 @@ function renderWheelApplication() {
             <div class="wheel-stage-disc" data-wheel-stage-disc>${buildWheelDiscSvg(activeSegments)}</div>
             <div class="wheel-stage-labels" data-wheel-stage-labels>${buildWheelLabels(activeSegments, inlineEdit?.enabled)}</div>
         `;
+        if (optionsRoot) optionsRoot.innerHTML = activeSegments.map((segment, index) => `
+            <li><b>${segment.index + 1}</b><span${inlineEdit?.enabled ? ` data-inline-editable="segment:${index}"` : ""}>${escapeWheelText(segment.text)}</span></li>
+        `).join("");
         applyRotation(normalizedRotation(), "none");
         inlineEdit?.syncUi();
     };
@@ -335,13 +337,21 @@ function renderWheelApplication() {
 
     renderDisc();
     persistState();
+    const playground = svgRoot?.closest(".wheel-stage-playground");
+    const fitWheel = () => {
+        if (!playground || !svgRoot) return;
+        svgRoot.style.width = `${Math.max(1, Math.min(playground.clientWidth, playground.clientHeight, 720))}px`;
+    };
+    if (playground && typeof ResizeObserver === "function") new ResizeObserver(fitWheel).observe(playground);
+    window.addEventListener("resize", fitWheel, { passive: true });
+    fitWheel();
 
     spinButtons.forEach((button) => {
         button.addEventListener("click", spin);
     });
 
     document.addEventListener("keydown", (event) => {
-        if (event.code !== "Space" || inlineEdit?.enabled) return;
+        if (event.defaultPrevented || event.code !== "Space" || inlineEdit?.enabled || event.target?.closest?.("button, a, input, textarea, select, [contenteditable='true']")) return;
         event.preventDefault();
         spin();
     });

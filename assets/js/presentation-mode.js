@@ -53,9 +53,7 @@
             ? 0
             : topbar?.offsetHeight || 0;
         const availableHeight = window.innerHeight - padding - gap - topbarHeight;
-        const minimumHeight = Math.min(320, Math.max(220, Math.floor(window.innerHeight * 0.42)));
-
-        shell.style.setProperty("--presentation-stage-height", `${Math.max(minimumHeight, availableHeight)}px`);
+        shell.style.setProperty("--presentation-stage-height", `${Math.max(0, availableHeight)}px`);
         document.dispatchEvent(new CustomEvent("educaria-presentation-layout-change"));
     }
 
@@ -96,7 +94,7 @@
         restore.className = "presentation-topbar-restore";
         restore.dataset.presentationTopbarRestore = "";
         restore.setAttribute("aria-label", "Mostrar novamente a barra superior");
-        restore.innerHTML = '<span aria-hidden="true">⌄</span> Mostrar topo';
+        restore.innerHTML = '<span aria-hidden="true">⌄</span> Mostrar controles';
         restore.addEventListener("click", () => {
             const topbarButton = document.querySelector("[data-presentation-topbar]");
             if (document.body.classList.contains("presentation-topbar-collapsed")) {
@@ -126,7 +124,7 @@
         topbar.dataset.presentationTopbar = "";
         topbar.setAttribute("aria-pressed", "false");
         topbar.setAttribute("aria-label", "Ocultar ou mostrar barra superior");
-        topbar.textContent = "Topo";
+        topbar.textContent = "Ocultar controles";
 
         const print = document.createElement("button");
         print.type = "button";
@@ -189,9 +187,13 @@
         });
 
         document.addEventListener("keydown", (event) => {
-            if (isEditableTarget(event.target)) return;
+            if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isEditableTarget(event.target)) return;
 
             const key = event.key;
+            // Letters belong to the word game; native button activation belongs to the focused control.
+            if (document.body.dataset.materialType === "hangman" && /^[a-z]$/i.test(key)) return;
+            if ((key === " " || key === "Enter") && event.target?.closest?.("button, a, [role='button']")) return;
+            if (key === " " && document.querySelector("[data-flashcard-flip]")) return;
             if (key === "f" || key === "F") {
                 event.preventDefault();
                 toggleFullscreen(document.querySelector("[data-presentation-fullscreen]"));

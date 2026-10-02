@@ -69,6 +69,7 @@ function harness(db = database()) {
         CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } },
         materialGroupLabel: () => "Quiz", normalizeSearchText: (text) => String(text).toLowerCase(),
         readCurrentTeacher: () => ({ uid }),
+        getAvailableClasses: () => ["8º Ano A", "8º Ano B", "9º Ano A"],
         readActiveLessonId: () => activeId, writeActiveLessonId: (value) => { activeId = value; },
         educariaScopedKey: (key) => `${key}:${uid}`,
         firebaseServices: () => ({ db: { collection: () => ({ doc: () => ({ collection: () => collection }) }) } })
@@ -282,4 +283,79 @@ test("draft autosave reports quota failures and exposes a recovery event", () =>
     const result = vm.runInContext('saveBuilderState({ key: "draft", stackSelector: "[data-slides-stack]" })', context);
     assert.equal(result.saved, false);
     assert.equal(events.at(-1).type, "educaria-storage-error");
+});
+
+test("saving in multiple classes creates independent IDs without changing the library original", () => {
+    const h = harness();
+    h.put(sample());
+    h.run('saveLessonToDestinations(readLessonsLibrary()[0], [{scope:"class",className:"8º Ano A"},{scope:"class",className:"8º Ano B"}], {updateSource:false})');
+    assert.equal(h.local().length, 3);
+    assert.equal(new Set(h.local().map((record) => record.id)).size, 3);
+    assert.equal(h.local().find((record) => record.id === "lesson-test").scope, "library");
+    assert.deepEqual(h.local().filter((record) => record.scope === "class").map((record) => record.className).sort(), ["8º Ano A", "8º Ano B"]);
+});
+
+test("explicit save updates only the source destination and creates new copies for the others", () => {
+    const h = harness();
+    h.put(sample("Original", {scope:"class",className:"8º Ano A",syncRevision:"r1"}));
+    h.run('saveLessonToDestinations({...readLessonsLibrary()[0],title:"Revisado"}, [{scope:"class",className:"8º Ano A"},{scope:"class",className:"8º Ano B"},{scope:"library"}], {markReady:true})');
+    assert.equal(h.local().length, 3);
+    assert.equal(h.local().find((record) => record.id === "lesson-test").className, "8º Ano A");
+    assert.ok(h.local().every((record) => record.title === "Revisado" && record.status === "ready"));
+    assert.ok(h.local().filter((record) => record.id !== "lesson-test").every((record) => record.syncRevision === ""));
+});
+
+test("duplicate destinations are deduplicated and invalid selections leave storage unchanged", () => {
+    const h = harness();
+    h.put(sample());
+    assert.throws(() => h.run('saveLessonToDestinations(readLessonsLibrary()[0], [{scope:"class",className:"Turma removida"}])'));
+    assert.throws(() => h.run('saveLessonToDestinations(readLessonsLibrary()[0], [])'));
+    assert.equal(h.local().length, 1);
+    h.run('saveLessonToDestinations(readLessonsLibrary()[0], [{scope:"class",className:"8º Ano A"},{scope:"class",className:"8º Ano A"}])');
+    assert.equal(h.local().length, 2);
+});
+
+test("teachers without classes can still save to their personal library", () => {
+    const h = harness();
+    h.context.getAvailableClasses = () => [];
+    h.context.input = sample();
+    h.run('saveLessonToDestinations(input,[{scope:"library"}])');
+    assert.equal(h.local().length, 1);
+    assert.equal(h.local()[0].scope, "library");
+});
+
+test("building an existing class material does not move it to the last selected class", () => {
+    const h = harness();
+    h.put(sample("Original", {scope:"class",className:"8º Ano A"}));
+    Object.assign(h.context, {
+        currentClassName:()=>"8º Ano B", forceSyncDraftFromPage(){},
+        summarizeCurrentDraft:()=>({rawDraft:"{}",summary:{title:"Atualizado",summary:"",type:"Quiz"},materialType:"quiz"})
+    });
+    h.context.document.getElementById=()=>null;
+    const start=source.indexOf("function buildLessonRecord(");
+    const end=source.indexOf("function persistLessonRecord(",start);
+    vm.runInContext(source.slice(start,end),h.context);
+    assert.equal(h.run('buildLessonRecord("quiz","class").className'),"8º Ano A");
+    assert.equal(h.run('buildLessonRecord("quiz","class").id'),"lesson-test");
+});
+
+test("multi-destination local quota failure is atomic", () => {
+    const h = harness();
+    h.put(sample());
+    h.localStorage.setItem = () => { throw new Error("QuotaExceededError"); };
+    assert.throws(() => h.run('saveLessonToDestinations(readLessonsLibrary()[0],[{scope:"class",className:"8º Ano A"},{scope:"class",className:"8º Ano B"}])'), /QuotaExceeded/);
+    assert.equal(h.local().length, 1);
+});
+
+test("retrying pending multi-class sync uses the same records and does not duplicate copies", async () => {
+    const h = harness();
+    h.put(sample());
+    h.run('saveLessonToDestinations(readLessonsLibrary()[0],[{scope:"class",className:"8º Ano A"},{scope:"class",className:"8º Ano B"}])');
+    const ids = h.local().map((record) => record.id).sort();
+    h.db.failTransactions = true;
+    assert.equal((await h.sync()).synced, false);
+    h.db.failTransactions = false;
+    assert.equal((await h.sync()).synced, true);
+    assert.deepEqual(h.local().map((record) => record.id).sort(), ids);
+    assert.equal(h.db.docs.size, 3);
 });

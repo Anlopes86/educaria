@@ -1119,6 +1119,16 @@ body.lesson-sequence-route-hidden .lesson-sequence-stage-route {
 }
 
 /* A atividade aberta dentro da Aula completa mantém só os controles necessários. */
+@media (max-height: 650px) and (min-width: 701px) {
+    .lesson-sequence-stage-page .lesson-sequence-stage-topbar { min-height: 0; padding: 6px 10px; }
+    .lesson-sequence-stage-route { grid-template-columns: minmax(0, 1fr); }
+    .lesson-sequence-stage-objective { display: none; }
+    .lesson-sequence-player-item { padding: 6px 10px; grid-template-columns: 24px minmax(0, 1fr); }
+    .lesson-sequence-player-item .lesson-sequence-player-order { width: 24px; height: 24px; }
+    .lesson-sequence-player-item small { display: none; }
+    .lesson-sequence-stage-nav { min-height: 44px; padding: 5px 12px; }
+}
+
 body.lesson-sequence-embedded .presentation-topbar,
 body.lesson-sequence-embedded .presentation-topbar-restore,
 body.lesson-sequence-embedded [data-presentation-restore-topbar] {
@@ -1126,6 +1136,8 @@ body.lesson-sequence-embedded [data-presentation-restore-topbar] {
 }
 
 body.lesson-sequence-embedded .presentation-shell {
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0;
     width: 100vw;
     height: 100dvh;
     min-height: 100dvh;

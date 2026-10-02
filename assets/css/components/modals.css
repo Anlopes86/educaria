@@ -20,6 +20,50 @@
     box-shadow: 0 28px 60px -34px rgba(15, 23, 42, 0.42);
 }
 
+.lesson-destination-dialog {
+    padding: 0;
+    border: 0;
+    border-radius: 24px;
+    background: transparent;
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+    margin: auto;
+    color: var(--navy-dark);
+}
+
+.lesson-destination-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.52);
+    backdrop-filter: blur(5px);
+}
+
+.lesson-destination-card {
+    width: min(580px, calc(100vw - 24px));
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+    gap: 12px;
+}
+
+.lesson-destination-card p { margin: 0; }
+.lesson-destination-card .platform-field { gap: 6px; }
+
+.lesson-destination-card header h2 { margin: 6px 0; }
+.lesson-destination-card header p { margin: 0; overflow-wrap: anywhere; }
+.lesson-destination-choices { border: 0; padding: 0; min-width: 0; }
+.lesson-destination-choices legend { margin-bottom: 8px; font-weight: 700; }
+.lesson-destination-choices > div { display: grid; gap: 8px; max-height: 240px; overflow: auto; }
+.lesson-destination-choice {
+    display: flex; align-items: center; gap: 12px; padding: 12px;
+    border: 1px solid #d8e4e7; border-radius: 14px; cursor: pointer;
+}
+.lesson-destination-choice:has(input:checked) { background: #e4f4f0; border-color: #0f766e; }
+.lesson-destination-choice input { width: 20px; height: 20px; flex: 0 0 20px; accent-color: #0f766e; }
+.lesson-destination-choice small { display: block; color: #475569; }
+.lesson-destination-note { margin: 0; font-size: 0.9rem; color: #475569; }
+.lesson-destination-results { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.lesson-destination-results li { display: grid; gap: 3px; padding: 10px; background: #f1f5f9; border-radius: 10px; }
+.lesson-destination-results span { font-size: 0.9rem; }
+.lesson-destination-card .utility-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
 .ai-ready-checklist {
     display: grid;
     gap: 8px;
