@@ -293,6 +293,16 @@ function renderHangmanApplication() {
         applyGuess(key);
     });
 
+    window.educariaPresentationProgress = {
+        capture: () => ({ currentIndex, guessedLetters: [...guessedLetters], wrongLetters: [...wrongLetters], revealAnswer }),
+        restore(saved) {
+            if (!saved) return;
+            currentIndex = Math.max(0, Math.min(rounds.length - 1, Number(saved.currentIndex) || 0));
+            guessedLetters = new Set(saved.guessedLetters || []); wrongLetters = new Set(saved.wrongLetters || []);
+            revealAnswer = Boolean(saved.revealAnswer);
+            renderStage();
+        }
+    };
     renderStage();
 }
 

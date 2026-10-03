@@ -298,6 +298,16 @@ function renderMatchApplication() {
     if (leftLabelRoot) leftLabelRoot.textContent = state.controls["ligar-coluna-a"];
     if (rightLabelRoot) rightLabelRoot.textContent = state.controls["ligar-coluna-b"];
 
+    window.educariaPresentationProgress = {
+        capture: () => ({ matchedIds: [...matchedIds], rightItems, selectedLeft, selectedRight, status: statusRoot?.textContent }),
+        restore(saved) {
+            if (!saved) return;
+            matchedIds = new Set(saved.matchedIds || []);
+            if (saved.rightItems?.length === state.pairs.length) rightItems = saved.rightItems;
+            selectedLeft = saved.selectedLeft || ""; selectedRight = saved.selectedRight || "";
+            renderLists(); updateStatus(saved.status || "Selecione um item de cada coluna");
+        }
+    };
     buildRightItems();
     renderLists();
     updateStatus("Selecione um item de cada coluna");

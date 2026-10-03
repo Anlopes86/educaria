@@ -34,6 +34,23 @@ Não há redirecionamento automático antes da confirmação. O professor conclu
 
 Os testes no navegador usam dados fictícios. A confirmação remota foi coberta com testes simulados, sem gravar no Firebase de produção. Uma TV física, o fluxo completo em outros navegadores e todas as combinações de conteúdo continuam exigindo validação adicional.
 
-### Próxima rodada visual
+### Refinamentos finais implementados
 
-Ainda não foram implementados todos os refinamentos da análise: numeração/progresso da memória, hierarquia do quiz, novos ajustes por formato e preservação do progresso ao trocar e retornar a blocos da aula completa são itens separados.
+- A barra da apresentação destaca tela cheia e ocultação dos controles. Impressão, edição e retorno ficam em “Mais opções”, com fechamento por Escape e clique fora. O menu cabe também em telas estreitas.
+- A memória mostra cartas numeradas, pares encontrados, tentativas e reinício. A grade considera largura e altura; cartas com textos muito longos permitem rolagem para não perder conteúdo.
+- O quiz dá mais destaque à pergunta, amplia alternativas e oferece retorno textual além das cores. A explicação mantém o foco dentro da janela e pode ser fechada por Escape.
+- O debate tem cronômetro por rodada, com iniciar, pausar e reiniciar. Trocar de rodada, sair da atividade ou ocultar a página pausa a contagem. Em janelas baixas, a diagramação prioriza a proposição, os lados e o desafio.
+- Ligue os pontos tem seleção mais evidente, marca de acerto e linhas legíveis. O mapa mental reduz cabeçalhos em telas baixas para preservar o espaço da explicação com rolagem.
+- Slides com imagem que falha no carregamento passam a usar a área de texto, sem manter um espaço vazio para a imagem.
+- Os 11 formatos recuperam o progresso ao trocar de bloco e voltar na mesma aula completa: posição, respostas, pares, letras, resultados ou temporizadores, conforme a atividade. O cronômetro retorna pausado. Um sorteio em andamento mantém o resultado já escolhido, sem sortear novamente.
+
+Essa retomada é temporária, na memória da apresentação: recarregar a página, fechá-la ou abrir outra apresentação inicia uma nova sessão. Não altera o conteúdo salvo nem consome créditos de IA. A troca de bloco fica protegida enquanto a próxima atividade carrega.
+
+### Validação dos refinamentos
+
+- 64 testes automatizados do front, incluindo captura/restauração dos 11 formatos, isolamento dos blocos, navegação durante carregamento e regras do cronômetro.
+- Sintaxe, referências locais, traduções e espaços em branco verificados.
+- Conferência local do quiz, memória, debate, ligue os pontos e mapa mental, incluindo janela de 1280 × 600; menu e quiz em 390 × 844.
+- Ocultação dos controles, navegação por teclado, feedback de verdadeiro/falso, fechamento da explicação e retomada entre blocos conferidos com dados fictícios.
+
+Conteúdos excepcionalmente longos ainda podem precisar de rolagem. Não houve consumo de IA nem gravação em turmas reais durante os testes.

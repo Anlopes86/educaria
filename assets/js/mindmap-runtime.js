@@ -337,6 +337,16 @@ function renderMindmapApplication() {
         });
     }
 
+    window.educariaPresentationProgress = {
+        capture: () => ({ activeIndex, layout: state.controls["mapa-layout"], scrollTop: detailTextRoot?.scrollTop || 0 }),
+        restore(saved) {
+            if (!saved) return;
+            activeIndex = Math.max(0, Math.min(state.branches.length - 1, Number(saved.activeIndex) || 0));
+            state.controls["mapa-layout"] = saved.layout || state.controls["mapa-layout"];
+            renderStatic(); renderMap(); renderDetail();
+            if (detailTextRoot) detailTextRoot.scrollTop = saved.scrollTop || 0;
+        }
+    };
     renderStatic();
     renderMap();
     renderDetail();

@@ -146,6 +146,9 @@ function renderQuizApplication(questions, controls = {}) {
     let currentIndex = 0;
     let saveTimer = 0;
     let inlineEdit = null;
+    const answers = {};
+    const feedback = document.querySelector("[data-quiz-answer-feedback]");
+    let modalReturnFocus = null;
 
     const state = {
         controls: {
@@ -177,7 +180,10 @@ function renderQuizApplication(questions, controls = {}) {
     };
 
     const closeModal = () => {
-        if (modal) modal.hidden = true;
+        if (modal && !modal.hidden) {
+            modal.hidden = true;
+            modalReturnFocus?.focus?.({ preventScroll: true });
+        }
     };
 
     const openModal = (question) => {
@@ -188,8 +194,32 @@ function renderQuizApplication(questions, controls = {}) {
             ${question.criteria ? `<p><strong>Critério:</strong> <span data-inline-editable="question:criteria">${escapeHtml(question.criteria)}</span></p>` : ""}
             ${question.model ? `<p><strong>Resposta modelo:</strong> <span data-inline-editable="question:model" data-inline-editable-multiline="true">${escapeHtml(question.model)}</span></p>` : ""}
         `;
+        modalReturnFocus = document.activeElement;
         modal.hidden = false;
+        closeModalButton?.focus();
         inlineEdit?.syncUi();
+    };
+
+    const paintAnswer = () => {
+        const question = state.questions[currentIndex];
+        const selectedKey = answers[currentIndex];
+        const correctKey = normalizeCorrectKey(question);
+        optionsRoot.querySelectorAll(".option-btn").forEach((node) => {
+            const key = node.dataset.runtimeOption;
+            node.classList.toggle("selected", key === selectedKey);
+            node.classList.toggle("is-correct", Boolean(selectedKey && correctKey && key === correctKey));
+            node.classList.toggle("is-wrong", Boolean(selectedKey && correctKey && key === selectedKey && key !== correctKey));
+            node.classList.toggle("is-neutral", Boolean(selectedKey && correctKey && key !== selectedKey && key !== correctKey));
+            node.setAttribute("aria-pressed", String(key === selectedKey));
+        });
+        if (!feedback) return;
+        const correctOption = question.options.find((option) => option.key === correctKey);
+        feedback.dataset.state = !selectedKey || !correctKey ? "idle" : selectedKey === correctKey ? "correct" : "wrong";
+        feedback.textContent = question.type === "Pergunta aberta" ? "Converse com a turma e revele a resposta quando quiser."
+            : !selectedKey ? "Escolha uma alternativa para conferir a resposta."
+            : !correctKey ? "Resposta selecionada. Confira a explicação com a turma."
+            : selectedKey === correctKey ? "✓ Resposta correta! Veja a explicação para aprofundar."
+            : `↻ Vamos revisar. Resposta correta: ${correctOption?.value || correctKey}.`;
     };
 
     const paint = () => {
@@ -199,11 +229,14 @@ function renderQuizApplication(questions, controls = {}) {
         if (title) title.textContent = state.controls["quiz-tema"];
         if (classLabel) classLabel.textContent = turma || state.controls["quiz-tema"];
         if (counter) counter.textContent = `${currentIndex + 1} de ${state.questions.length}`;
+        const stageCounter = document.querySelector("[data-quiz-stage-counter]");
+        if (stageCounter) stageCounter.textContent = `Questão ${currentIndex + 1} de ${state.questions.length}`;
         prompt.textContent = question.prompt;
         if (helper) helper.textContent = question.type;
         prompt.classList.toggle("quiz-application-prompt--open", isOpenQuestion);
         optionsRoot.classList.toggle("quiz-application-options--open", isOpenQuestion);
         cardRoot?.classList.toggle("quiz-application-card--open", isOpenQuestion);
+        optionsRoot.classList.toggle("quiz-application-options--binary", isBinaryQuestion(question));
         closeModal();
 
         if (isOpenQuestion) {
@@ -222,6 +255,7 @@ function renderQuizApplication(questions, controls = {}) {
 
         prevButton.disabled = currentIndex === 0;
         nextButton.disabled = currentIndex === state.questions.length - 1;
+        paintAnswer();
         inlineEdit?.syncUi();
     };
 
@@ -282,33 +316,9 @@ function renderQuizApplication(questions, controls = {}) {
         const button = event.target.closest("[data-runtime-option]");
         if (!button) return;
 
-        const question = state.questions[currentIndex];
         const selectedKey = button.dataset.runtimeOption || "";
-        const correctKey = normalizeCorrectKey(question);
-
-        optionsRoot.querySelectorAll(".option-btn").forEach((node) => {
-            node.classList.remove("selected", "is-correct", "is-wrong", "is-neutral");
-        });
-
-        optionsRoot.querySelectorAll(".option-btn").forEach((node) => {
-            const optionKey = node.dataset.runtimeOption || "";
-
-            if (optionKey === correctKey) {
-                node.classList.add("is-correct");
-                return;
-            }
-
-            if (optionKey === selectedKey && selectedKey !== correctKey) {
-                node.classList.add("is-wrong", "selected");
-                return;
-            }
-
-            node.classList.add("is-neutral");
-        });
-
-        if (selectedKey === correctKey) {
-            button.classList.add("selected");
-        }
+        answers[currentIndex] = selectedKey;
+        paintAnswer();
     });
 
     revealButton.addEventListener("click", () => {
@@ -333,7 +343,17 @@ function renderQuizApplication(questions, controls = {}) {
     });
 
     document.addEventListener("keydown", (event) => {
-        if (event.defaultPrevented) return;
+        if (modal && !modal.hidden) {
+            if (event.key === "Escape") { event.preventDefault(); closeModal(); }
+            if (event.key === "Tab") {
+                const nodes = [...modal.querySelectorAll('button, [contenteditable="true"]')];
+                const first = nodes[0], last = nodes[nodes.length - 1];
+                if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+                else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+            }
+            return;
+        }
+        if (event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
         if (event.key === "ArrowLeft") {
             event.preventDefault();
             if (currentIndex === 0) return;
@@ -348,6 +368,15 @@ function renderQuizApplication(questions, controls = {}) {
             paint();
         }
     });
+
+    window.educariaPresentationProgress = {
+        capture: () => ({ currentIndex, answers: { ...answers } }),
+        restore(saved) {
+            currentIndex = Math.max(0, Math.min(state.questions.length - 1, Number(saved?.currentIndex) || 0));
+            Object.assign(answers, saved?.answers || {});
+            paint();
+        }
+    };
 
     persistState();
     paint();

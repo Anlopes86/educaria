@@ -39,6 +39,7 @@
             <article class="question-card quiz-application-card quiz-application-card--immersive">
                 <div class="quiz-application-meta">
                     <h2 class="question-text quiz-application-title" data-quiz-application-title>Quiz</h2>
+                    <span class="quiz-application-badge" data-quiz-stage-counter></span>
                 </div>
 
                 <div class="quiz-application-prompt-wrap">
@@ -46,6 +47,7 @@
                 </div>
 
                 <div class="options-container quiz-application-options" data-quiz-application-options></div>
+                <p class="quiz-answer-feedback" data-quiz-answer-feedback role="status" aria-live="polite">Escolha uma alternativa para conferir a resposta.</p>
 
                 <div class="results-actions quiz-application-actions">
                     <button type="button" class="review-btn" data-quiz-application-prev>Anterior</button>
@@ -56,11 +58,11 @@
         </section>
 
         <div class="platform-modal-backdrop quiz-explanation-modal" data-quiz-explanation-modal hidden>
-            <article class="platform-modal-card quiz-explanation-modal-card">
+            <article class="platform-modal-card quiz-explanation-modal-card" role="dialog" aria-modal="true" aria-labelledby="quiz-explanation-heading" tabindex="-1">
                 <div class="quiz-explanation-modal-head">
                     <div>
                         <span class="platform-section-label">Explicação</span>
-                        <h3 data-quiz-explanation-title>Detalhes da resposta</h3>
+                        <h3 id="quiz-explanation-heading" data-quiz-explanation-title>Detalhes da resposta</h3>
                     </div>
                     <button type="button" class="platform-link-button platform-link-secondary" data-quiz-explanation-close>Fechar</button>
                 </div>

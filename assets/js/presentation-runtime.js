@@ -531,6 +531,13 @@ function renderPresentation(slides, draft = {}) {
         if (slide.imageUrl) {
             media.hidden = false;
             media.innerHTML = `<img data-presentation-image alt="${escapeHtml(slide.imagePrompt || slide.title)}" src="${escapeHtml(slide.imageUrl)}">`;
+            media.querySelector("img")?.addEventListener("error", () => {
+                if (state.slides[currentIndex] !== slide) return;
+                media.hidden = true;
+                applySlideLayout(slideRoot, { ...slide, imageUrl: "" });
+                resetMediaStyles();
+                applySlideDensity(slideRoot, copyRoot, slide, viewport);
+            }, { once: true });
             applyMediaAspect(slideRoot, media, () => {
                 applySplitAspect(slideRoot, media);
 
@@ -597,7 +604,7 @@ function renderPresentation(slides, draft = {}) {
     });
 
     document.addEventListener("keydown", (event) => {
-        if (event.defaultPrevented) return;
+        if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || event.target?.closest?.('input, textarea, select, [contenteditable="true"]')) return;
         if (event.key === "ArrowLeft") {
             event.preventDefault();
             if (currentIndex === 0) return;
@@ -613,6 +620,14 @@ function renderPresentation(slides, draft = {}) {
         }
     });
 
+    window.educariaPresentationProgress = {
+        capture: () => ({ currentIndex }),
+        restore(saved) {
+            if (!saved) return;
+            currentIndex = Math.max(0, Math.min(state.slides.length - 1, Number(saved.currentIndex) || 0));
+            paint();
+        }
+    };
     updateViewportMetrics();
     paint();
 

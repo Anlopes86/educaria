@@ -98,6 +98,12 @@
             <div class="presentation-controls presentation-controls--floating debate-floating-controls">
                 <button type="button" class="presentation-nav-button presentation-nav-button--prev" data-debate-stage-prev aria-label="Etapa anterior">Anterior</button>
                 <span class="presentation-counter" data-debate-stage-counter>1 de 3</span>
+                <div class="debate-timer" aria-label="Cronômetro da rodada">
+                    <output class="debate-timer-output" data-debate-timer role="timer" aria-live="off">05:00</output>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-debate-timer-toggle>Iniciar</button>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-debate-timer-reset aria-label="Reiniciar cronômetro da rodada">Reiniciar</button>
+                    <span data-debate-timer-status role="status" aria-live="polite"></span>
+                </div>
                 <button type="button" class="presentation-nav-button presentation-nav-button--next" data-debate-stage-next aria-label="Próxima etapa">Próxima</button>
             </div>
         </section>

@@ -378,6 +378,18 @@ function renderWordsearchApplication() {
         resetNoteMessage();
     });
 
+    window.educariaPresentationProgress = {
+        capture: () => ({ revealSolution, activeEntryIds: [...activeEntryIds], foundEntryIds: [...foundEntryIds], zoomed: boardRoot?.closest(".wordsearch-stage-board-shell")?.classList.contains("is-zoomed") }),
+        restore(saved) {
+            if (!saved) return;
+            revealSolution = Boolean(saved.revealSolution);
+            activeEntryIds.splice(0, activeEntryIds.length, ...(saved.activeEntryIds || []));
+            foundEntryIds.splice(0, foundEntryIds.length, ...(saved.foundEntryIds || []));
+            if (toggleButton) toggleButton.textContent = revealSolution ? "Ocultar gabarito" : "Mostrar gabarito";
+            if (saved.zoomed) document.querySelector("[data-puzzle-zoom]")?.click();
+            syncBankSelectionState(); paintBoard(); resetNoteMessage();
+        }
+    };
     if (typeof ResizeObserver === "function" && boardRoot) {
         const boardShell = boardRoot.closest(".wordsearch-stage-board-shell");
         if (boardShell) {

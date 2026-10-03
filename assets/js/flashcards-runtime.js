@@ -370,6 +370,15 @@ function renderFlashcardsPresentation(cards, controls = {}) {
         }
     });
 
+    window.educariaPresentationProgress = {
+        capture: () => ({ currentIndex, isFlipped }),
+        restore(saved) {
+            if (!saved) return;
+            currentIndex = Math.max(0, Math.min(draftState.cards.length - 1, Number(saved.currentIndex) || 0));
+            isFlipped = Boolean(saved.isFlipped);
+            paint();
+        }
+    };
     persistState();
     paint();
     window.addEventListener("resize", fitVisibleText);

@@ -140,8 +140,25 @@
             window.print();
         });
 
+        const more = document.createElement("details");
+        more.className = "presentation-more";
+        const summary = document.createElement("summary");
+        summary.className = "platform-link-button platform-link-secondary";
+        summary.textContent = "Mais opções";
+        const panel = document.createElement("div");
+        panel.className = "presentation-more-panel";
+        panel.appendChild(print);
+        actions.querySelectorAll("[data-return-to-editor], [data-inline-edit-toggle], [data-debate-inline-edit-toggle], a.platform-link-primary").forEach((node) => panel.appendChild(node));
+        more.append(summary, panel);
+        actions.appendChild(more);
+        panel.addEventListener("click", (event) => {
+            if (event.target.closest("button, a")) more.open = false;
+        });
+        document.addEventListener("click", (event) => { if (!more.contains(event.target)) more.open = false; });
+        more.addEventListener("keydown", (event) => {
+            if (event.key === "Escape") { more.open = false; summary.focus(); event.preventDefault(); }
+        });
         actions.prepend(topbar);
-        actions.prepend(print);
         actions.prepend(fullscreen);
     }
 
@@ -188,11 +205,13 @@
 
         document.addEventListener("keydown", (event) => {
             if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey || isEditableTarget(event.target)) return;
+            if (document.querySelector('[role="dialog"][aria-modal="true"]')?.closest('[hidden]') === null) return;
+            if (document.querySelector("dialog[open]")) return;
 
             const key = event.key;
             // Letters belong to the word game; native button activation belongs to the focused control.
             if (document.body.dataset.materialType === "hangman" && /^[a-z]$/i.test(key)) return;
-            if ((key === " " || key === "Enter") && event.target?.closest?.("button, a, [role='button']")) return;
+            if ((key === " " || key === "Enter") && event.target?.closest?.("button, a, summary, [role='button']")) return;
             if (key === " " && document.querySelector("[data-flashcard-flip]")) return;
             if (key === "f" || key === "F") {
                 event.preventDefault();

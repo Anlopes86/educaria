@@ -185,6 +185,8 @@ function renderWheelApplication() {
     let pendingRemovalIndex = -1;
     let saveTimer = 0;
     let inlineEdit = null;
+    let spinTimer = 0;
+    let finishSpin = null;
 
     const persistState = () => {
         state.segments = state.segments.map((segment, index) => ({ ...segment, index }));
@@ -289,7 +291,7 @@ function renderWheelApplication() {
             resultRoot.textContent = "Girando...";
         }
 
-        window.setTimeout(() => {
+        finishSpin = () => {
             if (resultRoot) {
                 resultRoot.textContent = winner.text;
             }
@@ -300,7 +302,8 @@ function renderWheelApplication() {
 
             isSpinning = false;
             updateButtonsAvailability(false);
-        }, 4800);
+        };
+        spinTimer = window.setTimeout(finishSpin, 4800);
     };
 
     if (typeof createPresentationInlineEditController === "function") {
@@ -335,6 +338,20 @@ function renderWheelApplication() {
         });
     }
 
+    window.educariaPresentationProgress = {
+        capture() {
+            if (isSpinning) { window.clearTimeout(spinTimer); finishSpin?.(); }
+            return { currentRotation, activeSegments, pendingRemovalIndex, result: resultRoot?.textContent };
+        },
+        restore(saved) {
+            if (!saved) return;
+            currentRotation = Number(saved.currentRotation) || 0;
+            activeSegments = Array.isArray(saved.activeSegments) ? saved.activeSegments : activeSegments;
+            pendingRemovalIndex = Number.isInteger(saved.pendingRemovalIndex) ? saved.pendingRemovalIndex : -1;
+            if (resultRoot) resultRoot.textContent = saved.result || "Aguardando giro";
+            renderDisc(); updateButtonsAvailability(!activeSegments.length);
+        }
+    };
     renderDisc();
     persistState();
     const playground = svgRoot?.closest(".wheel-stage-playground");

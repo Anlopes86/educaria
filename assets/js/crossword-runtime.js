@@ -428,6 +428,20 @@ function renderCrosswordApplication() {
         }
         paintBoard();
     });
+    window.educariaPresentationProgress = {
+        capture: () => ({ values: { ...values }, revealAnswers, activeCellKey, activeDirection, correctCells: [...correctCells], incorrectCells: [...incorrectCells], zoomed: boardRoot?.closest(".crossword-stage-board-shell")?.classList.contains("is-zoomed"), note: noteRoot?.textContent }),
+        restore(saved) {
+            if (!saved) return;
+            Object.assign(values, saved.values || {});
+            revealAnswers = Boolean(saved.revealAnswers); activeCellKey = saved.activeCellKey || ""; activeDirection = saved.activeDirection || "across";
+            (saved.correctCells || []).forEach((key) => correctCells.add(key));
+            (saved.incorrectCells || []).forEach((key) => incorrectCells.add(key));
+            recomputeSolvedEntries(); renderClues(); paintBoard();
+            if (toggleButton) toggleButton.textContent = revealAnswers ? "Ocultar gabarito" : "Mostrar gabarito";
+            if (saved.zoomed) document.querySelector("[data-puzzle-zoom]")?.click();
+            if (noteRoot && saved.note) noteRoot.textContent = saved.note;
+        }
+    };
 }
 
 document.addEventListener("DOMContentLoaded", renderCrosswordApplication);

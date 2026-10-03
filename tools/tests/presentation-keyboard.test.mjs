@@ -55,7 +55,7 @@ test("modified keys do not trigger presentation actions",()=>{
 test("hangman accepts only single unhandled letters, never ArrowRight, Tab or Enter",()=>{
     let onKey; const guesses=[];
     const start=hangmanSource.lastIndexOf('    document.addEventListener("keydown"');
-    const end=hangmanSource.indexOf('\n    renderStage();',start);
+    const end=hangmanSource.indexOf('\n    window.educariaPresentationProgress',start);
     vm.runInNewContext(hangmanSource.slice(start,end),{
         document:{addEventListener:(_,fn)=>{onKey=fn;}},
         api:{normalizeAnswer:key=>key.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase()},

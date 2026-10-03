@@ -91,8 +91,9 @@ function fitMemoryTileLabel(label) {
     const tile = label.closest(".memory-stage-tile");
     if (!tile) return;
 
-    const availableWidth = Math.max(tile.clientWidth - 36, 72);
-    const availableHeight = Math.max(tile.clientHeight - 36, 52);
+    const tileStyle = window.getComputedStyle(tile);
+    const availableWidth = Math.max(1, tile.clientWidth - parseFloat(tileStyle.paddingLeft) - parseFloat(tileStyle.paddingRight));
+    const availableHeight = Math.max(1, tile.clientHeight - parseFloat(tileStyle.paddingTop) - parseFloat(tileStyle.paddingBottom));
     let fontSize = Math.min(48, availableWidth / 4.2, availableHeight / 2.2);
     const minFontSize = 14;
 
@@ -137,6 +138,10 @@ function renderMemoryApplication() {
     let selected = [];
     let locked = false;
     let saveTimer = 0;
+    let mismatchTimer = 0;
+    let attempts = 0;
+    const titleRoot = document.querySelector("[data-memory-title]");
+    if (titleRoot) titleRoot.textContent = controls["memoria-titulo"] || "Encontre os pares";
 
     const persistState = () => {
         state.pairs = state.pairs.map((pair, index) => ({ ...pair, index }));
@@ -160,28 +165,20 @@ function renderMemoryApplication() {
         if (!gridRoot) return;
 
         const totalCards = cards.length;
-        let cols = 4;
-        let rows = 2;
-
-        if (totalCards <= 4) {
-            cols = 2;
-            rows = 2;
-        } else if (totalCards <= 6) {
-            cols = 3;
-            rows = 2;
-        } else if (totalCards <= 8) {
-            cols = 4;
-            rows = 2;
-        } else if (totalCards <= 10) {
-            cols = 5;
-            rows = 2;
-        } else {
-            cols = 4;
-            rows = Math.ceil(totalCards / 4);
+        let cols = 2;
+        let bestScore = Infinity;
+        const gap = parseFloat(window.getComputedStyle(gridRoot).gap) || 8;
+        for (let candidate = 2; candidate <= Math.min(8, totalCards); candidate++) {
+            const rows = Math.ceil(totalCards / candidate);
+            const width = Math.max(1, (gridRoot.clientWidth - gap * (candidate - 1)) / candidate);
+            const height = Math.max(1, (gridRoot.clientHeight - gap * (rows - 1)) / rows);
+            const score = Math.abs(Math.log(width / height / 2.3)) + (candidate * rows - totalCards) / totalCards * .8
+                + Math.max(0, 80 - height) * .03 + Math.max(0, 170 - width) * .02;
+            if (score < bestScore) { bestScore = score; cols = candidate; }
         }
 
         gridRoot.style.setProperty("--memory-cols", String(cols));
-        gridRoot.style.setProperty("--memory-rows", String(rows));
+        gridRoot.style.setProperty("--memory-rows", String(Math.ceil(totalCards / cols)));
     }
 
     let inlineEdit = null;
@@ -191,24 +188,34 @@ function renderMemoryApplication() {
 
         updateGridMetrics();
 
-        gridRoot.innerHTML = cards.map((card) => {
+        const focusedId = document.activeElement?.dataset?.memoryTile;
+        gridRoot.innerHTML = cards.map((card, index) => {
             const isOpen = inlineEdit?.enabled || selected.includes(card.id) || card.found;
             const editableAttrs = inlineEdit?.enabled
                 ? ` data-inline-editable="pair:${card.pairId}:${card.field}"`
                 : "";
             return `
-                <button type="button" class="memory-stage-tile ${isOpen ? "is-open" : ""} ${card.found ? "is-found" : ""} ${inlineEdit?.enabled ? "is-editing" : ""}" data-memory-tile="${card.id}" style="--memory-accent:${card.color};">
-                    <strong${editableAttrs}>${isOpen ? escapeMemoryText(card.text) : "?"}</strong>
+                <button type="button" class="memory-stage-tile ${isOpen ? "is-open" : ""} ${card.found ? "is-found" : ""} ${inlineEdit?.enabled ? "is-editing" : ""}" data-memory-tile="${card.id}" style="--memory-accent:${card.color};" aria-label="Carta ${index + 1}${isOpen ? ': ' + escapeMemoryAttr(card.text) : ', fechada'}${card.found ? ', par encontrado' : ''}" aria-pressed="${Boolean(isOpen)}">
+                    ${isOpen ? `<span class="memory-tile-number" aria-hidden="true">${index + 1}${card.found ? " ✓" : ""}</span>` : ""}
+                    <strong${editableAttrs}>${isOpen ? escapeMemoryText(card.text) : index + 1}</strong>
                 </button>
             `;
         }).join("");
 
         window.requestAnimationFrame(fitVisibleLabels);
+        const found = cards.filter((card) => card.found).length / 2;
+        const progress = document.querySelector("[data-memory-progress]");
+        const tries = document.querySelector("[data-memory-attempts]");
+        if (progress) progress.textContent = found === state.pairs.length ? `✓ Todos os ${found} pares encontrados!` : `${found} de ${state.pairs.length} pares`;
+        if (tries) tries.textContent = `${attempts} ${attempts === 1 ? "tentativa" : "tentativas"}`;
+        if (focusedId) gridRoot.querySelector(`[data-memory-tile="${focusedId}"]`)?.focus({ preventScroll: true });
         inlineEdit?.syncUi();
     }
 
     function resetGame() {
         if (inlineEdit?.enabled) return;
+        window.clearTimeout(mismatchTimer);
+        attempts = 0;
         selected = [];
         locked = false;
         cards.forEach((card) => {
@@ -223,6 +230,7 @@ function renderMemoryApplication() {
         inlineEdit = createPresentationInlineEditController({
             onModeChange(enabled) {
                 if (enabled) {
+                    window.clearTimeout(mismatchTimer);
                     selected = [];
                     locked = false;
                 }
@@ -267,6 +275,7 @@ function renderMemoryApplication() {
 
         if (selected.length < 2) return;
 
+        attempts += 1;
         locked = true;
         const [first, second] = selected.map((cardId) => cards.find((item) => item.id === cardId));
 
@@ -279,21 +288,33 @@ function renderMemoryApplication() {
             return;
         }
 
-        window.setTimeout(() => {
+        paint();
+        mismatchTimer = window.setTimeout(() => {
             selected = [];
             locked = false;
             paint();
         }, 1600);
     });
 
-    document.addEventListener("keydown", (event) => {
-        if (event.key !== "Escape" || !inlineEdit?.enabled) return;
-        resetGame();
-    });
+    document.querySelector("[data-memory-restart]")?.addEventListener("click", resetGame);
+
+    window.educariaPresentationProgress = {
+        capture: () => ({ cards: cards.map((card) => ({ ...card })), attempts }),
+        restore(saved) {
+            if (!Array.isArray(saved?.cards) || saved.cards.length !== cards.length) return;
+            window.clearTimeout(mismatchTimer);
+            cards.splice(0, cards.length, ...saved.cards);
+            attempts = Number(saved.attempts) || 0;
+            selected = []; locked = false;
+            paint();
+        }
+    };
 
     persistState();
     paint();
-    window.addEventListener("resize", fitVisibleLabels);
+    const resizeBoard = () => { updateGridMetrics(); window.requestAnimationFrame(fitVisibleLabels); };
+    window.addEventListener("resize", resizeBoard);
+    if (typeof ResizeObserver === "function" && gridRoot) new ResizeObserver(resizeBoard).observe(gridRoot);
 }
 
 document.addEventListener("DOMContentLoaded", renderMemoryApplication);

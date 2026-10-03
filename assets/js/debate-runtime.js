@@ -232,6 +232,28 @@ function syncDebateGuidanceUi(runtime) {
     });
 }
 
+function debateDurationSeconds(value) {
+    const text = String(value || "").trim().toLowerCase();
+    const clock = text.match(/^(\d+):(\d{1,2})$/);
+    const number = text.match(/\d+(?:[.,]\d+)?/);
+    const seconds = clock ? Number(clock[1]) * 60 + Number(clock[2])
+        : number ? Number(number[0].replace(",", ".")) * (/\b(s|seg|segundos?)\b/.test(text) ? 1 : 60) : 300;
+    return Math.max(1, Math.min(14400, Math.round(seconds)));
+}
+
+function createDebateTimer(seconds, now = () => Date.now()) {
+    let remaining = seconds * 1000;
+    let deadline = null;
+    const read = () => deadline === null ? remaining : Math.max(0, deadline - now());
+    return {
+        seconds: () => Math.ceil(read() / 1000),
+        running: () => deadline !== null && read() > 0,
+        start() { if (deadline === null && remaining > 0) deadline = now() + remaining; },
+        pause() { remaining = read(); deadline = null; },
+        reset(value = seconds) { remaining = value * 1000; deadline = null; }
+    };
+}
+
 function renderDebateApplication() {
     const runtime = window.__educariaDebateRuntime || {
         activeIndex: 0,
@@ -292,6 +314,33 @@ function renderDebateApplication() {
         stageWidth: window.innerWidth
     };
     let resizeFrame = 0;
+    const roundTimers = new Map();
+    let timerIndex = runtime.activeIndex;
+    const activeTimer = () => {
+        if (!roundTimers.has(runtime.activeIndex)) roundTimers.set(runtime.activeIndex, createDebateTimer(debateDurationSeconds(runtime.steps[runtime.activeIndex]?.time)));
+        return roundTimers.get(runtime.activeIndex);
+    };
+    const paintTimer = () => {
+        const timer = activeTimer();
+        const seconds = timer.seconds();
+        const output = document.querySelector("[data-debate-timer]");
+        const toggle = document.querySelector("[data-debate-timer-toggle]");
+        const status = document.querySelector("[data-debate-timer-status]");
+        const clockText = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+        if (output) { if (output.textContent !== clockText) output.textContent = clockText; output.dataset.finished = String(seconds === 0); }
+        if (toggle) { toggle.textContent = timer.running() ? "Pausar" : "Iniciar"; toggle.disabled = seconds === 0; }
+        const statusText = seconds === 0 ? "Tempo encerrado" : "";
+        if (status && status.textContent !== statusText) status.textContent = statusText;
+    };
+    document.querySelector("[data-debate-timer-toggle]")?.addEventListener("click", () => {
+        const timer = activeTimer(); if (timer.running()) timer.pause(); else timer.start(); paintTimer();
+    });
+    document.querySelector("[data-debate-timer-reset]")?.addEventListener("click", () => {
+        activeTimer().reset(debateDurationSeconds(runtime.steps[runtime.activeIndex]?.time)); paintTimer();
+    });
+    const timerInterval = window.setInterval(paintTimer, 250);
+    window.addEventListener("pagehide", () => window.clearInterval(timerInterval), { once: true });
+    document.addEventListener("visibilitychange", () => { if (document.hidden) { activeTimer().pause(); paintTimer(); } });
 
     const setTextAll = (selector, value) => {
         document.querySelectorAll(selector).forEach((node) => {
@@ -444,6 +493,9 @@ function renderDebateApplication() {
     const renderStep = () => {
         const step = runtime.steps[runtime.activeIndex];
         if (!step) return;
+        if (timerIndex !== runtime.activeIndex) roundTimers.get(timerIndex)?.pause();
+        timerIndex = runtime.activeIndex;
+        paintTimer();
 
         const guidanceHtml = formatDebateGuidanceHtml(step.guidance);
         const stepCounter = `${runtime.activeIndex + 1} de ${runtime.steps.length}`;
@@ -523,6 +575,19 @@ function renderDebateApplication() {
     };
 
     updateViewportMetrics();
+    window.educariaPresentationProgress = {
+        capture() {
+            roundTimers.forEach((timer) => timer.pause());
+            return { activeIndex: runtime.activeIndex, guidanceOpen: runtime.guidanceOpen, timers: [...roundTimers].map(([index, timer]) => [index, timer.seconds()]) };
+        },
+        restore(saved) {
+            if (!saved) return;
+            runtime.activeIndex = Math.max(0, Math.min(runtime.steps.length - 1, Number(saved.activeIndex) || 0));
+            runtime.guidanceOpen = Boolean(saved.guidanceOpen);
+            (saved.timers || []).forEach(([index, seconds]) => roundTimers.set(index, createDebateTimer(seconds)));
+            renderStep();
+        }
+    };
     renderStep();
     persistRuntimeDraft();
 
@@ -614,6 +679,7 @@ function renderDebateApplication() {
         });
 
         document.addEventListener("keydown", (event) => {
+            if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
             const editable = event.target.closest("[data-debate-editable][contenteditable='true']");
             if (editable) {
                 const multiline = editable.dataset.debateEditableMultiline === "true";
@@ -636,11 +702,13 @@ function renderDebateApplication() {
             }
 
             if (event.key === "ArrowLeft" && runtime.activeIndex > 0) {
+                event.preventDefault();
                 runtime.activeIndex -= 1;
                 renderStep();
             }
 
             if (event.key === "ArrowRight" && runtime.activeIndex < runtime.steps.length - 1) {
+                event.preventDefault();
                 runtime.activeIndex += 1;
                 renderStep();
             }
