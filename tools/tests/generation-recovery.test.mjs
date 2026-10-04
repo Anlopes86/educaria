@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 
 const recoverySource = await fs.readFile(new URL("../../assets/js/generation-recovery.js", import.meta.url), "utf8");
 const generator = await fs.readFile(new URL("../../assets/js/ai-material-generator.js", import.meta.url), "utf8");
-const importSource = generator.slice(generator.indexOf("function readDashboardQuickResult()"), generator.indexOf("function bindAiMaterialGenerator()"));
+const importSource = generator.slice(generator.indexOf("function applyGenerationOptionsToEditor("), generator.indexOf("function bindAiMaterialGenerator()"));
 
 function harness(values = new Map()) {
     const state = { failWrite: false, failImport: false, applied: 0, lessons: [], errors: [], navigations: [] };

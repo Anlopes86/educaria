@@ -440,6 +440,51 @@ body.theme-editor[data-material-type] .editor-disclosure-body {
     padding: 18px;
 }
 
+/* The slide editor uses color as a second cue, alongside labels and icons. */
+.builder-review-intro { margin-bottom: 18px; padding: 18px; border: 1px solid #c8e8e1; border-radius: 16px; background: #eef9f6; color: #134e4a; }
+.builder-review-intro p { margin: 6px 0 10px; color: #526575; font-size: .88rem; }
+.builder-review-intro a { color: #0f766e; font-weight: 700; font-size: .8rem; text-underline-offset: 3px; }
+
+body.theme-editor[data-material-type="slides"] .editor-disclosure--ai {
+    --section-color: #0f766e;
+    --section-tint: #e6f6f2;
+    --section-icon: #ccece4;
+}
+
+body.theme-editor[data-material-type="slides"] .editor-disclosure--theme {
+    --section-color: #7c3aed;
+    --section-tint: #f3edff;
+    --section-icon: #e8dbff;
+}
+
+body.theme-editor[data-material-type="slides"] .editor-disclosure--manual {
+    --section-color: #1d4ed8;
+    --section-tint: #edf3ff;
+    --section-icon: #dbe8ff;
+}
+
+body.theme-editor[data-material-type="slides"] .editor-disclosure:is(.editor-disclosure--ai, .editor-disclosure--theme, .editor-disclosure--manual) {
+    border-left-color: var(--section-color);
+}
+
+body.theme-editor[data-material-type="slides"] .editor-disclosure:is(.editor-disclosure--ai, .editor-disclosure--theme, .editor-disclosure--manual) > summary {
+    color: var(--section-color);
+    background: linear-gradient(100deg, var(--section-tint), #ffffff);
+}
+
+body.theme-editor[data-material-type="slides"] .editor-disclosure:is(.editor-disclosure--ai, .editor-disclosure--theme, .editor-disclosure--manual) > summary:hover {
+    background: var(--section-tint);
+}
+
+body.theme-editor[data-material-type="slides"] .editor-disclosure:is(.editor-disclosure--ai, .editor-disclosure--theme, .editor-disclosure--manual) > summary:focus-visible {
+    outline-color: var(--section-color);
+}
+
+body.theme-editor[data-material-type="slides"] .editor-disclosure :is(.editor-disclosure-icon, .editor-disclosure-toggle) {
+    background: var(--section-icon);
+    color: var(--section-color);
+}
+
 body.theme-editor[data-material-type] .platform-field label {
     color: #263b53;
     font-size: 0.82rem;

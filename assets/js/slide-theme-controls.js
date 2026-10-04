@@ -51,6 +51,27 @@ function syncSlideVisualModeHelp() {
         : "Usa uma identidade visual segura e previsível, pronta para projeção.";
 }
 
+function syncSlidePedagogyHelp() {
+    const choices = [
+        ["slides-detalhamento", [
+            "Cerca de 3 tópicos por slide, com explicação breve e exemplo.",
+            "1 a 2 tópicos curtos por slide, apenas com as ideias essenciais.",
+            "4 a 5 tópicos por slide, com conceitos, explicações e exemplos mais desenvolvidos."
+        ]],
+        ["slides-tom", [
+            "Explicação objetiva, didática e com exemplos do cotidiano.",
+            "Comparações, sequências e palavras-chave para uma leitura rápida.",
+            "Mostra como e por que acontece, com etapas e relações de causa e consequência.",
+            "Usa perguntas, situações reais e pequenos desafios para despertar a curiosidade."
+        ]]
+    ];
+    choices.forEach(([id, descriptions]) => {
+        const field = document.getElementById(id);
+        const help = document.getElementById(`${id}-help`);
+        if (field && help) help.textContent = descriptions[field.selectedIndex] || descriptions[0];
+    });
+}
+
 function setSelectValueByText(select, desiredText) {
     if (!select) return;
     const match = [...select.options].find((option) => option.text.trim() === desiredText);
@@ -97,6 +118,10 @@ function bindSlideThemeControls() {
 
     syncThemePresetToControls();
     syncSlideVisualModeHelp();
+    syncSlidePedagogyHelp();
+    ["slides-detalhamento", "slides-tom"].forEach((id) => {
+        document.getElementById(id)?.addEventListener("change", syncSlidePedagogyHelp);
+    });
 
     fields.preset.addEventListener("change", () => {
         syncThemePresetToControls();

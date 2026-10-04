@@ -590,38 +590,17 @@ function refineSlideBodyTextSafe(body, slideType = "content") {
 }
 
 function compactSlideBodyText(body, slideType = "content") {
-    const raw = String(body || "").replace(/\r/g, "\n").trim();
-    if (!raw) {
-        return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
-    }
-
-    const protectedRaw = raw
-        .replace(/\bD\./g, "__ABBR_D__")
-        .replace(/\bDr\./g, "__ABBR_DR__")
-        .replace(/\bSr\./g, "__ABBR_SR__")
-        .replace(/\bSra\./g, "__ABBR_SRA__");
-
-    const restore = (text) => String(text || "")
-        .replaceAll("__ABBR_D__", "D.")
-        .replaceAll("__ABBR_DR__", "Dr.")
-        .replaceAll("__ABBR_SR__", "Sr.")
-        .replaceAll("__ABBR_SRA__", "Sra.");
-
-    const baseUnits = protectedRaw
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean)
-        .flatMap((line) => line.split(/;\s+|(?<=[!?])\s+|(?<=\.)\s+(?=[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ])/))
-        .map((line) => restore(line).replace(/^[-*•]\s*/, "").trim())
-        .filter(Boolean)
-        .slice(0, slideType === "cover" ? 2 : 5);
+    // Keep the complete explanation, including examples and abbreviations.
+    // Density is guided during generation; fitting is handled by presentation.
+    const baseUnits = String(body || "").replace(/\r\n?/g, "\n").split("\n")
+        .map((line) => line.replace(/^\s*[-*•]\s*/, "").trim()).filter(Boolean);
 
     if (!baseUnits.length) {
         return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     }
 
     if (slideType === "cover") {
-        return baseUnits.map((line) => trimWords(line, 10)).join("\n");
+        return baseUnits.join("\n");
     }
 
     return baseUnits.map((line) => `- ${line}`).join("\n");
@@ -953,7 +932,9 @@ function applySlidesFromStructuredData(payload) {
         if (subtitle) subtitle.value = slide.subtitle || "";
         if (body) body.value = compactSlideBodyText(slide.body || "", slideType);
         if (imagePrompt) imagePrompt.value = "";
-        if (imageUrl) imageUrl.value = "";
+        const uploadedImage = index === 0 && /^data:image\/(webp|png|jpeg);base64,/.test(payload?.cover_image || "")
+            && payload.cover_image.length <= 160 * 1024 ? payload.cover_image : "";
+        if (imageUrl) imageUrl.value = uploadedImage;
         if (accentColor) accentColor.value = visual.accent;
         if (slideColor) slideColor.value = visual.background;
         if (textColor) textColor.value = visual.text;
@@ -961,7 +942,7 @@ function applySlidesFromStructuredData(payload) {
         card.dataset.slideType = slideType;
 
         if (imageMode) {
-            setSelectByText(imageMode, "Sem imagem");
+            setSelectByText(imageMode, uploadedImage ? "Enviar imagem" : "Sem imagem");
         }
 
         if (layout) {
@@ -978,6 +959,9 @@ function applySlidesFromStructuredData(payload) {
 function applyFlashcardsFromStructuredData(payload) {
     const cardsPayload = Array.isArray(payload?.cards) ? payload.cards : [];
     if (!cardsPayload.length) return false;
+    if (typeof payload.generation_options?.examples === "boolean") {
+        setSelectByText(document.getElementById("cards-exemplo"), payload.generation_options.examples ? "Sim" : "Não");
+    }
 
     const cards = ensureCardCount("[data-flashcards-stack]", "[data-flashcard]", cardsPayload.length);
     if (!cards.length) return false;
@@ -988,32 +972,11 @@ function applyFlashcardsFromStructuredData(payload) {
         const back = card.querySelector('[data-field="back"]');
         const example = card.querySelector('[data-field="example"]');
 
-        const fitFlashcardText = (value, maxChars, maxWords) => {
-            const clean = String(value || "").replace(/\s+/g, " ").trim();
-            if (!clean) return "";
-
-            const words = clean.split(" ").filter(Boolean);
-            let candidate = words.slice(0, maxWords).join(" ");
-
-            if (candidate.length > maxChars) {
-                candidate = candidate.slice(0, maxChars);
-                const punctuationBreak = Math.max(
-                    candidate.lastIndexOf("."),
-                    candidate.lastIndexOf(":"),
-                    candidate.lastIndexOf(";"),
-                    candidate.lastIndexOf(",")
-                );
-                const wordBreak = candidate.lastIndexOf(" ");
-                const breakAt = punctuationBreak > maxChars * 0.55 ? punctuationBreak + 1 : wordBreak;
-                candidate = candidate.slice(0, breakAt > 0 ? breakAt : maxChars).trim();
-            }
-
-            return candidate.trim();
-        };
-
-        if (front) front.value = fitFlashcardText(item.front, 56, 8);
-        if (back) back.value = fitFlashcardText(item.back, 120, 18);
-        if (example) example.value = fitFlashcardText(item.example, 140, 20);
+        // Keep complete answers and notes. Generation guides length; presentation handles overflow.
+        const cleanText = (value) => String(value || "").replace(/\s+/g, " ").trim();
+        if (front) front.value = cleanText(item.front);
+        if (back) back.value = cleanText(item.back);
+        if (example) example.value = cleanText(item.example);
     });
 
     const titleField = document.getElementById("cards-tema");
@@ -1316,7 +1279,8 @@ function applyMindmapFromStructuredData(payload) {
 
     if (titleField) titleField.value = payload.title || "";
     if (subtitleField) subtitleField.value = payload.subtitle || "";
-    if (layoutField) setSelectByText(layoutField, "Tópicos");
+    const requestedLayout = payload.layout || payload.generation_options?.layout || document.getElementById("mind-layout-ia")?.value || "Radial";
+    if (layoutField) setSelectByText(layoutField, /topic|tópico/i.test(requestedLayout) ? "Tópicos" : "Radial");
 
     if (typeof setMindCountSelect === "function") {
         setMindCountSelect(branches.length);
@@ -1828,12 +1792,16 @@ async function checkAiHealth() {
     return response.json();
 }
 
-async function requestStructuredMaterial(materialType, sourceText, file, action) {
+async function requestStructuredMaterial(materialType, sourceText, file, action, slideOptions, generationOptions) {
     const endpoint = resolveAiEndpoint();
     const formData = new FormData();
     formData.append("materialType", materialType);
     formData.append("sourceText", sourceText || "");
     formData.append("action", action || "");
+    if (generationOptions) formData.append("generationOptions", JSON.stringify(generationOptions));
+    if (materialType === "slides" && slideOptions) {
+        formData.append("slideOptions", JSON.stringify(slideOptions));
+    }
 
     if (file) {
         formData.append("file", file);
@@ -2110,7 +2078,6 @@ async function generateMaterial(materialType, button, options = {}) {
     const formatField = config.formatId ? document.getElementById(config.formatId) : null;
     const layoutField = config.layoutId ? document.getElementById(config.layoutId) : null;
     const detailField = config.detailId ? document.getElementById(config.detailId) : null;
-    const imagePrefField = config.imagePrefId ? document.getElementById(config.imagePrefId) : null;
     const audienceField = config.audienceId ? document.getElementById(config.audienceId) : null;
     const toneField = config.toneId ? document.getElementById(config.toneId) : null;
     const objectiveField = config.objectiveId ? document.getElementById(config.objectiveId) : null;
@@ -2118,14 +2085,14 @@ async function generateMaterial(materialType, button, options = {}) {
     const subjectField = config.subjectId ? document.getElementById(config.subjectId) : null;
     const file = fileField?.files?.[0] || null;
     const typedText = textField?.value.trim() || "";
-    const fileText = await readTextFile(file);
-    const sourceText = [typedText, fileText].filter(Boolean).join("\n\n").trim();
+    // The API extracts the attachment once. Duplicating TXT here wastes tokens
+    // and can make an otherwise valid file exceed the source-text limit.
+    const sourceText = typedText;
     const action = actionField ? actionField.options[actionField.selectedIndex].text.trim() : "";
     const countText = countField ? String(countField.value || "").trim() : "";
     const formatText = formatField ? formatField.options[formatField.selectedIndex].text.trim() : "";
     const layoutText = layoutField ? layoutField.options[layoutField.selectedIndex].text.trim() : "";
     const detailText = detailField ? detailField.options[detailField.selectedIndex].text.trim() : "";
-    const imagePrefText = imagePrefField ? imagePrefField.options[imagePrefField.selectedIndex].text.trim() : "";
     const audienceText = audienceField ? String(audienceField.value || "").trim() : "";
     const toneText = toneField ? toneField.options[toneField.selectedIndex].text.trim() : "";
     const objectiveText = objectiveField ? String(objectiveField.value || "").trim() : "";
@@ -2133,6 +2100,21 @@ async function generateMaterial(materialType, button, options = {}) {
     const subjectText = subjectField ? String(subjectField.value || "").trim() : "";
     const classText = config.classId ? String(document.getElementById(config.classId)?.value || "").trim() : "";
     const requestedCount = Number(countText) || undefined;
+    const slideOptions = materialType === "slides" ? {
+        detail: detailText, tone: toneText, audience: audienceText,
+        className: classText, subject: subjectText, objective: objectiveText
+    } : undefined;
+    const generationOptions = {
+        count: requestedCount, approach: action, format: formatText, layout: layoutText,
+        audience: audienceText, className: classText, subject: subjectText, objective: objectiveText,
+        examples: document.getElementById("cards-exemplo")?.value !== "Não",
+        shuffle: document.getElementById("ligar-embaralhar")?.value === "Sim",
+        eliminate: document.getElementById("roleta-eliminacao")?.value === "Sim",
+        directions: document.getElementById("caca-direcoes")?.value,
+        title: document.getElementById(({ memory: "memoria-titulo", hangman: "forca-titulo", crossword: "cruzada-titulo-ia" })[materialType])?.value || "",
+        leftLabel: document.getElementById("ligar-coluna-a")?.value || "",
+        rightLabel: document.getElementById("ligar-coluna-b")?.value || ""
+    };
 
     if (!sourceText && !file) {
         window.alert("Adicione um texto-base ou envie um arquivo para a IA estruturar.");
@@ -2166,109 +2148,15 @@ async function generateMaterial(materialType, button, options = {}) {
 
         await checkAiHealth();
 
-        let generationHints = materialType === "quiz"
-            ? [
-                action,
-                requestedCount ? `Gerar ${requestedCount} perguntas.` : "",
-                formatText ? `Formato desejado: ${formatText}.` : "",
-                subjectText ? `Disciplina: ${subjectText}.` : "",
-                audienceText ? `Ano ou público: ${audienceText}.` : "",
-                classText ? `Turma: ${classText}.` : ""
-            ].filter(Boolean).join(" ")
-            : materialType === "slides"
-                ? [
-                action,
-                requestedCount ? `Gerar ${requestedCount} slides.` : "",
-                audienceText ? `Público ou ano: ${audienceText}.` : "",
-                objectiveText ? `Objetivo da aula: ${objectiveText}.` : "",
-                subjectText ? `Disciplina: ${subjectText}.` : "",
-                classText ? `Turma: ${classText}.` : "",
-                toneText ? `Tom desejado: ${toneText}.` : "",
-                detailText ? `Nível de detalhamento: ${detailText}.` : "",
-                visualMode === "ai"
-                    ? "Modo visual: personalizado pela IA de acordo com o tema."
-                    : "Modo visual: padrão EducarIA, consistente e previsível.",
-                imagePrefText ? `Uso de imagens: ${imagePrefText}.` : ""
-            ].filter(Boolean).join(" ")
-                : materialType === "flashcards"
-                    ? [
-                action,
-                requestedCount ? `Gerar ${requestedCount} cards.` : "",
-                subjectText ? `Disciplina: ${subjectText}.` : "",
-                audienceText ? `Ano ou público: ${audienceText}.` : "",
-                classText ? `Turma: ${classText}.` : "",
-                document.getElementById("cards-exemplo")?.value ? `Incluir exemplos: ${document.getElementById("cards-exemplo").value}.` : ""
-            ].filter(Boolean).join(" ")
-                    : materialType === "mindmap"
-                        ? [
-                action,
-                requestedCount ? `Gerar ${requestedCount} tópicos.` : "",
-                layoutText ? `Leitura desejada: ${layoutText}.` : ""
-            ].filter(Boolean).join(" ")
-                        : materialType === "crossword"
-                            ? [
-                action,
-                requestedCount ? `Gerar ${requestedCount} entradas.` : "",
-                document.getElementById("cruzada-titulo-ia")?.value ? `Título desejado: ${document.getElementById("cruzada-titulo-ia").value}.` : "",
-                "Retornar respostas curtas e pistas objetivas em português do Brasil."
-            ].filter(Boolean).join(" ")
-                        : materialType === "memory"
-                            ? [
-                action,
-                requestedCount ? `Gerar ${requestedCount} pares.` : "",
-                document.getElementById("memoria-titulo")?.value ? `Título desejado: ${document.getElementById("memoria-titulo").value}.` : ""
-            ].filter(Boolean).join(" ")
-                            : materialType === "match"
-                                ? [
-                action,
-                requestedCount ? `Gerar ${requestedCount} pares.` : "",
-                document.getElementById("ligar-coluna-a")?.value ? `Nome da coluna A: ${document.getElementById("ligar-coluna-a").value}.` : "",
-                document.getElementById("ligar-coluna-b")?.value ? `Nome da coluna B: ${document.getElementById("ligar-coluna-b").value}.` : "",
-                document.getElementById("ligar-embaralhar")?.value === "Sim" ? "Embaralhar a coluna B." : "Manter a coluna B na ordem normal."
-            ].filter(Boolean).join(" ")
-                                : materialType === "wheel"
-                                    ? [
-                action,
-                requestedCount ? `Gerar ${requestedCount} espaços.` : "",
-                document.getElementById("roleta-eliminacao")?.value === "Sim" ? "Eliminar item sorteado após uso." : "Não eliminar item sorteado."
-            ].filter(Boolean).join(" ")
-                        : [
-                action,
-                requestedCount ? `Gerar ${requestedCount} etapas.` : "",
-                formatText ? `Formato desejado: ${formatText}.` : ""
-            ].filter(Boolean).join(" ");
+        const generationHints = [
+            action,
+            materialType === "slides" && requestedCount ? `Gerar ${requestedCount} slides.` : "",
+            materialType === "slides" ? (visualMode === "ai"
+                ? "Modo visual: personalizado pela IA de acordo com o tema."
+                : "Modo visual: padrão EducarIA.") : ""
+        ].filter(Boolean).join(" ");
 
-        if (["memory", "hangman"].includes(materialType)) {
-            const unit = materialType === "memory" ? "pares" : "palavras com dicas";
-            const titleId = materialType === "memory" ? "memoria-titulo" : "forca-titulo";
-            const desiredTitle = String(document.getElementById(titleId)?.value || "").trim();
-            generationHints = [
-                action,
-                requestedCount ? `Gerar ${requestedCount} ${unit}.` : "",
-                subjectText ? `Disciplina: ${subjectText}.` : "",
-                audienceText ? `Ano ou público: ${audienceText}.` : "",
-                classText ? `Turma: ${classText}.` : "",
-                desiredTitle ? `Título desejado: ${desiredTitle}.` : ""
-            ].filter(Boolean).join(" ");
-        }
-
-        if (["wheel", "match"].includes(materialType)) {
-            generationHints = [
-                generationHints,
-                subjectText ? `Disciplina: ${subjectText}.` : "",
-                audienceText ? `Ano ou público: ${audienceText}.` : "",
-                classText ? `Turma: ${classText}.` : ""
-            ].filter(Boolean).join(" ");
-        }
-
-        if (materialType === "wordsearch") {
-            generationHints = [
-                requestedCount ? `Gerar ${requestedCount} palavras.` : "",
-                "Prefira termos curtos, claros e adequados para um caça-palavras."
-            ].filter(Boolean).join(" ");
-        }
-
-        const payload = await requestStructuredMaterial(materialType, sourceText, file, generationHints);
+        const payload = await requestStructuredMaterial(materialType, sourceText, file, generationHints, slideOptions, generationOptions);
         if (materialType === "slides" && payload?.material) {
             payload.material.visual_mode = visualMode === "ai" ? "ai" : "standard";
         }
@@ -2315,6 +2203,34 @@ async function generateMaterial(materialType, button, options = {}) {
         button.disabled = false;
         button.textContent = originalLabel;
     }
+}
+
+function applyGenerationOptionsToEditor(materialType, options) {
+    if (!options) return;
+    const config = materialConfig(materialType);
+    const values = [[config?.countId, options.count], [config?.subjectId, options.subject],
+        [config?.audienceId, options.audience], [config?.objectiveId, options.objective]];
+    values.forEach(([id, value]) => {
+        const field = id ? document.getElementById(id) : null;
+        if (field && value != null) field.value = String(value);
+    });
+    const labels = {
+        detail: { concise: "Mais enxuto", balanced: "Equilibrado", detailed: "Mais detalhado" },
+        tone: { balanced: "Claro e equilibrado", visual: "Mais visual e direto", explanatory: "Mais explicativo", inspiring: "Mais inspirador" },
+        format: { mixed: "Misto", choice: "Múltipla escolha", open: "Perguntas abertas", "true-false": "Verdadeiro ou falso", "two-sides": "Dois lados", "guided-circle": "Roda guiada" },
+        layout: { radial: "Radial", topics: "Tópicos" }
+    };
+    ["detail", "tone", "format", "layout"].forEach((key) => {
+        const field = config?.[`${key}Id`] ? document.getElementById(config[`${key}Id`]) : null;
+        if (field && labels[key][options[key]]) setSelectByText(field, labels[key][options[key]]);
+    });
+    const actionField = config?.actionId ? document.getElementById(config.actionId) : null;
+    if (actionField && options.approach) setSelectByText(actionField, options.approach);
+    if (materialType === "wordsearch" && options.directions) {
+        const directions = document.getElementById("caca-direcoes");
+        if (directions) directions.value = options.directions;
+    }
+    if (typeof syncSlidePedagogyHelp === "function") syncSlidePedagogyHelp();
 }
 
 function readDashboardQuickResult() {
@@ -2400,6 +2316,7 @@ async function consumeDashboardQuickResult() {
         }
         textField.value = String(request.topic || "").trim();
         textField.dispatchEvent(new Event("input", { bubbles: true }));
+        applyGenerationOptionsToEditor(materialType, request.material?.generation_options);
         if (!config.apply(request.material)) throw new Error("Conteúdo não aplicado.");
         await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
         if (recovery.currentUid() !== request.ownerUid) throw new Error("A conta foi alterada.");

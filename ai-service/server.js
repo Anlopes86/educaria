@@ -9,6 +9,8 @@ import mammoth from "mammoth";
 import { PDFParse } from "pdf-parse";
 import { GoogleGenAI } from "@google/genai";
 import { generateGroqStructuredMaterial } from "./ai-text-provider.js";
+import { normalizeSlideGenerationOptions, slidePedagogyInstructions, normalizeGeneratedSlideBody } from "./slide-generation-policy.js";
+import { normalizeActivityGenerationOptions, activityGenerationInstructions, applyActivityGenerationSettings } from "./activity-generation-policy.js";
 import {
     aiCreditsForUsage,
     buildAiCreditUsagePolicy,
@@ -1625,7 +1627,12 @@ function parseWheelTemplateText(sourceText) {
  * @param {string} sourceText - Raw source material from teacher input or uploaded file
  * @returns {string} Full prompt string ready to send to Gemini
  */
-function promptFor(materialType, action, sourceText) {
+function promptFor(materialType, action, sourceText, slideOptions, generationOptions) {
+    const base = basePromptFor(materialType, action, sourceText, slideOptions);
+    return generationOptions ? `${base}\n\n${activityGenerationInstructions(materialType, generationOptions)}` : base;
+}
+
+function basePromptFor(materialType, action, sourceText, slideOptions) {
     if (materialType === "quiz") {
         return [
             "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
@@ -1936,23 +1943,24 @@ function promptFor(materialType, action, sourceText) {
         "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
         "Responda apenas em JSON compatível com o schema fornecido.",
         "Monte slides em português do Brasil, prontos para uma aula real e para edição rápida pelo professor.",
-        "Quebre o conteúdo em uma sequência lógica, didática e enxuta.",
+        "Quebre o conteúdo em uma sequência lógica e didática, com a profundidade escolhida pelo professor.",
         "O texto visível no slide deve ser curto, projetável e fácil de ler pela turma.",
         "Evite parágrafos longos, frases de efeito, clichês e tom genérico de apresentação corporativa.",
         "Prefira títulos claros, subtítulos úteis e corpo em tópicos curtos.",
-        "Regra forte de formatacao do body:",
-        "- Escreva o body em 2 a 5 linhas curtas.",
+        "Regra forte de formatação do body:",
+        "- A quantidade de linhas e a extensão de cada uma seguem a configuração pedagógica abaixo.",
         "- Quebre linhas com \\n.",
         "- Quando listar ideias, comece cada linha com '- '.",
-        "- Cada linha deve ter uma única ideia, de preferência com até 10 palavras.",
+        "- Cada linha deve expressar uma ideia completa; nunca corte uma frase para encurtá-la.",
         "- Não escreva parágrafos corridos no body.",
         "- Não repita o título no body.",
-        "Regra forte de composicao:",
+        "Regra forte de composição:",
         "- Slide de capa: 1 a 2 linhas no body.",
         "- Slides de conteúdo: priorize bullets curtos.",
         "- Slide final: fechamento, síntese ou pergunta de revisão.",
         "Use teacher_notes para orientar a mediação do professor sem repetir o que já está visível no slide.",
         "Mantenha teacher_notes em 1 ou 2 frases curtas.",
+        ...slidePedagogyInstructions(normalizeSlideGenerationOptions(slideOptions, action)),
         "Não prometa nem gere imagens. Deixe image_prompt vazio; o professor poderá enviar uma imagem real depois.",
         "Escolha tipos de slide com intenção visual: cover na abertura, question para provocar participação e closing no encerramento.",
         "Varie a composição entre título forte, síntese em tópicos e pergunta de discussão; não transforme todos os slides na mesma lista.",
@@ -1962,7 +1970,7 @@ function promptFor(materialType, action, sourceText) {
         "Regras adicionais:",
         "- Não invente dados específicos que não estejam sustentados pelo texto-base.",
         "- Se o conteúdo estiver extenso, priorize as ideias centrais.",
-        "- Se o texto estiver raso, mantenha a estrutura simples e honesta.",
+        "- Se a origem for apenas um tópico, desenvolva-o com conhecimento pedagógico confiável, respeitando o público e o detalhamento. Se for um texto-base, preserve suas informações e não invente dados específicos.",
         "- Evite excesso de slides; prefira concisão com progressão clara.",
         "- Respeite explicitamente quantidade de slides, nível de detalhamento e preferência de imagens quando o professor informar.",
         "Material de origem:",
@@ -1989,31 +1997,7 @@ function trimWords(text, maxWords = 12) {
 }
 
 function normalizeSlideBody(body, slideType) {
-    const raw = String(body || "").trim();
-    if (!raw) {
-        return slideType === "cover" ? "Visão geral da aula" : "Conteúdo principal";
-    }
-
-    const lines = raw
-        .replace(/\r/g, "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-    const normalizedLines = (lines.length > 1 ? lines : splitIntoShortUnits(raw))
-        .map((line) => line.replace(/^[-*•]\s*/, "").trim())
-        .filter(Boolean)
-        .slice(0, slideType === "cover" ? 2 : 5)
-        .map((line, index) => {
-            const compact = trimWords(line, slideType === "cover" ? 9 : 11);
-            if (slideType === "cover") {
-                return compact;
-            }
-
-            return `- ${compact}`;
-        });
-
-    return normalizedLines.join("\n");
+    return normalizeGeneratedSlideBody(body, slideType);
 }
 
 const DEFAULT_SLIDE_VISUAL_THEME = Object.freeze({
@@ -2101,10 +2085,8 @@ function normalizeSlideVisualVariant(value, slideType, index) {
 }
 
 /**
- * Post-processes a Gemini-generated slides object to enforce display constraints:
- * trims body text to max lines/words by slide type, caps teacher_notes at 22 words,
- * and sets the layout field based on whether an image_prompt is present.
- * @param {{ slides: Array<object> }} material - Raw slides object from Gemini
+ * Normalizes slide formatting and visual tokens without cutting off explanations.
+ * @param {{ slides: Array<object> }} material - Raw slides object from the provider
  * @returns {{ slides: Array<object> }} Normalised slides object, safe for the builder
  */
 function normalizeSlidesMaterial(material) {
@@ -2123,7 +2105,7 @@ function normalizeSlidesMaterial(material) {
                 ...slide,
                 type: slideType,
                 body: normalizeSlideBody(slide?.body, slideType),
-                teacher_notes: trimWords(slide?.teacher_notes || "", 22),
+                teacher_notes: String(slide?.teacher_notes || "").trim(),
                 visual_variant: normalizeSlideVisualVariant(slide?.visual_variant, slideType, index),
                 layout
             };
@@ -2253,8 +2235,8 @@ function fallbackJsonPrompt(schemaConfig) {
     ].join(" ");
 }
 
-function estimateProviderTokenReservation(materialType, action, sourceText) {
-    const prompt = promptFor(materialType, action, sourceText);
+function estimateProviderTokenReservation(materialType, action, sourceText, slideOptions, generationOptions) {
+    const prompt = promptFor(materialType, action, sourceText, slideOptions, generationOptions);
     const estimatedInputTokens = Math.ceil(prompt.length / 3);
     const estimatedOutputTokens = activeAiTextProvider() === "groq"
         ? groqMaxCompletionTokens
@@ -2273,10 +2255,10 @@ function estimateProviderTokenReservation(materialType, action, sourceText) {
  * @returns {Promise<{ material: object, usageMetadata: object, providerRequests: number, provider: string, model: string }>} Parsed material and accumulated provider usage
  * @throws {Error} If the provider call fails
  */
-async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig) {
+async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig, slideOptions, generationOptions) {
     const provider = activeAiTextProvider();
     const model = activeAiTextModel(provider);
-    const basePrompt = promptFor(materialType, action, sourceText);
+    const basePrompt = promptFor(materialType, action, sourceText, slideOptions, generationOptions);
 
     if (provider === "groq") {
         // Portuguese educational text often tokenizes more densely than the
@@ -2607,6 +2589,14 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(400).json({ error: "Objetivo do professor muito longo (max 500 caracteres)." });
         }
 
+        const slideOptions = materialType === "slides"
+            ? normalizeSlideGenerationOptions(request.body.slideOptions, action) : undefined;
+        const generationOptions = normalizeActivityGenerationOptions(materialType, request.body.generationOptions, action);
+        if (slideOptions) Object.assign(generationOptions, {
+            audience: slideOptions.audience, className: slideOptions.className,
+            subject: slideOptions.subject, objective: slideOptions.objective
+        });
+
         const fileText = await extractTextFromFile(request.file);
         const sourceText = [request.body.sourceText, fileText]
             .filter(Boolean)
@@ -2626,7 +2616,8 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(503).json({ error: aiTextProviderConfigurationError() });
         }
 
-        const estimatedReservation = estimateAiCreditReservation(sourceText, action, aiCreditUsagePolicy);
+        const reservationContext = `${action}\n${JSON.stringify(generationOptions)}\n${JSON.stringify(slideOptions || {})}`;
+        const estimatedReservation = estimateAiCreditReservation(sourceText, reservationContext, aiCreditUsagePolicy);
         creditReservation = await reserveAiDailyCredit(request, estimatedReservation);
         if (!creditReservation.reserved) {
             const credits = creditReservation.credits;
@@ -2639,7 +2630,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             });
         }
 
-        const providerTokenEstimate = estimateProviderTokenReservation(materialType, action, sourceText);
+        const providerTokenEstimate = estimateProviderTokenReservation(materialType, action, sourceText, slideOptions, generationOptions);
         const providerTokenResult = await reserveAiProviderTokens(providerTokenEstimate);
         if (!providerTokenResult.reserved) {
             await refundAiDailyCredit(creditReservation.reservation);
@@ -2672,16 +2663,17 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
 
         let generated;
         try {
-            generated = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig);
+            generated = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig, slideOptions, generationOptions);
             providerRequests = generated.providerRequests;
         } catch (error) {
             providerRequests = Math.max(0, Math.floor(Number(error?.providerRequests) || 0));
             throw error;
         }
         const measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
-        const material = materialType === "slides"
-            ? normalizeSlidesMaterial(generated.material)
+        const normalizedMaterial = materialType === "slides"
+            ? { ...normalizeSlidesMaterial(generated.material), generation_options: slideOptions }
             : generated.material;
+        const material = applyActivityGenerationSettings(materialType, normalizedMaterial, generationOptions);
 
         const providerTokenQuota = await settleAiProviderTokens(
             providerTokenReservation,
@@ -2736,6 +2728,10 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
 
         if (isUploadValidationError(error)) {
             return response.status(400).json({ error: "Arquivo não suportado. Envie TXT, RTF, DOCX ou PDF válidos." });
+        }
+
+        if (["invalid_slide_options", "invalid_generation_options"].includes(error?.code)) {
+            return response.status(400).json({ error: error.message, code: error.code });
         }
 
         if (error?.code === "groq_prompt_too_long") {

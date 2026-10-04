@@ -1,4 +1,36 @@
 /* Final presentation hierarchy: the activity comes before the teacher's tools. */
+/* Longer explanations need the density rules to win over decorative headings. */
+body.presentation-page .presentation-slide.presentation-slide--dense h1 {
+    font-size: clamp(2rem, 3.1vw, 3rem);
+    line-height: 1.08;
+    max-width: 100%;
+}
+body.presentation-page .presentation-slide.presentation-slide--dense .presentation-slide-copy {
+    gap: 6px;
+    align-content: safe center;
+    max-height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+}
+body.presentation-page .presentation-slide.presentation-slide--dense .presentation-slide-kicker {
+    margin-bottom: 0;
+    font-size: .72rem;
+}
+body.presentation-page .presentation-slide.presentation-slide--dense .presentation-slide-body {
+    overflow: visible;
+    line-height: 1.38;
+}
+body.presentation-page .presentation-slide.presentation-slide--dense .presentation-slide-body ul {
+    gap: 6px;
+}
+body.presentation-page .presentation-slide.presentation-slide--dense .presentation-slide-body li {
+    padding: 6px 10px;
+    gap: 10px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--slide-accent, #0ea5e9) 12%, var(--slide-bg, #f0fdfa));
+}
+
 .presentation-runtime-page .presentation-topbar { position: relative; z-index: 20; gap: 12px; overflow: visible; }
 body.presentation-runtime-page .presentation-topbar .platform-top-actions { gap: 8px; overflow: visible; flex-wrap: wrap; }
 .presentation-runtime-page .presentation-topbar .platform-link-primary {

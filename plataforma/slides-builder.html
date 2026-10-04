@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slides | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260930-4">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261003-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -25,9 +25,9 @@
     <script src="../assets/js/editor-disclosure.js?v=20260930-1" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20260930-1" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261003-1" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
-    <script src="../assets/js/slide-theme-controls.js?v=20260930-1" defer></script>
+    <script src="../assets/js/slide-theme-controls.js?v=20261003-1" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="slides" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -87,7 +87,7 @@
                             </div>
                             <div class="platform-field">
                                 <label for="slides-disciplina">Disciplina</label>
-                                <input id="slides-disciplina" type="text" placeholder="Ex.: História">
+                                <input id="slides-disciplina" type="text" maxlength="120" placeholder="Ex.: História">
                             </div>
                             <div class="platform-field platform-field-wide">
                                 <label for="slides-fonte-texto">Roteiro ou texto-base do professor</label>
@@ -111,24 +111,27 @@
                             </div>
                             <div class="platform-field">
                                 <label for="slides-detalhamento">Nível de detalhamento</label>
-                                <select id="slides-detalhamento">
+                                <select id="slides-detalhamento" aria-describedby="slides-detalhamento-help">
                                     <option>Equilibrado</option>
                                     <option>Mais enxuto</option>
                                     <option>Mais detalhado</option>
                                 </select>
+                                <small id="slides-detalhamento-help" class="platform-field-help">Cerca de 3 tópicos por slide, com explicação breve e exemplo.</small>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-publico">Ano ou público</label>
-                                <input id="slides-publico" type="text" value="" placeholder="Ex.: 5º ano, ensino médio, EJA">
+                                <input id="slides-publico" type="text" value="" maxlength="160" aria-describedby="slides-publico-help" placeholder="Ex.: 5º ano, ensino médio, EJA">
+                                <small id="slides-publico-help" class="platform-field-help">Orienta a linguagem, os exemplos e a profundidade. Tem prioridade sobre o ano no nome da turma.</small>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-tom">Tom da apresentação</label>
-                                <select id="slides-tom">
+                                <select id="slides-tom" aria-describedby="slides-tom-help">
                                     <option>Claro e equilibrado</option>
                                     <option>Mais visual e direto</option>
                                     <option>Mais explicativo</option>
                                     <option>Mais inspirador</option>
                                 </select>
+                                <small id="slides-tom-help" class="platform-field-help">Explicação objetiva, didática e com exemplos do cotidiano.</small>
                             </div>
                             <div class="platform-field platform-field-wide slide-ai-visual-mode">
                                 <label for="slides-visual-mode">Visual dos slides</label>
@@ -140,9 +143,10 @@
                             </div>
                             <div class="platform-field platform-field-wide">
                                 <label for="slides-objetivo">Objetivo da aula</label>
-                                <input id="slides-objetivo" type="text" value="" placeholder="Ex.: introduzir o tema, revisar conteúdo, preparar debate">
+                                <input id="slides-objetivo" type="text" value="" maxlength="280" placeholder="Ex.: introduzir o tema, revisar conteúdo, preparar debate">
                             </div>
                         </div>
+                        <p class="platform-field-help">Estas escolhas orientam a próxima geração. Para alterar slides já criados, gere novamente ou edite o texto manualmente.</p>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-primary" data-generate-material="slides">Estruturar slides com IA</button>
                         </div>

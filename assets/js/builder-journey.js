@@ -177,12 +177,14 @@ function educariaBuilderJourneyConfig() {
     }
 
     function syncClassSaveAvailability() {
-        const hasClass = Boolean(document.getElementById(config.classId)?.value);
         const button = document.querySelector('[data-save-lesson][data-save-target="turma.html"]');
         if (!button) return;
-        button.disabled = !hasClass;
-        button.setAttribute("aria-disabled", hasClass ? "false" : "true");
-        button.title = hasClass ? "" : "Selecione uma turma para salvar nela.";
+        // The destination dialog owns class selection, including library drafts.
+        // Requiring a class here prevents the teacher from opening that dialog.
+        button.disabled = false;
+        button.setAttribute("aria-disabled", "false");
+        button.setAttribute("aria-haspopup", "dialog");
+        button.title = "Escolha uma ou mais turmas para salvar o material.";
     }
 
     function escapeBuilderJourneyHtml(value) {

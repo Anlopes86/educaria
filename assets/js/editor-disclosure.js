@@ -215,6 +215,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function injectStartPanel(pane, aiDisclosure, manualDisclosure) {
         if (!aiDisclosure || !manualDisclosure || pane.querySelector(".builder-start-panel")) return;
+        const saved = typeof readActiveLesson === "function" ? readActiveLesson() : null;
+        if (shouldFocusEdit || EDUCARIA_EDITOR_INITIAL_PARAMS.get("quickApply") === "1" || saved?.materialType === document.body?.dataset.materialType) {
+            pane.insertAdjacentHTML("afterbegin", '<div class="builder-review-intro"><strong>Revise e deixe com a sua cara</strong><p>Ajuste o conteúdo, confira a prévia e apresente à turma.</p><a href="index.html#quick-ai-create">Criar outra atividade no painel →</a></div>');
+            return;
+        }
         pane.insertAdjacentHTML("afterbegin", startPanelTemplate());
 
         pane.querySelector("[data-builder-start-mode=\"topic\"]")?.addEventListener("click", () => {

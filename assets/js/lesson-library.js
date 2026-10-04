@@ -1095,7 +1095,8 @@ function openLessonDestinationModal(source, options = {}) {
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
     const updateSource = options.updateSource !== false;
     const initialClass = source.className || currentClassName();
-    const libraryChecked = updateSource && (options.initialScope === LESSON_SCOPE_LIBRARY || normalizeLessonScope(source) === LESSON_SCOPE_LIBRARY);
+    const libraryChecked = updateSource && (options.initialScope === LESSON_SCOPE_LIBRARY
+        || (!options.initialScope && normalizeLessonScope(source) === LESSON_SCOPE_LIBRARY));
     const choice = (scope, className, checked) => {
         const updates = updateSource && scope === normalizeLessonScope(source) && className === source.className && readLessonsLibrary().some((item) => item.id === source.id);
         return `<label class="lesson-destination-choice" ${scope === LESSON_SCOPE_CLASS ? "data-destination-class-row" : ""}>
@@ -2034,6 +2035,7 @@ function bindSaveLessonAction() {
 function hydrateBuilderCommonActions() {
     document.querySelectorAll("[data-save-lesson]").forEach((button) => {
         const saveScope = button.dataset.saveScope || LESSON_SCOPE_CLASS;
+        button.setAttribute("aria-haspopup", "dialog");
         if (saveScope === LESSON_SCOPE_LIBRARY) {
             button.textContent = lessonLibraryTranslate("builder.actions.saveLibrary", "Salvar na biblioteca");
             button.setAttribute("aria-label", lessonLibraryTranslate("builder.actions.saveLibrary", "Salvar na biblioteca"));

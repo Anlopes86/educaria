@@ -103,6 +103,24 @@ const DASHBOARD_QUICK_OPTION_CONFIGS = {
     ]
 };
 const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
+// Keep the essential controls visible; teaching choices live under Personalizar.
+DASHBOARD_QUICK_OPTION_CONFIGS.slides.find((field) => field.key === "visualMode").advanced = true;
+const dashboardChoice = (key, label, value, choices) => ({ key, type: "select", label, value, advanced: true,
+    options: choices.map(([value, label]) => ({ value, label })) });
+DASHBOARD_QUICK_OPTION_CONFIGS.slides.push(
+    dashboardChoice("detail", "Nível de detalhamento", "balanced", [["concise", "Mais enxuto"], ["balanced", "Equilibrado"], ["detailed", "Mais detalhado"]]),
+    dashboardChoice("tone", "Tom da apresentação", "balanced", [["balanced", "Claro e equilibrado"], ["visual", "Mais visual e direto"], ["explanatory", "Mais explicativo"], ["inspiring", "Mais inspirador"]])
+);
+DASHBOARD_QUICK_OPTION_CONFIGS.flashcards.push(dashboardChoice("examples", "Exemplos e anotações", "true", [["true", "Incluir"], ["false", "Não incluir"]]));
+DASHBOARD_QUICK_OPTION_CONFIGS.wheel.push(dashboardChoice("eliminate", "Depois de sortear", "false", [["false", "Manter o item"], ["true", "Retirar o item"]]));
+DASHBOARD_QUICK_OPTION_CONFIGS.match.push(dashboardChoice("shuffle", "Coluna de respostas", "true", [["true", "Embaralhar"], ["false", "Manter a ordem"]]));
+DASHBOARD_QUICK_OPTION_CONFIGS.wordsearch.push(dashboardChoice("directions", "Direções das palavras", "diagonal", [["basic", "Horizontal e vertical"], ["diagonal", "Com diagonais"], ["full", "Todas as direções"]]));
+for (const [type, choices] of Object.entries({
+    quiz: ["Converter texto corrido em quiz", "Estruturar perguntas enviadas", "Completar alternativas quando faltar"],
+    mindmap: ["Organizar conceitos em tópicos", "Resumir um tema em mapa mental", "Estruturar revisão visual"],
+    debate: ["Organizar roteiro de debate", "Criar pergunta central e etapas", "Transformar texto em discussão guiada"],
+    crossword: ["Montar cruzadinha a partir do tema", "Criar respostas e pistas para revisão", "Transformar texto em palavras cruzadas"]
+})) DASHBOARD_QUICK_OPTION_CONFIGS[type].push(dashboardChoice("approach", "Como a IA deve ajudar", choices[0], choices.map((label) => [label, label])));
 const DASHBOARD_TOUR_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 let dashboardTourState = null;
@@ -284,7 +302,7 @@ function hydrateDashboardGreeting() {
 function syncDashboardFormatHierarchy() {
     const quickCopy = document.querySelector("[data-dashboard-quick-copy]");
     if (quickCopy) {
-        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Digite o que deseja ensinar e escolha a ferramenta. A IA prepara o primeiro rascunho.");
+        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Tema ou arquivo. Você escolhe, a IA prepara.");
     }
 
     const toolkitSection = document.getElementById("activity-toolkit");
@@ -376,7 +394,8 @@ function hydrateQuickCreateForm() {
 
 function readDashboardQuickOptionValues(root) {
     if (!root) return {};
-    return [...root.querySelectorAll("[data-dashboard-quick-option]")].reduce((values, field) => {
+    const scope = root.closest("[data-dashboard-quick-form]") || root;
+    return [...scope.querySelectorAll("[data-dashboard-quick-option]")].reduce((values, field) => {
         values[field.dataset.dashboardQuickOption] = field.value;
         return values;
     }, {});
@@ -406,7 +425,7 @@ function renderDashboardQuickOptions(materialType) {
     }
 
     const rememberedValues = dashboardQuickOptionState.get(materialType) || {};
-    const fieldsHtml = fields.map((field) => {
+    const renderField = (field) => {
         const label = dashboardTranslate(field.labelKey, field.label);
         const rememberedValue = rememberedValues[field.key];
 
@@ -421,7 +440,7 @@ function renderDashboardQuickOptions(materialType) {
             return `
                 <label class="dashboard-quick-option-field">
                     <span>${escapeHtml(label)}</span>
-                    <select data-dashboard-quick-option="${escapeHtml(field.key)}">${options}</select>
+                    <select aria-label="${escapeHtml(label)}" data-dashboard-quick-option="${escapeHtml(field.key)}">${options}</select>
                 </label>
             `;
         }
@@ -433,10 +452,18 @@ function renderDashboardQuickOptions(materialType) {
         return `
             <label class="dashboard-quick-option-field">
                 <span>${escapeHtml(label)}</span>
-                <input type="number" min="${field.min}" max="${field.max}" step="1" value="${value}" inputmode="numeric" data-dashboard-quick-option="${escapeHtml(field.key)}">
+                <input type="number" aria-label="${escapeHtml(label)}" min="${field.min}" max="${field.max}" step="1" value="${value}" inputmode="numeric" data-dashboard-quick-option="${escapeHtml(field.key)}">
             </label>
         `;
-    }).join("");
+    };
+    const basics = fields.filter((field) => !field.advanced);
+    const advancedRoot = document.querySelector("[data-dashboard-advanced-options]");
+    if (advancedRoot) advancedRoot.innerHTML = fields.filter((field) => field.advanced).map(renderField).join("");
+    const imagePanel = document.querySelector("[data-dashboard-slide-image-panel]");
+    if (imagePanel) imagePanel.hidden = materialType !== "slides";
+    const manualLink = document.querySelector("[data-dashboard-manual-link]");
+    const format = DASHBOARD_QUICK_CREATE_FORMATS.find((item) => item.materialType === materialType);
+    if (manualLink && format) manualLink.href = `${format.href}&focus=edit`;
 
     root.hidden = false;
     root.innerHTML = `
@@ -447,8 +474,8 @@ function renderDashboardQuickOptions(materialType) {
                 <small>${escapeHtml(dashboardTranslate("dashboard.quick.optionsNote", "Só o essencial para estruturar o rascunho"))}</small>
             </span>
         </div>
-        <div class="dashboard-quick-options-grid dashboard-quick-options-grid--${fields.length}">
-            ${fieldsHtml}
+        <div class="dashboard-quick-options-grid dashboard-quick-options-grid--${basics.length}">
+            ${basics.map(renderField).join("")}
         </div>
     `;
 }
@@ -465,7 +492,7 @@ function collectDashboardQuickOptions(form, materialType) {
         if (field.type === "select") {
             const option = field.options.find((item) => item.value === input.value) || field.options[0];
             values[field.key] = option.value;
-            instructions.push(option.instruction);
+            if (option.instruction) instructions.push(option.instruction);
             return;
         }
 
@@ -479,6 +506,9 @@ function collectDashboardQuickOptions(form, materialType) {
     });
 
     dashboardQuickOptionState.set(materialType, values);
+    ["audience", "subject", "objective", "className"].forEach((key) => {
+        values[key] = form.querySelector(`[data-dashboard-context="${key}"]`)?.value.trim() || "";
+    });
     return {
         values,
         instructions,
@@ -565,7 +595,7 @@ function setDashboardQuickGenerating(form, isGenerating) {
     form.dataset.generating = isGenerating ? "true" : "false";
     if (topicField) topicField.disabled = isGenerating;
     if (formatSelect) formatSelect.disabled = isGenerating;
-    form.querySelectorAll("[data-dashboard-quick-option]").forEach((field) => {
+    form.querySelectorAll("[data-dashboard-quick-option], [data-dashboard-context], input[type=file], [data-dashboard-remove-image], [data-dashboard-remove-source]").forEach((field) => {
         field.disabled = isGenerating;
     });
     if (button) {
@@ -578,7 +608,7 @@ function setDashboardQuickGenerating(form, isGenerating) {
     if (progress) progress.hidden = !isGenerating;
 }
 
-async function requestDashboardQuickMaterial(materialType, topic, label, generationOptions, ownerUid) {
+async function requestDashboardQuickMaterial(materialType, topic, label, generationOptions, ownerUid, file) {
     if (typeof window.educariaAiEndpoint !== "function") {
         throw new Error(dashboardTranslate("dashboard.quick.generationError", "Não foi possível conectar ao serviço de IA. Tente novamente."));
     }
@@ -587,6 +617,9 @@ async function requestDashboardQuickMaterial(materialType, topic, label, generat
     formData.append("materialType", materialType);
     formData.append("sourceText", topic);
     formData.append("text", topic);
+    if (file) formData.append("file", file);
+    formData.append("generationOptions", JSON.stringify(generationOptions?.values || {}));
+    if (materialType === "slides") formData.append("slideOptions", JSON.stringify(generationOptions?.values || {}));
     const optionInstructions = generationOptions?.instructions?.join(" ") || "";
     formData.append("action", `Crie um rascunho pedagógico de ${label || "atividade"}, claro e pronto para o professor revisar e apresentar. ${optionInstructions}`.trim());
 
@@ -619,6 +652,8 @@ async function requestDashboardQuickMaterial(materialType, topic, label, generat
     if (materialType === "slides") {
         payload.material.visual_mode = generationOptions?.values?.visualMode === "ai" ? "ai" : "standard";
     }
+    // Keep selections with the recoverable result, including local-only presentation settings.
+    payload.material.generation_options = { ...generationOptions?.values, ...payload.material.generation_options };
     return payload;
 }
 
@@ -629,7 +664,7 @@ function dashboardQuickGenerationError(error) {
     if (Number(error?.status || 0) === 401) {
         return dashboardTranslate("dashboard.quick.sessionError", "Sua sessão expirou. Entre novamente para usar a IA.");
     }
-    if ([400, 403, 429].includes(Number(error?.status || 0)) && error?.message) {
+    if ([400, 403, 413, 429].includes(Number(error?.status || 0)) && error?.message) {
         return error.message;
     }
     return dashboardTranslate("dashboard.quick.generationError", "Não foi possível criar a atividade agora. Tente novamente.");
@@ -756,6 +791,8 @@ function bindQuickCreateForm() {
     if (!form) return;
     const topicField = form.querySelector("[data-dashboard-quick-topic]");
     const formatSelect = form.querySelector("[data-dashboard-quick-format]");
+    bindDashboardCreationAttachments(form);
+    hydrateDashboardCreationClasses();
 
     topicField?.addEventListener("input", () => {
         topicField.setCustomValidity("");
@@ -768,6 +805,21 @@ function bindQuickCreateForm() {
         renderDashboardQuickOptions(formatSelect.selectedOptions?.[0]?.dataset.materialType || "");
     });
 
+    document.addEventListener("click", (event) => {
+        const link = event.target.closest("#activity-toolkit a, .sidebar-subitem");
+        if (!link || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+        const format = DASHBOARD_QUICK_CREATE_FORMATS.find((item) => item.href === link.getAttribute("href"));
+        if (!format) return; // Complete lessons assemble existing activities, not one AI generation.
+        event.preventDefault();
+        if (form.dataset.generating !== "true") {
+            rememberDashboardQuickOptions();
+            formatSelect.value = format.href;
+            renderDashboardQuickOptions(format.materialType);
+        }
+        form.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+        topicField?.focus({ preventScroll: true });
+    });
+
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         if (form.dataset.generating === "true") return;
@@ -776,12 +828,13 @@ function bindQuickCreateForm() {
         const topic = topicField?.value.trim() || "";
         const target = formatSelect?.value || "";
         const materialType = formatSelect?.selectedOptions?.[0]?.dataset.materialType || "";
-        const className = typeof readSelectedClass === "function" ? readSelectedClass() : "";
+        const className = form.querySelector('[data-dashboard-context="className"]')?.value || "";
+        const sourceFile = form.querySelector("[data-dashboard-source-file]")?.files?.[0] || null;
 
         if (feedback) feedback.hidden = true;
         topicField?.setCustomValidity("");
-        if (topic.length < 3) {
-            topicField?.setCustomValidity(dashboardTranslate("dashboard.quick.topicRequired", "Digite um tópico para a IA criar a atividade."));
+        if (topic.length < 3 && !sourceFile) {
+            topicField?.setCustomValidity("Digite um tema ou anexe um arquivo para criar a atividade.");
             topicField?.reportValidity();
             topicField?.focus();
             return;
@@ -808,6 +861,8 @@ function bindQuickCreateForm() {
 
         setDashboardQuickGenerating(form, true);
         try {
+            validateDashboardSourceFile(sourceFile);
+            const coverImage = materialType === "slides" ? await prepareDashboardSlideImage(form) : "";
             if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
                 const hasCredits = await window.ensureEducariaAiCreditsAvailable({ materialType });
                 if (!hasCredits) return;
@@ -815,8 +870,9 @@ function bindQuickCreateForm() {
 
             const label = formatSelect?.selectedOptions?.[0]?.textContent?.trim() || "Atividade";
             if (ownerUid !== window.educariaGenerationRecovery.currentUid()) return;
-            const payload = await requestDashboardQuickMaterial(materialType, topic, label, generationOptions, ownerUid);
-            const result = window.educariaGenerationRecovery.create({ ownerUid, topic, materialType, className, label, payload });
+            const payload = await requestDashboardQuickMaterial(materialType, topic, label, generationOptions, ownerUid, sourceFile);
+            if (coverImage) payload.material.cover_image = coverImage;
+            const result = window.educariaGenerationRecovery.create({ ownerUid, topic: topic || `Conteúdo de ${sourceFile.name}`, materialType, className, label, payload });
             window.educariaGenerationRecovery.save(result);
             if (typeof educariaTrack === "function") {
                 educariaTrack("quick_ai_generation_succeeded", {
