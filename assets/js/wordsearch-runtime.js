@@ -202,13 +202,14 @@ function renderWordsearchApplication() {
             const availableHeight = Math.max(1, shell.clientHeight - verticalPadding);
             const cellSizeByHeight = Math.max(1, (availableHeight - gap * (rows - 1)) / rows);
             const cellSizeByWidth = Math.max(1, (availableWidth - gap * (cols - 1)) / cols);
-            const fittedCellSize = shell.classList.contains("is-zoomed") ? Math.max(32, Math.min(cellSizeByHeight, cellSizeByWidth)) : Math.min(cellSizeByHeight, cellSizeByWidth);
+            const baseCellSize = Math.min(cellSizeByHeight, cellSizeByWidth);
+            const fittedCellSize = shell.classList.contains("is-zoomed") ? Math.max(32, baseCellSize * 1.5) : baseCellSize;
             const fittedWidth = Math.max(1, fittedCellSize * cols + gap * (cols - 1));
             const fittedHeight = Math.max(1, fittedCellSize * rows + gap * (rows - 1));
             inner.style.width = `${Math.floor(fittedWidth)}px`;
             inner.style.height = `${Math.floor(fittedHeight)}px`;
             inner.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
-            inner.style.setProperty("--wordsearch-letter-size", `${Math.max(8, Math.min(28, fittedCellSize * 0.65))}px`);
+            inner.style.setProperty("--wordsearch-letter-size", `${Math.max(8, Math.min(42, fittedCellSize * 0.65))}px`);
         });
     }
 

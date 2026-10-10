@@ -103,7 +103,7 @@ function serializeFlashcards(cards) {
 }
 
 function normalizeFlashcardText(value) {
-    return String(value || "").replace(/\s+/g, " ").trim();
+    return String(value || "").replace(/\r\n?/g, "\n").trim();
 }
 
 function normalizeFlashcardForStage(card) {
@@ -138,19 +138,22 @@ function fitFlashcardFaceContent(face) {
     const exampleBlock = face.querySelector("[data-flashcard-example-block]");
     const exampleText = exampleBlock?.querySelector("p");
     const exampleVisible = Boolean(exampleText && !exampleBlock?.hidden);
-    const availableWidth = Math.max(face.clientWidth - 56, 220);
+    const faceStyle = window.getComputedStyle(face);
+    // Leave room for fractional CSS pixels so a fitting word does not create a scrollbar.
+    const availableWidth = Math.max(1, Math.floor(face.clientWidth - (parseFloat(faceStyle.paddingLeft) || 0) - (parseFloat(faceStyle.paddingRight) || 0)) - 2);
     const density = face.dataset.density || "comfort";
     const maxTitleSize = density === "dense"
         ? Math.min(face.clientWidth * 0.13, face.clientHeight * 0.18, 80)
         : density === "compact"
             ? Math.min(face.clientWidth * 0.16, face.clientHeight * 0.21, 100)
             : Math.min(face.clientWidth * 0.2, face.clientHeight * 0.26, 128);
-    const minTitleSize = density === "dense" ? 28 : density === "compact" ? 32 : 40;
+    const minTitleSize = face.clientHeight < 300 || availableWidth < 400 ? 20 : density === "dense" ? 28 : density === "compact" ? 32 : 40;
     const initialTitleSize = Math.max(minTitleSize, Math.round(maxTitleSize));
     const maxExampleSize = exampleVisible ? Math.min(face.clientWidth * 0.038, 28) : 0;
     const minExampleSize = 18;
 
     title.style.maxWidth = `${availableWidth}px`;
+    title.style.overflowWrap = "normal";
     title.style.fontSize = `${initialTitleSize}px`;
     title.style.lineHeight = initialTitleSize >= 84 ? "0.94" : initialTitleSize >= 64 ? "0.98" : "1.02";
 
@@ -167,7 +170,7 @@ function fitFlashcardFaceContent(face) {
     let exampleSize = exampleText ? parseFloat(window.getComputedStyle(exampleText).fontSize) || 16 : 0;
     let attempts = 0;
 
-    while (face.scrollHeight > face.clientHeight + 2 && attempts < 100) {
+    while ((face.scrollHeight > face.clientHeight + 2 || title.scrollWidth > availableWidth) && attempts < 100) {
         if (titleSize > minTitleSize) {
             titleSize -= titleSize > 72 ? 2 : 1;
             title.style.fontSize = `${titleSize}px`;
@@ -182,6 +185,9 @@ function fitFlashcardFaceContent(face) {
 
         attempts += 1;
     }
+
+    // Only an unbroken token that cannot fit at the readable minimum may wrap.
+    title.style.overflowWrap = title.scrollWidth > availableWidth ? "anywhere" : "normal";
 
     return true;
 }
@@ -382,6 +388,11 @@ function renderFlashcardsPresentation(cards, controls = {}) {
     persistState();
     paint();
     window.addEventListener("resize", fitVisibleText);
+    document.addEventListener("educaria-presentation-layout-change", fitVisibleText);
+    if (typeof ResizeObserver === "function") {
+        new ResizeObserver(fitVisibleText).observe(cardRoot.querySelector(".flashcards-stage-scene") || cardRoot);
+    }
+    document.fonts?.ready.then(fitVisibleText);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

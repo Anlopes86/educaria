@@ -1044,6 +1044,7 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 }
 
 .dashboard-quick-option-field input,
+.dashboard-quick-option-field textarea,
 .dashboard-quick-option-field select {
     width: 100%;
     min-width: 0;
@@ -1060,6 +1061,9 @@ body.product-body.theme-overview .app-content.dashboard-overview-content {
 .dashboard-quick-option-field select option {
     color: var(--navy-dark);
 }
+
+.dashboard-quick-option-field textarea { min-height: 92px; padding: 10px 11px; resize: vertical; line-height: 1.5; }
+.dashboard-quick-option-field > small { font-size: .72rem; line-height: 1.4; }
 
 .dashboard-quick-create-form .platform-link-button {
     width: 100%;
@@ -1537,6 +1541,31 @@ body.dashboard-ai-result-open {
 }
 
 /* Creation-focused teacher home */
+.dashboard-tour-field-group { display: grid; gap: 10px; min-width: 0; }
+body .dashboard-tour-card {
+    right: auto;
+    bottom: auto;
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    background: #fff;
+    border-top: 4px solid #0f9488;
+}
+.dashboard-tour-copy { display: grid; gap: 10px; }
+.dashboard-tour-step { color: #0f766e; font-size: .78rem; font-weight: 800; }
+.dashboard-tour-card .dashboard-tour-tip { padding: 10px 12px; border-radius: 12px; background: #effaf6; color: #365c55; font-size: .8rem; line-height: 1.5; }
+.dashboard-tour-card[data-guide-step="format"], .dashboard-tour-card[data-guide-step="personalize"] { border-top-color: #7c3aed; }
+.dashboard-tour-card[data-guide-step="generate"] { border-top-color: #0284c7; }
+.dashboard-tour-progress { display: flex; gap: 6px; }
+.dashboard-tour-button:focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }
+@media (max-width: 860px) {
+    .dashboard-tour-active [data-dashboard-tour-anchor], .dashboard-tour-active [data-dashboard-quick-open] { scroll-margin-top: 76px; }
+    .dashboard-tour-card p { font-size: .9rem; line-height: 1.5; }
+    .dashboard-tour-actions, .dashboard-tour-actions-group { gap: 6px; }
+    .dashboard-tour-button { padding: 0 11px; font-size: .85rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-tour-highlight { transition: none; }
+}
 body.product-body.theme-overview .dashboard-quick-create-form { grid-template-columns: minmax(0, 1fr); }
 body.product-body.theme-overview .dashboard-quick-create-form > * { grid-column: 1 / -1; min-width: 0; }
 body.product-body.theme-overview .dashboard-quick-options { border: 0; background: transparent; padding: 0; }
@@ -1749,6 +1778,7 @@ body.product-body.theme-overview .dashboard-quick-option-field > span {
 }
 
 body.product-body.theme-overview .dashboard-quick-option-field input,
+body.product-body.theme-overview .dashboard-quick-option-field textarea,
 body.product-body.theme-overview .dashboard-quick-option-field select {
     border-color: rgba(15, 118, 110, 0.16);
     background: rgba(255, 255, 255, 0.94);
@@ -1757,6 +1787,7 @@ body.product-body.theme-overview .dashboard-quick-option-field select {
 }
 
 body.product-body.theme-overview .dashboard-quick-option-field input:focus,
+body.product-body.theme-overview .dashboard-quick-option-field textarea:focus,
 body.product-body.theme-overview .dashboard-quick-option-field select:focus {
     outline: 3px solid rgba(20, 184, 166, 0.16);
     border-color: rgba(13, 148, 136, 0.55);

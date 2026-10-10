@@ -1,0 +1,99 @@
+/* Keep every activity inside the actual stage, including short lesson iframes. */
+@media screen {
+    .presentation-shell, .lesson-sequence-stage-shell { flex: 0 0 auto; }
+    body.presentation-topbar-collapsed .presentation-shell { gap: 0; }
+    .memory-stage-layout, .wheel-stage-shell { grid-template-rows: minmax(0, 1fr); }
+    .memory-stage-card, .wheel-stage-card, .flashcards-stage-card { max-height: 100%; }
+    .memory-stage-grid { height: auto; align-self: stretch; grid-template-rows: repeat(var(--memory-rows, 2), minmax(52px, 1fr)); }
+    .memory-stage-tile strong { overflow-wrap: break-word; word-break: normal; hyphens: none; }
+
+    .wheel-stage-playground { min-width: 0; container-type: size; }
+    .wheel-stage-svg { width: min(100cqw, 100cqh, 690px); max-width: 100%; }
+    .wheel-stage-footer.wheel-stage-panel { height: 100%; overflow: hidden; }
+    .wheel-stage-options { overscroll-behavior: contain; scrollbar-width: thin; scrollbar-gutter: stable; }
+    .wheel-stage-panel .wheel-stage-result { max-height: min(110px, 22dvh); }
+
+    /* Absolute 3D faces can disappear in short/clipped compositing layers.
+       Layer the faces in a definite grid track and fade only the active face. */
+    .flashcards-stage-scene { width: 100%; grid-template-rows: minmax(0, 1fr); perspective: none; }
+    .flashcards-stage-inner { width: min(100%, 1000px); display: grid; grid-template-rows: minmax(0, 1fr); transform: none; transform-style: flat; transition: none; }
+    .flashcards-stage-card.is-flipped .flashcards-stage-inner { transform: none; }
+    .flashcards-stage-face { position: relative; inset: auto; grid-area: 1 / 1; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: auto; align-content: safe center; backface-visibility: visible; transform: none; transition: opacity 160ms ease; }
+    .flashcards-stage-face--back { align-content: safe center; }
+    .flashcards-stage-face--back, .is-flipped .flashcards-stage-face--front { visibility: hidden; opacity: 0; pointer-events: none; }
+    .is-flipped .flashcards-stage-face--back { visibility: visible; opacity: 1; pointer-events: auto; }
+    .flashcards-stage-face > strong, .flashcards-stage-example p { word-break: normal; hyphens: none; overflow-wrap: break-word; line-height: 1.18; white-space: pre-line; }
+    .flashcards-stage-example { width: 100%; min-width: 0; }
+    .flashcards-stage-actions .presentation-nav-button { position: static; transform: none; flex: 0 0 46px; width: 46px; height: 46px; padding: 0; font-size: 0; }
+    .flashcards-stage-actions .presentation-nav-button::before { display: block; }
+    .flashcards-stage-actions .presentation-nav-button::after { content: none; }
+    .flashcards-stage-card.is-editing .flashcards-stage-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .flashcards-stage-card.is-editing .flashcards-stage-face { grid-area: auto; visibility: visible; opacity: 1; pointer-events: auto; }
+
+    .debate-stage-layout { grid-template-rows: minmax(0, 1fr) auto; align-content: stretch; }
+    .debate-stage-card { height: 100%; max-height: 100%; align-self: stretch; }
+    body.debate-presentation-shell .debate-floating-controls { min-height: 0; margin: 0 auto; padding: 4px 10px; }
+
+    .presentation-topbar .presentation-topbar-group { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; grid-column: 1 / -1; }
+    .hangman-stage-actions { justify-content: center; }
+    .hangman-stage-nav { justify-content: center; flex-wrap: wrap; }
+    .hangman-stage-layout { grid-template-columns: minmax(0, 1fr) minmax(200px, .35fr); }
+    .hangman-stage-sidebar { display: grid; overflow: auto; min-width: 0; padding: 12px; }
+    .hangman-stage-sidebar > *, .hangman-round-item { min-width: 0; overflow-wrap: break-word; }
+    .wordsearch-stage-board-shell { min-width: 0; grid-template-rows: minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); }
+    .wordsearch-stage-board-shell.is-zoomed { grid-template-rows: auto; grid-template-columns: auto; scrollbar-gutter: stable; }
+    .wordsearch-stage-board-shell.is-zoomed .wordsearch-grid--stage { min-width: 0; }
+
+    .presentation-library-link { position: relative; flex: 0 0 40px; display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; min-width: 40px; color: #0f766e; background: #fff; border: 1px solid #bcd6d3; border-radius: 50%; text-decoration: none; z-index: 35; }
+    .presentation-library-link:hover, .presentation-library-link:focus-visible { background: #e1f5f0; outline: 3px solid #0f766e44; outline-offset: 2px; }
+    .presentation-library-link > span { position: absolute; top: calc(100% + 8px); left: 0; width: max-content; padding: 6px 10px; border-radius: 8px; font-size: .8rem; font-weight: 700; background: #102a43; color: #fff; box-shadow: 0 4px 16px #0f172a22; opacity: 0; visibility: hidden; pointer-events: none; }
+    .presentation-library-link:hover > span, .presentation-library-link:focus-visible > span { opacity: 1; visibility: visible; }
+    body.presentation-topbar-collapsed > .presentation-library-link { position: fixed; top: 10px; left: 12px; z-index: 81; box-shadow: 0 4px 16px #0f172a22; }
+    body.presentation-topbar-collapsed:not(.lesson-sequence-embedded) :is(.debate-stage-head, .flashcards-stage-header, .memory-stage-header, .hangman-stage-head, .match-stage-header, .mind-stage-head, .wordsearch-stage-head, .crossword-stage-head) { padding-left: 44px; }
+    body.lesson-sequence-embedded .presentation-library-link { display: none; }
+    .lesson-sequence-stage-page .lesson-sequence-stage-topbar { overflow: visible; z-index: 10; }
+    .lesson-sequence-stage-page .lesson-sequence-stage-frame { grid-template-rows: minmax(0, 1fr) auto; }
+
+    @media (max-height: 720px) {
+        .flashcards-stage-card { padding: 12px 18px; gap: 10px; }
+        .flashcards-stage-header .platform-section-label { display: none; }
+        .flashcards-stage-header h1 { margin: 0; font-size: clamp(1.15rem, 2.2vw, 1.8rem); }
+        .flashcards-stage-header { align-items: center; gap: 10px; }
+        .flashcards-stage-face { padding: 40px 18px 12px; border-radius: 22px; }
+        .flashcards-face-label { top: 8px; left: 14px; padding: 4px 10px; }
+        .memory-stage-card { padding: 12px 16px; gap: 10px; }
+        .memory-stage-grid { gap: 8px; }
+        .memory-stage-header { gap: 8px; }
+        .memory-stage-header .platform-section-label { display: none; }
+        .wheel-stage-card { padding: 10px 14px; }
+        .wheel-stage-footer.wheel-stage-panel { gap: 8px; }
+        .wheel-stage-spin-button { min-height: 42px; }
+        .lesson-sequence-stage-page .lesson-sequence-stage-shell { gap: 6px; padding: 6px; }
+        .lesson-sequence-stage-class { display: none; }
+        .lesson-sequence-stage-page .lesson-sequence-stage-topbar { min-height: 0; padding: 5px 8px; }
+        .lesson-sequence-player-item { min-height: 0; padding: 5px 10px; }
+        .lesson-sequence-player-item small { display: none; }
+        .lesson-sequence-player-item .lesson-sequence-player-order { height: 24px; width: 24px; }
+        .lesson-sequence-stage-route { padding: 0; min-height: 0; }
+        .lesson-sequence-player-item > span:last-child { line-height: 1.25; }
+        .lesson-sequence-player-item > span:last-child > small { display: none; }
+        .lesson-sequence-stage-nav { min-height: 38px; padding: 4px 12px; }
+        .lesson-sequence-stage-nav small { display: none; }
+    }
+    @media (max-width: 900px) {
+        .lesson-sequence-stage-actions .platform-link-button[data-lesson-player-toggle-route] { display: inline-flex; }
+        .lesson-sequence-stage-class, .lesson-sequence-stage-title-group small { display: none; }
+        .lesson-sequence-stage-topbar { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+        .lesson-sequence-stage-actions { justify-content: center; flex-wrap: wrap; }
+    }
+    @media (max-width: 700px) {
+        .hangman-stage-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(260px, 1fr) auto; overflow-y: auto; }
+        .hangman-stage-sidebar { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px; gap: 8px; }
+        .hangman-stage-nav, .hangman-round-list, .hangman-stage-note { grid-column: 1 / -1; }
+        .flashcards-stage-card { padding: 10px; gap: 8px; }
+        .flashcards-stage-inner { width: 100%; }
+        .flashcards-stage-header h1 { font-size: 1.2rem; }
+        .flashcards-stage-card.is-editing .flashcards-stage-inner { grid-template-columns: minmax(0, 1fr); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+    }
+}
+@media print { .presentation-library-link { display: none !important; } }

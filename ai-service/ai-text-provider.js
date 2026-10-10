@@ -79,7 +79,7 @@ export async function generateGroqStructuredMaterial({
                 role: "system",
                 content: [
                     "Você é um assistente pedagógico da EducarIA.",
-                    "Responda em português do Brasil e siga rigorosamente o schema JSON fornecido.",
+                    "Siga rigorosamente o schema JSON fornecido. Use português do Brasil como padrão para conteúdo novo; preserve o idioma de material pronto e respeite o idioma pedido pelo professor.",
                     "Preencha todos os campos. Quando um campo não se aplicar, use string vazia ou array vazio.",
                     "Não inclua markdown nem texto fora do JSON estruturado."
                 ].join(" ")
@@ -146,4 +146,3 @@ export async function generateGroqStructuredMaterial({
         providerRequestId: payload?.x_groq?.id || payload?.id || ""
     };
 }
-

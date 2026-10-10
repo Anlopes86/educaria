@@ -24,7 +24,7 @@ const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_
     .filter((format) => format.materialType);
 const DASHBOARD_QUICK_OPTION_CONFIGS = {
     slides: [
-        { key: "count", type: "number", labelKey: "dashboard.quick.count.slides", label: "Quantidade de slides", min: 1, max: 20, value: 8, instruction: (value) => `Gerar ${value} slides.` },
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.slides", label: "Quantidade de slides", min: 1, max: 20, value: "", allowAuto: true, instruction: (value) => `Gerar ${value} slides.` },
         {
             key: "visualMode",
             type: "select",
@@ -53,7 +53,7 @@ const DASHBOARD_QUICK_OPTION_CONFIGS = {
         }
     ],
     flashcards: [
-        { key: "count", type: "number", labelKey: "dashboard.quick.count.cards", label: "Quantidade de cards", min: 2, max: 24, value: 12, instruction: (value) => `Gerar ${value} cards.` }
+        { key: "count", type: "number", labelKey: "dashboard.quick.count.cards", label: "Quantidade de cards", min: 2, max: 24, value: "", allowAuto: true, instruction: (value) => `Gerar ${value} cards.` }
     ],
     memory: [
         { key: "count", type: "number", labelKey: "dashboard.quick.count.pairs", label: "Quantidade de pares", min: 2, max: 16, value: 6, instruction: (value) => `Gerar ${value} pares.` }
@@ -112,6 +112,12 @@ DASHBOARD_QUICK_OPTION_CONFIGS.slides.push(
     dashboardChoice("tone", "Tom da apresentação", "balanced", [["balanced", "Claro e equilibrado"], ["visual", "Mais visual e direto"], ["explanatory", "Mais explicativo"], ["inspiring", "Mais inspirador"]])
 );
 DASHBOARD_QUICK_OPTION_CONFIGS.flashcards.push(dashboardChoice("examples", "Exemplos e anotações", "true", [["true", "Incluir"], ["false", "Não incluir"]]));
+for (const type of ["slides", "flashcards"]) {
+    DASHBOARD_QUICK_OPTION_CONFIGS[type].push(dashboardChoice("contentMode", "Como usar o conteúdo", "auto", [
+        ["auto", "Seguir meu pedido"], ["preserve", "Organizar meu texto"],
+        ["summarize", "Resumir"], ["develop", "Aprofundar o assunto"]
+    ]));
+}
 DASHBOARD_QUICK_OPTION_CONFIGS.wheel.push(dashboardChoice("eliminate", "Depois de sortear", "false", [["false", "Manter o item"], ["true", "Retirar o item"]]));
 DASHBOARD_QUICK_OPTION_CONFIGS.match.push(dashboardChoice("shuffle", "Coluna de respostas", "true", [["true", "Embaralhar"], ["false", "Manter a ordem"]]));
 DASHBOARD_QUICK_OPTION_CONFIGS.wordsearch.push(dashboardChoice("directions", "Direções das palavras", "diagonal", [["basic", "Horizontal e vertical"], ["diagonal", "Com diagonais"], ["full", "Todas as direções"]]));
@@ -124,6 +130,8 @@ for (const [type, choices] of Object.entries({
 const DASHBOARD_TOUR_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 let dashboardTourState = null;
+let dashboardTourAutoTimer = 0;
+const dashboardTourSeenOnPage = new Set();
 let dashboardQuickAiResult = null;
 const dashboardQuickOptionState = new Map();
 
@@ -446,13 +454,14 @@ function renderDashboardQuickOptions(materialType) {
         }
 
         const parsedValue = Number.parseInt(rememberedValue, 10);
-        const value = Number.isFinite(parsedValue)
+        const value = field.allowAuto && rememberedValue === "" ? "" : Number.isFinite(parsedValue)
             ? Math.min(field.max, Math.max(field.min, parsedValue))
             : field.value;
         return `
             <label class="dashboard-quick-option-field">
                 <span>${escapeHtml(label)}</span>
-                <input type="number" aria-label="${escapeHtml(label)}" min="${field.min}" max="${field.max}" step="1" value="${value}" inputmode="numeric" data-dashboard-quick-option="${escapeHtml(field.key)}">
+                <input type="number" aria-label="${escapeHtml(label)}" min="${field.min}" max="${field.max}" step="1" value="${value}" ${field.allowAuto ? 'placeholder="Automática"' : ""} inputmode="numeric" data-dashboard-quick-option="${escapeHtml(field.key)}">
+                ${field.allowAuto ? "<small>Em branco: adapta ao conteúdo. Preencha para fixar a quantidade.</small>" : ""}
             </label>
         `;
     };
@@ -496,6 +505,10 @@ function collectDashboardQuickOptions(form, materialType) {
             return;
         }
 
+        if (field.allowAuto && !input.value.trim()) {
+            values[field.key] = null;
+            return;
+        }
         const parsedValue = Number.parseInt(input.value, 10);
         const value = Number.isFinite(parsedValue)
             ? Math.min(field.max, Math.max(field.min, parsedValue))
@@ -506,7 +519,7 @@ function collectDashboardQuickOptions(form, materialType) {
     });
 
     dashboardQuickOptionState.set(materialType, values);
-    ["audience", "subject", "objective", "className"].forEach((key) => {
+    ["audience", "subject", "objective", "className", "teacherInstructions"].forEach((key) => {
         values[key] = form.querySelector(`[data-dashboard-context="${key}"]`)?.value.trim() || "";
     });
     return {
@@ -619,7 +632,12 @@ async function requestDashboardQuickMaterial(materialType, topic, label, generat
     formData.append("text", topic);
     if (file) formData.append("file", file);
     formData.append("generationOptions", JSON.stringify(generationOptions?.values || {}));
-    if (materialType === "slides") formData.append("slideOptions", JSON.stringify(generationOptions?.values || {}));
+    if (materialType === "slides") {
+        const values = generationOptions?.values || {};
+        formData.append("slideOptions", JSON.stringify(Object.fromEntries(
+            ["detail", "tone", "audience", "className", "subject", "objective"].map((key) => [key, values[key]])
+        )));
+    }
     const optionInstructions = generationOptions?.instructions?.join(" ") || "";
     formData.append("action", `Crie um rascunho pedagógico de ${label || "atividade"}, claro e pronto para o professor revisar e apresentar. ${optionInstructions}`.trim());
 
@@ -947,7 +965,10 @@ function refreshTeacherDashboard() {
 async function syncAndRefreshTeacherDashboard() {
     refreshTeacherDashboard();
 
-    if (typeof syncClassesWithFirebase !== "function") return;
+    if (typeof syncClassesWithFirebase !== "function") {
+        scheduleDashboardTourAutoStart();
+        return;
+    }
 
     try {
         await syncClassesWithFirebase();
@@ -956,6 +977,7 @@ async function syncAndRefreshTeacherDashboard() {
     }
 
     refreshTeacherDashboard();
+    scheduleDashboardTourAutoStart();
 }
 
 function dashboardTourStorageKeys() {
@@ -985,8 +1007,10 @@ function readDashboardTourSessionIdentifier() {
 }
 
 function hasSeenDashboardTour() {
+    const keys = dashboardTourStorageKeys();
+    if (keys.some((key) => dashboardTourSeenOnPage.has(key))) return true;
     try {
-        return dashboardTourStorageKeys().some((key) => localStorage.getItem(key) === "done");
+        return keys.some((key) => localStorage.getItem(key) === "done");
     } catch (error) {
         console.warn("EducarIA dashboard tour unavailable:", error);
         return false;
@@ -994,8 +1018,10 @@ function hasSeenDashboardTour() {
 }
 
 function markDashboardTourSeen() {
+    const keys = dashboardTourStorageKeys();
+    keys.forEach((key) => dashboardTourSeenOnPage.add(key));
     try {
-        dashboardTourStorageKeys().forEach((key) => {
+        keys.forEach((key) => {
             localStorage.setItem(key, "done");
         });
     } catch (error) {
@@ -1023,27 +1049,54 @@ function setDashboardTourSidebarPanel(key) {
 function dashboardTourSteps() {
     return [
         {
+            id: "class",
             selector: '[data-dashboard-tour-anchor="create-class-form"]',
             panel: "create-class",
             title: "Comece criando sua primeira turma",
-            description: "Dê um nome à turma e escolha a matéria. Assim, as atividades que você criar já ficam organizadas para cada grupo."
+            description: "Informe o nome da turma e escolha a matéria. Depois, você poderá selecionar essa turma ao criar uma atividade.",
+            tip: "Já tem uma turma? Pode avançar. Este guia não cria nem altera seus materiais."
         },
         {
-            selector: '[data-dashboard-tour-anchor="quick-create"]',
-            title: "Crie a primeira atividade",
-            description: "Digite o tema, escolha a ferramenta e aguarde no painel. Quando o rascunho ficar pronto, escolha entre editar ou apresentar."
+            id: "source",
+            selector: '[data-dashboard-tour-anchor="source"]',
+            title: "Comece com um tema ou arquivo",
+            description: "Digite o assunto que quer ensinar ou abra Anexar arquivo do professor. A IA pode usar seu PDF, DOCX, TXT ou RTF como base.",
+            tip: "Use só o arquivo ou acrescente orientações no campo do tema."
         },
         {
-            selector: '[data-dashboard-tour-anchor="toolkit"]',
-            title: "Escolha o formato da atividade",
-            description: "Aqui ficam os formatos principais. Os extras continuam disponíveis logo abaixo para variar a dinâmica da aula."
+            id: "format",
+            selector: '[data-dashboard-tour-anchor="format"]',
+            title: "Escolha o formato e a quantidade",
+            description: "Selecione Slides, Quiz, Memória ou outra ferramenta. As opções básicas aparecem de acordo com a atividade escolhida.",
+            tip: "Defina quantos slides, perguntas ou pares deseja. No quiz, escolha também o tipo de pergunta."
         },
         {
-            selector: '[data-dashboard-tour-anchor="library"]',
-            title: "Guarde seu próprio acervo",
-            description: "A biblioteca concentra os materiais que você salvou nos builders, para revisar, editar e reutilizar depois."
+            id: "personalize",
+            selector: '[data-dashboard-tour-anchor="audience"]',
+            disclosure: ".dashboard-personalize",
+            title: "Adapte à sua turma",
+            description: "Em Personalizar a atividade, escolha onde salvar, informe o ano ou público e ajuste as opções que quiser.",
+            tip: "É opcional. Nos slides, você também pode adicionar uma imagem de abertura."
+        },
+        {
+            id: "generate",
+            selector: '[data-dashboard-quick-open]',
+            title: "Gere, revise e apresente",
+            description: "Clique em Gerar com IA e aguarde no painel. Ao terminar, escolha Revisar e editar ou Apresentar agora.",
+            tip: "Confira o conteúdo antes de usar em sala. Ajustes manuais no editor não gastam créditos de IA."
+        },
+        {
+            id: "reuse",
+            selector: '[data-dashboard-tour-anchor="destinations"]',
+            title: "Encontre tudo de novo",
+            description: "Use Turmas para ver as atividades de cada grupo e Biblioteca para consultar seu acervo. No editor, Salvar na turma permite escolher uma ou mais turmas.",
+            tip: "Para rever estas etapas, clique em Ver guia rápido quando quiser."
         }
-    ];
+    ].map((step) => ({ ...step,
+        title: dashboardTranslate(`dashboard.guide.${step.id}.title`, step.title),
+        description: dashboardTranslate(`dashboard.guide.${step.id}.description`, step.description),
+        tip: dashboardTranslate(`dashboard.guide.${step.id}.tip`, step.tip)
+    }));
 }
 
 function dashboardProgressSnapshot() {
@@ -1056,9 +1109,31 @@ function dashboardProgressSnapshot() {
 }
 
 function shouldAutoStartDashboardTour() {
+    const teacher = typeof readCurrentTeacher === "function" ? readCurrentTeacher() : null;
+    if (!teacher?.uid && !teacher?.email && !readDashboardTourSessionIdentifier()) return false;
+    if (dashboardTourState && !dashboardTourState.root.hidden) return false;
+    if (document.body.classList.contains("dashboard-ai-result-open")) return false;
+    if (document.querySelector('[data-dashboard-quick-form]')?.dataset.generating === "true") return false;
+    if (window.educariaGenerationRecovery?.list().length) return false;
     if (hasSeenDashboardTour()) return false;
     const snapshot = dashboardProgressSnapshot();
     return snapshot.classesCount === 0 || snapshot.lessonsCount === 0;
+}
+
+function scheduleDashboardTourAutoStart() {
+    window.clearTimeout(dashboardTourAutoTimer);
+    dashboardTourAutoTimer = window.setTimeout(() => {
+        if (shouldAutoStartDashboardTour()) startDashboardTour(false, "auto");
+    }, 480);
+}
+
+function prepareDashboardTourStep(step) {
+    const state = dashboardTourState;
+    state.disclosures.forEach(({ element, open }) => { element.open = open; });
+    const disclosure = step.disclosure ? document.querySelector(step.disclosure) : null;
+    if (disclosure) disclosure.open = true;
+    setDashboardTourSidebarPanel(step.panel || "");
+    if (typeof setMobileSidebarOpen === "function") setMobileSidebarOpen(Boolean(step.panel));
 }
 
 function trackDashboardTourEvent(name, metadata = {}) {
@@ -1073,18 +1148,21 @@ function buildDashboardTour() {
     root.className = "dashboard-tour";
     root.hidden = true;
     root.innerHTML = `
-        <button type="button" class="dashboard-tour-backdrop" data-dashboard-tour-close aria-label="Fechar guia"></button>
+        <div class="dashboard-tour-backdrop" aria-hidden="true"></div>
         <div class="dashboard-tour-highlight" aria-hidden="true"></div>
-        <section class="dashboard-tour-card" role="dialog" aria-modal="true" aria-label="Guia de uso do painel">
+        <section class="dashboard-tour-card" role="dialog" aria-modal="true" aria-labelledby="dashboard-guide-title" aria-describedby="dashboard-guide-description">
             <span class="dashboard-tour-step"></span>
-            <h3></h3>
-            <p></p>
+            <div class="dashboard-tour-copy" aria-live="polite" aria-atomic="true">
+                <h3 id="dashboard-guide-title"></h3>
+                <p id="dashboard-guide-description"></p>
+                <p class="dashboard-tour-tip"></p>
+            </div>
             <div class="dashboard-tour-progress" aria-hidden="true"></div>
             <div class="dashboard-tour-actions">
-                <button type="button" class="dashboard-tour-button" data-dashboard-tour-close>Pular</button>
+                <button type="button" class="dashboard-tour-button" data-dashboard-tour-close></button>
                 <div class="dashboard-tour-actions-group">
-                    <button type="button" class="dashboard-tour-button" data-dashboard-tour-prev>Voltar</button>
-                    <button type="button" class="dashboard-tour-button dashboard-tour-button--primary" data-dashboard-tour-next>Pr&oacute;ximo</button>
+                    <button type="button" class="dashboard-tour-button" data-dashboard-tour-prev></button>
+                    <button type="button" class="dashboard-tour-button dashboard-tour-button--primary" data-dashboard-tour-next></button>
                 </div>
             </div>
         </section>
@@ -1099,6 +1177,7 @@ function buildDashboardTour() {
         step: root.querySelector(".dashboard-tour-step"),
         title: root.querySelector("h3"),
         description: root.querySelector("p"),
+        tip: root.querySelector(".dashboard-tour-tip"),
         progress: root.querySelector(".dashboard-tour-progress"),
         previous: root.querySelector("[data-dashboard-tour-prev]"),
         next: root.querySelector("[data-dashboard-tour-next]"),
@@ -1106,6 +1185,9 @@ function buildDashboardTour() {
         steps: dashboardTourSteps(),
         index: 0,
         previousPanel: "",
+        previousMobileOpen: false,
+        disclosures: [],
+        backgroundElements: [],
         entrypoint: "manual",
         startedAt: 0,
         lastFocusedElement: null,
@@ -1193,7 +1275,7 @@ function updateDashboardTourGeometry() {
 
     const target = document.querySelector(step.selector);
     if (!target) {
-        closeDashboardTour(true, "target_missing");
+        closeDashboardTour(false, "target_missing");
         return;
     }
 
@@ -1231,31 +1313,38 @@ function renderDashboardTourStep(shouldScroll) {
     const step = state.steps[state.index];
     if (!step) return;
 
-    setDashboardTourSidebarPanel(step.panel || "");
+    prepareDashboardTourStep(step);
 
     const target = document.querySelector(step.selector);
     if (!target) {
-        closeDashboardTour(true, "target_missing");
+        closeDashboardTour(false, "target_missing");
         return;
     }
 
-    state.step.textContent = `Passo ${state.index + 1} de ${state.steps.length}`;
+    state.step.textContent = dashboardTranslate("dashboard.guide.progress", "Passo {current} de {total}")
+        .replace("{current}", state.index + 1).replace("{total}", state.steps.length);
     state.title.textContent = step.title;
     state.description.textContent = step.description;
+    state.tip.textContent = step.tip;
+    state.card.dataset.guideStep = step.id;
+    state.closeButtons.forEach((button) => { button.textContent = dashboardTranslate("dashboard.guide.skip", "Pular guia"); });
+    state.previous.textContent = dashboardTranslate("dashboard.guide.back", "Voltar");
     state.previous.disabled = state.index === 0;
-    state.next.textContent = state.index === state.steps.length - 1 ? "Concluir" : "Pr\u00f3ximo";
+    state.next.textContent = state.index === state.steps.length - 1
+        ? dashboardTranslate("dashboard.guide.finish", "Começar") : dashboardTranslate("dashboard.guide.next", "Próximo");
     renderDashboardTourProgress();
 
-    const scrollBehavior = shouldScroll ? "smooth" : "auto";
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const scrollBehavior = shouldScroll && !reduceMotion ? "smooth" : "auto";
     target.scrollIntoView({
         behavior: scrollBehavior,
-        block: "center",
+        block: window.matchMedia("(max-width: 860px)").matches ? "start" : "center",
         inline: "nearest"
     });
 
     window.setTimeout(() => {
         updateDashboardTourGeometry();
-    }, shouldScroll ? 240 : 0);
+    }, scrollBehavior === "smooth" ? 240 : 0);
 }
 
 function detachDashboardTourListeners() {
@@ -1263,7 +1352,7 @@ function detachDashboardTourListeners() {
 
     window.removeEventListener("resize", dashboardTourState.repositionHandler);
     window.removeEventListener("scroll", dashboardTourState.repositionHandler, true);
-    document.removeEventListener("keydown", dashboardTourState.keyHandler);
+    document.removeEventListener("keydown", dashboardTourState.keyHandler, true);
     dashboardTourState.repositionHandler = null;
     dashboardTourState.keyHandler = null;
 }
@@ -1272,6 +1361,7 @@ function attachDashboardTourListeners() {
     if (!dashboardTourState || dashboardTourState.repositionHandler || dashboardTourState.keyHandler) return;
 
     dashboardTourState.repositionHandler = () => {
+        if (typeof setMobileSidebarOpen === "function") setMobileSidebarOpen(Boolean(dashboardTourState.steps[dashboardTourState.index]?.panel));
         scheduleDashboardTourGeometry();
     };
 
@@ -1279,6 +1369,8 @@ function attachDashboardTourListeners() {
         if (!dashboardTourState || dashboardTourState.root.hidden) return;
 
         if (event.key === "Escape") {
+            event.preventDefault();
+            event.stopImmediatePropagation();
             closeDashboardTour(true, "dismissed");
         } else if (event.key === "Tab") {
             const focusable = [...dashboardTourState.card.querySelectorAll(DASHBOARD_TOUR_FOCUSABLE_SELECTOR)]
@@ -1288,10 +1380,10 @@ function attachDashboardTourListeners() {
             const first = focusable[0];
             const last = focusable[focusable.length - 1];
             const active = document.activeElement;
-            if (event.shiftKey && active === first) {
+            if (event.shiftKey && (active === first || !dashboardTourState.card.contains(active))) {
                 event.preventDefault();
                 last.focus();
-            } else if (!event.shiftKey && active === last) {
+            } else if (!event.shiftKey && (active === last || !dashboardTourState.card.contains(active))) {
                 event.preventDefault();
                 first.focus();
             }
@@ -1312,7 +1404,7 @@ function attachDashboardTourListeners() {
 
     window.addEventListener("resize", dashboardTourState.repositionHandler);
     window.addEventListener("scroll", dashboardTourState.repositionHandler, true);
-    document.addEventListener("keydown", dashboardTourState.keyHandler);
+    document.addEventListener("keydown", dashboardTourState.keyHandler, true);
 }
 
 function closeDashboardTour(markSeen, reason = "dismissed") {
@@ -1341,25 +1433,44 @@ function closeDashboardTour(markSeen, reason = "dismissed") {
     });
 
     dashboardTourState.root.hidden = true;
+    document.body.classList.remove("dashboard-tour-active");
+    dashboardTourState.disclosures.forEach(({ element, open }) => { element.open = open; });
+    dashboardTourState.backgroundElements.forEach(({ element, inert }) => { element.inert = inert; });
     dashboardTourState.highlight.removeAttribute("style");
     dashboardTourState.card.style.removeProperty("left");
     dashboardTourState.card.style.removeProperty("top");
     setDashboardTourSidebarPanel(dashboardTourState.previousPanel || "");
+    if (typeof setMobileSidebarOpen === "function") setMobileSidebarOpen(dashboardTourState.previousMobileOpen);
     detachDashboardTourListeners();
-    dashboardTourState.lastFocusedElement?.focus?.();
+    if (completed) {
+        const needsClass = dashboardProgressSnapshot().classesCount === 0;
+        if (needsClass) {
+            setDashboardTourSidebarPanel("create-class");
+            if (typeof setMobileSidebarOpen === "function") setMobileSidebarOpen(true);
+        }
+        document.querySelector(needsClass ? "#sidebar-nome-turma" : "[data-dashboard-quick-topic]")?.focus();
+    } else dashboardTourState.lastFocusedElement?.focus?.({ preventScroll: true });
 }
 
 function startDashboardTour(force, entrypoint = "manual") {
+    if (dashboardTourState && !dashboardTourState.root.hidden) return;
+    if (document.body.classList.contains("dashboard-ai-result-open") || document.querySelector('[data-dashboard-quick-form]')?.dataset.generating === "true") return;
     if (!force && hasSeenDashboardTour()) return;
 
     const snapshot = dashboardProgressSnapshot();
     const state = buildDashboardTour();
     state.index = 0;
+    state.steps = dashboardTourSteps();
     state.previousPanel = currentDashboardSidebarPanel();
+    state.previousMobileOpen = document.body.classList.contains("app-sidebar-open");
+    state.disclosures = [...document.querySelectorAll(".dashboard-creation-disclosure")].map((element) => ({ element, open: element.open }));
+    state.backgroundElements = [...document.querySelectorAll(".app-shell, [data-sidebar-mobile-toggle], [data-sidebar-backdrop]")].map((element) => ({ element, inert: element.inert }));
     state.entrypoint = entrypoint;
     state.startedAt = Date.now();
     state.lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     state.root.hidden = false;
+    document.body.classList.add("dashboard-tour-active");
+    state.backgroundElements.forEach(({ element }) => { element.inert = true; });
     if (!force) {
         markDashboardTourSeen();
     }
@@ -1403,11 +1514,6 @@ document.addEventListener("DOMContentLoaded", () => {
     syncAndRefreshTeacherDashboard();
     restoreDashboardQuickResults(true);
 
-    window.setTimeout(() => {
-        if (window.educariaGenerationRecovery?.list().length) return;
-        if (!shouldAutoStartDashboardTour()) return;
-        startDashboardTour(false, "auto");
-    }, 480);
 });
 
 document.addEventListener("educaria-auth-changed", () => {
@@ -1417,10 +1523,15 @@ document.addEventListener("educaria-auth-changed", () => {
 
 document.addEventListener("educaria-classes-updated", () => {
     refreshTeacherDashboard();
+    scheduleDashboardTourAutoStart();
 });
 
 document.addEventListener("educaria-language-changed", () => {
     refreshTeacherDashboard();
+    if (dashboardTourState && !dashboardTourState.root.hidden) {
+        dashboardTourState.steps = dashboardTourSteps();
+        renderDashboardTourStep(false);
+    }
 });
 
 window.addEventListener("pageshow", () => {

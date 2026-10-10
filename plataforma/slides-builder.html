@@ -13,7 +13,7 @@
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/generation-recovery.js" defer></script>
-    <script src="../assets/js/live-preview.js?v=20260927-6" defer></script>
+    <script src="../assets/js/live-preview.js?v=20261010-1" defer></script>
     <script src="../assets/js/builder-actions.js" defer></script>
     <script src="../assets/js/builder-templates.js" defer></script>
     <script src="../assets/js/local-persistence.js?v=20260927-6" defer></script>
@@ -25,9 +25,9 @@
     <script src="../assets/js/editor-disclosure.js?v=20260930-1" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20261003-1" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261010-1" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
-    <script src="../assets/js/slide-theme-controls.js?v=20261003-1" defer></script>
+    <script src="../assets/js/slide-theme-controls.js?v=20261010-1" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="slides" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -93,6 +93,11 @@
                                 <label for="slides-fonte-texto">Roteiro ou texto-base do professor</label>
                                 <textarea id="slides-fonte-texto" rows="6" placeholder="Digite um tópico, cole um roteiro ou envie um arquivo para a IA montar os slides."></textarea>
                             </div>
+                            <details class="platform-field platform-field-wide">
+                                <summary>Pedido específico para a IA (opcional)</summary>
+                                <label for="slides-teacher-instructions">Como organizar ou aprofundar?</label>
+                                <textarea id="slides-teacher-instructions" rows="3" maxlength="1500" placeholder="Ex.: aprofunde as causas com explicações e exemplos; mantenha o texto em inglês; não inclua capa."></textarea>
+                            </details>
                             <div class="platform-field">
                                 <label for="slides-arquivo">Arquivo de apoio</label>
                                 <input id="slides-arquivo" type="file" accept=".txt,.docx,.pdf">
@@ -100,14 +105,17 @@
                             <div class="platform-field">
                                 <label for="slides-acao-ia">Como a IA deve ajudar</label>
                                 <select id="slides-acao-ia">
+                                    <option>Seguir meu pedido</option>
                                     <option>Organizar texto em slides</option>
                                     <option>Resumir tópicos em sequência</option>
+                                    <option>Desenvolver e aprofundar o assunto</option>
                                     <option>Criar sequência didática mais visual</option>
                                 </select>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-quantidade">Quantidade de slides</label>
-                                <input id="slides-quantidade" type="number" min="1" max="30" step="1" value="8" placeholder="Ex.: 10">
+                                <input id="slides-quantidade" type="number" min="1" max="30" step="1" value="" placeholder="Automática" aria-describedby="slides-quantidade-help">
+                                <small id="slides-quantidade-help" class="platform-field-help">Em branco: adapta ao conteúdo. Preencha para fixar a quantidade.</small>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-detalhamento">Nível de detalhamento</label>
@@ -116,7 +124,7 @@
                                     <option>Mais enxuto</option>
                                     <option>Mais detalhado</option>
                                 </select>
-                                <small id="slides-detalhamento-help" class="platform-field-help">Cerca de 3 tópicos por slide, com explicação breve e exemplo.</small>
+                                <small id="slides-detalhamento-help" class="platform-field-help">Conceitos com explicação breve e exemplo, em blocos de leitura.</small>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-publico">Ano ou público</label>

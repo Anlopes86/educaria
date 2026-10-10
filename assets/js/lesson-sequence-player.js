@@ -283,6 +283,8 @@ function selectLessonPlayerIndex(nextIndex) {
 function toggleLessonPlayerRoute() {
     const trigger = document.querySelector("[data-lesson-player-toggle-route]");
     const routeIsHidden = document.body.classList.toggle("lesson-sequence-route-hidden");
+    const route = document.querySelector("[data-lesson-player-route]");
+    if (route) route.inert = routeIsHidden;
     if (!trigger) return;
     trigger.setAttribute("aria-pressed", String(routeIsHidden));
     trigger.textContent = routeIsHidden ? "Mostrar roteiro" : "Ocultar roteiro";

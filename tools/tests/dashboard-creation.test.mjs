@@ -36,7 +36,9 @@ for (const type of ["slides", "quiz", "flashcards", "memory", "wheel", "match", 
         const options = h.context.collectDashboardQuickOptions(h.form, type);
         await h.context.requestDashboardQuickMaterial(type, "Tema", type, options, "teacher");
         const sent = JSON.parse(h.request.body.get("generationOptions"));
-        assert.equal(sent.audience, "EJA"); assert.equal(sent.className, "Turma A"); assert.ok(sent.count > 0);
+        assert.equal(sent.audience, "EJA"); assert.equal(sent.className, "Turma A");
+        if (["slides", "flashcards"].includes(type)) assert.equal(sent.count, null);
+        else assert.ok(sent.count > 0);
         for (const field of h.configs[type]) assert.notEqual(sent[field.key], undefined, field.key);
         assert.ok(h.request.body.get("action").length <= 500);
         assert.ok(h.configs[type].filter((field) => !field.advanced).length <= 2);
@@ -50,6 +52,33 @@ test("file-only creation sends the original file, with no cover image sent to AI
     assert.equal(h.request.body.get("sourceText"), "");
     assert.equal(JSON.parse(h.request.body.get("slideOptions")).audience, "EJA");
     assert.equal(h.request.body.get("cover_image"), null);
+});
+
+test("automatic quantity and a specific English-card request are sent separately from source", async () => {
+    const h = harness(); h.populate("flashcards");
+    h.fields.set('[data-dashboard-quick-option="contentMode"]', { value: "preserve" });
+    h.fields.set('[data-dashboard-context="teacherInstructions"]', { value: "Número na frente, explicação no verso. Não traduza." });
+    const options = h.context.collectDashboardQuickOptions(h.form, "flashcards");
+    await h.context.requestDashboardQuickMaterial("flashcards", "1. ENGLISH INTERVIEW", "Flashcards", options, "teacher");
+    const sent = JSON.parse(h.request.body.get("generationOptions"));
+    assert.equal(sent.count, null);
+    assert.equal(sent.contentMode, "preserve");
+    assert.equal(sent.teacherInstructions, "Número na frente, explicação no verso. Não traduza.");
+    assert.equal(h.request.body.get("sourceText"), "1. ENGLISH INTERVIEW");
+    assert.doesNotMatch(h.request.body.get("action"), /Gerar \d+ cards/);
+});
+
+test("an explicit quantity remains supported and long instructions do not overflow slideOptions", async () => {
+    const h = harness(); h.populate("slides");
+    h.fields.set('[data-dashboard-quick-option="count"]', { value: "10" });
+    h.fields.set('[data-dashboard-context="teacherInstructions"]', { value: '"'.repeat(1500) });
+    const options = h.context.collectDashboardQuickOptions(h.form, "slides");
+    await h.context.requestDashboardQuickMaterial("slides", "Tema", "Slides", options, "teacher");
+    assert.equal(JSON.parse(h.request.body.get("generationOptions")).count, 10);
+    assert.equal(JSON.parse(h.request.body.get("generationOptions")).teacherInstructions.length, 1500);
+    assert.equal(JSON.parse(h.request.body.get("slideOptions")).teacherInstructions, undefined);
+    assert.match(h.request.body.get("action"), /Gerar 10 slides/);
+    assert.ok(h.request.body.get("slideOptions").length < 3000);
 });
 test("changed accounts cannot submit content to the provider", async () => {
     const h = harness();

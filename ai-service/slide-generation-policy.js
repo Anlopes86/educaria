@@ -56,9 +56,9 @@ export function slideAudienceProfile(options) {
 
 export function slidePedagogyInstructions(options) {
     const details = {
-        concise: "MAIS ENXUTO: em slides de conteúdo, use 1 a 2 tópicos de até 8 palavras cada. Selecione só ideias essenciais. Prefira uma palavra-chave com uma definição breve, sem explicações secundárias.",
-        balanced: "EQUILIBRADO: em slides de conteúdo, use 3 tópicos de aproximadamente 8 a 12 palavras cada. Combine conceito, explicação breve e um exemplo concreto quando pertinente.",
-        detailed: "MAIS DETALHADO: em slides de conteúdo, use 4 a 5 tópicos de aproximadamente 12 a 18 palavras cada, até 80 palavras no body. Inclua explicação do conceito, relação de causa/consequência ou etapas, e exemplo aplicado. Aprofunde o raciocínio sem repetir ideias nem inventar fatos. O detalhe precisa aparecer no body, não apenas em teacher_notes."
+        concise: "MAIS ENXUTO: selecione ideias essenciais com definições breves. Use 1 a 2 blocos curtos, sem explicações secundárias, desde que isso não contrarie um pedido específico de aprofundamento ou preservação do texto.",
+        balanced: "EQUILIBRADO: apresente um conceito com explicação breve e um exemplo pertinente. Use frases completas, normalmente 2 a 3 blocos. A estrutura pode ser narrativa, comparação ou lista; não entregue só palavras-chave.",
+        detailed: "MAIS DETALHADO: desenvolva o raciocínio no body. Para cada ideia central, explique o que significa, como ou por que acontece e uma consequência ou aplicação. Inclua exemplos concretos explicados, não apenas mencionados. Como referência, use 60 a 110 palavras nos slides de desenvolvimento quando houver conteúdo suficiente, em 2 a 4 blocos legíveis. Essa faixa não é meta de preenchimento nem motivo para cortar um texto fornecido. Não basta aumentar o número de bullets. O detalhe precisa aparecer no body, não apenas em teacher_notes."
     };
     const tones = {
         balanced: "CLARO E EQUILIBRADO: linguagem objetiva, acolhedora e didática. Títulos descritivos, termos definidos e exemplos cotidianos.",
@@ -84,15 +84,15 @@ export function slidePedagogyInstructions(options) {
         audiences[audience.profile],
         "O campo Ano ou público tem prioridade sobre o nome da turma. Não deduza idade a partir de um nome sem ano explícito. Não confunda maior detalhamento com conteúdo de séries mais avançadas.",
         `Disciplina: ${JSON.stringify(options.subject || "não informada")}. Objetivo da aula: ${JSON.stringify(options.objective || "não informado")}.`,
-        "Capa: 1 a 2 linhas curtas. Fechamento: 1 a 3 linhas para síntese ou pergunta. Não aumente a quantidade de slides para compensar o detalhamento; respeite a quantidade pedida.",
+        "Capa e fechamento só quando fizerem sentido para o pedido; não desperdice slides com introduções genéricas. Respeite uma quantidade explicitamente selecionada. Com quantidade automática, distribua o raciocínio em mais slides quando necessário para manter legibilidade.",
         "Antes de responder, confira se o body reflete o detalhamento e o tom escolhidos, se os exemplos servem ao público e se as frases estão completas."
     ];
 }
 
 export function normalizeGeneratedSlideBody(body, slideType) {
     const lines = String(body || "").replace(/\r\n?/g, "\n").split("\n")
-        .map((line) => line.replace(/^\s*[-*•]\s*/, "").trim()).filter(Boolean);
-    if (!lines.length) return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
+        .map((line) => line.trim().replace(/^[-*•]\s+/, "- "));
+    if (!lines.some(Boolean)) return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     // Preserve meaning: display fitting belongs to the presentation, not word slicing.
-    return lines.map((line) => slideType === "cover" ? line : `- ${line}`).join("\n");
+    return lines.join("\n").trim();
 }

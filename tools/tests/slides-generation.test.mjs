@@ -12,7 +12,7 @@ test("complete explanations survive editor import", () => {
     const line = "D. Pedro viveu no Brasil. Depois retornou a Portugal; estes acontecimentos ajudam a entender esse período histórico.";
     assert.equal(context.compactSlideBodyText(line, "cover"), line);
     const body = Array.from({ length: 6 }, () => line).join("\r\n");
-    assert.equal(context.compactSlideBodyText(body), Array.from({ length: 6 }, () => `- ${line}`).join("\n"));
+    assert.equal(context.compactSlideBodyText(body), Array.from({ length: 6 }, () => line).join("\n"));
 });
 
 function generationHarness() {
@@ -23,7 +23,8 @@ function generationHarness() {
         detail: { selectedIndex: 0, options: [{ text: "Mais detalhado" }] },
         tone: { selectedIndex: 0, options: [{ text: "Mais explicativo" }] },
         audience: { value: "EJA" }, objective: { value: "Explicar. Relacionar ao cotidiano." },
-        subject: { value: "Ciências" }, className: { value: "7º ano A" }, visual: { value: "ai" }
+        subject: { value: "Ciências" }, className: { value: "7º ano A" }, visual: { value: "ai" },
+        instructions: { value: "" }
     };
     const context = vm.createContext({
         FormData, CustomEvent: class {}, console,
@@ -31,7 +32,7 @@ function generationHarness() {
         document: { getElementById: (id) => fields[id], dispatchEvent() {} },
         fetch: async (url, request) => { posted = request; return { ok: true, json: async () => ({ material: { slides: [{}] } }) }; },
         resolveAiEndpoint: () => "https://ai.example.test/api/ai/generate",
-        materialConfig: () => ({ textId: "text", fileId: "file", actionId: "action", countId: "count", detailId: "detail", toneId: "tone", audienceId: "audience", objectiveId: "objective", subjectId: "subject", classId: "className", visualModeId: "visual", apply(value) { applied = value; return true; } }),
+        materialConfig: () => ({ textId: "text", fileId: "file", actionId: "action", countId: "count", detailId: "detail", toneId: "tone", audienceId: "audience", objectiveId: "objective", subjectId: "subject", classId: "className", visualModeId: "visual", instructionsId: "instructions", apply(value) { applied = value; return true; } }),
         readTextFile: async () => "", educariaTrackAiEvent() {}, checkAiHealth: async () => {}, openAiReadyModal() {}, reviewGeneratedMaterial() {}
     });
     vm.runInContext(section("async function requestStructuredMaterial(", "async function requestTemplateStructuredMaterial("), context);
@@ -62,6 +63,20 @@ test("long slide settings do not overflow the action field", async () => {
     await h.context.generateMaterial("slides", { textContent: "Gerar" });
     assert.ok(h.posted.body.get("action").length < 500);
     assert.equal(JSON.parse(h.posted.body.get("slideOptions")).objective.length, 280);
+});
+
+test("editor sends an expansion request with automatic quantity without mixing it into the text", async () => {
+    const h = generationHarness();
+    h.fields.count.value = "";
+    h.fields.action.options[0].text = "Desenvolver e aprofundar o assunto";
+    h.fields.instructions.value = "Explique as causas com exemplos. Não inclua capa.";
+    assert.equal(await h.context.generateMaterial("slides", { textContent: "Gerar" }), true);
+    const sent = JSON.parse(h.posted.body.get("generationOptions"));
+    assert.equal(sent.contentMode, "develop");
+    assert.equal(sent.teacherInstructions, h.fields.instructions.value);
+    assert.equal(sent.count, undefined);
+    assert.equal(h.posted.body.get("sourceText"), "Fotossíntese");
+    assert.doesNotMatch(h.posted.body.get("action"), /Gerar \d+ slides/);
 });
 
 test("file upload and non-slide requests keep the original transport", async () => {

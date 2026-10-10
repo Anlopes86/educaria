@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="dashboard.title">Painel do Professor | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261004-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261009-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -23,7 +23,7 @@
     <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
     <script src="../assets/js/image-upload.js" defer></script>
     <script src="../assets/js/dashboard-creation.js?v=20261004-1" defer></script>
-    <script src="../assets/js/teacher-dashboard.js?v=20261004-1" defer></script>
+    <script src="../assets/js/teacher-dashboard.js?v=20261010-1" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
@@ -111,7 +111,7 @@
                         <li><span>3</span><strong data-i18n="dashboard.hero.flow.present">Revise e apresente</strong></li>
                     </ol>
 
-                    <div class="dashboard-hero-actions">
+                    <div class="dashboard-hero-actions" data-dashboard-tour-anchor="destinations">
                         <a href="turmas.html" class="platform-link-button platform-link-primary" data-dashboard-tour-anchor="hero-action">Turmas</a>
                         <a href="biblioteca.html" class="platform-link-button platform-link-secondary" data-i18n="dashboard.nav.library">Biblioteca</a>
                         <span class="ai-credits-pill" data-ai-credits>Créditos de IA: carregando...</span>
@@ -125,9 +125,10 @@
                     <p data-dashboard-quick-copy data-i18n="dashboard.quick.copy">Tema ou arquivo. Você escolhe, a IA prepara.</p>
 
                     <form class="dashboard-quick-create-form" data-dashboard-quick-form>
+                        <div class="dashboard-tour-field-group" data-dashboard-tour-anchor="source">
                         <label class="dashboard-quick-field dashboard-quick-field--topic">
-                            <span><b aria-hidden="true">1</b><span data-i18n="dashboard.quick.topic">Tópico para criação</span></span>
-                            <textarea rows="2" maxlength="50000" data-dashboard-quick-topic data-i18n-placeholder="dashboard.quick.topicPlaceholder" placeholder="Ex.: Revolução Francesa para o 8º ano"></textarea>
+                            <span><b aria-hidden="true">1</b><span data-i18n="dashboard.quick.topic">Tema ou conteúdo</span></span>
+                            <textarea rows="2" maxlength="50000" data-dashboard-quick-topic data-i18n-placeholder="dashboard.quick.topicPlaceholder" placeholder="Escreva um tema ou cole seu conteúdo e diga o que a IA deve fazer."></textarea>
                         </label>
 
                         <details class="dashboard-creation-disclosure dashboard-source-attachment">
@@ -138,24 +139,28 @@
                                 <small id="dashboard-source-help">TXT, RTF, DOCX ou PDF com texto selecionável · até 5 MB. Você pode gerar só com o arquivo ou acrescentar orientações acima.</small>
                             </div>
                         </details>
+                        </div>
 
+                        <div class="dashboard-tour-field-group" data-dashboard-tour-anchor="format">
                         <label class="dashboard-quick-field dashboard-quick-field--format">
                             <span><b aria-hidden="true">2</b><span data-i18n="dashboard.quick.tool">Ferramenta</span></span>
                             <select data-dashboard-quick-format aria-label="Ferramenta"></select>
                         </label>
 
                         <div class="dashboard-quick-options" data-dashboard-quick-options aria-live="polite" hidden></div>
+                        </div>
 
                         <details class="dashboard-creation-disclosure dashboard-personalize">
                             <summary><span aria-hidden="true">☷</span><span>Personalizar a atividade</span><small>Público e opções</small></summary>
                             <div class="dashboard-creation-disclosure-body">
-                                <div class="dashboard-quick-options-grid">
+                                <div class="dashboard-quick-options-grid" data-dashboard-tour-anchor="audience">
                                     <label class="dashboard-quick-option-field"><span>Salvar em</span><select data-dashboard-context="className"><option value="">Biblioteca pessoal</option></select></label>
                                     <label class="dashboard-quick-option-field"><span>Ano ou público</span><input type="text" maxlength="160" data-dashboard-context="audience" placeholder="Ex.: 5º ano, ensino médio, EJA"></label>
                                     <label class="dashboard-quick-option-field"><span>Disciplina</span><input type="text" maxlength="120" data-dashboard-context="subject" placeholder="Ex.: Ciências"></label>
                                     <label class="dashboard-quick-option-field"><span>Objetivo da aula</span><input type="text" maxlength="280" data-dashboard-context="objective" placeholder="Ex.: revisar conceitos"></label>
                                 </div>
                                 <div class="dashboard-quick-options-grid" data-dashboard-advanced-options></div>
+                                <label class="dashboard-quick-option-field"><span>Pedido específico para a IA <small>(opcional)</small></span><textarea rows="3" maxlength="1500" data-dashboard-context="teacherInstructions" placeholder="Ex.: mantenha o texto em inglês; coloque só o número na frente e a explicação completa no verso. Ou: aprofunde o assunto com causas e exemplos."></textarea></label>
                                 <small>A IA adapta a linguagem e os exemplos ao público. Você poderá revisar tudo no editor.</small>
                             </div>
                         </details>

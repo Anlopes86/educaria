@@ -6,9 +6,9 @@ import { normalizeSlideGenerationOptions as options, slideAudienceProfile, slide
 import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } from "../activity-generation-policy.js";
 
 for (const [label, detail, expected] of [
-    ["Mais enxuto", "concise", /1 a 2 tópicos de até 8 palavras/],
-    ["Equilibrado", "balanced", /3 tópicos de aproximadamente 8 a 12/],
-    ["Mais detalhado", "detailed", /4 a 5 tópicos de aproximadamente 12 a 18/]
+    ["Mais enxuto", "concise", /1 a 2 blocos curtos/],
+    ["Equilibrado", "balanced", /conceito com explicação breve/],
+    ["Mais detalhado", "detailed", /explique o que significa, como ou por que/]
 ]) {
     test(`detail ${label}: distinct visible-content guidance`, () => {
         const normalized = options({ detail: label });
@@ -29,7 +29,7 @@ for (const [label, tone, expected] of [
         assert.equal(normalized.tone, tone);
         const prompt = slidePedagogyInstructions(normalized).join("\n");
         assert.match(prompt, expected);
-        assert.match(prompt, /4 a 5 tópicos/);
+        assert.match(prompt, /desenvolva o raciocínio no body/);
         assert.deepEqual(options(normalized), normalized);
     });
 }
@@ -76,7 +76,7 @@ for (const raw of [null, false, 42, [], "null", "[]", "broken", { audience: {} }
 
 test("body formatting never discards explanations or cuts sentences", () => {
     const lines = Array.from({ length: 6 }, (_, i) => `Exemplo ${i}: a energia do Sol sustenta os seres vivos; Dr. Silva explica por que isso acontece.`);
-    assert.equal(normalizeGeneratedSlideBody(lines.join("\r\n"), "content"), lines.map((line) => `- ${line}`).join("\n"));
+    assert.equal(normalizeGeneratedSlideBody(lines.join("\r\n"), "content"), lines.join("\n"));
     assert.equal(normalizeGeneratedSlideBody(lines[0], "cover"), lines[0]);
     assert.equal(normalizeGeneratedSlideBody("- Texto\n• Outro", "content"), "- Texto\n- Outro");
     assert.equal(normalizeGeneratedSlideBody("", "cover"), "Visão geral da aula");
@@ -89,7 +89,7 @@ vm.runInContext(promptSource, promptContext);
 
 test("actual server prompt includes structured pedagogical fields", () => {
     const prompt = promptContext.promptFor("slides", "Gerar 8 slides. Modo visual: personalizado.", "Fotossíntese", options({ detail: "detailed", tone: "inspiring", audience: "EJA", subject: "Ciências", objective: "Entender energia" }));
-    assert.match(prompt, /4 a 5 tópicos/);
+    assert.match(prompt, /desenvolva o raciocínio no body/);
     assert.match(prompt, /pequenos desafios/);
     assert.match(prompt, /sem infantilização/);
     assert.match(prompt, /Entender energia/);

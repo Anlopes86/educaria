@@ -593,17 +593,13 @@ function compactSlideBodyText(body, slideType = "content") {
     // Keep the complete explanation, including examples and abbreviations.
     // Density is guided during generation; fitting is handled by presentation.
     const baseUnits = String(body || "").replace(/\r\n?/g, "\n").split("\n")
-        .map((line) => line.replace(/^\s*[-*•]\s*/, "").trim()).filter(Boolean);
+        .map((line) => line.trim().replace(/^[-*•]\s+/, "- "));
 
-    if (!baseUnits.length) {
+    if (!baseUnits.some(Boolean)) {
         return slideType === "cover" ? "Visão geral da aula" : "- Conteúdo principal";
     }
 
-    if (slideType === "cover") {
-        return baseUnits.join("\n");
-    }
-
-    return baseUnits.map((line) => `- ${line}`).join("\n");
+    return baseUnits.join("\n").trim();
 }
 
 function splitParagraphs(text) {
@@ -973,7 +969,7 @@ function applyFlashcardsFromStructuredData(payload) {
         const example = card.querySelector('[data-field="example"]');
 
         // Keep complete answers and notes. Generation guides length; presentation handles overflow.
-        const cleanText = (value) => String(value || "").replace(/\s+/g, " ").trim();
+        const cleanText = (value) => String(value || "").replace(/\r\n?/g, "\n").trim();
         if (front) front.value = cleanText(item.front);
         if (back) back.value = cleanText(item.back);
         if (example) example.value = cleanText(item.example);
@@ -1886,6 +1882,7 @@ function materialConfig(materialType) {
             toneId: "slides-tom",
             objectiveId: "slides-objetivo",
             visualModeId: "slides-visual-mode",
+            instructionsId: "slides-teacher-instructions",
             apply: applySlidesFromStructuredData,
             fallback: buildFallbackSlides
         };
@@ -1900,6 +1897,8 @@ function materialConfig(materialType) {
             classId: "cards-turma",
             subjectId: "cards-disciplina",
             audienceId: "cards-ano",
+            contentModeId: "cards-content-mode",
+            instructionsId: "cards-teacher-instructions",
             apply: applyFlashcardsFromStructuredData,
             fallback: buildFallbackFlashcards
         };
@@ -2106,6 +2105,9 @@ async function generateMaterial(materialType, button, options = {}) {
     } : undefined;
     const generationOptions = {
         count: requestedCount, approach: action, format: formatText, layout: layoutText,
+        contentMode: config.contentModeId ? document.getElementById(config.contentModeId)?.value || "auto"
+            : materialType === "slides" ? (/aprofundar/i.test(action) ? "develop" : /^Resumir/i.test(action) ? "summarize" : /^Organizar texto/i.test(action) ? "preserve" : "auto") : "auto",
+        teacherInstructions: config.instructionsId ? document.getElementById(config.instructionsId)?.value.trim() || "" : "",
         audience: audienceText, className: classText, subject: subjectText, objective: objectiveText,
         examples: document.getElementById("cards-exemplo")?.value !== "Não",
         shuffle: document.getElementById("ligar-embaralhar")?.value === "Sim",
@@ -2209,7 +2211,8 @@ function applyGenerationOptionsToEditor(materialType, options) {
     if (!options) return;
     const config = materialConfig(materialType);
     const values = [[config?.countId, options.count], [config?.subjectId, options.subject],
-        [config?.audienceId, options.audience], [config?.objectiveId, options.objective]];
+        [config?.audienceId, options.audience], [config?.objectiveId, options.objective],
+        [config?.instructionsId, options.teacherInstructions], [config?.contentModeId, options.contentMode]];
     values.forEach(([id, value]) => {
         const field = id ? document.getElementById(id) : null;
         if (field && value != null) field.value = String(value);
@@ -2226,6 +2229,13 @@ function applyGenerationOptionsToEditor(materialType, options) {
     });
     const actionField = config?.actionId ? document.getElementById(config.actionId) : null;
     if (actionField && options.approach) setSelectByText(actionField, options.approach);
+    if (materialType === "slides" && actionField && options.contentMode) {
+        setSelectByText(actionField, { auto: "Seguir meu pedido", preserve: "Organizar texto em slides", summarize: "Resumir tópicos em sequência", develop: "Desenvolver e aprofundar o assunto" }[options.contentMode] || "Seguir meu pedido");
+    }
+    if (["slides", "flashcards"].includes(materialType) && options.count === null && config?.countId) {
+        const count = document.getElementById(config.countId);
+        if (count) count.value = "";
+    }
     if (materialType === "wordsearch" && options.directions) {
         const directions = document.getElementById("caca-direcoes");
         if (directions) directions.value = options.directions;

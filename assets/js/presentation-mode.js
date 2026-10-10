@@ -20,6 +20,8 @@
     let idleTimer = 0;
     let layoutFrame = 0;
     let layoutTimer = 0;
+    let libraryReturn = null;
+    let libraryReturnParent = null;
 
     function isEditableTarget(target) {
         return target?.closest?.("input, textarea, select, [contenteditable='true'], [data-inline-editable]");
@@ -52,7 +54,7 @@
         const topbarHeight = document.body.classList.contains("presentation-topbar-collapsed")
             ? 0
             : topbar?.offsetHeight || 0;
-        const availableHeight = window.innerHeight - padding - gap - topbarHeight;
+        const availableHeight = shell.clientHeight - padding - (topbarHeight ? gap : 0) - topbarHeight;
         shell.style.setProperty("--presentation-stage-height", `${Math.max(0, availableHeight)}px`);
         document.dispatchEvent(new CustomEvent("educaria-presentation-layout-change"));
     }
@@ -81,6 +83,10 @@
     function toggleTopbar(button) {
         const isPinned = document.body.classList.toggle("presentation-topbar-pinned");
         document.body.classList.toggle("presentation-topbar-collapsed", !isPinned);
+        if (libraryReturn) {
+            if (isPinned) libraryReturnParent.prepend(libraryReturn);
+            else document.body.appendChild(libraryReturn);
+        }
         button?.setAttribute("aria-pressed", isPinned ? "false" : "true");
         showPresentationChrome();
         queuePresentationViewportSync();
@@ -102,6 +108,21 @@
             }
         });
         document.body.appendChild(restore);
+    }
+
+    function addLibraryReturnAction() {
+        const actions = document.querySelector(".presentation-topbar .platform-top-actions, .presentation-topbar .presentation-topbar-group, .lesson-sequence-stage-actions");
+        if (!actions || document.querySelector("[data-presentation-library]")) return;
+        const link = document.createElement("a");
+        link.href = "biblioteca.html";
+        link.className = "presentation-library-link";
+        link.dataset.presentationLibrary = "";
+        link.title = "Retornar à biblioteca";
+        link.setAttribute("aria-label", "Retornar à biblioteca");
+        link.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h4v15H4zM11 5h4v15h-4zM18 4l3 15M3 21h19"/></svg><span>Retornar à biblioteca</span>';
+        actions.prepend(link);
+        libraryReturn = link;
+        libraryReturnParent = actions;
     }
 
     function addPresentationChromeActions() {
@@ -174,6 +195,7 @@
     loadOfflineRuntime();
 
     document.addEventListener("DOMContentLoaded", () => {
+        addLibraryReturnAction();
         if (!document.querySelector(".presentation-shell")) return;
 
         document.body.classList.add("presentation-runtime-page", "presentation-topbar-pinned");

@@ -169,6 +169,19 @@ function buildFlashcardsPreview() {
     `;
 }
 
+function renderSlidePreviewBody(body) {
+    const lines = String(body || "").replace(/\r\n?/g, "\n").split("\n").map(line => line.trim()).filter(Boolean);
+    let markup = "", inList = false;
+    for (const line of lines) {
+        const bullet = /^[-*•]\s+/.test(line);
+        if (bullet && !inList) markup += "<ul>";
+        if (!bullet && inList) markup += "</ul>";
+        markup += bullet ? `<li>${escapeHtml(line.replace(/^[-*•]\s+/, ""))}</li>` : `<p>${escapeHtml(line)}</p>`;
+        inList = bullet;
+    }
+    return markup + (inList ? "</ul>" : "");
+}
+
 function buildSlidesPreview() {
     const root = document.querySelector("[data-slides-preview]");
     if (!root) return;
@@ -176,7 +189,7 @@ function buildSlidesPreview() {
     const slides = [...document.querySelectorAll("[data-slide-card]")];
     const totalEl = document.getElementById("slides-quantidade");
     const detailEl = document.getElementById("slides-detalhamento");
-    const total = totalEl ? `${totalEl.value || 0} slides` : "Slides";
+    const total = totalEl?.value ? `${totalEl.value} slides` : "Quantidade automática";
     const detail = detailEl ? detailEl.options[detailEl.selectedIndex].text.trim() : "Equilibrado";
 
     root.innerHTML = `
@@ -200,10 +213,7 @@ function buildSlidesPreview() {
             const textColor = colorValue(slide, "slide-text-color", "#0f172a");
             const accentColor = colorValue(slide, "slide-accent-color", "#0ea5e9");
             const slideFont = selectValue(slide, "slide-font") || "Destaque moderno";
-            const bodyLines = body.replace(/\r/g, "").split("\n").map((line) => line.replace(/^[-*•]\s*/, "").trim()).filter(Boolean);
-            const bodyMarkup = bodyLines.length > 1
-                ? `<ul>${bodyLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
-                : `<p>${escapeHtml(body)}</p>`;
+            const bodyMarkup = renderSlidePreviewBody(body);
 
             const textBlock = `
                 <div class="slide-preview-text slide-preview-text--${escapeHtml(slideFont.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"))}" style="color: ${escapeHtml(textColor)};">

@@ -54,9 +54,9 @@ function syncSlideVisualModeHelp() {
 function syncSlidePedagogyHelp() {
     const choices = [
         ["slides-detalhamento", [
-            "Cerca de 3 tópicos por slide, com explicação breve e exemplo.",
-            "1 a 2 tópicos curtos por slide, apenas com as ideias essenciais.",
-            "4 a 5 tópicos por slide, com conceitos, explicações e exemplos mais desenvolvidos."
+            "Conceitos com explicação breve e exemplo, em blocos de leitura.",
+            "Só as ideias essenciais, com definições breves.",
+            "Desenvolve como e por que acontece, com relações e exemplos explicados — não apenas mais tópicos."
         ]],
         ["slides-tom", [
             "Explicação objetiva, didática e com exemplos do cotidiano.",

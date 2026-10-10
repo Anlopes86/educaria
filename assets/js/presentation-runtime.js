@@ -158,73 +158,20 @@ function renderSlideBody(body) {
         return "<p>Sem conteúdo definido.</p>";
     }
 
-    const hasBullets = lines.some((line) => /^[-*•]\s+/.test(line));
-    if (hasBullets) {
-        return `
-            <ul>
-                ${lines.map((line) => `<li>${escapeHtml(line.replace(/^[-*•]\s+/, ""))}</li>`).join("")}
-            </ul>
-        `;
+    // Preserve paragraphs and explicit lists, including mixed content.
+    let markup = "", inList = false;
+    for (const line of lines) {
+        const bullet = /^[-*•]\s+/.test(line);
+        if (bullet && !inList) markup += "<ul>";
+        if (!bullet && inList) markup += "</ul>";
+        markup += bullet ? `<li>${escapeHtml(line.replace(/^[-*•]\s+/, ""))}</li>` : `<p>${escapeHtml(line)}</p>`;
+        inList = bullet;
     }
-
-    return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
+    return markup + (inList ? "</ul>" : "");
 }
 
 function renderStructuredSlideBody(body) {
-    const lines = String(body || "")
-        .replace(/\r/g, "")
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
-
-    if (!lines.length) {
-        return "<p>Sem conteúdo definido.</p>";
-    }
-
-    const bulletPattern = /^[-*••]\s+/;
-    const hasBullets = lines.some((line) => bulletPattern.test(line));
-    if (hasBullets) {
-        return `
-            <ul>
-                ${lines.map((line) => renderStructuredBulletLine(line, bulletPattern)).join("")}
-            </ul>
-        `;
-    }
-
-    if (lines.length === 1) {
-        const numberedParts = lines[0]
-            .split(/(?=\d+\.\s+)/)
-            .map((line) => line.replace(/^\d+\.\s*/, "").trim())
-            .filter(Boolean);
-
-        if (numberedParts.length >= 2) {
-            return `
-                <ul>
-                    ${numberedParts.slice(0, 6).map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
-                </ul>
-            `;
-        }
-
-        const sentenceParts = lines[0]
-            .split(/(?<=[.!?;:])\s+/)
-            .map((line) => line.trim())
-            .filter(Boolean);
-
-        if (sentenceParts.length >= 3) {
-            return `
-                <ul>
-                    ${sentenceParts.slice(0, 5).map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
-                </ul>
-            `;
-        }
-    }
-
-    return lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("");
-}
-
-function renderStructuredBulletLine(line, bulletPattern) {
-    const clean = String(line || "").replace(bulletPattern, "").trim();
-    return `<li>${escapeHtml(clean)}</li>`;
+    return renderSlideBody(body);
 }
 
 function clearMediaAspect(slideRoot, media) {

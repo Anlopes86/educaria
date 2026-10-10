@@ -1,3 +1,25 @@
+.flashcard-preview {
+    display: grid;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.flashcard-preview-face,
+.flashcard-preview-example {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    padding: 14px 16px;
+    border-radius: 16px;
+}
+
+.flashcard-preview-face > span,
+.flashcard-preview-example > p {
+    white-space: pre-line;
+    overflow-wrap: break-word;
+    line-height: 1.5;
+}
+
 .wheel-preview-card,
 .memory-preview-card {
     background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);

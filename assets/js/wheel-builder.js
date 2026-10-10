@@ -52,6 +52,8 @@ function collectWheelSegments() {
 }
 
 function setWheelCountSelect(count) {
+    const countInput = document.getElementById("roleta-quantidade-livre");
+    if (countInput) countInput.value = String(count);
     const quantity = document.getElementById("roleta-quantidade");
     if (!quantity) return;
 
@@ -66,12 +68,29 @@ function setWheelCountSelect(count) {
         return;
     }
 
-    const highest = options[options.length - 1];
-    if (highest) {
-        highest.textContent = `${count} espaços`;
-        highest.value = highest.textContent;
-        quantity.value = highest.value;
-    }
+    const custom = document.createElement("option");
+    custom.textContent = `${count} espaços`;
+    custom.value = custom.textContent;
+    quantity.appendChild(custom);
+    quantity.value = custom.value;
+}
+
+function ensureWheelRemoveControls() {
+    const segments = [...document.querySelectorAll("[data-wheel-segment]")];
+    segments.forEach((segment, index) => {
+        let button = segment.querySelector("[data-wheel-remove]");
+        if (!button) {
+            button = document.createElement("button");
+            button.type = "button";
+            button.className = "platform-link-button platform-link-secondary";
+            button.dataset.wheelRemove = "";
+            button.textContent = "Remover";
+            (segment.querySelector(".activity-card-actions") || segment.querySelector(".activity-card-header") || segment).appendChild(button);
+        }
+        button.disabled = segments.length <= 2;
+        button.setAttribute("aria-label", `Remover espaço ${index + 1}`);
+        button.title = segments.length <= 2 ? "A roleta precisa de pelo menos dois espaços" : `Remover espaço ${index + 1}`;
+    });
 }
 
 function syncWheelSegmentCount() {
@@ -208,6 +227,7 @@ function buildWheelSvg(segments, rotation = 0) {
 
 function renderWheelPreview() {
     syncWheelSegmentCount();
+    ensureWheelRemoveControls();
 
     const segments = collectWheelSegments();
     const title = document.getElementById("roleta-titulo")?.value.trim() || "Roleta";
@@ -232,6 +252,10 @@ function renderWheelPreview() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Saved presentations can have a custom count absent from the original select.
+    // Restore that count before reconciling, so opening the editor never drops items.
+    const restoredCount = document.querySelectorAll("[data-wheel-segment]").length;
+    if (restoredCount >= 2) setWheelCountSelect(restoredCount);
     syncWheelSegmentCount();
     renderWheelPreview();
 

@@ -85,6 +85,9 @@ function serializeWheelSegments(segments) {
                 <div>
                     <span class="platform-section-label" data-wheel-label>Espaço ${index + 1}</span>
                 </div>
+                <div class="activity-card-actions">
+                    <button type="button" class="platform-link-button platform-link-secondary" data-wheel-remove>Remover</button>
+                </div>
             </div>
             <div class="platform-form-grid">
                 <div class="platform-field platform-field-wide">
