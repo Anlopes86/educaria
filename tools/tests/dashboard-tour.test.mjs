@@ -5,16 +5,23 @@ import vm from "node:vm";
 
 const source = await fs.readFile(new URL("../../assets/js/teacher-dashboard.js", import.meta.url), "utf8");
 const html = await fs.readFile(new URL("../../plataforma/index.html", import.meta.url), "utf8");
+const css = await fs.readFile(new URL("../../assets/css/pages/dashboard.css", import.meta.url), "utf8");
 const dictionaries = await Promise.all(["pt-BR", "en-US", "es-ES"].map(async (lang) => JSON.parse(await fs.readFile(new URL(`../../assets/i18n/${lang}.json`, import.meta.url), "utf8"))));
 const tourSource = source.slice(source.indexOf("function dashboardTourStorageKeys("), source.indexOf('document.addEventListener("DOMContentLoaded"'));
 function element() {
-    return { style: { removeProperty() {} }, removeAttribute() {}, focus() { this.focused = true; }, hidden: false, open: false, inert: false };
+    return {
+        style: { removeProperty(key) { delete this[key]; } }, dataset: {},
+        removeAttribute(key) { if (key === "style") for (const name of ["left", "top", "width", "height"]) delete this.style[name]; },
+        focus(options) { this.focused = true; this.focusOptions = options; },
+        getBoundingClientRect() { return this.rect || { left: 30, top: 160, right: 290, bottom: 310, width: 260, height: 150 }; },
+        scrollIntoView(options) { this.scrollOptions = options; }, hidden: false, open: false, inert: false
+    };
 }
 function harness() {
     const storage = new Map(), nodes = new Map(), classes = new Set(), listeners = new Map();
-    const data = { teacher: { uid: "new-teacher" }, groups: [], lessons: [], recovered: [], timer: null, mobile: false };
+    const data = { teacher: { uid: "new-teacher" }, groups: [], lessons: [], recovered: [], timer: null, mobile: false, frames: new Map(), frameId: 0 };
     const context = vm.createContext({
-        console: { warn() {} }, DASHBOARD_TOUR_STORAGE_PREFIX: "educaria:dashboard-tour:", DASHBOARD_TOUR_SESSION_KEY: "educaria:auth:session",
+        console: { warn() {} }, HTMLElement: Object, DASHBOARD_TOUR_STORAGE_PREFIX: "educaria:dashboard-tour:", DASHBOARD_TOUR_SESSION_KEY: "educaria:auth:session",
         DASHBOARD_TOUR_FOCUSABLE_SELECTOR: "button", dashboardTourSeenOnPage: new Set(), dashboardTourState: null, dashboardTourAutoTimer: 0,
         readCurrentTeacher: () => data.teacher, getAvailableClasses: () => data.groups, readLessonsLibrary: () => data.lessons,
         dashboardTranslate: (_, fallback) => fallback,
@@ -25,6 +32,9 @@ function harness() {
             addEventListener: (name, handler) => listeners.set(name, handler), removeEventListener: (name) => listeners.delete(name)
         },
         window: {
+            innerWidth: 1280, innerHeight: 720,
+            requestAnimationFrame: (handler) => { const id = ++data.frameId; data.frames.set(id, handler); return id; },
+            cancelAnimationFrame: (id) => data.frames.delete(id),
             educariaGenerationRecovery: { list: () => data.recovered }, setTimeout: (handler) => { data.timer = handler; return 1; }, clearTimeout() {},
             addEventListener() {}, removeEventListener() {}, matchMedia: () => ({ matches: false })
         },
@@ -113,4 +123,88 @@ test("scheduled onboarding checks identity after authentication becomes availabl
     h.context.startDashboardTour = () => { starts++; };
     h.data.teacher = null; h.context.scheduleDashboardTourAutoStart(); h.data.timer(); assert.equal(starts, 0);
     h.data.teacher = { uid: "new-teacher" }; h.context.scheduleDashboardTourAutoStart(); h.data.timer(); assert.equal(starts, 1);
+});
+
+function readyTour(h) {
+    openTour(h);
+    const state = h.context.dashboardTourState;
+    Object.assign(state, {
+        step: element(), title: element(), description: element(), tip: element(), progress: element(),
+        previous: element(), next: element(), closeButtons: [element()], rafId: 0
+    });
+    state.root.hidden = true;
+    const target = element();
+    h.nodes.set('[data-dashboard-tour-anchor="create-class-form"]', target);
+    return { state, target };
+}
+
+test("opening positions card and highlight before revealing or focusing, without deferred timers", () => {
+    const h = harness(), { state, target } = readyTour(h);
+    state.card.getBoundingClientRect = () => {
+        assert.equal(state.root.dataset.positioned, "false", "The unpositioned card must stay invisible");
+        return { width: 360, height: 270 };
+    };
+    state.next.focus = (options) => {
+        assert.equal(state.root.dataset.positioned, "true");
+        assert.equal(state.card.style.left, "308px");
+        assert.equal(state.card.style.top, "160px");
+        assert.equal(state.highlight.style.left, "20px");
+        assert.equal(options.preventScroll, true);
+        state.next.focused = true;
+    };
+    h.context.startDashboardTour(true);
+    assert.equal(state.root.hidden, false);
+    assert.equal(state.card.dataset.guideStep, "class");
+    assert.equal(state.next.focused, true);
+    assert.equal(target.scrollOptions.behavior, "instant");
+    assert.equal(h.data.timer, null, "Opening must not queue late geometry or focus callbacks");
+    assert.match(css, /\.dashboard-tour:not\(\[data-positioned="true"\]\) \.dashboard-tour-card,[\s\S]*?visibility: hidden/);
+    assert.match(css, /body\.dashboard-tour-active \.app-sidebar\s*\{\s*transition: none;/);
+});
+
+test("closing cancels geometry work and reopening uses fresh coordinates at the first step", () => {
+    const h = harness(), { state, target } = readyTour(h);
+    h.context.startDashboardTour(true);
+    h.context.scheduleDashboardTourGeometry();
+    assert.equal(h.data.frames.size, 1);
+    h.context.closeDashboardTour(true);
+    assert.equal(h.data.frames.size, 0);
+    assert.equal(state.rafId, 0);
+    assert.equal(state.root.dataset.positioned, "false");
+    assert.equal(state.card.style.left, undefined);
+    target.rect = { left: 70, top: 240, right: 330, bottom: 390, width: 260, height: 150 };
+    state.index = 4;
+    h.context.startDashboardTour(true);
+    assert.equal(state.index, 0);
+    assert.equal(state.root.dataset.positioned, "true");
+    assert.equal(state.card.style.left, "348px");
+    assert.equal(state.card.style.top, "240px");
+    assert.equal(h.data.timer, null);
+});
+
+test("a missing opening target closes without revealing or focusing an empty guide", () => {
+    const h = harness(), { state } = readyTour(h);
+    h.nodes.delete('[data-dashboard-tour-anchor="create-class-form"]');
+    h.context.startDashboardTour(true);
+    assert.equal(state.root.hidden, true);
+    assert.equal(state.root.dataset.positioned, "false");
+    assert.equal(state.next.focused, undefined);
+    assert.equal(h.classes.has("dashboard-tour-active"), false);
+});
+
+test("subsequent steps still follow scrolling and reduced motion uses instant placement", () => {
+    const h = harness(), { state } = readyTour(h), target = element();
+    h.nodes.set('[data-dashboard-tour-anchor="source"]', target);
+    h.context.startDashboardTour(true);
+    state.index = 1;
+    h.context.renderDashboardTourStep(true);
+    assert.equal(target.scrollOptions.behavior, "smooth");
+    assert.equal(state.card.dataset.guideStep, "source");
+    target.rect = { left: 300, top: 200, right: 550, bottom: 300, width: 250, height: 100 };
+    h.context.scheduleDashboardTourGeometry();
+    [...h.data.frames.values()][0]();
+    assert.equal(state.card.style.top, "200px");
+    h.context.window.matchMedia = () => ({ matches: true });
+    h.context.renderDashboardTourStep(true);
+    assert.equal(target.scrollOptions.behavior, "instant");
 });

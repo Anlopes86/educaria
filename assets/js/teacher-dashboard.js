@@ -1292,6 +1292,8 @@ function updateDashboardTourGeometry() {
     dashboardTourState.highlight.style.height = `${Math.round(height)}px`;
 
     positionDashboardTourCard(rect);
+    // Reveal only after both the card and its highlight have their coordinates.
+    dashboardTourState.root.dataset.positioned = "true";
 }
 
 function scheduleDashboardTourGeometry() {
@@ -1335,16 +1337,14 @@ function renderDashboardTourStep(shouldScroll) {
     renderDashboardTourProgress();
 
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const scrollBehavior = shouldScroll && !reduceMotion ? "smooth" : "auto";
+    const scrollBehavior = shouldScroll && !reduceMotion ? "smooth" : "instant";
     target.scrollIntoView({
         behavior: scrollBehavior,
         block: window.matchMedia("(max-width: 860px)").matches ? "start" : "center",
         inline: "nearest"
     });
 
-    window.setTimeout(() => {
-        updateDashboardTourGeometry();
-    }, scrollBehavior === "smooth" ? 240 : 0);
+    updateDashboardTourGeometry();
 }
 
 function detachDashboardTourListeners() {
@@ -1433,6 +1433,11 @@ function closeDashboardTour(markSeen, reason = "dismissed") {
     });
 
     dashboardTourState.root.hidden = true;
+    dashboardTourState.root.dataset.positioned = "false";
+    if (dashboardTourState.rafId) {
+        window.cancelAnimationFrame(dashboardTourState.rafId);
+        dashboardTourState.rafId = 0;
+    }
     document.body.classList.remove("dashboard-tour-active");
     dashboardTourState.disclosures.forEach(({ element, open }) => { element.open = open; });
     dashboardTourState.backgroundElements.forEach(({ element, inert }) => { element.inert = inert; });
@@ -1468,6 +1473,7 @@ function startDashboardTour(force, entrypoint = "manual") {
     state.entrypoint = entrypoint;
     state.startedAt = Date.now();
     state.lastFocusedElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    state.root.dataset.positioned = "false";
     state.root.hidden = false;
     document.body.classList.add("dashboard-tour-active");
     state.backgroundElements.forEach(({ element }) => { element.inert = true; });
@@ -1488,10 +1494,9 @@ function startDashboardTour(force, entrypoint = "manual") {
         lessonsCount: snapshot.lessonsCount
     });
     attachDashboardTourListeners();
-    renderDashboardTourStep(true);
-    window.setTimeout(() => {
-        state.next?.focus?.();
-    }, 40);
+    // Opening must not paint the card at its default position while scrolling.
+    renderDashboardTourStep(false);
+    if (!state.root.hidden) state.next?.focus?.({ preventScroll: true });
 }
 
 function bindDashboardTourTrigger() {

@@ -274,6 +274,17 @@ body.product-body.theme-overview .dashboard-class-grid .quick-class-card p {
     display: none;
 }
 
+.dashboard-tour:not([data-positioned="true"]) .dashboard-tour-card,
+.dashboard-tour:not([data-positioned="true"]) .dashboard-tour-highlight {
+    visibility: hidden;
+    transition: none;
+}
+
+/* The guide measures the opened drawer before revealing its first step. */
+body.dashboard-tour-active .app-sidebar {
+    transition: none;
+}
+
 .dashboard-tour-backdrop {
     position: absolute;
     inset: 0;
