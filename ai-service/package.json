@@ -9,7 +9,9 @@
     "test": "node --test tests/*.test.mjs"
   },
   "overrides": {
-    "gaxios@6": { "uuid": "^11.1.1" }
+    "gaxios@6": { "uuid": "^11.1.1" },
+    "proxy-addr": "^2.0.8",
+    "mammoth": { "argparse": "2.0.1" }
   },
   "dependencies": {
     "@google/genai": "^1.50.0",
