@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apresentação de Palavras Cruzadas | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261009-2">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261010-3">
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/crossword-core.js" defer></script>
     <script src="../assets/js/presentation-mode.js?v=20261009-2" defer></script>
-    <script src="../assets/js/crossword-runtime.js" defer></script>
+    <script src="../assets/js/crossword-runtime.js?v=20261010-3" defer></script>
 </head>
 <body data-material-type="crossword">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -31,6 +31,7 @@
                         <p data-crossword-stage-subtitle>Preencha as respostas usando as pistas horizontais e verticais.</p>
                     </div>
                     <div class="crossword-stage-actions">
+                        <button type="button" class="platform-link-button platform-link-secondary" data-crossword-invert aria-pressed="false">Inverter jogo</button>
                         <button type="button" class="platform-link-button platform-link-secondary" data-puzzle-zoom aria-pressed="false">Ampliar grade</button>
                         <button type="button" class="platform-link-button platform-link-secondary" data-crossword-check>Conferir</button>
                         <button type="button" class="platform-link-button platform-link-secondary" data-crossword-toggle-solution>Mostrar gabarito</button>
@@ -55,9 +56,9 @@
                             <span class="platform-section-label">Vertical</span>
                             <div data-crossword-stage-down></div>
                         </section>
-                        <p class="crossword-preview-note crossword-stage-note" data-crossword-stage-note hidden></p>
                     </aside>
                 </div>
+                <p class="crossword-preview-note crossword-stage-note" data-crossword-stage-note role="status" hidden></p>
             </article>
         </section>
     </main>

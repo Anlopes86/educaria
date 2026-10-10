@@ -31,7 +31,7 @@ function parseCrosswordEntries(stackHtml) {
     }));
 }
 
-function buildRuntimeClueMarkup(entries, solvedIds) {
+function buildRuntimeClueMarkup(entries, solvedIds, inverted = false, revealedClueIds = new Set()) {
     const api = window.EducarIACrossword;
     if (!entries.length) {
         return `<p class="crossword-clues-empty">Nenhuma pista neste grupo.</p>`;
@@ -40,9 +40,13 @@ function buildRuntimeClueMarkup(entries, solvedIds) {
     return `
         <ol class="crossword-clue-list">
             ${entries.map((entry) => `
-                <li class="${solvedIds.has(entry.id) ? "is-solved" : ""}">
+                <li class="${!inverted && solvedIds.has(entry.id) ? "is-solved" : ""}">
                     <strong>${entry.number}.</strong>
-                    <span>${api.escapeHtml(entry.clue || entry.answer || "Sem pista")}</span>
+                    <span>${api.escapeHtml(inverted ? entry.answer : entry.clue || entry.answer || "Sem pista")}</span>
+                    ${inverted ? `
+                        <button type="button" class="crossword-reveal-clue" data-crossword-reveal-clue="${api.escapeHtml(entry.id)}" aria-expanded="${revealedClueIds.has(entry.id)}" aria-label="${revealedClueIds.has(entry.id) ? "Ocultar" : "Mostrar"} pista de ${api.escapeHtml(entry.answer)}">${revealedClueIds.has(entry.id) ? "Ocultar pista" : "Mostrar pista"}</button>
+                        ${revealedClueIds.has(entry.id) ? `<p class="crossword-revealed-clue">${api.escapeHtml(entry.clue || "Esta resposta não tem uma pista cadastrada. Crie uma com a turma.")}</p>` : ""}
+                    ` : ""}
                 </li>
             `).join("")}
         </ol>
@@ -117,6 +121,11 @@ function renderCrosswordApplication() {
     const noteRoot = document.querySelector("[data-crossword-stage-note]");
     const toggleButton = document.querySelector("[data-crossword-toggle-solution]");
     const checkButton = document.querySelector("[data-crossword-check]");
+    const invertButton = document.querySelector("[data-crossword-invert]");
+    const zoomButton = document.querySelector("[data-puzzle-zoom]");
+    const stageCard = boardRoot?.closest(".crossword-stage-card");
+    const stageBody = boardRoot?.closest(".crossword-stage-body");
+    const sidebar = document.querySelector(".crossword-stage-sidebar");
 
     const values = {};
     const correctCells = new Set();
@@ -124,6 +133,9 @@ function renderCrosswordApplication() {
     const solvedIds = new Set();
     const navigation = buildCrosswordNavigation(puzzle);
     let revealAnswers = false;
+    let inverted = false;
+    let zoomed = false;
+    const revealedClueIds = new Set();
     let activeCellKey = "";
     let activeDirection = "across";
 
@@ -173,7 +185,7 @@ function renderCrosswordApplication() {
     }
 
     function focusCell(key, options = {}) {
-        if (!key || revealAnswers) return false;
+        if (!key || revealAnswers || inverted) return false;
         setActiveCell(key, options);
 
         const input = boardRoot?.querySelector(`[data-crossword-input="${key}"]`);
@@ -201,8 +213,30 @@ function renderCrosswordApplication() {
     }
 
     function renderClues() {
-        if (acrossRoot) acrossRoot.innerHTML = buildRuntimeClueMarkup(puzzle.acrossEntries, solvedIds);
-        if (downRoot) downRoot.innerHTML = buildRuntimeClueMarkup(puzzle.downEntries, solvedIds);
+        if (acrossRoot) acrossRoot.innerHTML = buildRuntimeClueMarkup(puzzle.acrossEntries, solvedIds, inverted, revealedClueIds);
+        if (downRoot) downRoot.innerHTML = buildRuntimeClueMarkup(puzzle.downEntries, solvedIds, inverted, revealedClueIds);
+    }
+
+    function syncPuzzleView() {
+        stageCard?.classList.toggle("is-grid-expanded", zoomed);
+        stageCard?.classList.toggle("is-inverted", inverted);
+        stageBody?.classList.toggle("is-sidebar-hidden", zoomed);
+        if (sidebar) sidebar.hidden = zoomed;
+        if (zoomButton) {
+            zoomButton.textContent = zoomed ? "Reduzir grade" : "Ampliar grade";
+            zoomButton.setAttribute("aria-pressed", String(zoomed));
+        }
+        if (invertButton) {
+            invertButton.textContent = inverted ? "Voltar ao jogo normal" : "Inverter jogo";
+            invertButton.setAttribute("aria-pressed", String(inverted));
+        }
+        if (checkButton) checkButton.hidden = inverted;
+        if (subtitleRoot) subtitleRoot.textContent = inverted
+            ? "As respostas já estão na grade. Que pergunta ou frase poderia explicar cada uma?" : subtitle;
+        if (toggleButton) toggleButton.textContent = inverted
+            ? (revealedClueIds.size === puzzle.placedEntries.length ? "Ocultar pistas" : "Mostrar todas as pistas")
+            : revealAnswers ? "Ocultar gabarito" : "Mostrar gabarito";
+        fitBoardToAvailableSpace();
     }
 
     let boardResizeFrame = 0;
@@ -217,7 +251,7 @@ function renderCrosswordApplication() {
             const gap = parseFloat(getComputedStyle(grid).columnGap) || 0;
             const width = shell.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
             const height = shell.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
-            const cell = Math.max(shell.classList.contains("is-zoomed") ? 36 : 1, Math.min((width - gap * (puzzle.cols - 1)) / puzzle.cols, (height - gap * (puzzle.rows - 1)) / puzzle.rows));
+            const cell = Math.max(1, Math.min((width - gap * (puzzle.cols - 1)) / puzzle.cols, (height - gap * (puzzle.rows - 1)) / puzzle.rows));
             grid.style.width = `${Math.floor(cell * puzzle.cols + gap * (puzzle.cols - 1))}px`;
             grid.style.height = `${Math.floor(cell * puzzle.rows + gap * (puzzle.rows - 1))}px`;
             grid.style.gridTemplateRows = `repeat(${puzzle.rows}, minmax(0, 1fr))`;
@@ -229,14 +263,14 @@ function renderCrosswordApplication() {
         if (!boardRoot) return;
         boardRoot.innerHTML = api.buildBoardMarkup(puzzle, {
             mode: "play",
-            revealAnswers,
+            revealAnswers: revealAnswers || inverted,
             values,
-            correctCells,
-            incorrectCells
+            correctCells: inverted ? new Set() : correctCells,
+            incorrectCells: inverted ? new Set() : incorrectCells
         });
         fitBoardToAvailableSpace();
 
-        if (!revealAnswers && activeCellKey) {
+        if (!revealAnswers && !inverted && activeCellKey) {
             window.requestAnimationFrame(() => {
                 focusCell(activeCellKey, {
                     preferredDirection: activeDirection
@@ -249,7 +283,9 @@ function renderCrosswordApplication() {
         if (!noteRoot) return;
 
         let message = "Preencha as letras e use Conferir para validar a cruzadinha.";
-        if (puzzle.omittedEntries.length) {
+        if (inverted) {
+            message = "A turma propõe uma pergunta ou frase para cada resposta. Revele a pista para comparar; outras formulações também podem estar corretas.";
+        } else if (puzzle.omittedEntries.length) {
             message = `${puzzle.omittedEntries.length} ${puzzle.omittedEntries.length === 1 ? "entrada ficou de fora" : "entradas ficaram de fora"} da grade atual.`;
         } else if (puzzle.sizeAdjusted) {
             message = `A grade foi ampliada para ${puzzle.size} x ${puzzle.size} para acomodar todas as respostas.`;
@@ -302,12 +338,23 @@ function renderCrosswordApplication() {
         if (shell) new ResizeObserver(fitBoardToAvailableSpace).observe(shell);
     }
     window.addEventListener("resize", fitBoardToAvailableSpace, { passive: true });
-    document.querySelector("[data-puzzle-zoom]")?.addEventListener("click", (event) => {
-        const zoomed = boardRoot?.closest(".crossword-board-shell--stage")?.classList.toggle("is-zoomed");
-        event.currentTarget.textContent = zoomed ? "Ver grade inteira" : "Ampliar grade";
-        event.currentTarget.setAttribute("aria-pressed", String(Boolean(zoomed)));
-        fitBoardToAvailableSpace();
+    zoomButton?.addEventListener("click", () => {
+        zoomed = !zoomed;
+        syncPuzzleView();
     });
+    invertButton?.addEventListener("click", () => {
+        inverted = !inverted;
+        syncPuzzleView(); renderClues(); paintBoard(); resetNote();
+    });
+    [acrossRoot, downRoot].forEach((root) => root?.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-crossword-reveal-clue]");
+        const id = button?.dataset.crosswordRevealClue;
+        if (!inverted || !puzzle.placedEntries.some((entry) => entry.id === id)) return;
+        if (revealedClueIds.has(id)) revealedClueIds.delete(id);
+        else revealedClueIds.add(id);
+        renderClues(); syncPuzzleView();
+        root.querySelector(`[data-crossword-reveal-clue="${id}"]`)?.focus({ preventScroll: true });
+    }));
 
     boardRoot?.addEventListener("focusin", (event) => {
         const input = event.target.closest("[data-crossword-input]");
@@ -408,12 +455,23 @@ function renderCrosswordApplication() {
     });
 
     checkButton?.addEventListener("click", () => {
+        if (inverted) return;
         revealAnswers = false;
         if (toggleButton) toggleButton.textContent = "Mostrar gabarito";
         evaluateBoard();
     });
 
     toggleButton?.addEventListener("click", () => {
+        if (inverted) {
+            const showAll = revealedClueIds.size !== puzzle.placedEntries.length;
+            revealedClueIds.clear();
+            if (showAll) {
+                puzzle.placedEntries.forEach((entry) => revealedClueIds.add(entry.id));
+                zoomed = false;
+            }
+            renderClues(); syncPuzzleView();
+            return;
+        }
         revealAnswers = !revealAnswers;
         toggleButton.textContent = revealAnswers ? "Ocultar gabarito" : "Mostrar gabarito";
         if (revealAnswers) {
@@ -429,16 +487,20 @@ function renderCrosswordApplication() {
         paintBoard();
     });
     window.educariaPresentationProgress = {
-        capture: () => ({ values: { ...values }, revealAnswers, activeCellKey, activeDirection, correctCells: [...correctCells], incorrectCells: [...incorrectCells], zoomed: boardRoot?.closest(".crossword-stage-board-shell")?.classList.contains("is-zoomed"), note: noteRoot?.textContent }),
+        capture: () => ({ values: { ...values }, revealAnswers, activeCellKey, activeDirection, correctCells: [...correctCells], incorrectCells: [...incorrectCells], zoomed, inverted, revealedClueIds: [...revealedClueIds], note: noteRoot?.textContent }),
         restore(saved) {
             if (!saved) return;
+            Object.keys(values).forEach((key) => delete values[key]);
             Object.assign(values, saved.values || {});
             revealAnswers = Boolean(saved.revealAnswers); activeCellKey = saved.activeCellKey || ""; activeDirection = saved.activeDirection || "across";
+            zoomed = Boolean(saved.zoomed); inverted = Boolean(saved.inverted);
+            revealedClueIds.clear();
+            (saved.revealedClueIds || []).filter((id) => puzzle.placedEntries.some((entry) => entry.id === id)).forEach((id) => revealedClueIds.add(id));
+            correctCells.clear(); incorrectCells.clear();
             (saved.correctCells || []).forEach((key) => correctCells.add(key));
             (saved.incorrectCells || []).forEach((key) => incorrectCells.add(key));
             recomputeSolvedEntries(); renderClues(); paintBoard();
-            if (toggleButton) toggleButton.textContent = revealAnswers ? "Ocultar gabarito" : "Mostrar gabarito";
-            if (saved.zoomed) document.querySelector("[data-puzzle-zoom]")?.click();
+            syncPuzzleView(); resetNote();
             if (noteRoot && saved.note) noteRoot.textContent = saved.note;
         }
     };

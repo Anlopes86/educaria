@@ -76,23 +76,24 @@ function boardHarness(width, height, rows, cols) {
     const classes = new Set(), inner = { style: { setProperty(key, value) { this[key] = value; } } };
     const shell = { clientWidth: width, clientHeight: height, classList: { contains: value => classes.has(value) } };
     const context = vm.createContext({
-        boardRoot: { closest: () => shell, querySelector: () => inner }, boardResizeFrame: 0, puzzle: { rows, cols },
+        boardRoot: { closest: () => shell, querySelector: () => inner }, boardResizeFrame: 0, zoomed: false, puzzle: { rows, cols },
         window: { cancelAnimationFrame() {}, requestAnimationFrame(fn) { fn(); return 1; } },
         getComputedStyle: () => ({ paddingLeft: "10", paddingRight: "10", paddingTop: "10", paddingBottom: "10", gap: "2" })
     });
     vm.runInContext(section(wordsearch, "    function fitBoardToAvailableSpace", "    function paintBoard"), context);
-    return { context, inner, classes };
+    return { context, inner, shell, classes };
 }
-test("wordsearch zoom really enlarges cells already bigger than 32px and is reversible", () => {
+test("wordsearch expansion uses the available width and height without scroll or compounded zoom", () => {
     const h = boardHarness(600, 500, 8, 10);
     h.context.fitBoardToAvailableSpace();
     const original = parseFloat(h.inner.style.width);
-    h.classes.add("is-zoomed"); h.context.fitBoardToAvailableSpace();
+    h.context.zoomed = true; h.shell.clientWidth = 1000; h.context.fitBoardToAvailableSpace();
     const enlarged = parseFloat(h.inner.style.width);
-    assert.ok(enlarged > original * 1.4);
+    assert.equal(enlarged, 980);
+    assert.equal(parseFloat(h.inner.style.height), 480);
     h.context.fitBoardToAvailableSpace();
     assert.equal(parseFloat(h.inner.style.width), enlarged, "Repeated resizing must not compound zoom");
-    h.classes.clear(); h.context.fitBoardToAvailableSpace();
+    h.context.zoomed = false; h.shell.clientWidth = 600; h.context.fitBoardToAvailableSpace();
     assert.equal(parseFloat(h.inner.style.width), original);
 });
 test("the full wordsearch grid fits both axes in a short embedded stage", () => {

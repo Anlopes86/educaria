@@ -15,7 +15,7 @@
 @import url('./components/navigation.css');
 @import url('./components/presentation.css?v=20260930-1');
 @import url('./components/presentation-stages.css?v=20260928-2');
-@import url('./components/presentation-activities.css?v=20261002-1');
+@import url('./components/presentation-activities.css?v=20261010-3');
 @import url('./components/debate.css?v=20260930-1');
 @import url('./components/lesson-sequence.css?v=20261002-1');
 @import url('./components/previews.css?v=20261010-1');
@@ -34,5 +34,5 @@
 @import url('./components/mobile.css?v=20260928-2');
 @import url('./pages/editor.css?v=20261003-1');
 @import url('./components/presentation-refinements.css?v=20261003-1');
-@import url('./components/presentation-fit.css?v=20261010-1');
+@import url('./components/presentation-fit.css?v=20261010-3');
 

@@ -16,7 +16,7 @@
     <script src="../assets/js/live-preview.js?v=20261010-1" defer></script>
     <script src="../assets/js/builder-actions.js" defer></script>
     <script src="../assets/js/builder-templates.js" defer></script>
-    <script src="../assets/js/local-persistence.js?v=20260927-6" defer></script>
+    <script src="../assets/js/local-persistence.js?v=20261010-3" defer></script>
     <script src="../assets/js/image-upload.js" defer></script>
     <script src="../assets/js/slide-image-tools.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
@@ -25,7 +25,7 @@
     <script src="../assets/js/editor-disclosure.js?v=20260930-1" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20261010-1" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261010-3" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
     <script src="../assets/js/slide-theme-controls.js?v=20261010-1" defer></script>
 </head>
@@ -90,14 +90,9 @@
                                 <input id="slides-disciplina" type="text" maxlength="120" placeholder="Ex.: História">
                             </div>
                             <div class="platform-field platform-field-wide">
-                                <label for="slides-fonte-texto">Roteiro ou texto-base do professor</label>
-                                <textarea id="slides-fonte-texto" rows="6" placeholder="Digite um tópico, cole um roteiro ou envie um arquivo para a IA montar os slides."></textarea>
+                                <label for="slides-fonte-texto">Seu pedido e conteúdo</label>
+                                <textarea id="slides-fonte-texto" rows="6" placeholder="Escreva o que deseja e, se quiser, cole seu texto aqui. Ex.: explique as causas da Primeira Guerra com exemplos, sem capa. Também pode enviar um arquivo abaixo."></textarea>
                             </div>
-                            <details class="platform-field platform-field-wide">
-                                <summary>Pedido específico para a IA (opcional)</summary>
-                                <label for="slides-teacher-instructions">Como organizar ou aprofundar?</label>
-                                <textarea id="slides-teacher-instructions" rows="3" maxlength="1500" placeholder="Ex.: aprofunde as causas com explicações e exemplos; mantenha o texto em inglês; não inclua capa."></textarea>
-                            </details>
                             <div class="platform-field">
                                 <label for="slides-arquivo">Arquivo de apoio</label>
                                 <input id="slides-arquivo" type="file" accept=".txt,.docx,.pdf">

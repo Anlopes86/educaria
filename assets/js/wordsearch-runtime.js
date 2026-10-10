@@ -57,7 +57,7 @@ function renderWordsearchApplication() {
     const controls = draft?.controls || {};
     const words = parseWordsearchWords(draft?.stackHtml || "");
     const fallbackWords = [
-        { term: "RIO", clue: "Curso de agua" },
+        { term: "RIO", clue: "Curso de água" },
         { term: "SERRA", clue: "Relevo elevado" },
         { term: "PLANALTO", clue: "Forma de relevo" },
         { term: "CLIMA", clue: "Condição atmosférica" }
@@ -82,9 +82,16 @@ function renderWordsearchApplication() {
     const bankRoot = document.querySelector("[data-wordsearch-stage-bank]");
     const noteRoot = document.querySelector("[data-wordsearch-stage-note]");
     const toggleButton = document.querySelector("[data-wordsearch-toggle-solution]");
+    const bankButton = document.querySelector("[data-wordsearch-toggle-bank]");
+    const zoomButton = document.querySelector("[data-puzzle-zoom]");
+    const stageCard = boardRoot?.closest(".wordsearch-stage-card");
+    const stageBody = boardRoot?.closest(".wordsearch-stage-body");
+    const sidebar = document.querySelector(".wordsearch-stage-sidebar");
     const highlightPalette = ["#14b8a6", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#22c55e", "#ef4444", "#6366f1"];
 
     let revealSolution = false;
+    let wordsHidden = false;
+    let zoomed = false;
     const activeEntryIds = [];
     const foundEntryIds = [];
     let pendingStartKey = "";
@@ -203,13 +210,13 @@ function renderWordsearchApplication() {
             const cellSizeByHeight = Math.max(1, (availableHeight - gap * (rows - 1)) / rows);
             const cellSizeByWidth = Math.max(1, (availableWidth - gap * (cols - 1)) / cols);
             const baseCellSize = Math.min(cellSizeByHeight, cellSizeByWidth);
-            const fittedCellSize = shell.classList.contains("is-zoomed") ? Math.max(32, baseCellSize * 1.5) : baseCellSize;
-            const fittedWidth = Math.max(1, fittedCellSize * cols + gap * (cols - 1));
-            const fittedHeight = Math.max(1, fittedCellSize * rows + gap * (rows - 1));
+            // Expanded mode uses the whole stage, never magnification inside a scrollbox.
+            const fittedWidth = zoomed ? availableWidth : Math.max(1, baseCellSize * cols + gap * (cols - 1));
+            const fittedHeight = zoomed ? availableHeight : Math.max(1, baseCellSize * rows + gap * (rows - 1));
             inner.style.width = `${Math.floor(fittedWidth)}px`;
             inner.style.height = `${Math.floor(fittedHeight)}px`;
             inner.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
-            inner.style.setProperty("--wordsearch-letter-size", `${Math.max(8, Math.min(42, fittedCellSize * 0.65))}px`);
+            inner.style.setProperty("--wordsearch-letter-size", `${Math.max(8, Math.min(42, baseCellSize * 0.65))}px`);
         });
     }
 
@@ -345,11 +352,30 @@ function renderWordsearchApplication() {
     syncBankSelectionState();
     resetNoteMessage();
 
-    document.querySelector("[data-puzzle-zoom]")?.addEventListener("click", (event) => {
-        const zoomed = boardRoot?.closest(".wordsearch-stage-board-shell")?.classList.toggle("is-zoomed");
-        event.currentTarget.textContent = zoomed ? "Ver grade inteira" : "Ampliar grade";
-        event.currentTarget.setAttribute("aria-pressed", String(Boolean(zoomed)));
+    function syncPuzzleView() {
+        const hideWords = wordsHidden || zoomed;
+        stageCard?.classList.toggle("is-grid-expanded", zoomed);
+        stageBody?.classList.toggle("is-sidebar-hidden", hideWords);
+        if (sidebar) sidebar.hidden = hideWords;
+        if (zoomButton) {
+            zoomButton.textContent = zoomed ? "Reduzir grade" : "Ampliar grade";
+            zoomButton.setAttribute("aria-pressed", String(zoomed));
+        }
+        if (bankButton) {
+            bankButton.textContent = hideWords ? "Mostrar palavras" : "Esconder palavras";
+            bankButton.setAttribute("aria-pressed", String(hideWords));
+        }
         fitBoardToAvailableSpace();
+    }
+
+    zoomButton?.addEventListener("click", () => {
+        zoomed = !zoomed;
+        syncPuzzleView();
+    });
+    bankButton?.addEventListener("click", () => {
+        wordsHidden = !(wordsHidden || zoomed);
+        if (!wordsHidden) zoomed = false;
+        syncPuzzleView();
     });
 
     bankRoot?.addEventListener("click", (event) => {
@@ -380,14 +406,16 @@ function renderWordsearchApplication() {
     });
 
     window.educariaPresentationProgress = {
-        capture: () => ({ revealSolution, activeEntryIds: [...activeEntryIds], foundEntryIds: [...foundEntryIds], zoomed: boardRoot?.closest(".wordsearch-stage-board-shell")?.classList.contains("is-zoomed") }),
+        capture: () => ({ revealSolution, activeEntryIds: [...activeEntryIds], foundEntryIds: [...foundEntryIds], zoomed, wordsHidden }),
         restore(saved) {
             if (!saved) return;
             revealSolution = Boolean(saved.revealSolution);
             activeEntryIds.splice(0, activeEntryIds.length, ...(saved.activeEntryIds || []));
             foundEntryIds.splice(0, foundEntryIds.length, ...(saved.foundEntryIds || []));
             if (toggleButton) toggleButton.textContent = revealSolution ? "Ocultar gabarito" : "Mostrar gabarito";
-            if (saved.zoomed) document.querySelector("[data-puzzle-zoom]")?.click();
+            zoomed = Boolean(saved.zoomed);
+            wordsHidden = Boolean(saved.wordsHidden);
+            syncPuzzleView();
             syncBankSelectionState(); paintBoard(); resetNoteMessage();
         }
     };

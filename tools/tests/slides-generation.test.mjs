@@ -65,17 +65,17 @@ test("long slide settings do not overflow the action field", async () => {
     assert.equal(JSON.parse(h.posted.body.get("slideOptions")).objective.length, 280);
 });
 
-test("editor sends an expansion request with automatic quantity without mixing it into the text", async () => {
+test("editor sends the complete main-field request once with automatic quantity", async () => {
     const h = generationHarness();
     h.fields.count.value = "";
     h.fields.action.options[0].text = "Desenvolver e aprofundar o assunto";
-    h.fields.instructions.value = "Explique as causas com exemplos. Não inclua capa.";
+    h.fields.text.value = "Fotossíntese. Explique as causas com exemplos. Não inclua capa.";
     assert.equal(await h.context.generateMaterial("slides", { textContent: "Gerar" }), true);
     const sent = JSON.parse(h.posted.body.get("generationOptions"));
     assert.equal(sent.contentMode, "develop");
-    assert.equal(sent.teacherInstructions, h.fields.instructions.value);
+    assert.equal(sent.teacherInstructions, undefined);
     assert.equal(sent.count, undefined);
-    assert.equal(h.posted.body.get("sourceText"), "Fotossíntese");
+    assert.equal(h.posted.body.get("sourceText"), h.fields.text.value);
     assert.doesNotMatch(h.posted.body.get("action"), /Gerar \d+ slides/);
 });
 

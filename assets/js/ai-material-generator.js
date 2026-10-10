@@ -1882,7 +1882,6 @@ function materialConfig(materialType) {
             toneId: "slides-tom",
             objectiveId: "slides-objetivo",
             visualModeId: "slides-visual-mode",
-            instructionsId: "slides-teacher-instructions",
             apply: applySlidesFromStructuredData,
             fallback: buildFallbackSlides
         };
@@ -1898,7 +1897,6 @@ function materialConfig(materialType) {
             subjectId: "cards-disciplina",
             audienceId: "cards-ano",
             contentModeId: "cards-content-mode",
-            instructionsId: "cards-teacher-instructions",
             apply: applyFlashcardsFromStructuredData,
             fallback: buildFallbackFlashcards
         };
@@ -2107,7 +2105,6 @@ async function generateMaterial(materialType, button, options = {}) {
         count: requestedCount, approach: action, format: formatText, layout: layoutText,
         contentMode: config.contentModeId ? document.getElementById(config.contentModeId)?.value || "auto"
             : materialType === "slides" ? (/aprofundar/i.test(action) ? "develop" : /^Resumir/i.test(action) ? "summarize" : /^Organizar texto/i.test(action) ? "preserve" : "auto") : "auto",
-        teacherInstructions: config.instructionsId ? document.getElementById(config.instructionsId)?.value.trim() || "" : "",
         audience: audienceText, className: classText, subject: subjectText, objective: objectiveText,
         examples: document.getElementById("cards-exemplo")?.value !== "Não",
         shuffle: document.getElementById("ligar-embaralhar")?.value === "Sim",
@@ -2212,11 +2209,17 @@ function applyGenerationOptionsToEditor(materialType, options) {
     const config = materialConfig(materialType);
     const values = [[config?.countId, options.count], [config?.subjectId, options.subject],
         [config?.audienceId, options.audience], [config?.objectiveId, options.objective],
-        [config?.instructionsId, options.teacherInstructions], [config?.contentModeId, options.contentMode]];
+        [config?.contentModeId, options.contentMode]];
     values.forEach(([id, value]) => {
         const field = id ? document.getElementById(id) : null;
         if (field && value != null) field.value = String(value);
     });
+    // Older pending generations may still carry the former separate request.
+    const sourceField = config?.textId ? document.getElementById(config.textId) : null;
+    const legacyRequest = String(options.teacherInstructions || "").trim();
+    if (sourceField && legacyRequest && !sourceField.value.includes(legacyRequest)) {
+        sourceField.value = [legacyRequest, sourceField.value].filter(Boolean).join("\n\n");
+    }
     const labels = {
         detail: { concise: "Mais enxuto", balanced: "Equilibrado", detailed: "Mais detalhado" },
         tone: { balanced: "Claro e equilibrado", visual: "Mais visual e direto", explanatory: "Mais explicativo", inspiring: "Mais inspirador" },

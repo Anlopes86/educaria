@@ -204,7 +204,7 @@
   "dashboard.quick.title": "What will we teach today?",
   "dashboard.quick.copy": "A topic or a file. You choose, AI prepares it.",
   "dashboard.quick.note": "When it is ready, choose whether to review or present.",
-  "dashboard.quick.topic": "Topic or content",
+  "dashboard.quick.topic": "Your request and content",
   "dashboard.quick.topicPlaceholder": "Enter a topic or paste your content and describe what the AI should do.",
   "dashboard.quick.topicRequired": "Enter a topic for AI to create the activity.",
   "dashboard.quick.tool": "Tool",

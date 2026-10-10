@@ -49,6 +49,14 @@ function restoreControls(values) {
         if (!field) return;
         field.value = value;
     });
+    // Preserve requests saved before the creator was simplified to one field.
+    for (const prefix of ["slides", "cards"]) {
+        const source = document.getElementById(`${prefix}-fonte-texto`);
+        const request = String(values[`${prefix}-teacher-instructions`] || "").trim();
+        if (source && request && !source.value.includes(request)) {
+            source.value = [request, source.value].filter(Boolean).join("\n\n");
+        }
+    }
 }
 
 function captureControls() {

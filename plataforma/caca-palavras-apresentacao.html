@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apresenta&ccedil;&atilde;o do Ca&ccedil;a-palavras | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261009-2">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261010-3">
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/wordsearch-core.js" defer></script>
     <script src="../assets/js/presentation-mode.js?v=20261009-2" defer></script>
-    <script src="../assets/js/wordsearch-runtime.js?v=20261009-2" defer></script>
+    <script src="../assets/js/wordsearch-runtime.js?v=20261010-3" defer></script>
 </head>
 <body data-material-type="wordsearch">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -31,6 +31,7 @@
                         <p data-wordsearch-stage-subtitle>Encontre os termos escondidos na grade.</p>
                     </div>
                     <div class="wordsearch-stage-actions">
+                        <button type="button" class="platform-link-button platform-link-secondary" data-wordsearch-toggle-bank aria-pressed="false" aria-controls="wordsearch-word-bank">Esconder palavras</button>
                         <button type="button" class="platform-link-button platform-link-secondary" data-puzzle-zoom aria-pressed="false">Ampliar grade</button>
                         <button type="button" class="platform-link-button platform-link-secondary" data-wordsearch-toggle-solution>Mostrar gabarito</button>
                     </div>
@@ -46,11 +47,11 @@
                     <div class="wordsearch-stage-board-shell">
                         <div class="wordsearch-grid wordsearch-grid--stage" data-wordsearch-stage-board></div>
                     </div>
-                    <aside class="wordsearch-stage-sidebar">
+                    <aside class="wordsearch-stage-sidebar" id="wordsearch-word-bank">
                         <div class="wordsearch-stage-bank" data-wordsearch-stage-bank></div>
-                        <p class="wordsearch-stage-note" data-wordsearch-stage-note hidden></p>
                     </aside>
                 </div>
+                <p class="wordsearch-stage-note" data-wordsearch-stage-note role="status" hidden></p>
             </article>
         </section>
     </main>

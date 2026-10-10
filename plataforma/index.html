@@ -23,7 +23,7 @@
     <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
     <script src="../assets/js/image-upload.js" defer></script>
     <script src="../assets/js/dashboard-creation.js?v=20261004-1" defer></script>
-    <script src="../assets/js/teacher-dashboard.js?v=20261010-2" defer></script>
+    <script src="../assets/js/teacher-dashboard.js?v=20261010-3" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
@@ -127,7 +127,7 @@
                     <form class="dashboard-quick-create-form" data-dashboard-quick-form>
                         <div class="dashboard-tour-field-group" data-dashboard-tour-anchor="source">
                         <label class="dashboard-quick-field dashboard-quick-field--topic">
-                            <span><b aria-hidden="true">1</b><span data-i18n="dashboard.quick.topic">Tema ou conteúdo</span></span>
+                            <span><b aria-hidden="true">1</b><span data-i18n="dashboard.quick.topic">Seu pedido e conteúdo</span></span>
                             <textarea rows="2" maxlength="50000" data-dashboard-quick-topic data-i18n-placeholder="dashboard.quick.topicPlaceholder" placeholder="Escreva um tema ou cole seu conteúdo e diga o que a IA deve fazer."></textarea>
                         </label>
 
@@ -160,7 +160,6 @@
                                     <label class="dashboard-quick-option-field"><span>Objetivo da aula</span><input type="text" maxlength="280" data-dashboard-context="objective" placeholder="Ex.: revisar conceitos"></label>
                                 </div>
                                 <div class="dashboard-quick-options-grid" data-dashboard-advanced-options></div>
-                                <label class="dashboard-quick-option-field"><span>Pedido específico para a IA <small>(opcional)</small></span><textarea rows="3" maxlength="1500" data-dashboard-context="teacherInstructions" placeholder="Ex.: mantenha o texto em inglês; coloque só o número na frente e a explicação completa no verso. Ou: aprofunde o assunto com causas e exemplos."></textarea></label>
                                 <small>A IA adapta a linguagem e os exemplos ao público. Você poderá revisar tudo no editor.</small>
                             </div>
                         </details>

@@ -519,7 +519,7 @@ function collectDashboardQuickOptions(form, materialType) {
     });
 
     dashboardQuickOptionState.set(materialType, values);
-    ["audience", "subject", "objective", "className", "teacherInstructions"].forEach((key) => {
+    ["audience", "subject", "objective", "className"].forEach((key) => {
         values[key] = form.querySelector(`[data-dashboard-context="${key}"]`)?.value.trim() || "";
     });
     return {

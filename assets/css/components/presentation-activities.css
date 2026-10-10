@@ -1087,25 +1087,6 @@
     place-items: center;
 }
 
-.wordsearch-stage-board-shell.is-zoomed,
-.crossword-board-shell--stage.is-zoomed {
-    overflow: auto;
-    place-items: start;
-}
-
-.wordsearch-stage-board-shell.is-zoomed > div,
-.crossword-board-shell--stage.is-zoomed > div {
-    width: max-content;
-    min-width: 100%;
-    height: auto;
-    place-items: start;
-}
-
-.is-zoomed .wordsearch-grid-inner,
-.is-zoomed .crossword-grid {
-    margin: 0;
-}
-
 .wordsearch-grid-inner {
     display: grid;
     grid-template-columns: repeat(var(--wordsearch-cols), minmax(0, 1fr));

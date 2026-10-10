@@ -52,12 +52,12 @@ test("mindmap keeps layout, selected topic and explanation scroll", async () => 
     assert.equal(context.activeIndex, 1); assert.equal(context.state.controls["mapa-layout"], "Tópicos"); assert.equal(context.detailTextRoot.scrollTop, 180);
 });
 test("wordsearch retains found words and revealed solution", async () => {
-    const { api, context } = await adapter("wordsearch-runtime.js", { revealSolution: false, activeEntryIds: [], foundEntryIds: [], toggleButton: {}, syncBankSelectionState: noop, paintBoard: noop, resetNoteMessage: noop });
+    const { api, context } = await adapter("wordsearch-runtime.js", { revealSolution: false, zoomed: false, wordsHidden: false, syncPuzzleView: noop, activeEntryIds: [], foundEntryIds: [], toggleButton: {}, syncBankSelectionState: noop, paintBoard: noop, resetNoteMessage: noop });
     api.restore({ revealSolution: true, activeEntryIds: ["word-1"], foundEntryIds: ["word-0"] });
     assert.equal(context.foundEntryIds[0], "word-0"); assert.equal(context.toggleButton.textContent, "Ocultar gabarito");
 });
 test("crossword restores entered letters and feedback", async () => {
-    const { api, context } = await adapter("crossword-runtime.js", { values: {}, revealAnswers: false, activeCellKey: "", activeDirection: "across", correctCells: new Set(), incorrectCells: new Set(), toggleButton: {}, noteRoot: {}, recomputeSolvedEntries: noop, renderClues: noop, paintBoard: noop });
+    const { api, context } = await adapter("crossword-runtime.js", { values: {}, revealAnswers: false, zoomed: false, inverted: false, revealedClueIds: new Set(), puzzle: { placedEntries: [] }, syncPuzzleView: noop, resetNote: noop, activeCellKey: "", activeDirection: "across", correctCells: new Set(), incorrectCells: new Set(), toggleButton: {}, noteRoot: {}, recomputeSolvedEntries: noop, renderClues: noop, paintBoard: noop });
     api.restore({ values: { "2-3": "A" }, correctCells: ["2-3"], activeCellKey: "2-3", note: "1 letra correta" });
     assert.equal(context.values["2-3"], "A"); assert.equal(context.correctCells.has("2-3"), true); assert.equal(context.noteRoot.textContent, "1 letra correta");
 });

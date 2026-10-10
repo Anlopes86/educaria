@@ -204,7 +204,7 @@
   "dashboard.quick.title": "¿Qué vamos a enseñar hoy?",
   "dashboard.quick.copy": "Tema o archivo. Tú eliges, la IA lo prepara.",
   "dashboard.quick.note": "Cuando esté lista, elige entre revisar o presentar.",
-  "dashboard.quick.topic": "Tema o contenido",
+  "dashboard.quick.topic": "Tu pedido y contenido",
   "dashboard.quick.topicPlaceholder": "Escribe un tema o pega tu contenido e indica qué debe hacer la IA.",
   "dashboard.quick.topicRequired": "Escribe un tema para que la IA cree la actividad.",
   "dashboard.quick.tool": "Herramienta",
