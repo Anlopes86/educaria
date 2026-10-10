@@ -7,12 +7,32 @@ async function evaluate(cdp, expression) {
     if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description || result.exceptionDetails.text);
     return result.result.value;
 }
-async function until(cdp, expression) {
-    for (let i = 0; i < 60; i++) {
-        if (await evaluate(cdp, expression)) return;
-        await new Promise((resolve) => setTimeout(resolve, 150));
+function isNavigationContextError(error) {
+    return /Inspected target navigated or closed|Execution context was destroyed|Cannot find context with specified id/.test(error.message);
+}
+
+export async function until(cdp, expression, { attempts = 60, intervalMs = 150 } = {}) {
+    for (let i = 0; i < attempts; i++) {
+        try {
+            if (await evaluate(cdp, expression)) return;
+        } catch (error) {
+            // Retry only a read-only condition while Chrome replaces the document.
+            // A closed target still fails unless the expected destination appears.
+            if (!isNavigationContextError(error)) throw error;
+        }
+        await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
     throw new Error(`Browser recovery check timed out: ${expression}`);
+}
+
+export async function triggerNavigation(cdp, expression) {
+    try {
+        await evaluate(cdp, expression);
+    } catch (error) {
+        // A successful navigation may discard this evaluation's response. Never
+        // repeat the click: the caller must verify the destination with until().
+        if (!isNavigationContextError(error)) throw error;
+    }
 }
 
 async function navigate(cdp, url) {
@@ -53,7 +73,7 @@ export async function checkQuickRecovery(cdp, dashboardUrl, screenshotDir = "") 
     assert.equal(keyboard, true);
     await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-later]').click()`);
     assert.equal(await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-resume]').hidden`), false);
-    await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-resume]').click(); document.querySelector('[data-dashboard-ai-result-edit]').click();`);
+    await triggerNavigation(cdp, `document.querySelector('[data-dashboard-ai-result-resume]').click(); document.querySelector('[data-dashboard-ai-result-edit]').click();`);
     await until(cdp, `location.pathname.endsWith('quiz-builder.html') && typeof readActiveLesson === 'function' && !window.educariaQuickImportPending && Boolean(readActiveLesson()?.draft)`);
     const lessonId = `lesson-ai-${records.quiz.id}`;
     const saved = await evaluate(cdp, `readActiveLesson()`);
@@ -76,7 +96,7 @@ export async function checkQuickRecovery(cdp, dashboardUrl, screenshotDir = "") 
 
     await navigate(cdp, dashboardUrl);
     await until(cdp, `document.readyState === 'complete' && document.querySelector('[data-dashboard-ai-result-tool]')?.textContent === 'Slides'`);
-    await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-present]').click()`);
+    await triggerNavigation(cdp, `document.querySelector('[data-dashboard-ai-result-present]').click()`);
     await until(cdp, `location.pathname.endsWith('/apresentacao.html') && document.body?.textContent.includes('Energia para a vida')`);
     const editorIntact = await evaluate(cdp, `(() => {
         const saved = JSON.parse(localStorage.getItem(educariaScopedKey('educaria:lessons'))).find((lesson) => lesson.id === ${JSON.stringify(`lesson-ai-${records.slides.id}`)});
