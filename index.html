@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EducarIA | Transforme a sua aula em poucos minutos</title>
     <meta name="description" content="Transforme seu tema ou arquivo em slides, quizzes, flashcards e jogos com IA. Experimente os formatos, edite do seu jeito e apresente em sala de aula.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="assets/css/estilo-premium.css?v=20261011-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
     <script src="assets/js/auth-flow.js" defer></script>
-    <script src="assets/js/landing-page.js?v=20261010-4" defer></script>
+    <script src="assets/js/landing-page.js?v=20261011-1" defer></script>
 </head>
 <body class="landing-page">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -19,7 +21,24 @@
         <div class="landing-container landing-header-inner">
             <a href="index.html" class="landing-brand" aria-label="EducarIA — página inicial"><span class="landing-brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><strong>Educar<span>IA</span></strong></a>
             <nav class="landing-nav" aria-label="Navegação principal"><a href="#ferramentas">Explore as atividades</a><a href="#como-funciona">Como funciona</a><a href="#aula-completa">Aula completa</a></nav>
-            <div class="landing-header-actions"><a href="login.html" class="landing-text-link" data-landing-nav-secondary>Entrar</a><a href="cadastro.html" class="platform-link-button platform-link-primary landing-header-cta" data-landing-nav-primary>Criar conta</a></div>
+            <div class="landing-header-actions">
+                <button type="button" class="landing-text-link landing-login-toggle" data-landing-login-toggle aria-expanded="false" aria-controls="landing-login-panel">Faça login</button>
+                <a href="cadastro.html" class="platform-link-button platform-link-primary landing-header-cta" data-landing-nav-primary>Cadastre-se</a>
+                <form class="landing-login-panel" id="landing-login-panel" data-login-form hidden>
+                    <strong>Acesse sua conta</strong>
+                    <div class="platform-field">
+                        <label for="landing-login-email">Email</label>
+                        <input id="landing-login-email" name="email" type="email" autocomplete="email" required placeholder="professor@escola.com.br">
+                    </div>
+                    <div class="platform-field">
+                        <label for="landing-login-password">Senha</label>
+                        <input id="landing-login-password" name="password" type="password" autocomplete="current-password" required placeholder="Digite sua senha">
+                    </div>
+                    <button type="submit" class="platform-link-button platform-link-primary">Entrar</button>
+                    <p class="auth-feedback" data-auth-feedback role="status" aria-live="polite" hidden></p>
+                    <a href="cadastro.html">Ainda não tem cadastro? Cadastre-se</a>
+                </form>
+            </div>
         </div>
     </header>
     <main id="main-content" tabindex="-1">

@@ -17,8 +17,6 @@ function renderLandingState() {
     const authenticated = Boolean(teacher?.uid || teacher?.email);
 
     if (authenticated) {
-        updateLandingLink("[data-landing-nav-primary]", "plataforma/index.html", "Abrir painel");
-        updateLandingLink("[data-landing-nav-secondary]", "plataforma/biblioteca.html", "Biblioteca");
         updateLandingLink("[data-landing-hero-primary]", "plataforma/index.html", "Criar nova atividade");
         updateLandingLink("[data-landing-cta-primary]", "plataforma/index.html", "Abrir painel");
         updateLandingLink("[data-landing-cta-secondary]", "plataforma/biblioteca.html", "Ir para biblioteca");
@@ -27,8 +25,6 @@ function renderLandingState() {
         return;
     }
 
-    updateLandingLink("[data-landing-nav-primary]", "cadastro.html", "Criar conta");
-    updateLandingLink("[data-landing-nav-secondary]", "login.html", "Entrar");
     updateLandingLink("[data-landing-hero-primary]", "cadastro.html", "Criar minha primeira atividade");
     updateLandingLink("[data-landing-cta-primary]", "cadastro.html", "Criar conta");
     updateLandingLink("[data-landing-cta-secondary]", "login.html", "Entrar");
@@ -38,6 +34,28 @@ function renderLandingState() {
 
 document.addEventListener("DOMContentLoaded", renderLandingState);
 document.addEventListener("educaria-auth-changed", renderLandingState);
+
+function initializeLandingLogin() {
+    const toggle = document.querySelector("[data-landing-login-toggle]");
+    const panel = document.querySelector("#landing-login-panel");
+    const email = document.querySelector("#landing-login-email");
+    if (!toggle || !panel) return;
+
+    toggle.addEventListener("click", () => {
+        const isOpening = panel.hidden;
+        panel.hidden = !isOpening;
+        toggle.setAttribute("aria-expanded", String(isOpening));
+        if (isOpening) email?.focus();
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key !== "Escape" || panel.hidden) return;
+        panel.hidden = true;
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.focus();
+    });
+}
+
+document.addEventListener("DOMContentLoaded", initializeLandingLogin);
 
 // Fixed, local examples only: no AI requests, account writes or saved teacher materials.
 function initializeLandingShowcase() {

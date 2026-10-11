@@ -103,14 +103,39 @@ test('landing: roulette result matches the pointer, blocks repeated spins and re
     }
 });
 test('landing: authenticated and signed-out visitors keep appropriate CTA destinations', () => {
-    const h = setup(); h.context.renderLandingState();
-    assert.equal(h.get('[data-landing-nav-secondary]').attributes.get('href'), 'login.html');
+    const h = setup();
+    h.get('[data-landing-nav-primary]').setAttribute('href', 'cadastro.html');
+    h.get('[data-landing-nav-primary]').textContent = 'Cadastre-se';
+    h.get('[data-landing-login-toggle]').textContent = 'Faça login';
+    h.context.renderLandingState();
+    assert.equal(h.get('[data-landing-nav-primary]').attributes.get('href'), 'cadastro.html');
+    assert.equal(h.get('[data-landing-nav-primary]').textContent, 'Cadastre-se');
+    assert.equal(h.get('[data-landing-login-toggle]').textContent, 'Faça login');
     assert.equal(h.get('[data-landing-example-cta]').attributes.get('href'), 'cadastro.html');
     h.setTeacher({uid:'example-teacher'}); h.context.renderLandingState();
+    assert.equal(h.get('[data-landing-nav-primary]').attributes.get('href'), 'cadastro.html');
+    assert.equal(h.get('[data-landing-nav-primary]').textContent, 'Cadastre-se');
+    assert.equal(h.get('[data-landing-login-toggle]').hidden, false);
     assert.equal(h.get('[data-landing-example-cta]').attributes.get('href'), 'plataforma/index.html');
     assert.equal(h.get('[data-landing-lesson-cta]').attributes.get('href'), 'plataforma/criar-aula.html');
     h.setTeacher(null); h.context.renderLandingState();
     assert.equal(h.get('[data-landing-lesson-cta]').attributes.get('href'), 'cadastro.html');
+});
+test('landing: login opens the inline form and focuses the email field', () => {
+    const h = setup();
+    h.context.initializeLandingLogin();
+    const toggle = h.get('[data-landing-login-toggle]');
+    const panel = h.get('#landing-login-panel');
+    panel.hidden = true;
+    toggle.click();
+    assert.equal(panel.hidden, false);
+    assert.equal(toggle.attributes.get('aria-expanded'), 'true');
+    assert.equal(h.get('#landing-login-email').focused, true);
+    toggle.click();
+    assert.equal(panel.hidden, true);
+    assert.equal(toggle.attributes.get('aria-expanded'), 'false');
+    assert.match(html, /data-login-form/);
+    assert.match(html, /href="cadastro\.html"[^>]*>Cadastre-se/);
 });
 test('landing: examples are local, initialization is idempotent and credit promises stay accurate', () => {
     const h = setup(); const listener = h.tabs[0].listeners.get('click');
