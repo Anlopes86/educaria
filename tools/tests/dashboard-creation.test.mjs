@@ -54,6 +54,16 @@ test("file-only creation sends the original file, with no cover image sent to AI
     assert.equal(h.request.body.get("cover_image"), null);
 });
 
+test("dashboard sends the illustration choice beside the unmodified teacher request", async () => {
+    const h = harness(); h.populate("slides");
+    h.fields.set('[data-dashboard-quick-option="includeIllustration"]', { value: "true" });
+    const options = h.context.collectDashboardQuickOptions(h.form, "slides");
+    const request = "Explique as fases da Lua com um esquema ilustrativo.";
+    await h.context.requestDashboardQuickMaterial("slides", request, "Slides", options, "teacher");
+    assert.equal(JSON.parse(h.request.body.get("slideOptions")).includeIllustration, "true");
+    assert.equal(h.request.body.get("sourceText"), request);
+});
+
 test("automatic quantity follows the request in the single main field", async () => {
     const h = harness(); h.populate("flashcards");
     h.fields.set('[data-dashboard-quick-option="contentMode"]', { value: "preserve" });
@@ -128,7 +138,7 @@ test("slides carry a safe cover image only on the first slide, side by side", ()
         } };
     });
     const context = vm.createContext({
-        document: { getElementById: () => null }, ensureCardCount: () => cards,
+        window: {}, document: { getElementById: () => null }, ensureCardCount: () => cards,
         normalizeAiSlideTheme: () => ({}), renderAiSlideThemeSummary() {},
         slideVisualFor: () => ({}), compactSlideBodyText: (text) => text,
         setSelectByText: (field, value) => { field.value = value; },

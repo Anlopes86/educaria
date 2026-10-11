@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="dashboard.title">Painel do Professor | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261010-2">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261011-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -23,7 +23,8 @@
     <script src="../assets/js/app-sidebar.js?v=20260928-2" defer></script>
     <script src="../assets/js/image-upload.js" defer></script>
     <script src="../assets/js/dashboard-creation.js?v=20261004-1" defer></script>
-    <script src="../assets/js/teacher-dashboard.js?v=20261010-3" defer></script>
+    <script src="../assets/js/slide-illustrations.js?v=20261011-2" defer></script>
+    <script src="../assets/js/teacher-dashboard.js?v=20261011-2" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
@@ -161,15 +162,12 @@
                                 </div>
                                 <div class="dashboard-quick-options-grid" data-dashboard-advanced-options></div>
                                 <small>A IA adapta a linguagem e os exemplos ao público. Você poderá revisar tudo no editor.</small>
-                            </div>
-                        </details>
-
-                        <details class="dashboard-creation-disclosure dashboard-slide-attachment" data-dashboard-slide-image-panel hidden>
-                            <summary><span aria-hidden="true">▧</span><span>Imagem de abertura dos slides</span><small>Opcional</small></summary>
-                            <div class="dashboard-creation-disclosure-body">
-                                <label class="dashboard-quick-option-field"><span>Selecionar imagem</span><input type="file" data-dashboard-slide-image accept="image/png,image/jpeg,image/webp" aria-describedby="dashboard-image-help"></label>
+                                <div class="dashboard-creation-disclosure-body dashboard-slide-attachment" data-dashboard-slide-image-panel hidden>
+                                <small>Incluir ilustração: a IA cria desenhos e diagramas relacionados ao seu pedido. Não gera fotografias. Essa criação também utiliza créditos.</small>
+                                <label class="dashboard-quick-option-field"><span>Enviar imagem própria</span><input type="file" data-dashboard-slide-image accept="image/png,image/jpeg,image/webp" aria-describedby="dashboard-image-help"></label>
                                 <small id="dashboard-image-help">JPG, PNG ou WebP · até 8 MB. Aparece ao lado do texto no primeiro slide; não é enviada à IA. Ajuste as demais imagens no editor.</small>
                                 <div class="dashboard-image-preview" data-dashboard-image-preview hidden><img alt="Prévia da imagem de abertura"><button type="button" class="platform-link-button platform-link-secondary" data-dashboard-remove-image>Remover imagem</button></div>
+                                </div>
                             </div>
                         </details>
 

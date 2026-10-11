@@ -109,7 +109,8 @@ const dashboardChoice = (key, label, value, choices) => ({ key, type: "select", 
     options: choices.map(([value, label]) => ({ value, label })) });
 DASHBOARD_QUICK_OPTION_CONFIGS.slides.push(
     dashboardChoice("detail", "Nível de detalhamento", "balanced", [["concise", "Mais enxuto"], ["balanced", "Equilibrado"], ["detailed", "Mais detalhado"]]),
-    dashboardChoice("tone", "Tom da apresentação", "balanced", [["balanced", "Claro e equilibrado"], ["visual", "Mais visual e direto"], ["explanatory", "Mais explicativo"], ["inspiring", "Mais inspirador"]])
+    dashboardChoice("tone", "Tom da apresentação", "balanced", [["balanced", "Claro e equilibrado"], ["visual", "Mais visual e direto"], ["explanatory", "Mais explicativo"], ["inspiring", "Mais inspirador"]]),
+    dashboardChoice("includeIllustration", "Incluir ilustração", "false", [["false", "Não"], ["true", "Sim"]])
 );
 DASHBOARD_QUICK_OPTION_CONFIGS.flashcards.push(dashboardChoice("examples", "Exemplos e anotações", "true", [["true", "Incluir"], ["false", "Não incluir"]]));
 for (const type of ["slides", "flashcards"]) {
@@ -417,6 +418,8 @@ function rememberDashboardQuickOptions() {
 }
 
 function renderDashboardQuickOptions(materialType) {
+    const creator = document.querySelector(".dashboard-quick-create");
+    if (creator) creator.dataset.materialType = materialType;
     const root = document.querySelector("[data-dashboard-quick-options]");
     if (!root) return;
 
@@ -548,6 +551,7 @@ function dashboardQuickResultModalTemplate() {
                 </div>
                 <p class="ai-credits-pill dashboard-ai-result-usage" data-dashboard-ai-result-usage hidden></p>
                 <p data-dashboard-ai-result-storage role="status"></p>
+                <p data-dashboard-illustration-feedback role="status" hidden></p>
                 <div class="ai-ready-actions dashboard-ai-result-actions">
                     <button type="button" class="platform-link-button platform-link-primary" data-dashboard-ai-result-edit>
                         ${escapeHtml(dashboardTranslate("dashboard.quick.result.edit", "Revisar e editar"))}
@@ -573,6 +577,7 @@ function ensureDashboardQuickResultModal() {
 function openDashboardQuickResultModal(result) {
     const modal = ensureDashboardQuickResultModal();
     if (!modal) return;
+    modal.dataset.materialType = result.materialType || "slides";
     dashboardQuickAiResult = result;
 
     const tool = modal.querySelector("[data-dashboard-ai-result-tool]");
@@ -580,6 +585,11 @@ function openDashboardQuickResultModal(result) {
     const usage = modal.querySelector("[data-dashboard-ai-result-usage]");
     if (tool) tool.textContent = result.label || "Atividade";
     if (topic) topic.textContent = result.topic;
+    const illustrationFeedback = modal.querySelector("[data-dashboard-illustration-feedback]");
+    if (illustrationFeedback) {
+        illustrationFeedback.textContent = window.EducariaSlideIllustrations?.feedback(result.material) || "";
+        illustrationFeedback.hidden = !illustrationFeedback.textContent;
+    }
 
     const charged = Number(result.cost || 0);
     if (usage) {
@@ -635,7 +645,7 @@ async function requestDashboardQuickMaterial(materialType, topic, label, generat
     if (materialType === "slides") {
         const values = generationOptions?.values || {};
         formData.append("slideOptions", JSON.stringify(Object.fromEntries(
-            ["detail", "tone", "audience", "className", "subject", "objective"].map((key) => [key, values[key]])
+            ["detail", "tone", "audience", "className", "subject", "objective", "includeIllustration"].map((key) => [key, values[key]])
         )));
     }
     const optionInstructions = generationOptions?.instructions?.join(" ") || "";

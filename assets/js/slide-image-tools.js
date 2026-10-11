@@ -65,6 +65,15 @@ async function handleLocalUpload(card, file, input) {
 }
 
 function bindSlideImageTools() {
+    const coverInput = document.getElementById("slides-imagem-propria");
+    const removeCover = document.querySelector("[data-remove-slide-cover]");
+    coverInput?.addEventListener("change", () => {
+        if (removeCover) removeCover.hidden = !coverInput.files?.length;
+    });
+    removeCover?.addEventListener("click", () => {
+        if (coverInput) coverInput.value = "";
+        removeCover.hidden = true;
+    });
     document.addEventListener("change", (event) => {
         const modeSelect = event.target.closest('[data-field="slide-image-mode"]');
         if (modeSelect) {
@@ -80,7 +89,7 @@ function bindSlideImageTools() {
                 return;
             }
 
-            panel.hidden = false;
+            panel.hidden = modeSelect.value !== SLIDE_UPLOAD_MODE;
         }
 
         const uploadInput = event.target.closest("[data-upload-input]");

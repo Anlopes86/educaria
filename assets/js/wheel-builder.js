@@ -183,12 +183,12 @@ function wrapWheelLabel(text, maxCharsPerLine = 10, maxLines = 2) {
 }
 
 function buildWheelSvg(segments, rotation = 0) {
+    segments = window.EducariaVisuals?.wheel(segments) || segments;
     const size = 420;
     const cx = 210;
     const cy = 210;
     const radius = 170;
     const slice = (Math.PI * 2) / segments.length;
-    const maxChars = segments.length >= 10 ? 8 : 10;
 
     const paths = segments.map((segment, index) => {
         const startAngle = -Math.PI / 2 + index * slice;
@@ -197,12 +197,13 @@ function buildWheelSvg(segments, rotation = 0) {
         const end = polar(cx, cy, radius, endAngle);
         const labelPoint = polar(cx, cy, radius * 0.57, startAngle + slice / 2);
         const largeArc = slice > Math.PI ? 1 : 0;
-        const lines = wrapWheelLabel(segment.text, maxChars, 2);
-        const fontSize = segments.length >= 10 ? 11 : 12;
+        const lines = [String(index + 1)];
+        const fontSize = segments.length >= 10 ? 14 : 18;
 
         return `
             <path d="M ${cx} ${cy} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArc} 1 ${end.x} ${end.y} Z" fill="${segment.color}" stroke="#ffffff" stroke-width="3"></path>
             <g transform="translate(${labelPoint.x} ${labelPoint.y})">
+                <circle r="16" fill="#fffaf2"></circle>
                 <text text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="700" fill="#0f172a">
                     ${lines.map((line, lineIndex) => {
                         const offset = lines.length === 1 ? 0 : lineIndex === 0 ? -7 : 8;
@@ -218,8 +219,8 @@ function buildWheelSvg(segments, rotation = 0) {
             <g transform="rotate(${rotation} ${cx} ${cy})">
                 <circle cx="${cx}" cy="${cy}" r="${radius + 8}" fill="#ffffff"></circle>
                 ${paths}
-                <circle cx="${cx}" cy="${cy}" r="28" fill="#0f172a"></circle>
-                <circle cx="${cx}" cy="${cy}" r="12" fill="#ffffff"></circle>
+                <circle cx="${cx}" cy="${cy}" r="28" fill="#fffaf2"></circle>
+                <circle cx="${cx}" cy="${cy}" r="12" fill="#774d32"></circle>
             </g>
         </svg>
     `;
@@ -229,7 +230,11 @@ function renderWheelPreview() {
     syncWheelSegmentCount();
     ensureWheelRemoveControls();
 
-    const segments = collectWheelSegments();
+    const rawSegments = collectWheelSegments();
+    const segments = window.EducariaVisuals?.wheel(rawSegments) || rawSegments;
+    document.querySelectorAll("[data-wheel-color]").forEach((field, index) => {
+        if (segments[index]) field.value = segments[index].color;
+    });
     const title = document.getElementById("roleta-titulo")?.value.trim() || "Roleta";
     const elimination = document.getElementById("roleta-eliminacao")?.value || "Não";
     const svgRoot = document.querySelector("[data-wheel-preview-svg]");

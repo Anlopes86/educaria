@@ -1,8 +1,8 @@
 const FLASHCARD_THEME_PRESETS = {
     moderno: {
-        front: "#ffffff",
-        back: "#dbeafe",
-        text: "#0f172a"
+        front: "#e1d7f0",
+        back: "#fffaf1",
+        text: "#463563"
     },
     academico: {
         front: "#f8fafc",

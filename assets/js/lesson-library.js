@@ -1602,11 +1602,12 @@ function applyLibraryFilters(lessons) {
 }
 
 function lessonPedagogyTagsHtml(lesson) {
+    const tagLabels = { avaliacao: "Avaliação", revisao: "Revisão", argumentacao: "Argumentação", vocabulario: "Vocabulário", organizacao: "Organização" };
     const chips = [
         lesson.subject,
         lesson.grade,
         ...(lesson.bnccCodes || []),
-        ...(lesson.tags || [])
+        ...(lesson.tags || []).map((tag) => Object.hasOwn(tagLabels, tag) ? tagLabels[tag] : tag)
     ].filter(Boolean).slice(0, 5);
 
     if (!chips.length) return "";
@@ -1666,11 +1667,14 @@ function libraryFilterSummaryLabel(filterId, filteredCount, totalCount) {
     const location = libraryScopeLabel();
     if (normalizeSearchText(librarySearchQuery)) {
         const noun = lessonLibraryTranslate(filteredCount === 1 ? "library.count.material" : "library.count.materials", filteredCount === 1 ? "material" : "materiais");
-        return `${filteredCount} ${noun} ${lessonLibraryTranslate("library.filters.searchFound", "encontrados pela busca em")} ${location}.`;
+        const found = filteredCount === 1
+            ? lessonLibraryTranslate("library.filters.searchFoundOne", "encontrado pela busca em")
+            : lessonLibraryTranslate("library.filters.searchFound", "encontrados pela busca em");
+        return `${filteredCount} ${noun} ${found} ${location}.`;
     }
     if (filter.id === "all") {
-        const noun = lessonLibraryTranslate(totalCount === 1 ? "library.count.material" : "library.count.materials", totalCount === 1 ? "material" : "materiais");
-        return `${totalCount} ${noun} ${lessonLibraryTranslate("library.filters.summaryIn", "em")} ${location}.`;
+        const noun = lessonLibraryTranslate(filteredCount === 1 ? "library.count.material" : "library.count.materials", filteredCount === 1 ? "material" : "materiais");
+        return `${filteredCount} ${noun} ${lessonLibraryTranslate("library.filters.summaryIn", "em")} ${location}.`;
     }
 
     if (!filteredCount) {
@@ -2307,31 +2311,12 @@ function hydrateClassPage() {
     }
 
     if (listRoot) {
-        const groupedLessons = filteredLessons.reduce((groups, lesson) => {
-            const key = lesson.materialType || "slides";
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(lesson);
-            return groups;
-        }, {});
-
-        const groupOrder = ["lesson", "quiz", "slides", "flashcards", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"];
-        const visibleGroupOrder = groupOrder.filter((key) => (groupedLessons[key] || []).length > 0);
-        listRoot.innerHTML = visibleGroupOrder
-            .map((key) => {
-                const groupItems = groupedLessons[key] || [];
-                const count = groupItems.length;
-
-                return `
-                <details class="editor-disclosure lesson-group-section lesson-group-disclosure">
-                    <summary>
-                        <span>${escapeHtml(materialGroupLabel(key))}</span>
-                        <small>${count} ${lessonLibraryTranslate(count === 1 ? "dashboard.count.activity" : "dashboard.count.activities", count === 1 ? "atividade" : "atividades")}</small>
-                    </summary>
-                    <div class="editor-disclosure-body lesson-group-body">
-                        ${count ? `
-                        <div class="lesson-history-grid class-lesson-grid">
-                            ${groupItems.map((lesson) => `
-                                <article class="lesson-history-card lesson-history-card--grouped">
+        listRoot.innerHTML = `<div class="lesson-history-grid class-lesson-grid collection-library-grid">
+                            ${filteredLessons.map((lesson) => {
+                                const key = lesson.materialType || "slides";
+                                return `
+                                <article class="lesson-history-card lesson-history-card--grouped" data-material-type="${escapeHtml(key)}">
+                                    ${window.EducariaCollections?.cover(key) || ""}
                                     <span class="route-tag">${escapeHtml(materialGroupLabel(key))}</span>
                                     <h3>${escapeHtml(lesson.title)}</h3>
                                     <p>${escapeHtml(lesson.summary)}</p>
@@ -2344,25 +2329,19 @@ function hydrateClassPage() {
                                     <div class="lesson-history-actions">
                                         <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
                                         <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
+                                        <details class="collection-more">
+                                            <summary>${lessonLibraryTranslate("library.actions.more", "Mais opções")}</summary>
+                                            <div>
                                         <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.addToLibrary", "Adicionar a biblioteca")}</button>
                                         <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.duplicateToClass", "Duplicar para outra turma")}</button>
                                         <button type="button" class="platform-link-button platform-link-secondary" data-rename-lesson="${escapeHtml(lesson.id)}">Renomear</button>
                                         <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.remove", "Remover")}</button>
+                                            </div>
+                                        </details>
                                     </div>
                                 </article>
-                            `).join("")}
-                        </div>
-                        ` : `
-                        <article class="lesson-history-card lesson-history-card--empty">
-                            <span class="route-tag">${escapeHtml(materialGroupLabel(key))}</span>
-                            <h3>${lessonLibraryTranslate("classDetail.empty.noSavedActivityTitle", "Nenhuma atividade salva")}</h3>
-                            <p>${escapeHtml(materialGroupDescription(key))}</p>
-                        </article>
-                        `}
-                    </div>
-                </details>
-            `;
-            }).join("");
+                            `; }).join("")}
+                        </div>`;
     }
 
     if (selectRoot) {
@@ -2745,30 +2724,13 @@ function hydrateLibraryPage() {
         return;
     }
 
-    const groupedLessons = filteredLessons.reduce((groups, lesson) => {
-        const key = lesson.materialType || "slides";
-        if (!groups[key]) groups[key] = [];
-        groups[key].push(lesson);
-        return groups;
-    }, {});
-
-    const groupOrder = ["lesson", "quiz", "slides", "flashcards", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"];
-    const visibleGroupOrder = groupOrder.filter((key) => (groupedLessons[key] || []).length > 0);
-    root.innerHTML = visibleGroupOrder.map((key) => {
-        const groupItems = groupedLessons[key] || [];
-        const count = groupItems.length;
-
-        return `
-            <details class="editor-disclosure lesson-group-section lesson-group-disclosure" data-material-type="${escapeHtml(key)}" open>
-                <summary>
-                    <span>${materialGroupLabel(key)}</span>
-                    <small>${count} ${lessonLibraryTranslate(count === 1 ? "library.count.material" : "library.count.materials", count === 1 ? "material" : "materiais")}</small>
-                </summary>
-                <div class="editor-disclosure-body lesson-group-body">
-                    ${count ? `
-                    <div class="lesson-history-grid class-lesson-grid">
-                        ${groupItems.map((lesson) => `
-                            <article class="lesson-history-card lesson-history-card--grouped">
+    // Keep the user's sort across formats, without a mostly empty row per type.
+    root.innerHTML = `<div class="lesson-history-grid class-lesson-grid collection-library-grid">
+                        ${filteredLessons.map((lesson) => {
+                            const key = lesson.materialType || "slides";
+                            return `
+                            <article class="lesson-history-card lesson-history-card--grouped" data-material-type="${escapeHtml(key)}">
+                                ${window.EducariaCollections?.cover(key) || ""}
                                 <span class="route-tag">${escapeHtml(materialGroupLabel(key))}</span>
                                 <h3>${escapeHtml(lesson.title)}</h3>
                                 <p>${escapeHtml(lesson.summary)}</p>
@@ -2779,26 +2741,20 @@ function hydrateLibraryPage() {
                                 </div>
                                 ${lessonPedagogyTagsHtml(lesson)}
                                 <div class="lesson-history-actions">
-                                    <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
-                                    <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-present-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
+                                    <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
+                                    <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
+                                    <details class="collection-more">
+                                        <summary>${lessonLibraryTranslate("library.actions.more", "Mais opções")}</summary>
+                                        <div>
                                     ${libraryTransferActionHtml(lesson)}
                                     <button type="button" class="platform-link-button platform-link-secondary" data-rename-lesson="${escapeHtml(lesson.id)}">Renomear</button>
                                     <button type="button" class="platform-link-button platform-link-secondary" data-delete-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("library.actions.delete", "Excluir")}</button>
+                                        </div>
+                                    </details>
                                 </div>
                             </article>
-                        `).join("")}
-                    </div>
-                    ` : `
-                    <article class="lesson-history-card lesson-history-card--empty">
-                        <span class="route-tag">${materialGroupLabel(key)}</span>
-                        <h3>${lessonLibraryTranslate("library.empty.noSavedMaterialTitle", "Nenhum material salvo")}</h3>
-                        <p>${materialGroupDescription(key)}</p>
-                    </article>
-                    `}
-                </div>
-            </details>
-        `;
-    }).join("");
+                        `; }).join("")}
+                    </div>`;
     root.setAttribute("aria-busy", "false");
 }
 

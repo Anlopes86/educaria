@@ -23,6 +23,14 @@ function colorValue(scope, field, fallback = "#dff6f8") {
     return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
 }
 
+function syncPreviewPaletteFields(scope, fields) {
+    // Keep colour pickers and preview in agreement when opening an old default theme.
+    Object.entries(fields).forEach(([name, value]) => {
+        const field = scope.querySelector(`[data-field="${name}"]`);
+        if (field && field.value !== value) field.value = value;
+    });
+}
+
 function renderQuestionOptions(options, correctKey) {
     return `
         <div class="preview-option-list">
@@ -38,9 +46,9 @@ function renderQuestionOptions(options, correctKey) {
 
 function renderSlideMedia(title, imagePrompt, imageUrl) {
     return `
-        <div class="slide-image-preview">
+        <div class="slide-image-preview${imageUrl?.startsWith("data:image/svg+xml;") ? " slide-image-preview--illustration" : ""}">
             ${imageUrl ? `
-                <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(title)}">
+                <img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(imagePrompt || title)}">
             ` : `
                 <div class="slide-image-preview-placeholder">
                     <div>
@@ -140,9 +148,13 @@ function buildFlashcardsPreview() {
             const front = textValue(card, "front") || "Sem frente";
             const back = textValue(card, "back") || "Sem verso";
             const example = textValue(card, "example") || "Sem anotações";
-            const frontColor = colorValue(card, "front-color", "#ffffff");
-            const backColor = colorValue(card, "back-color", "#dbeafe");
-            const textColor = colorValue(card, "text-color", "#0f172a");
+            const rawColors = {
+                frontColor: colorValue(card, "front-color", "#ffffff"),
+                backColor: colorValue(card, "back-color", "#dbeafe"),
+                textColor: colorValue(card, "text-color", "#0f172a")
+            };
+            const { frontColor, backColor, textColor } = window.EducariaVisuals?.flashcard(rawColors) || rawColors;
+            syncPreviewPaletteFields(card, { "front-color": frontColor, "back-color": backColor, "text-color": textColor });
 
             return `
                 <section class="live-preview-card">
@@ -209,9 +221,13 @@ function buildSlidesPreview() {
             const imageMode = selectValue(slide, "slide-image-mode") || "Sem imagem";
             const imagePrompt = textValue(slide, "slide-image-prompt") || "Sem imagem definida";
             const imageUrl = textValue(slide, "slide-image-url");
-            const slideColor = colorValue(slide, "slide-color");
-            const textColor = colorValue(slide, "slide-text-color", "#0f172a");
-            const accentColor = colorValue(slide, "slide-accent-color", "#0ea5e9");
+            const rawColors = {
+                slideColor: colorValue(slide, "slide-color"),
+                textColor: colorValue(slide, "slide-text-color", "#0f172a"),
+                accentColor: colorValue(slide, "slide-accent-color", "#0ea5e9")
+            };
+            const { slideColor, textColor, accentColor } = window.EducariaVisuals?.slide(rawColors) || rawColors;
+            syncPreviewPaletteFields(slide, { "slide-color": slideColor, "slide-text-color": textColor, "slide-accent-color": accentColor });
             const slideFont = selectValue(slide, "slide-font") || "Destaque moderno";
             const bodyMarkup = renderSlidePreviewBody(body);
 

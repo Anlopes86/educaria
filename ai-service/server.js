@@ -10,6 +10,7 @@ import { PDFParse } from "pdf-parse";
 import { GoogleGenAI } from "@google/genai";
 import { generateGroqStructuredMaterial } from "./ai-text-provider.js";
 import { normalizeSlideGenerationOptions, slidePedagogyInstructions, normalizeGeneratedSlideBody } from "./slide-generation-policy.js";
+import { slideIllustrationSchema, slideIllustrationInstructions, normalizeSlideIllustration } from "./slide-illustration-policy.js";
 import { normalizeActivityGenerationOptions, activityGenerationInstructions, applyActivityGenerationSettings } from "./activity-generation-policy.js";
 import {
     aiCreditsForUsage,
@@ -1217,6 +1218,7 @@ const slidesSchema = {
                     body: { type: "string" },
                     teacher_notes: { type: "string" },
                     image_prompt: { type: "string" },
+                    illustration: slideIllustrationSchema,
                     visual_variant: {
                         type: "string",
                         enum: ["hero", "light", "alternate", "question", "contrast"]
@@ -1932,6 +1934,7 @@ function basePromptFor(materialType, action, sourceText, slideOptions) {
         : [
             "Modo visual escolhido: padrão EducarIA.",
             "Preencha visual_theme com uma paleta moderna, sóbria e de alto contraste, pois o editor aplicará o padrão visual da plataforma.",
+            "No padrão, capa e fechamento têm fundo verde-escuro #153c41 e texto creme #f8f9ec; conteúdo usa fundos claros #f8f9ec ou #e8f3ed e texto #173c43. Planeje as cores e os rótulos das ilustrações para esses fundos, com destaques suaves em menta, dourado, lilás ou coral.",
             "Use visual_variant de acordo com a função de cada slide, sem depender dele para transmitir o conteúdo."
         ];
 
@@ -1957,7 +1960,7 @@ function basePromptFor(materialType, action, sourceText, slideOptions) {
         "Use teacher_notes para orientar a mediação do professor sem repetir o que já está visível no slide.",
         "Use teacher_notes para orientações de mediação. Não esconda ali as explicações solicitadas para os alunos.",
         ...slidePedagogyInstructions(normalizeSlideGenerationOptions(slideOptions, action)),
-        "Não prometa nem gere imagens. Deixe image_prompt vazio; o professor poderá enviar uma imagem real depois.",
+        ...slideIllustrationInstructions(normalizeSlideGenerationOptions(slideOptions, action)),
         "Escolha o tipo pela função: content para explicação, question para participação, cover e closing somente se o pedido comportar abertura e encerramento próprios.",
         "Varie a composição entre título forte, síntese em tópicos e pergunta de discussão; não transforme todos os slides na mesma lista.",
         ...slideVisualInstructions,
@@ -2085,7 +2088,7 @@ function normalizeSlideVisualVariant(value, slideType, index) {
  * @param {{ slides: Array<object> }} material - Raw slides object from the provider
  * @returns {{ slides: Array<object> }} Normalised slides object, safe for the builder
  */
-function normalizeSlidesMaterial(material) {
+function normalizeSlidesMaterial(material, options = {}) {
     if (!material || !Array.isArray(material.slides)) {
         return material;
     }
@@ -2095,10 +2098,13 @@ function normalizeSlidesMaterial(material) {
         visual_theme: normalizeSlideVisualTheme(material.visual_theme),
         slides: material.slides.map((slide, index, slides) => {
             const slideType = slide?.type || (index === 0 ? "cover" : index === slides.length - 1 ? "closing" : "content");
-            const layout = slide?.image_prompt ? "split" : "stack";
+            const illustration = normalizeSlideIllustration(slide?.illustration, options.includeIllustration);
+            const layout = illustration.elements.length ? "split" : "stack";
 
             return {
                 ...slide,
+                illustration,
+                image_prompt: "",
                 type: slideType,
                 body: normalizeSlideBody(slide?.body, slideType),
                 teacher_notes: String(slide?.teacher_notes || "").trim(),
@@ -2667,7 +2673,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         }
         const measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
         const normalizedMaterial = materialType === "slides"
-            ? { ...normalizeSlidesMaterial(generated.material), generation_options: slideOptions }
+            ? { ...normalizeSlidesMaterial(generated.material, slideOptions), generation_options: slideOptions }
             : generated.material;
         const material = applyActivityGenerationSettings(materialType, normalizedMaterial, generationOptions);
 

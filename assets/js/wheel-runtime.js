@@ -103,7 +103,8 @@ function serializeWheelSegments(segments) {
     `).join("");
 }
 
-function buildWheelDiscSvg(segments) {
+function buildWheelDiscSvg(segments, palette = segments) {
+    segments = window.EducariaVisuals?.wheel(segments, palette) || segments;
     const size = 560;
     const cx = 280;
     const cy = 280;
@@ -131,8 +132,8 @@ function buildWheelDiscSvg(segments) {
         <svg viewBox="0 0 ${size} ${size}" role="img" aria-label="Roleta da atividade">
             <circle cx="${cx}" cy="${cy}" r="${radius + 10}" fill="#ffffff"></circle>
             ${paths}
-            <circle cx="${cx}" cy="${cy}" r="58" fill="#0f172a"></circle>
-            <circle cx="${cx}" cy="${cy}" r="20" fill="#ffffff"></circle>
+            <circle cx="${cx}" cy="${cy}" r="58" fill="#fffaf2"></circle>
+            <circle cx="${cx}" cy="${cy}" r="20" fill="#774d32"></circle>
         </svg>
     `;
 }
@@ -140,7 +141,7 @@ function buildWheelDiscSvg(segments) {
 function buildWheelLabels(segments, editEnabled = false) {
     const slice = (Math.PI * 2) / segments.length;
     const labelRadius = segments.length >= 10 ? 35 : segments.length >= 7 ? 33 : 31;
-    const numbered = editEnabled || segments.length > 6 || segments.some((segment) => segment.text.length > 18);
+    const numbered = true;
 
     return segments.map((segment, index) => {
         const midAngle = -Math.PI / 2 + index * slice + slice / 2;
@@ -228,7 +229,7 @@ function renderWheelApplication() {
     const renderDisc = () => {
         if (!svgRoot || !activeSegments.length) return;
         svgRoot.innerHTML = `
-            <div class="wheel-stage-disc" data-wheel-stage-disc>${buildWheelDiscSvg(activeSegments)}</div>
+            <div class="wheel-stage-disc" data-wheel-stage-disc>${buildWheelDiscSvg(activeSegments, state.segments)}</div>
             <div class="wheel-stage-labels" data-wheel-stage-labels>${buildWheelLabels(activeSegments, inlineEdit?.enabled)}</div>
         `;
         if (optionsRoot) optionsRoot.innerHTML = activeSegments.map((segment, index) => `

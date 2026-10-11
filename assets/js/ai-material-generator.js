@@ -56,6 +56,7 @@ function aiReadyModalTemplate() {
                     </div>
                 </div>
                 <p class="ai-credits-pill" data-ai-ready-credit-usage hidden></p>
+                <p data-ai-ready-illustration-feedback role="status" hidden></p>
                 <ul class="ai-ready-checklist" aria-label="Próximos passos">
                     <li><span><strong>Revise o conteúdo</strong><small>Textos, respostas e imagens continuam editáveis.</small></span></li>
                     <li><span><strong>Confira como ficará na TV</strong><small>O teste abre uma tela 16:9 sem sair do editor.</small></span></li>
@@ -359,6 +360,11 @@ function openAiReadyModal(materialType = "", usageDetails = null) {
     const presentLink = modal.querySelector("[data-ai-ready-present]");
     if (presentLink) presentLink.setAttribute("href", builderPresentationPath(resolvedMaterialType));
     const usageLabel = modal.querySelector("[data-ai-ready-credit-usage]");
+    const illustrationFeedback = modal.querySelector("[data-ai-ready-illustration-feedback]");
+    if (illustrationFeedback) {
+        illustrationFeedback.textContent = window.EducariaSlideIllustrations?.feedback(usageDetails?.material) || "";
+        illustrationFeedback.hidden = !illustrationFeedback.textContent;
+    }
     const charged = Number(usageDetails?.charge?.cost || 0);
     const remaining = Number(usageDetails?.credits?.remaining ?? -1);
     if (usageLabel) {
@@ -863,20 +869,20 @@ function renderAiSlideThemeSummary(theme, isPersonalized) {
 
 function slideVisualFor(type, index) {
     if (type === "cover") {
-        return { accent: "#2dd4bf", background: "#102a43", text: "#f8fafc" };
+        return { accent: "#d7e6b9", background: "#153c41", text: "#f8f9ec" };
     }
 
     if (type === "question") {
-        return { accent: "#f97316", background: "#fff7ed", text: "#7c2d12" };
+        return { accent: "#927044", background: "#f5f0de", text: "#473e24" };
     }
 
     if (type === "closing") {
-        return { accent: "#facc15", background: "#153e3a", text: "#f8fafc" };
+        return { accent: "#d7e6b9", background: "#153c41", text: "#f8f9ec" };
     }
 
     return index % 2 === 0
-        ? { accent: "#0f766e", background: "#f0fdfa", text: "#16324f" }
-        : { accent: "#2563eb", background: "#eff6ff", text: "#172554" };
+        ? { accent: "#226963", background: "#e8f3ed", text: "#173c43" }
+        : { accent: "#226963", background: "#faf8ef", text: "#173c43" };
 }
 
 function applySlidesFromStructuredData(payload) {
@@ -927,10 +933,12 @@ function applySlidesFromStructuredData(payload) {
         if (title) title.value = slide.title || "";
         if (subtitle) subtitle.value = slide.subtitle || "";
         if (body) body.value = compactSlideBodyText(slide.body || "", slideType);
-        if (imagePrompt) imagePrompt.value = "";
         const uploadedImage = index === 0 && /^data:image\/(webp|png|jpeg);base64,/.test(payload?.cover_image || "")
             && payload.cover_image.length <= 160 * 1024 ? payload.cover_image : "";
-        if (imageUrl) imageUrl.value = uploadedImage;
+        const resolvedImage = window.EducariaSlideIllustrations?.resolveImage(payload, slide, index)
+            || { url: uploadedImage, description: "", mode: uploadedImage ? "Enviar imagem" : "Sem imagem" };
+        if (imagePrompt) imagePrompt.value = resolvedImage.description;
+        if (imageUrl) imageUrl.value = resolvedImage.url;
         if (accentColor) accentColor.value = visual.accent;
         if (slideColor) slideColor.value = visual.background;
         if (textColor) textColor.value = visual.text;
@@ -938,7 +946,12 @@ function applySlidesFromStructuredData(payload) {
         card.dataset.slideType = slideType;
 
         if (imageMode) {
-            setSelectByText(imageMode, uploadedImage ? "Enviar imagem" : "Sem imagem");
+            if (resolvedImage.mode === "Ilustração da IA" && !Array.from(imageMode.options).some((option) => option.text === resolvedImage.mode)) {
+                const option = document.createElement("option");
+                option.textContent = resolvedImage.mode;
+                imageMode.appendChild(option);
+            }
+            setSelectByText(imageMode, resolvedImage.mode);
         }
 
         if (layout) {
@@ -2099,6 +2112,7 @@ async function generateMaterial(materialType, button, options = {}) {
     const requestedCount = Number(countText) || undefined;
     const slideOptions = materialType === "slides" ? {
         detail: detailText, tone: toneText, audience: audienceText,
+        includeIllustration: document.getElementById("slides-incluir-ilustracao")?.value === "true",
         className: classText, subject: subjectText, objective: objectiveText
     } : undefined;
     const generationOptions = {
@@ -2125,6 +2139,8 @@ async function generateMaterial(materialType, button, options = {}) {
     button.textContent = "Gerando...";
 
     try {
+        const coverFile = materialType === "slides" ? document.getElementById("slides-imagem-propria")?.files?.[0] : null;
+        const coverImage = coverFile ? await window.educariaImages.optimize(coverFile) : null;
         educariaTrackAiEvent("ai_generate_started", {
             materialType,
             sourceChars: sourceText.length,
@@ -2158,6 +2174,8 @@ async function generateMaterial(materialType, button, options = {}) {
         const payload = await requestStructuredMaterial(materialType, sourceText, file, generationHints, slideOptions, generationOptions);
         if (materialType === "slides" && payload?.material) {
             payload.material.visual_mode = visualMode === "ai" ? "ai" : "standard";
+            payload.material.generation_options = { ...slideOptions, ...payload.material.generation_options };
+            if (coverImage) payload.material.cover_image = coverImage;
         }
         const applied = config.apply(payload?.material);
         if (!applied) {
@@ -2208,6 +2226,7 @@ function applyGenerationOptionsToEditor(materialType, options) {
     if (!options) return;
     const config = materialConfig(materialType);
     const values = [[config?.countId, options.count], [config?.subjectId, options.subject],
+        [materialType === "slides" ? "slides-incluir-ilustracao" : null, options.includeIllustration],
         [config?.audienceId, options.audience], [config?.objectiveId, options.objective],
         [config?.contentModeId, options.contentMode]];
     values.forEach(([id, value]) => {

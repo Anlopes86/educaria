@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="560" height="560" viewBox="0 0 560 560" fill="none">
+  <defs>
+    <radialGradient id="sun"><stop stop-color="#fff2b0"/><stop offset=".6" stop-color="#ffc967"/><stop offset="1" stop-color="#f3984c"/></radialGradient>
+    <linearGradient id="earth" x1="345" y1="340" x2="410" y2="405" gradientUnits="userSpaceOnUse"><stop stop-color="#96ecde"/><stop offset="1" stop-color="#369baf"/></linearGradient>
+    <linearGradient id="saturn" x1="362" y1="75" x2="440" y2="140" gradientUnits="userSpaceOnUse"><stop stop-color="#eac9ff"/><stop offset="1" stop-color="#8c79bd"/></linearGradient>
+  </defs>
+  <g stroke="#afddd9" stroke-opacity=".23"><circle cx="280" cy="280" r="115"/><circle cx="280" cy="280" r="179"/><circle cx="280" cy="280" r="248"/></g>
+  <circle cx="280" cy="280" r="91" fill="#ffc967" fill-opacity=".05"/><circle cx="280" cy="280" r="77" fill="#ffc967" fill-opacity=".09"/><circle cx="280" cy="280" r="59" fill="url(#sun)"/>
+  <path d="M251 252c12-15 26-20 42-16" stroke="#fff6d0" stroke-width="6" stroke-linecap="round" opacity=".65"/>
+  <circle cx="375" cy="372" r="34" fill="url(#earth)"/><path d="m359 347 13 8-4 10 10 9-7 13-13-2-4-13-10-4m45 3 13 6-7 19-10-8" fill="#daf9c4" fill-opacity=".8"/>
+  <circle cx="127" cy="218" r="22" fill="#ef977e"/><path d="m120 201 10 5m-15 14 19 8" stroke="#ffc5a0" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="402" cy="111" r="39" fill="url(#saturn)"/><ellipse cx="402" cy="111" rx="66" ry="16" transform="rotate(-28 402 111)" stroke="#ddd2f8" stroke-width="9"/>
+  <circle cx="232" cy="523" r="15" fill="#b4c5f2"/><circle cx="269" cy="166" r="12" fill="#e2e5e3"/>
+  <g fill="#d8eeee"><circle cx="98" cy="82" r="2"/><circle cx="215" cy="56" r="3"/><circle cx="490" cy="249" r="3"/><circle cx="59" cy="369" r="3"/><circle cx="179" cy="401" r="2"/><circle cx="454" cy="478" r="2"/><circle cx="468" cy="49" r="2"/></g>
+  <g stroke="#a5ded7" stroke-width="2" stroke-linecap="round"><path d="M91 445v12m-6-6h12M476 338v12m-6-6h12M316 51v10m-5-5h10"/></g>
+</svg>

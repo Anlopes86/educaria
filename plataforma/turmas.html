@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="classes.title">Turmas | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260930-2">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261011-3">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js" defer></script>
@@ -13,11 +13,13 @@
     <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/turma-context.js?v=20260930-2" defer></script>
-    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/collection-visuals.js?v=20261011-3" defer></script>
+    <script src="../assets/js/lesson-library.js?v=20261011-3" defer></script>
     <script src="../assets/js/app-sidebar.js?v=20260930-2" defer></script>
-    <script src="../assets/js/classes-overview.js?v=20260930-2" defer></script>
+    <script src="../assets/js/classes-overview.js?v=20261011-3" defer></script>
 </head>
-<body class="product-body theme-overview" data-requires-auth="true" data-page="classes-overview">
+<body class="product-body theme-overview collection-page" data-requires-auth="true" data-page="classes-overview">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
@@ -90,12 +92,13 @@
         <main id="main-content" class="app-content workspace-page workspace-page--classes" tabindex="-1">
             <section class="workspace-page-hero workspace-page-hero--classes">
                 <div class="workspace-page-hero__copy">
+                    <span class="collection-hero-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="7" r="3"/><circle cx="17" cy="8" r="2.5"/><path d="M2 20v-3a6 6 0 0 1 12 0v3zm13-7a5 5 0 0 1 7 4v3h-5"/></svg></span>
                     <span class="workspace-page-eyebrow" data-i18n="classes.hero.label">Suas turmas</span>
-                    <h1 data-i18n="classes.hero.title">Organize cada turma e continue de onde parou</h1>
-                    <p data-i18n="classes.hero.copy">Veja o que já foi criado, retome a atividade mais recente ou comece um novo material com a turma certa selecionada.</p>
+                    <h1 data-i18n="classes.hero.title">Cada turma, novas possibilidades.</h1>
+                    <p data-i18n="classes.hero.copy">As atividades de cada grupo em um só lugar. Retome uma ideia ou prepare a próxima aula.</p>
                     <div class="workspace-page-actions">
                         <button type="button" class="platform-link-button workspace-primary-action" data-open-sidebar-panel="create-class" data-i18n="dashboard.nav.createClass">Criar turma</button>
-                        <a href="index.html#activity-toolkit" class="platform-link-button workspace-secondary-action" data-i18n="dashboard.nav.createActivity">Criar atividade</a>
+                        <a href="index.html#quick-ai-create" class="platform-link-button workspace-secondary-action" data-i18n="dashboard.nav.createActivity">Criar atividade</a>
                     </div>
                     <div class="workspace-hero-stats" role="status" aria-live="polite" aria-atomic="true">
                         <article>

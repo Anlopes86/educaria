@@ -266,11 +266,12 @@ function renderFlashcardsPresentation(cards, controls = {}) {
         theme.textContent = draftState.controls["cards-tema"] || "Flashcards";
         classLabel.textContent = turma ? `${turma} • ${draftState.controls["cards-tema"]}` : (draftState.controls["cards-tema"] || "Flashcards");
 
-        frontFace.style.background = card.frontColor;
-        backFace.style.background = card.backColor;
-        frontFace.style.color = card.textColor;
-        backFace.style.color = card.textColor;
-        exampleBlock.style.color = card.textColor;
+        const visual = window.EducariaVisuals?.flashcard(card) || card;
+        frontFace.style.background = visual.frontColor;
+        backFace.style.background = visual.backColor;
+        frontFace.style.color = visual.textColor;
+        backFace.style.color = visual.textColor;
+        exampleBlock.style.color = visual.textColor;
         frontFace.dataset.density = frontDensity;
         backFace.dataset.density = backDensity;
 

@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import vm from "node:vm";
 import { normalizeSlideGenerationOptions as options, slideAudienceProfile, slidePedagogyInstructions, normalizeGeneratedSlideBody } from "../slide-generation-policy.js";
 import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } from "../activity-generation-policy.js";
+import { slideIllustrationInstructions } from "../slide-illustration-policy.js";
 
 for (const [label, detail, expected] of [
     ["Mais enxuto", "concise", /1 a 2 blocos curtos/],
@@ -58,7 +59,7 @@ test("explicit audience wins over grade in selected class", () => {
 
 test("old editor and quick creation labels are supported", () => {
     const result = options(undefined, "Gerar 8 slides. Público ou ano: 5º ano. Objetivo da aula: explicar fotossíntese. Disciplina: Ciências. Turma: 5º ano A. Tom desejado: Mais explicativo. Nível de detalhamento: Mais detalhado. Modo visual: padrão.");
-    assert.deepEqual(result, { detail: "detailed", tone: "explanatory", audience: "5º ano", objective: "explicar fotossíntese", subject: "Ciências", className: "5º ano A" });
+    assert.deepEqual(result, { detail: "detailed", tone: "explanatory", audience: "5º ano", objective: "explicar fotossíntese", subject: "Ciências", className: "5º ano A", includeIllustration: false });
     assert.equal(options(undefined, "Ano ou público: EJA.").audience, "EJA");
 });
 
@@ -84,7 +85,7 @@ test("body formatting never discards explanations or cuts sentences", () => {
 
 const server = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
 const promptSource = server.slice(server.indexOf("function promptFor("), server.indexOf("function splitIntoShortUnits("));
-const promptContext = vm.createContext({ normalizeSlideGenerationOptions: options, slidePedagogyInstructions });
+const promptContext = vm.createContext({ normalizeSlideGenerationOptions: options, slidePedagogyInstructions, slideIllustrationInstructions });
 vm.runInContext(promptSource, promptContext);
 
 test("actual server prompt includes structured pedagogical fields", () => {

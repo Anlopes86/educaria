@@ -266,8 +266,9 @@ function normalizeSlideImageControls(card) {
         imageMode.innerHTML = `
             <option>Sem imagem</option>
             <option>Enviar imagem</option>
+            ${hasImage && imageUrl.value.startsWith("data:image/svg+xml;") ? "<option>Ilustração da IA</option>" : ""}
         `;
-        imageMode.value = hasImage ? "Enviar imagem" : "Sem imagem";
+        imageMode.value = hasImage ? (imageUrl.value.startsWith("data:image/svg+xml;") ? "Ilustração da IA" : "Enviar imagem") : "Sem imagem";
     }
 
     if (layout) {

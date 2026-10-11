@@ -7,7 +7,7 @@ import { normalizeSlideGenerationOptions, slidePedagogyInstructions } from "../s
 
 const types = ["slides", "quiz", "flashcards", "memory", "wheel", "match", "mindmap", "debate", "wordsearch", "crossword", "hangman"];
 const server = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
-const context = vm.createContext({ normalizeSlideGenerationOptions, slidePedagogyInstructions, activityGenerationInstructions: instructions });
+const context = vm.createContext({ normalizeSlideGenerationOptions, slidePedagogyInstructions, slideIllustrationInstructions, activityGenerationInstructions: instructions });
 vm.runInContext(server.slice(server.indexOf("function promptFor("), server.indexOf("function splitIntoShortUnits(")), context);
 
 for (const type of types) {
@@ -51,3 +51,4 @@ test("explicit audience overrides the class for every activity", () => {
     assert.match(instructions("memory", normalize("memory", { className: "2º ano A" })), /anos iniciais/);
     assert.match(instructions("memory", normalize("memory", { className: "Turma azul" })), /não invente idade/);
 });
+import { slideIllustrationInstructions } from "../slide-illustration-policy.js";

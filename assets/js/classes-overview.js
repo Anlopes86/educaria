@@ -245,6 +245,8 @@ function hydrateClassesOverviewPage() {
         const safe = typeof escapeHtml === "function" ? escapeHtml : (value) => String(value || "");
         const safeClassName = safe(card.className);
         const classToken = encodeURIComponent(card.className);
+        const identity = window.EducariaCollections?.classIdentity(card.className) || { tone: "mint", initials: "T" };
+        const profile = typeof getClassProfile === "function" ? getClassProfile(card.className) : null;
         const latestLesson = card.latestLesson && typeof card.latestLesson === "object" ? card.latestLesson : null;
         const latestLessonTitle = latestLesson
             ? safe(latestLesson.title || (typeof materialGroupLabel === "function" ? materialGroupLabel(latestLesson.materialType || "slides") : classesTranslate("classes.count.activity", "Atividade")))
@@ -261,9 +263,13 @@ function hydrateClassesOverviewPage() {
             : "turma.html#atividades-salvas";
 
         return `
-            <article class="lesson-history-card class-overview-card">
-                <span class="route-tag">${countLabel}</span>
+            <article class="lesson-history-card class-overview-card" data-class-tone="${safe(identity.tone)}">
+                <div class="collection-class-identity">
+                    <span class="collection-class-avatar" aria-hidden="true">${safe(identity.initials)}</span>
+                    <span class="route-tag">${countLabel}</span>
+                </div>
                 <h3>${safeClassName}</h3>
+                ${profile?.school ? `<p class="collection-class-school">${safe(profile.school)}</p>` : ""}
                 <p>${safe(card.summary)}</p>
                 <div class="lesson-history-meta">
                     <span>${safe(card.latestLabel)}</span>
@@ -274,13 +280,15 @@ function hydrateClassesOverviewPage() {
                     <span class="class-overview-latest-label">${classesTranslate("classes.latest.label", "Atividade recente")}</span>
                     <strong>${latestLessonTitle}</strong>
                     <small>${safe(latestLessonUpdated ? `${classesTranslate("classes.latest.updatedAt", "Atualizada em")} ${latestLessonUpdated}` : classesTranslate("classes.latest.recentUpdate", "Atualização recente"))}</small>
+                    <div class="collection-class-recent-actions">
+                        <a href="${latestLessonEditorPath}" data-class-open-editor="${classToken}" data-lesson-id="${latestLessonId}">${classesTranslate("classes.actions.continueEditing", "Continuar edição")}</a>
+                        <a href="${latestLessonPresentationPath}" data-class-open-presentation="${classToken}" data-lesson-id="${latestLessonId}">${classesTranslate("classes.actions.presentNow", "Apresentar agora")}</a>
+                    </div>
                 </div>
                 ` : ""}
                 <div class="lesson-history-actions">
                     <a href="turma.html#atividades-salvas" class="platform-link-button platform-link-primary" data-class-open-materials="${classToken}">${classesTranslate("classes.actions.viewMaterials", "Ver materiais")}</a>
-                    <a href="index.html#activity-toolkit" class="platform-link-button platform-link-secondary" data-class-create-material="${classToken}">${classesTranslate("classes.actions.createMaterial", "Criar material")}</a>
-                    ${latestLesson ? `<a href="${latestLessonEditorPath}" class="platform-link-button platform-link-secondary" data-class-open-editor="${classToken}" data-lesson-id="${latestLessonId}">${classesTranslate("classes.actions.continueEditing", "Continuar edição")}</a>` : ""}
-                    ${latestLesson ? `<a href="${latestLessonPresentationPath}" class="platform-link-button platform-link-secondary" data-class-open-presentation="${classToken}" data-lesson-id="${latestLessonId}">${classesTranslate("classes.actions.presentNow", "Apresentar agora")}</a>` : ""}
+                    <a href="index.html#quick-ai-create" class="platform-link-button platform-link-secondary" data-class-create-material="${classToken}">${classesTranslate("classes.actions.createMaterial", "Criar material")}</a>
                 </div>
             </article>
         `;

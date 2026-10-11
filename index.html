@@ -3,270 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EducarIA | Atividades prontas para ensinar e apresentar</title>
-    <meta name="description" content="Transforme um tema ou arquivo em slides, quizzes e atividades prontas para revisar, editar e apresentar à turma.">
-    <link rel="stylesheet" href="assets/css/estilo-premium.css?v=20260928-5">
+    <title>EducarIA | Transforme a sua aula em poucos minutos</title>
+    <meta name="description" content="Transforme seu tema ou arquivo em slides, quizzes, flashcards e jogos com IA. Experimente os formatos, edite do seu jeito e apresente em sala de aula.">
+    <link rel="stylesheet" href="assets/css/estilo-premium.css?v=20261011-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
     <script src="assets/js/firebase-config.js"></script>
     <script src="assets/js/auth-flow.js" defer></script>
-    <script src="assets/js/landing-page.js" defer></script>
+    <script src="assets/js/landing-page.js?v=20261010-4" defer></script>
 </head>
 <body class="landing-page">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
-
     <header class="landing-header">
         <div class="landing-container landing-header-inner">
-            <a href="index.html" class="landing-brand" aria-label="EducarIA — página inicial">
-                <span class="landing-brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-                <strong>Educar<span>IA</span></strong>
-            </a>
-
-            <nav class="landing-nav" aria-label="Navegação principal">
-                <a href="#como-funciona">Como funciona</a>
-                <a href="#ferramentas">Atividades</a>
-                <a href="#planos">Comece grátis</a>
-            </nav>
-
-            <div class="landing-header-actions">
-                <a href="login.html" class="landing-text-link" data-landing-nav-secondary>Entrar</a>
-                <a href="cadastro.html" class="platform-link-button platform-link-primary landing-header-cta" data-landing-nav-primary>Criar conta</a>
-            </div>
+            <a href="index.html" class="landing-brand" aria-label="EducarIA — página inicial"><span class="landing-brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><strong>Educar<span>IA</span></strong></a>
+            <nav class="landing-nav" aria-label="Navegação principal"><a href="#ferramentas">Explore as atividades</a><a href="#como-funciona">Como funciona</a><a href="#aula-completa">Aula completa</a></nav>
+            <div class="landing-header-actions"><a href="login.html" class="landing-text-link" data-landing-nav-secondary>Entrar</a><a href="cadastro.html" class="platform-link-button platform-link-primary landing-header-cta" data-landing-nav-primary>Criar conta</a></div>
         </div>
     </header>
-
     <main id="main-content" tabindex="-1">
         <section class="landing-hero" id="hub">
             <div class="landing-container landing-hero-grid">
-                <article class="landing-hero-copy">
-                    <span class="landing-eyebrow"><span aria-hidden="true">✦</span> Planeje menos. Envolva mais.</span>
+                <div class="landing-hero-copy">
+                    <span class="landing-eyebrow"><span aria-hidden="true">✦</span> Sua ideia. Muitas formas de ensinar.</span>
                     <h1>Transforme a sua aula <span>em poucos minutos.</span></h1>
-                    <p>Crie com um tema ou arquivo, revise do seu jeito e apresente em sala de aula.</p>
-
-                    <div class="landing-hero-actions">
-                        <a href="cadastro.html" class="platform-link-button platform-link-primary landing-primary-action" data-landing-hero-primary>Criar minha primeira atividade</a>
-                        <a href="#como-funciona" class="platform-link-button platform-link-secondary">Ver como funciona</a>
-                    </div>
-
-                    <ul class="landing-trust-list" aria-label="Vantagens da plataforma">
-                        <li><span aria-hidden="true">✓</span> Você revisa tudo</li>
-                        <li><span aria-hidden="true">✓</span> Pronto para apresentar em sala de aula</li>
-                    </ul>
-                </article>
-
-                <aside class="landing-studio" aria-label="Exemplo do fluxo de criação na EducarIA">
-                    <div class="landing-studio-topbar">
-                        <div class="landing-window-dots" aria-hidden="true"><i></i><i></i><i></i></div>
-                        <span>Nova atividade</span>
-                        <span class="landing-ai-chip">IA disponível</span>
-                    </div>
-
-                    <div class="landing-studio-body">
-                        <div class="landing-studio-step">
-                            <span class="landing-step-number">1</span>
-                            <div>
-                                <small>Conteúdo da aula</small>
-                                <strong>Sistema Solar: movimentos e estações</strong>
-                            </div>
-                        </div>
-
-                        <div class="landing-source-options" aria-label="Formas de adicionar conteúdo">
-                            <span class="is-active">Digitar um tema</span>
-                            <span>Enviar arquivo</span>
-                        </div>
-
-                        <div class="landing-studio-step">
-                            <span class="landing-step-number">2</span>
-                            <div>
-                                <small>Escolha o formato</small>
-                                <div class="landing-format-options">
-                                    <span class="is-active">Slides</span>
-                                    <span>Quiz</span>
-                                    <span>Flashcards</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="landing-studio-result">
-                            <span aria-hidden="true">✦</span>
-                            <div>
-                                <strong>Rascunho pronto para revisar</strong>
-                                <small>Edite textos, ordem e visual antes de apresentar.</small>
-                            </div>
-                            <span class="landing-result-action">Revisar →</span>
-                        </div>
-                    </div>
-
-                    <div class="landing-studio-footer" aria-hidden="true">
-                        <span class="is-done">Conteúdo</span>
-                        <i></i>
-                        <span class="is-done">Formato</span>
-                        <i></i>
-                        <span>Apresentar</span>
-                    </div>
-                </aside>
+                    <p>De um tema ou arquivo a slides, quizzes e jogos. Crie com IA, dê seu toque e apresente em sala de aula.</p>
+                    <div class="landing-hero-actions"><a href="cadastro.html" class="platform-link-button platform-link-primary landing-primary-action" data-landing-hero-primary>Criar minha primeira atividade</a><a href="#ferramentas" class="landing-demo-link">Explorar os formatos <span aria-hidden="true">↗</span></a></div>
+                    <p class="landing-hero-note">Versão beta · Você revisa tudo antes de apresentar.</p>
+                </div>
+                <div class="landing-collage" role="img" aria-label="Exemplos de atividades sobre o Sistema Solar: um slide ilustrado, um quiz sobre Marte e um flashcard sobre o Sol.">
+                    <div class="landing-orbit-label" aria-hidden="true"><span>✦</span> Uma ideia ganha vida</div>
+                    <div class="landing-hero-slide" aria-hidden="true"><div class="landing-preview-topline"><span>CIÊNCIAS / SLIDES</span><span>01 — 03</span></div><div class="landing-hero-slide-copy"><small>Vamos explorar?</small><strong>Um universo<br>de descobertas.</strong><p>Conheça nosso Sistema Solar.</p></div><img src="assets/img/landing-solar.svg" width="560" height="560" alt="" fetchpriority="high"><span class="landing-slide-signature">EducarIA <span>✦</span></span></div>
+                    <div class="landing-floating-quiz" aria-hidden="true"><span class="landing-mini-label">QUIZ <span>01/05</span></span><strong>Qual é o planeta vermelho?</strong><div><span class="is-correct">✓ Marte</span><span>Vênus</span></div></div>
+                    <div class="landing-floating-card" aria-hidden="true"><span class="landing-mini-label">FLASHCARDS</span><span class="landing-sun-symbol">☀</span><strong>O Sol é uma estrela.</strong><small>Vire. Descubra. Aprenda.</small></div>
+                    <div class="landing-collage-caption" aria-hidden="true"><span>Slides</span><span>Jogos</span><span>Descobertas</span></div>
+                </div>
             </div>
         </section>
-
-        <section class="landing-flow-section" id="como-funciona">
-            <div class="landing-container">
-                <header class="landing-section-heading landing-section-heading--center">
-                    <span class="platform-section-label">Um fluxo simples</span>
-                    <h2>Da ideia à aula em poucas etapas</h2>
-                </header>
-
-                <ol class="landing-flow-grid">
-                    <li>
-                        <span>1</span>
-                        <div>
-                            <h3>Informe o conteúdo</h3>
-                            <p>Digite um tema ou envie seu material.</p>
-                        </div>
-                    </li>
-                    <li>
-                        <span>2</span>
-                        <div>
-                            <h3>Escolha a atividade</h3>
-                            <p>Escolha o formato que combina com a aula.</p>
-                        </div>
-                    </li>
-                    <li>
-                        <span>3</span>
-                        <div>
-                            <h3>Revise e apresente</h3>
-                            <p>Ajuste e apresente em sala de aula.</p>
-                        </div>
-                    </li>
-                </ol>
-            </div>
-        </section>
-
         <section class="landing-tools-section" id="ferramentas">
             <div class="landing-container">
-                <header class="landing-section-heading landing-tools-heading">
-                    <div>
-                        <span class="platform-section-label">Escolha pelo momento da aula</span>
-                        <h2>Um formato para cada objetivo</h2>
+                <header class="landing-section-heading landing-tools-heading"><div><span class="platform-section-label">Menos do mesmo. Mais possibilidades.</span><h2>Dê outro ritmo<br>à sua aula.</h2></div><p>O mesmo tema, diferentes experiências.<br><strong>Escolha um formato e experimente aqui.</strong></p></header>
+                <div class="landing-showcase" data-landing-showcase>
+                    <div class="landing-format-tabs" role="tablist" aria-label="Formatos de atividade">
+                        <button type="button" id="tab-slides" role="tab" aria-selected="true" aria-controls="demo-slides" data-demo-tab="slides"><span aria-hidden="true">▤</span> Slides</button>
+                        <button type="button" id="tab-quiz" role="tab" aria-selected="false" aria-controls="demo-quiz" tabindex="-1" data-demo-tab="quiz"><span aria-hidden="true">?</span> Quiz</button>
+                        <button type="button" id="tab-flashcards" role="tab" aria-selected="false" aria-controls="demo-flashcards" tabindex="-1" data-demo-tab="flashcards"><span aria-hidden="true">▱</span> Flashcards</button>
+                        <button type="button" id="tab-memory" role="tab" aria-selected="false" aria-controls="demo-memory" tabindex="-1" data-demo-tab="memory"><span aria-hidden="true">◇</span> Memória</button>
+                        <button type="button" id="tab-mindmap" role="tab" aria-selected="false" aria-controls="demo-mindmap" tabindex="-1" data-demo-tab="mindmap"><span aria-hidden="true">⌘</span> Mapa mental</button>
+                        <button type="button" id="tab-wheel" role="tab" aria-selected="false" aria-controls="demo-wheel" tabindex="-1" data-demo-tab="wheel"><span aria-hidden="true">◉</span> Roleta</button>
                     </div>
-                    <p>Escolha o que combina com a sua aula.</p>
-                </header>
-
-                <div class="landing-main-tools">
-                    <a href="cadastro.html" class="landing-tool-card landing-tool-card--slides">
-                        <span class="landing-tool-tag">Visual</span>
-                        <div class="landing-tool-icon" aria-hidden="true">▤</div>
-                        <h3>Slides</h3>
-                        <p>Explique o conteúdo com uma sequência visual.</p>
-                        <strong>Criar <span aria-hidden="true">→</span></strong>
-                    </a>
-
-                    <a href="cadastro.html" class="landing-tool-card landing-tool-card--quiz">
-                        <span class="landing-tool-tag">Revisão</span>
-                        <div class="landing-tool-icon" aria-hidden="true">?</div>
-                        <h3>Quiz</h3>
-                        <p>Revise e veja o que a turma entendeu.</p>
-                        <strong>Criar <span aria-hidden="true">→</span></strong>
-                    </a>
-
-                    <a href="cadastro.html" class="landing-tool-card landing-tool-card--lesson">
-                        <span class="landing-tool-tag">Sequência</span>
-                        <div class="landing-tool-icon" aria-hidden="true">✦</div>
-                        <h3>Aula completa</h3>
-                        <p>Combine atividades em uma única apresentação.</p>
-                        <strong>Criar <span aria-hidden="true">→</span></strong>
-                    </a>
-
-                    <a href="cadastro.html" class="landing-tool-card landing-tool-card--memory">
-                        <span class="landing-tool-tag">Associação</span>
-                        <div class="landing-tool-icon" aria-hidden="true">◇</div>
-                        <h3>Jogo da memória</h3>
-                        <p>Associe conceitos e imagens de forma divertida.</p>
-                        <strong>Criar <span aria-hidden="true">→</span></strong>
-                    </a>
-
-                    <a href="cadastro.html" class="landing-tool-card landing-tool-card--flashcards">
-                        <span class="landing-tool-tag">Retomada</span>
-                        <div class="landing-tool-icon" aria-hidden="true">▱</div>
-                        <h3>Flashcards</h3>
-                        <p>Retome termos, ideias e respostas rápidas.</p>
-                        <strong>Criar <span aria-hidden="true">→</span></strong>
-                    </a>
-
-                    <a href="cadastro.html" class="landing-tool-card landing-tool-card--more">
-                        <span class="landing-tool-tag">Mais opções</span>
-                        <div class="landing-tool-icon" aria-hidden="true">＋</div>
-                        <h3>E muitas outras.</h3>
-                        <ul class="landing-tool-list" aria-label="Outras atividades disponíveis">
-                            <li>Caça-palavras</li>
-                            <li>Mapa mental</li>
-                            <li>Debate guiado</li>
-                            <li>Roleta</li>
-                            <li>Palavras cruzadas</li>
-                            <li>Forca</li>
-                            <li>Ligar pontos</li>
-                        </ul>
-                    </a>
+                    <div class="landing-demo-panel" id="demo-slides" role="tabpanel" aria-labelledby="tab-slides">
+                        <div class="landing-demo-description"><span class="landing-format-kicker">SLIDES</span><h3>Uma explicação <br>que dá vontade <br>de acompanhar.</h3><p>Organize ideias, imagens e exemplos em uma sequência visual que você pode editar.</p><span class="landing-interaction-hint">↗ Use as setas para explorar</span></div>
+                        <div class="landing-demo-surface landing-slides-demo">
+                            <div class="landing-sample-slide" data-sample-slide="0"><div><small>01 / NOSSO LUGAR NO UNIVERSO</small><h4>O Sistema<br>Solar</h4><p>Uma estrela. Oito planetas.<br>Muitas descobertas.</p></div><img src="assets/img/landing-solar.svg" alt="Ilustração do Sol e de planetas em órbitas" width="560" height="560" loading="lazy"></div>
+                            <div class="landing-sample-slide" data-sample-slide="1" hidden><div><small>02 / MOVIMENTOS DA TERRA</small><h4>Por que existe<br>dia e noite?</h4><p>A Terra gira em torno de si mesma. A parte voltada para o Sol recebe luz: é dia!</p></div><div class="landing-earth-diagram" aria-hidden="true"><span>☀</span><i></i><b>↻</b></div></div>
+                            <div class="landing-sample-slide" data-sample-slide="2" hidden><div><small>03 / VAMOS PENSAR JUNTOS?</small><h4>E se a Terra<br>não girasse?</h4><p>Converse com a turma: como seriam os dias e as noites?</p></div><div class="landing-discussion-art" aria-hidden="true"><span>?</span><span>!</span></div></div>
+                            <div class="landing-demo-controls"><button type="button" data-slide-step="-1" aria-label="Slide anterior">←</button><span data-slide-counter aria-live="polite">Slide 1 de 3</span><button type="button" data-slide-step="1" aria-label="Próximo slide">→</button></div>
+                        </div>
+                    </div>
+                    <div class="landing-demo-panel" id="demo-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
+                        <div class="landing-demo-description"><span class="landing-format-kicker">QUIZ</span><h3>Uma pergunta. <br>A turma inteira <br>pensando.</h3><p>Transforme a revisão em uma conversa. Mostre as perguntas e descubra as respostas com a turma.</p><span class="landing-interaction-hint">↗ Escolha uma resposta</span></div>
+                        <div class="landing-demo-surface landing-quiz-demo"><small>SISTEMA SOLAR · PERGUNTA 01</small><h4>Qual é conhecido como<br>o planeta vermelho?</h4><div class="landing-quiz-answers"><button type="button" data-quiz-answer="venus"><span>A</span> Vênus</button><button type="button" data-quiz-answer="mars"><span>B</span> Marte</button><button type="button" data-quiz-answer="jupiter"><span>C</span> Júpiter</button><button type="button" data-quiz-answer="saturn"><span>D</span> Saturno</button></div><p class="landing-demo-feedback" data-quiz-feedback aria-live="polite">Qual seria o palpite da sua turma?</p><button class="landing-reset-button" type="button" data-quiz-reset>Recomeçar exemplo ↻</button></div>
+                    </div>
+                    <div class="landing-demo-panel" id="demo-flashcards" role="tabpanel" aria-labelledby="tab-flashcards" hidden>
+                        <div class="landing-demo-description"><span class="landing-format-kicker">FLASHCARDS</span><h3>A curiosidade <br>vem na frente. <br>A descoberta, atrás.</h3><p>Relacione perguntas e respostas, termos e conceitos. Você escolhe o que vai em cada lado.</p><span class="landing-interaction-hint">↗ Toque no cartão para virar</span></div>
+                        <div class="landing-demo-surface landing-flashcards-demo"><button type="button" class="landing-flashcard" data-demo-flip aria-label="Virar flashcard para ver a resposta"><span class="landing-mini-label" data-flashcard-side>FRENTE · 01</span><span class="landing-flashcard-symbol" aria-hidden="true">☀</span><strong data-flashcard-text>O Sol é um planeta<br>ou uma estrela?</strong><span class="landing-flashcard-action" data-flashcard-action>Ver resposta ↻</span></button><span class="landing-card-caption" data-flashcard-status aria-live="polite">Um conceito de cada vez, no ritmo da sua turma.</span></div>
+                    </div>
+                    <div class="landing-demo-panel" id="demo-memory" role="tabpanel" aria-labelledby="tab-memory" hidden>
+                        <div class="landing-demo-description"><span class="landing-format-kicker">JOGO DA MEMÓRIA</span><h3>Conectar ideias <br>também pode <br>ser um jogo.</h3><p>Crie pares de conceitos, palavras ou imagens e convide a turma a encontrar as conexões.</p><span class="landing-interaction-hint">↗ Vire os cartões e encontre os pares</span></div>
+                        <div class="landing-demo-surface landing-memory-demo"><div class="landing-memory-grid">
+                            <button type="button" data-memory-pair="sun" data-memory-text="Sol" aria-label="Revelar cartão 1"><span>✦</span></button><button type="button" data-memory-pair="earth" data-memory-text="Nosso planeta" aria-label="Revelar cartão 2"><span>✦</span></button><button type="button" data-memory-pair="moon" data-memory-text="Lua" aria-label="Revelar cartão 3"><span>✦</span></button><button type="button" data-memory-pair="moon" data-memory-text="Satélite da Terra" aria-label="Revelar cartão 4"><span>✦</span></button><button type="button" data-memory-pair="sun" data-memory-text="Nossa estrela" aria-label="Revelar cartão 5"><span>✦</span></button><button type="button" data-memory-pair="earth" data-memory-text="Terra" aria-label="Revelar cartão 6"><span>✦</span></button>
+                        </div><p class="landing-demo-feedback" data-memory-feedback aria-live="polite">Encontre os 3 pares de ideias.</p><button class="landing-reset-button" type="button" data-memory-reset>Recomeçar exemplo ↻</button></div>
+                    </div>
+                    <div class="landing-demo-panel" id="demo-mindmap" role="tabpanel" aria-labelledby="tab-mindmap" hidden>
+                        <div class="landing-demo-description"><span class="landing-format-kicker">MAPA MENTAL</span><h3>O conteúdo <br>inteiro começa <br>a fazer sentido.</h3><p>Mostre como os conceitos se conectam e explore as explicações de cada tópico.</p><span class="landing-interaction-hint">↗ Selecione um ramo do mapa</span></div>
+                        <div class="landing-demo-surface landing-mindmap-demo"><div class="landing-map"><div class="landing-map-root">Sistema<br>Solar <span aria-hidden="true">✦</span></div><div class="landing-map-branches"><button type="button" data-map-node="sun" aria-pressed="true">O Sol</button><button type="button" data-map-node="planets" aria-pressed="false">Os planetas</button><button type="button" data-map-node="moons" aria-pressed="false">Os satélites</button></div></div><div class="landing-map-detail" aria-live="polite"><strong data-map-title>O Sol</strong><p data-map-text>A estrela no centro do Sistema Solar. Sua luz e seu calor são essenciais para a vida na Terra.</p></div></div>
+                    </div>
+                    <div class="landing-demo-panel" id="demo-wheel" role="tabpanel" aria-labelledby="tab-wheel" hidden>
+                        <div class="landing-demo-description"><span class="landing-format-kicker">ROLETA</span><h3>Um giro. <br>Uma surpresa. <br>Uma nova conversa.</h3><p>Sorteie temas, desafios ou participantes para dar movimento à aula.</p><span class="landing-interaction-hint">↗ Gire e descubra o próximo tema</span></div>
+                        <div class="landing-demo-surface landing-wheel-demo"><div class="landing-wheel-wrap"><span class="landing-wheel-pointer" aria-hidden="true">▼</span><div class="landing-demo-wheel" data-demo-wheel aria-hidden="true"><span>Sol</span><span>Terra</span><span>Lua</span><span>Marte</span></div><span class="landing-wheel-hub" aria-hidden="true">✦</span></div><button type="button" class="landing-demo-primary" data-wheel-spin>Girar roleta ↻</button><p class="landing-demo-feedback" data-wheel-feedback aria-live="polite">Qual será o assunto da vez?</p></div>
+                    </div>
+                    <div class="landing-showcase-footer"><span><span aria-hidden="true">✦</span> Exemplos ilustrativos e interativos. Sem usar créditos de IA.</span><a href="cadastro.html" data-landing-example-cta>Criar com meu conteúdo →</a></div>
+                    <noscript><p class="landing-noscript">Ative o JavaScript para experimentar os outros formatos. Você pode criar slides, quizzes, flashcards, jogos da memória, mapas mentais e roletas.</p></noscript>
+                </div>
+                <div class="landing-more-tools"><h3>E muitas outras.</h3><ul aria-label="Mais ferramentas disponíveis"><li>Caça-palavras</li><li>Palavras cruzadas</li><li>Debate guiado</li><li>Forca</li><li>Ligar pontos</li></ul></div>
+            </div>
+        </section>
+        <section class="landing-lesson-section" id="aula-completa">
+            <div class="landing-container landing-lesson-layout">
+                <div class="landing-section-heading"><span class="platform-section-label">Aula completa</span><h2>Atividades diferentes.<br>Uma aula que flui.</h2><p>Reúna os materiais que você criou, escolha a ordem e conduza tudo em uma apresentação contínua.</p><a href="cadastro.html" class="landing-light-link" data-landing-lesson-cta>Montar minha sequência →</a></div>
+                <div class="landing-lesson-sequence" aria-label="Exemplo de aula organizada em três atividades: slides, quiz e debate guiado">
+                    <div class="landing-sequence-heading"><span>MINHA AULA / SISTEMA SOLAR</span><span>3 atividades</span></div>
+                    <ol><li><span class="landing-sequence-number">01</span><div class="landing-sequence-thumb landing-sequence-thumb--slides" aria-hidden="true"><img src="assets/img/landing-solar.svg" width="560" height="560" alt="" loading="lazy"></div><div><small>SLIDES</small><strong>Explore o Sistema Solar</strong></div><span class="landing-sequence-handle" aria-hidden="true">⠿</span></li><li><span class="landing-sequence-number">02</span><div class="landing-sequence-thumb landing-sequence-thumb--quiz" aria-hidden="true">?</div><div><small>QUIZ</small><strong>O que descobrimos?</strong></div><span class="landing-sequence-handle" aria-hidden="true">⠿</span></li><li><span class="landing-sequence-number">03</span><div class="landing-sequence-thumb landing-sequence-thumb--debate" aria-hidden="true">“ ”</div><div><small>DEBATE GUIADO</small><strong>Viver em outro planeta?</strong></div><span class="landing-sequence-handle" aria-hidden="true">⠿</span></li></ol>
+                    <div class="landing-sequence-bottom"><span>Você escolhe a ordem.</span><span>Uma só apresentação ↗</span></div>
                 </div>
             </div>
         </section>
-
-        <section class="landing-control-section">
+        <section class="landing-flow-section" id="como-funciona">
             <div class="landing-container">
-                <header class="landing-section-heading landing-section-heading--center">
-                    <span class="platform-section-label">Comece do seu jeito</span>
-                    <h2>Use um tema ou o material que você já tem.</h2>
-                </header>
-
-                <div class="landing-input-options">
-                    <article>
-                        <span class="landing-input-icon" aria-hidden="true">Aa</span>
-                        <div>
-                            <h3>Digite um tema</h3>
-                            <p>Conte o que você quer ensinar.</p>
-                        </div>
-                    </article>
-                    <article>
-                        <span class="landing-input-icon" aria-hidden="true">↑</span>
-                        <div>
-                            <h3>Envie seu arquivo</h3>
-                            <p>Parta do material que já utiliza.</p>
-                        </div>
-                    </article>
-                </div>
-
-                <p class="landing-control-note"><span aria-hidden="true">✦</span> A IA organiza. Você revisa tudo antes de apresentar em sala de aula.</p>
+                <header class="landing-section-heading landing-section-heading--center"><span class="platform-section-label">A IA ajuda. A aula continua sua.</span><h2>Da ideia à aula<br>em poucas etapas.</h2></header>
+                <ol class="landing-flow-grid">
+                    <li><div class="landing-flow-art landing-flow-art--idea" aria-hidden="true"><span class="landing-mini-label">SEU PEDIDO E CONTEÚDO</span><p>Crie um quiz sobre o Sistema Solar para o 6º ano.</p><div><span>+ Enviar arquivo</span><strong>✦ Criar com IA</strong></div></div><div class="landing-flow-copy"><span>01</span><div><h3>Conte sua ideia</h3><p>Digite seu pedido ou envie um arquivo. Escolha a atividade e o público.</p></div></div></li>
+                    <li><div class="landing-flow-art landing-flow-art--edit" aria-hidden="true"><span class="landing-mini-label">DO SEU JEITO <span>✎</span></span><strong>Qual é o planeta vermelho?</strong><div><span class="landing-edit-answer">✓ Marte</span><span>Vênus</span></div><span class="landing-edit-note">Texto, respostas, ordem e visual.</span></div><div class="landing-flow-copy"><span>02</span><div><h3>Dê seu toque</h3><p>A IA prepara um rascunho. Revise o conteúdo e faça os ajustes que quiser.</p></div></div></li>
+                    <li><div class="landing-flow-art landing-flow-art--class" aria-hidden="true"><span class="landing-mini-label">TUDO NO SEU LUGAR</span><div><span class="landing-class-icon">6º</span><span><strong>6º ano A</strong><small>Ciências · Sistema Solar</small></span><span>✓</span></div><p><span>▤ Salvo na turma</span><strong>Apresentar ↗</strong></p></div><div class="landing-flow-copy"><span>03</span><div><h3>Leve para a turma</h3><p>Salve seus materiais, organize por turma e apresente na TV ou no projetor.</p></div></div></li>
+                </ol>
+                <p class="landing-first-step">Primeiro acesso? Comece criando sua turma. O guia rápido acompanha você.</p>
             </div>
         </section>
-
-        <section class="landing-cta-section" id="planos">
-            <div class="landing-container landing-cta-panel">
-                <div>
-                    <span class="platform-section-label">Comece grátis</span>
-                    <h2>Sua próxima atividade pode ficar pronta hoje.</h2>
-                    <p>Crie sua primeira turma e comece.</p>
-                </div>
-                <div class="landing-cta-actions">
-                    <a href="cadastro.html" class="platform-link-button platform-link-primary" data-landing-cta-primary>Criar conta grátis</a>
-                    <a href="login.html" class="platform-link-button platform-link-secondary" data-landing-cta-secondary>Já tenho conta</a>
-                    <small>5 gerações com IA por dia no plano gratuito.</small>
-                </div>
-            </div>
-        </section>
+        <section class="landing-cta-section" id="planos"><div class="landing-container landing-cta-panel"><div><span class="platform-section-label">Vamos experimentar?</span><h2>Sua próxima aula pode<br>começar com uma ideia.</h2><p>Crie sua conta, explore as ferramentas e ajude a construir o EducarIA nesta fase beta.</p></div><div class="landing-cta-actions"><a href="cadastro.html" class="platform-link-button platform-link-primary" data-landing-cta-primary>Criar conta grátis</a><a href="login.html" class="platform-link-button platform-link-secondary" data-landing-cta-secondary>Já tenho conta</a><small>Plano gratuito com créditos de IA.<br>Consulte seu saldo no painel.</small></div></div></section>
     </main>
-
-    <footer class="landing-footer">
-        <div class="landing-container landing-footer-inner">
-            <a href="index.html" class="landing-brand" aria-label="EducarIA — página inicial">
-                <span class="landing-brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
-                <strong>Educar<span>IA</span></strong>
-            </a>
-            <p>Ferramentas pedagógicas para criar, editar e apresentar.</p>
-            <nav aria-label="Links do rodapé">
-                <a href="privacidade.html">Privacidade</a>
-                <a href="termos.html">Termos de uso</a>
-            </nav>
-        </div>
-    </footer>
+    <footer class="landing-footer"><div class="landing-container landing-footer-inner"><a href="index.html" class="landing-brand" aria-label="EducarIA — página inicial"><span class="landing-brand-mark" aria-hidden="true"><i></i><i></i><i></i></span><strong>Educar<span>IA</span></strong></a><p>Mais possibilidades para a sua sala de aula.</p><nav aria-label="Links do rodapé"><a href="privacidade.html">Privacidade</a><a href="termos.html">Termos de uso</a></nav></div></footer>
 </body>
 </html>

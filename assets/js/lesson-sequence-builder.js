@@ -1258,20 +1258,25 @@ function buildDraftStackHtml(materialType, payload) {
     const colors = lessonColorPalette();
 
     if (materialType === "slides") {
-        return (Array.isArray(payload.slides) ? payload.slides : []).map((slide, index) => `
+        return (Array.isArray(payload.slides) ? payload.slides : []).map((slide, index) => {
+            const image = window.EducariaSlideIllustrations?.resolveImage(payload, slide, index);
+            const imageUrl = image?.url || slide.image_url || slide.imageUrl || "";
+            const imageDescription = image?.url ? image.description : slide.image_prompt || slide.imagePrompt || "";
+            return `
             <section data-slide-card>
                 <input data-field="slide-title" type="text" value="${escapeAttr(slide.title || `Slide ${index + 1}`)}">
                 <input data-field="slide-subtitle" type="text" value="${escapeAttr(slide.subtitle || "")}">
                 <textarea data-field="slide-body">${escapeHtml(slide.body || "")}</textarea>
                 <input data-field="slide-layout" type="text" value="Lado a lado">
-                <input data-field="slide-image-mode" type="text" value="${escapeAttr(slide.image_prompt || slide.imagePrompt ? "Gerar com IA" : (slide.image_url || slide.imageUrl ? "Upload" : "Sem imagem"))}">
-                <textarea data-field="slide-image-prompt">${escapeHtml(slide.image_prompt || slide.imagePrompt || "")}</textarea>
-                <input data-field="slide-image-url" type="text" value="${escapeAttr(slide.image_url || slide.imageUrl || "")}">
-                <input data-field="slide-accent-color" type="color" value="#0ea5e9">
-                <input data-field="slide-color" type="color" value="#d7f5f6">
-                <input data-field="slide-text-color" type="color" value="#0f172a">
+                <input data-field="slide-image-mode" type="text" value="${escapeAttr(image?.url ? image.mode : imageUrl ? "Enviar imagem" : "Sem imagem")}">
+                <textarea data-field="slide-image-prompt">${escapeHtml(imageDescription)}</textarea>
+                <input data-field="slide-image-url" type="text" value="${escapeAttr(imageUrl)}">
+                <input data-field="slide-accent-color" type="color" value="#d7e6b9">
+                <input data-field="slide-color" type="color" value="#153c41">
+                <input data-field="slide-text-color" type="color" value="#f8f9ec">
             </section>
-        `).join("");
+        `;
+        }).join("");
     }
 
     if (materialType === "quiz") {
@@ -1298,7 +1303,7 @@ function buildDraftStackHtml(materialType, payload) {
                 <input data-field="example" type="text" value="${escapeAttr(card.example || "")}">
                 <input data-field="front-color" type="color" value="#ffffff">
                 <input data-field="back-color" type="color" value="#dbeafe">
-                <input data-field="text-color" type="color" value="#0f172a">
+                <input data-field="text-color" type="color" value="#f8f9ec">
             </section>
         `).join("");
     }

@@ -436,7 +436,8 @@ function renderPresentation(slides, draft = {}) {
     };
 
     const paint = () => {
-        const slide = state.slides[currentIndex];
+        const savedSlide = state.slides[currentIndex];
+        const slide = window.EducariaVisuals?.slide(savedSlide) || savedSlide;
 
         slideTitle.textContent = slide.title;
         slideSubtitle.textContent = slide.subtitle || "";
@@ -479,7 +480,7 @@ function renderPresentation(slides, draft = {}) {
             media.hidden = false;
             media.innerHTML = `<img data-presentation-image alt="${escapeHtml(slide.imagePrompt || slide.title)}" src="${escapeHtml(slide.imageUrl)}">`;
             media.querySelector("img")?.addEventListener("error", () => {
-                if (state.slides[currentIndex] !== slide) return;
+                if (state.slides[currentIndex] !== savedSlide) return;
                 media.hidden = true;
                 applySlideLayout(slideRoot, { ...slide, imageUrl: "" });
                 resetMediaStyles();

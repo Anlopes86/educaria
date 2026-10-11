@@ -26,7 +26,9 @@ export function normalizeSlideGenerationOptions(raw, action = "") {
     if (!options || typeof options !== "object" || Array.isArray(options)) throw invalidOptions();
     const detail = normalize(optionText(options.detail ?? legacyValue(action, "Nível de detalhamento"), 60));
     const tone = normalize(optionText(options.tone ?? legacyValue(action, "Tom desejado"), 60));
+    if (options.includeIllustration != null && ![true, false, "true", "false"].includes(options.includeIllustration)) throw invalidOptions();
     return {
+        includeIllustration: options.includeIllustration === true || options.includeIllustration === "true",
         detail: ["concise", "mais enxuto"].includes(detail) ? "concise" : ["detailed", "mais detalhado"].includes(detail) ? "detailed" : "balanced",
         tone: ["visual", "mais visual e direto"].includes(tone) ? "visual" : ["explanatory", "mais explicativo"].includes(tone) ? "explanatory" : ["inspiring", "mais inspirador"].includes(tone) ? "inspiring" : "balanced",
         audience: optionText(options.audience ?? legacyValue(action, "Público ou ano|Ano ou público"), 160),

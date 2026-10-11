@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="classDetail.title">Turma | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20260930-2">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261011-3">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -13,12 +13,14 @@
     <script src="../assets/js/i18n.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/turma-context.js?v=20260930-2" defer></script>
-    <script src="../assets/js/lesson-library.js?v=20260930-2" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/collection-visuals.js?v=20261011-3" defer></script>
+    <script src="../assets/js/lesson-library.js?v=20261011-3" defer></script>
     <script src="../assets/js/app-sidebar.js?v=20260930-2" defer></script>
     <script src="../assets/js/class-format-picker.js" defer></script>
     <script src="../assets/js/class-detail.js?v=20260930-2" defer></script>
 </head>
-<body class="product-body theme-class" data-requires-auth="true" data-class-page-ready="false" data-page="class-detail">
+<body class="product-body theme-class collection-page" data-requires-auth="true" data-class-page-ready="false" data-page="class-detail">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
     <div class="app-shell">
         <aside class="app-sidebar">
@@ -91,6 +93,7 @@
         <main id="main-content" class="app-content" tabindex="-1">
             <section class="class-detail-hero">
                 <div class="class-detail-hero__copy">
+                    <span class="collection-hero-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 5h7l2 3h9v12H3zM3 5V3h7l2 2"/><path d="M8 12h8m-8 4h5"/></svg></span>
                     <span class="workspace-page-eyebrow" data-i18n="classDetail.hero.label">Turma selecionada</span>
                     <h1 data-class-title>Turma</h1>
                     <p data-class-profile-notes data-i18n="classDetail.profile.notesEmpty">Adicione informações úteis sobre esta turma.</p>
@@ -106,12 +109,14 @@
                     <select id="class-detail-picker" data-class-detail-picker></select>
                     <div class="class-detail-hero__actions">
                         <button type="button" class="platform-link-button platform-link-primary" data-class-profile-edit data-i18n="classDetail.profile.edit">Editar dados da turma</button>
-                        <a href="index.html#activity-toolkit" class="platform-link-button platform-link-secondary" data-i18n="dashboard.nav.createActivity">Criar atividade</a>
+                        <a href="index.html#quick-ai-create" class="platform-link-button platform-link-secondary" data-i18n="dashboard.nav.createActivity">Criar atividade</a>
                     </div>
                 </div>
             </section>
 
-            <section class="focus-card">
+            <details class="focus-card collection-class-overview">
+                <summary data-i18n="classDetail.overview.toggle">Resumo e atalhos da turma</summary>
+                <div class="collection-class-overview__body">
                 <div class="page-section-title">
                     <div>
                         <span class="platform-section-label" data-i18n="classDetail.flow.label">Fluxo principal</span>
@@ -145,7 +150,8 @@
                     <div class="class-next-step-slot" data-class-next-step></div>
                 </div>
                 <div class="class-recent-lesson-slot" data-class-recent-lesson></div>
-            </section>
+                </div>
+            </details>
 
             <section class="focus-card class-library-panel" id="atividades-salvas">
                 <div class="page-section-title">
@@ -153,7 +159,7 @@
                         <span class="platform-section-label" data-i18n="classDetail.activities.label">Atividades da turma</span>
                         <h2 data-class-title>Turma</h2>
                     </div>
-                    <p data-i18n="classDetail.activities.copy">Ficam aqui apenas os materiais da turma selecionada, agrupados por formato para facilitar retomada, edição e apresentação.</p>
+                    <p data-i18n="classDetail.activities.copy">Encontre uma atividade desta turma para editar, apresentar ou reutilizar.</p>
                 </div>
 
                 <div class="class-activity-toolbar">

@@ -45,7 +45,7 @@ test("editor selections reach the request as distinct fields, including selected
     const button = { textContent: "Gerar", disabled: false };
     assert.equal(await h.context.generateMaterial("slides", button), true);
     assert.deepEqual(JSON.parse(h.posted.body.get("slideOptions")), {
-        detail: "Mais detalhado", tone: "Mais explicativo", audience: "EJA", objective: "Explicar. Relacionar ao cotidiano.", subject: "Ciências", className: "7º ano A"
+        detail: "Mais detalhado", tone: "Mais explicativo", audience: "EJA", objective: "Explicar. Relacionar ao cotidiano.", subject: "Ciências", className: "7º ano A", includeIllustration: false
     });
     assert.match(h.posted.body.get("action"), /Gerar 8 slides/);
     assert.match(h.posted.body.get("action"), /personalizado/);
@@ -63,6 +63,19 @@ test("long slide settings do not overflow the action field", async () => {
     await h.context.generateMaterial("slides", { textContent: "Gerar" });
     assert.ok(h.posted.body.get("action").length < 500);
     assert.equal(JSON.parse(h.posted.body.get("slideOptions")).objective.length, 280);
+});
+
+test("illustration option accompanies the original request and own image stays local", async () => {
+    const h = generationHarness();
+    h.fields["slides-incluir-ilustracao"] = { value: "true" };
+    h.fields["slides-imagem-propria"] = { files: [{ name: "capa.png" }] };
+    h.context.window.educariaImages = { optimize: async () => "data:image/png;base64,capa" };
+    h.fields.text.value = "Explique as órbitas do sistema solar com uma ilustração.";
+    assert.equal(await h.context.generateMaterial("slides", { textContent: "Gerar" }), true);
+    assert.equal(JSON.parse(h.posted.body.get("slideOptions")).includeIllustration, true);
+    assert.equal(h.posted.body.get("sourceText"), h.fields.text.value);
+    assert.equal(h.posted.body.get("cover_image"), null);
+    assert.equal(h.applied.cover_image, "data:image/png;base64,capa");
 });
 
 test("editor sends the complete main-field request once with automatic quantity", async () => {

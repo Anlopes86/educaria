@@ -7,7 +7,7 @@ import { normalizeSlideGenerationOptions, slidePedagogyInstructions, normalizeGe
 import { interviewText, interviewRequest, expectedInterviewCards, detailedSlide } from "../../tools/fixtures/ai-content-cases.mjs";
 
 const server = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
-const context = vm.createContext({ normalizeActivityGenerationOptions, activityGenerationInstructions, normalizeSlideGenerationOptions, slidePedagogyInstructions });
+const context = vm.createContext({ normalizeActivityGenerationOptions, activityGenerationInstructions, normalizeSlideGenerationOptions, slidePedagogyInstructions, slideIllustrationInstructions });
 vm.runInContext(server.slice(server.indexOf("function promptFor("), server.indexOf("function splitIntoShortUnits(")), context);
 
 test("eight numbered English items and their request reach the real flashcard prompt intact", () => {
@@ -80,3 +80,4 @@ for (const raw of [{ contentMode: "random" }, { contentMode: {} }, { teacherInst
         assert.throws(() => normalizeActivityGenerationOptions("slides", raw), { code: "invalid_generation_options" });
     });
 }
+import { slideIllustrationInstructions } from "../slide-illustration-policy.js";

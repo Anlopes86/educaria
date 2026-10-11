@@ -1,9 +1,9 @@
 const SLIDE_THEME_PRESETS = {
     moderno: {
         font: "Destaque moderno",
-        accent: "#0ea5e9",
-        bg: "#d7f5f6",
-        text: "#0f172a"
+        accent: "#d7e6b9",
+        bg: "#153c41",
+        text: "#f8f9ec"
     },
     academico: {
         font: "Serifada clássica",

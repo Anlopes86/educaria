@@ -49,7 +49,7 @@ function paletteForTopic(topic) {
     if (text.includes("bio") || text.includes("ciencia") || text.includes("solar")) return { front: "#dcfce7", back: "#bbf7d0", text: "#14532d" };
     if (text.includes("geo")) return { front: "#ecfccb", back: "#d9f99d", text: "#365314" };
     if (text.includes("port") || text.includes("texto") || text.includes("gram")) return { front: "#fee2e2", back: "#fecaca", text: "#7f1d1d" };
-    return { front: "#ffffff", back: "#dbeafe", text: "#0f172a" };
+    return { front: "#e1d7f0", back: "#fffaf1", text: "#463563" };
 }
 
 function generatePairs(topic, count) {
