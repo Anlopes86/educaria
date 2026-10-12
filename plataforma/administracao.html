@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Administração | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261012-2">
+    <link rel="stylesheet" href="../assets/css/pages/admin.css?v=20261012-1">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js" defer></script>
+    <script src="../assets/js/storage-scope.js" defer></script>
+    <script src="../assets/js/firebase-config.js" defer></script>
+    <script src="../assets/js/auth-flow.js" defer></script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/admin-access.js?v=20261012-1" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20261012-2" defer></script>
+    <script src="../assets/js/admin-dashboard.js?v=20261012-1" defer></script>
+</head>
+<body class="product-body theme-overview" data-requires-auth="true">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
+    <div class="app-shell">
+        <aside class="app-sidebar">
+            <a href="index.html" class="app-sidebar-profile app-sidebar-profile-link" aria-label="Voltar ao painel do professor">
+                <strong data-sidebar-teacher>Professor</strong><span data-sidebar-institution>Conta educacional</span>
+            </a>
+            <nav class="app-sidebar-nav" aria-label="Navegação principal">
+                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false">Criar atividade</button>
+                <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden></div>
+                <a href="index.html" class="sidebar-nav-link">Painel</a>
+                <a href="biblioteca.html" class="sidebar-nav-link">Biblioteca</a>
+                <a href="turmas.html" class="sidebar-nav-link" data-sidebar-classes-page-link>Minhas turmas</a>
+                <a href="configuracoes.html" class="sidebar-nav-link">Configurações</a>
+            </nav>
+            <div class="app-sidebar-footer"><button type="button" class="platform-link-button platform-link-secondary sidebar-logout-button" data-logout>Sair</button></div>
+        </aside>
+        <main id="main-content" class="app-content workspace-page admin-page" tabindex="-1" data-admin-dashboard>
+            <section class="admin-hero" aria-labelledby="admin-title">
+                <div>
+                    <span class="admin-eyebrow">Administração</span>
+                    <h1 id="admin-title">Conheça quem está criando.</h1>
+                    <p>Acompanhe os professores cadastrados e o uso diário de IA, em um só lugar.</p>
+                    <span class="admin-readonly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg>Acesso restrito · Somente consulta</span>
+                </div>
+                <svg class="admin-hero-art" viewBox="0 0 280 190" aria-hidden="true">
+                    <circle cx="225" cy="38" r="30" fill="#d7e6b9"/>
+                    <rect x="16" y="22" width="224" height="151" rx="22" fill="#fffefa" transform="rotate(-4 128 97)"/>
+                    <circle cx="52" cy="60" r="16" fill="#d7e9ed"/><circle cx="52" cy="104" r="16" fill="#e1d7f0"/>
+                    <path d="M83 55h122M83 67h73M83 100h98M83 113h58M36 142h112" stroke="#c6d8ce" stroke-width="8" stroke-linecap="round"/>
+                    <circle cx="218" cy="143" r="34" fill="#d7e6b9" stroke="#153c41" stroke-width="7"/>
+                    <path d="m204 142 10 10 18-21" stroke="#226963" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </section>
+
+            <div class="admin-heading"><div><h2>Visão geral</h2><p>Cadastros e acessos à plataforma</p></div>
+                <button type="button" class="platform-link-button platform-link-secondary" data-admin-refresh>Atualizar dados</button>
+            </div>
+            <section class="admin-feedback" role="status" aria-live="polite" data-admin-feedback>
+                <span class="admin-feedback-symbol" aria-hidden="true">◎</span>
+                <p data-admin-status>Verificando o acesso à administração…</p>
+                <button type="button" class="platform-link-button platform-link-primary" data-admin-retry hidden>Tentar novamente</button>
+                <a href="../login.html" class="platform-link-button platform-link-primary" data-admin-login hidden>Entrar novamente</a>
+                <a href="index.html" class="admin-back">Voltar ao painel</a>
+            </section>
+            <div data-admin-content hidden>
+                <section class="admin-metrics" aria-label="Resumo dos usuários">
+                    <article class="admin-metric"><span>Total de usuários</span><strong data-admin-metric="total">—</strong><small>Contas cadastradas</small></article>
+                    <article class="admin-metric admin-metric--lilac"><span>Novos cadastros</span><strong data-admin-metric="newLast7Days">—</strong><small>Nos últimos 7 dias</small></article>
+                    <article class="admin-metric admin-metric--blue"><span>Login recente</span><strong data-admin-metric="signedInLast7Days">—</strong><small>Entraram nos últimos 7 dias</small></article>
+                    <article class="admin-metric admin-metric--sand"><span>Contas desativadas</span><strong data-admin-metric="disabled">—</strong><small>Sem acesso à plataforma</small></article>
+                </section>
+                <section class="admin-directory" aria-labelledby="admin-directory-title">
+                    <div class="admin-directory-heading"><div><span class="admin-eyebrow">Professores</span><h2 id="admin-directory-title">Pessoas por trás das aulas</h2></div><span class="admin-badge">Somente leitura</span></div>
+                    <form class="admin-filters" data-admin-filters role="search" aria-label="Buscar professores">
+                        <label class="admin-search"><span>Nome ou e-mail</span><input name="q" type="search" maxlength="120" placeholder="Quem você está procurando?" autocomplete="off"></label>
+                        <label><span>Plano</span><select name="plan"><option value="all">Todos os planos</option><option value="free">Gratuito</option><option value="pro">Pro</option></select></label>
+                        <label><span>Situação</span><select name="status"><option value="all">Todas as contas</option><option value="enabled">Habilitadas</option><option value="disabled">Desativadas</option></select></label>
+                        <button type="submit" class="platform-link-button platform-link-primary">Buscar</button>
+                    </form>
+                    <div class="admin-results-heading"><p data-admin-count tabindex="-1" role="status" aria-live="polite"></p><button type="button" class="admin-clear" data-admin-clear>Limpar filtros</button></div>
+                    <div class="admin-table-wrap" data-admin-table><table class="admin-table"><caption class="sr-only">Professores cadastrados e créditos diários de IA</caption><thead><tr><th scope="col">Professor</th><th scope="col">Escola</th><th scope="col">Cadastro e login</th><th scope="col">Conta</th><th scope="col">IA hoje</th></tr></thead><tbody data-admin-users></tbody></table></div>
+                    <div class="admin-empty" data-admin-empty hidden><strong>Nenhum professor encontrado.</strong><p>Tente outro nome ou remova os filtros.</p></div>
+                    <nav class="admin-pagination" aria-label="Páginas de usuários"><button type="button" class="platform-link-button platform-link-secondary" data-admin-prev disabled>← Anterior</button><span data-admin-page></span><button type="button" class="platform-link-button platform-link-secondary" data-admin-next disabled>Próxima →</button></nav>
+                </section>
+                <p class="admin-footnote" data-admin-updated></p>
+                <p class="admin-footnote">Os saldos são em créditos de IA, não em tokens. O último login não indica se o professor está online. Materiais privados e arquivos enviados não são exibidos aqui.</p>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

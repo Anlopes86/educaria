@@ -39,10 +39,25 @@ function harness(path = "index.html") {
     nodes.sidebar.querySelectorAll = () => state.focusable;
     nodes.sidebar.contains = element => state.focusable.includes(element);
     nodes.toggle.focus();
-    const scope = vm.createContext({document, window: {location:{pathname:`/plataforma/${path}`}, matchMedia:() => ({matches:state.mobile})}, readSelectedClass:()=>state.selected, getAvailableClasses:()=>state.classes});
+    const windowListeners = {};
+    const scope = vm.createContext({document, window: {addEventListener:(event, callback) => { windowListeners[event] = callback; }, location:{pathname:`/plataforma/${path}`}, matchMedia:() => ({matches:state.mobile})}, readSelectedClass:()=>state.selected, getAvailableClasses:()=>state.classes});
     vm.runInContext(source, scope);
-    return {node, nodes, state, document, scope, run: code=>vm.runInContext(code,scope)};
+    return {node, nodes, state, document, scope, windowListeners, run: code=>vm.runInContext(code,scope)};
 }
+
+test("admin navigation is removed on page leave and revalidated on browser return", async () => {
+    const h = harness();
+    let removed = 0;
+    h.document.querySelectorAll = selector => selector === "[data-sidebar-admin-link]" ? [{ remove: () => { removed += 1; } }] : [];
+    h.windowListeners.pagehide();
+    assert.equal(removed, 1);
+    let checked = 0;
+    h.scope.window.educariaAdminApi = { access: async () => { checked += 1; return false; } };
+    h.windowListeners.pageshow({ persisted: true });
+    await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(checked, 1);
+    assert.equal(removed, 2);
+});
 
 test("class detail highlights only the selected class and its parent section", () => {
     const h = harness("turma.html");
@@ -168,7 +183,7 @@ test("class navigation stays unique after language changes and reordering", () =
 test("all sidebar pages request the shared updated assets", async () => {
     for (const page of ["index","biblioteca","turmas","turma","configuracoes"]) {
         const html = await read(`plataforma/${page}.html`);
-        assert.match(html,/app-sidebar\.js\?v=20261012-1/);
+        assert.match(html,/app-sidebar\.js\?v=20261012-2/);
         assert.match(html,/estilo-premium\.css\?v=20261012-1/);
     }
     assert.match(await read("assets/css/estilo-premium.css"), /components\/sidebar\.css\?v=20261012-1/);

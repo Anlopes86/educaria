@@ -90,6 +90,13 @@ function reserveInBucket(bucket, amount, limit, reservationId, ttlMs, expiresAt 
     return { reserved: true, cost, used: bucket.used, reservationId };
 }
 
+function creditUsageSnapshot(value, fallback, ttlMs) {
+    const bucket = normalizeBucket(value, fallback);
+    releaseExpiredReservations(bucket, ttlMs);
+    const reserved = Math.min(bucket.used, Object.values(bucket.reservations).reduce((sum, item) => sum + item.amount, 0));
+    return { used: bucket.used, reserved };
+}
+
 function settleInBucket(bucket, reservationId, amount, limit) {
     const reservation = bucket.reservations?.[reservationId];
     if (!reservation) {
@@ -178,6 +185,11 @@ class MemoryAiCreditStore {
             await this.persist();
         }
         return { used: bucket.used };
+    }
+
+    async peek({ key, userId, day, plan }) {
+        await this.load();
+        return creditUsageSnapshot(this.buckets.get(key), { userId, day, plan }, this.reservationTtlMs);
     }
 
     async reserve({ key, userId, day, plan, limit, amount, reservationId = crypto.randomUUID(), expiresAt = "" }) {
@@ -390,6 +402,11 @@ class FirestoreAiCreditStore {
             const changed = releaseExpiredReservations(bucket, this.reservationTtlMs);
             return { write: changed, result: { used: bucket.used } };
         });
+    }
+
+    async peek({ key, userId, day, plan }) {
+        const { bucket } = await this.read(key, { userId, day, plan });
+        return creditUsageSnapshot(bucket, { userId, day, plan }, this.reservationTtlMs);
     }
 
     async reserve({ key, userId, day, plan, limit, amount, reservationId = crypto.randomUUID(), expiresAt = "" }) {

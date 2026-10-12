@@ -41,6 +41,7 @@ const SIDEBAR_FORMATS = {
 };
 
 const SIDEBAR_ICONS = {
+    admin: '<svg viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg>',
     dashboard: '<svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>',
     "create-class": '<svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm10-3v6m3-3h-6"/></svg>',
     "create-activity": '<svg viewBox="0 0 24 24"><path d="m12 3 1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1-4.1-1.4 4.1-1.4L12 3Zm6 10 .9 2.6 2.6.9-2.6.9L18 20l-.9-2.6-2.6-.9 2.6-.9L18 13ZM5 14l.7 2.3L8 17l-2.3.7L5 20l-.7-2.3L2 17l2.3-.7L5 14Z"/></svg>',
@@ -133,6 +134,7 @@ function sidebarNavKey(element) {
     if (href === "turmas.html") return "classes";
     if (href === "biblioteca.html") return "library";
     if (href === "configuracoes.html") return "settings";
+    if (href === "administracao.html") return "admin";
     return "";
 }
 
@@ -153,7 +155,8 @@ function reorderSidebarNavigation() {
             ...itemFor('[data-sidebar-classes-page-link]'),
             ...itemFor('[data-sidebar-toggle="create-class"]'),
             ...itemFor('[data-sidebar-toggle="classes"]'),
-            ...itemFor('a[href="configuracoes.html"]')
+            ...itemFor('a[href="configuracoes.html"]'),
+            ...itemFor('[data-sidebar-admin-link]')
         ];
         ordered.forEach((item) => nav.append(item));
     });
@@ -629,6 +632,27 @@ function ensureMobileSidebarControls() {
     setMobileSidebarOpen(false);
 }
 
+let sidebarAdminRequest = 0;
+async function refreshSidebarAdminAccess() {
+    const version = ++sidebarAdminRequest;
+    document.querySelectorAll("[data-sidebar-admin-link]").forEach(link => link.remove());
+    if (!window.educariaAdminApi) return;
+    try {
+        const allowed = await window.educariaAdminApi.access();
+        if (!allowed || version !== sidebarAdminRequest) return;
+        document.querySelectorAll(".app-sidebar-nav").forEach(nav => {
+            const link = document.createElement("a");
+            link.href = "administracao.html";
+            link.className = "sidebar-nav-link";
+            link.dataset.sidebarAdminLink = "";
+            link.textContent = "Administração";
+            nav.append(link);
+        });
+        decorateSidebarNavigation();
+        setActiveSidebarLinks();
+    } catch { /* Fail closed without disrupting the teacher's navigation. */ }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     ensureMobileSidebarControls();
     ensureSidebarProfile();
@@ -645,10 +669,20 @@ document.addEventListener("DOMContentLoaded", () => {
     bindSidebarCreateClass();
     bindSidebarToggles();
     bindSidebarPanelOpeners();
+    refreshSidebarAdminAccess();
 });
 
 document.addEventListener("educaria-auth-changed", () => {
     hydrateSidebarTeacher();
+    refreshSidebarAdminAccess();
+});
+
+window.addEventListener("pagehide", () => {
+    sidebarAdminRequest += 1;
+    document.querySelectorAll("[data-sidebar-admin-link]").forEach(link => link.remove());
+});
+window.addEventListener("pageshow", event => {
+    if (event.persisted) refreshSidebarAdminAccess();
 });
 
 document.addEventListener("educaria-classes-updated", () => {

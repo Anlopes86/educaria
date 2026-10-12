@@ -22,6 +22,7 @@ import {
 import { createAiCreditStore } from "./ai-credit-store.js";
 import { createFirebaseServices, verifyActiveSession, sessionErrorResponse } from "./firebase-admin-services.js";
 import { createDeletionManager, createFirestoreDeletionStore, createDeletionActions } from "./account-deletion.js";
+import { createAdminRouter, parseAdminUids } from "./admin-dashboard.js";
 
 function parseNonNegativeNumber(value, fallback) {
     const parsed = Number(value);
@@ -2414,6 +2415,31 @@ async function extractTextFromFile(file) {
 
     return "";
 }
+
+app.use("/api/admin", createAdminRouter({
+    getServices: getFirebaseServices,
+    adminUids: parseAdminUids(process.env.ADMIN_UIDS),
+    getPlan: async (user) => {
+        await loadBillingStore();
+        return aiPlanForRequest({ educariaUser: { ...user.customClaims, uid: user.uid } });
+    },
+    getCredits: async (user) => {
+        const day = dailyCreditDateKey();
+        const plan = user.plan;
+        const unlimited = aiUnlimitedUidAllowList.has(user.uid);
+        const limit = aiDailyCreditLimitForPlan(plan);
+        const balance = unlimited ? null : await aiCreditRepository.peek({
+            key: `${user.uid}:${plan}:${day}`, userId: user.uid, day, plan
+        });
+        return {
+            day, limit: unlimited ? null : limit, unlimited,
+            used: balance ? Math.max(0, balance.used - balance.reserved) : null,
+            reserved: balance?.reserved ?? null,
+            remaining: balance ? Math.max(0, limit - balance.used) : null,
+            resetAt: nextDailyCreditResetAt(), store: aiCreditStoreType()
+        };
+    }
+}));
 
 app.get("/api/health", (_request, response) => {
     if (process.env.NODE_ENV === "production") {
