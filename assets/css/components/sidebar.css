@@ -1,0 +1,269 @@
+/* Shared navigation: the same paper, pastel and deep-teal palette as the activities. */
+body.product-body .app-shell > .app-sidebar {
+    background: #153c41;
+    border-right: 1px solid #31565a;
+    color: #f1f5e9;
+    gap: 20px;
+}
+
+body.product-body .app-sidebar .app-sidebar-profile {
+    padding: 12px 10px;
+    gap: 10px;
+    border: 1px solid #426165;
+    border-radius: 18px;
+    background: #21474b;
+    box-shadow: 0 3px 0 #102f34;
+}
+
+body.product-body .app-sidebar .app-sidebar-profile:hover {
+    background: #2b5456;
+    border-color: #8cac9e;
+    box-shadow: 0 3px 0 #102f34;
+    transform: none;
+}
+
+body.product-body .app-sidebar .dashboard-avatar {
+    background: #d7e6b9;
+    color: #244c43;
+    border-radius: 14px;
+    box-shadow: 0 3px 0 #a8bf91;
+}
+
+body.product-body .app-sidebar .app-sidebar-profile strong { color: #fafbf0; }
+body.product-body .app-sidebar .app-sidebar-profile-copy > span { color: #c2d6ce; }
+body.product-body .app-sidebar .app-sidebar-profile-home {
+    background: #34595a;
+    color: #e0edcc;
+}
+body.product-body .app-sidebar .app-sidebar-profile-home .sidebar-nav-icon { color: inherit; }
+
+body.product-body .app-sidebar .app-sidebar-nav {
+    gap: 7px;
+    padding: 3px 5px 10px 3px;
+    scrollbar-color: #8cac9e transparent;
+    overscroll-behavior: contain;
+}
+body.product-body .app-sidebar .app-sidebar-nav::-webkit-scrollbar-thumb { background: #8cac9e; }
+
+body.product-body .app-sidebar .sidebar-nav-link {
+    min-height: 49px;
+    padding: 8px 11px;
+    border-radius: 14px;
+    color: #e3eee3;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    transform: none;
+    font-size: .91rem;
+}
+
+body.product-body .app-sidebar .sidebar-nav-link:hover,
+body.product-body .app-sidebar .sidebar-nav-link:focus-visible {
+    background: #2a5154;
+    border-color: #4a6d68;
+    color: #fffef3;
+    box-shadow: none;
+    transform: none;
+}
+
+body.product-body .app-sidebar .sidebar-nav-link.is-active {
+    background: #f0f4e6;
+    color: #193f41;
+    border-color: #e2ebd7;
+    box-shadow: 0 3px 0 #0f3034;
+}
+
+body.product-body .app-sidebar .sidebar-nav-link > .sidebar-nav-icon {
+    width: 31px;
+    height: 31px;
+    padding: 6px;
+    border-radius: 10px;
+    color: #365d50;
+    background: #d9e8c8;
+}
+body.product-body .app-sidebar [data-sidebar-nav-key="library"] > .sidebar-nav-icon {
+    background: #e6dcf0;
+    color: #6b517c;
+}
+body.product-body .app-sidebar [data-sidebar-nav-key="classes"] > .sidebar-nav-icon,
+body.product-body .app-sidebar [data-sidebar-nav-key="create-class"] > .sidebar-nav-icon {
+    background: #f1e4c9;
+    color: #796039;
+}
+body.product-body .app-sidebar [data-sidebar-nav-key="recent-classes"] > .sidebar-nav-icon {
+    background: #d3e8e0;
+    color: #2c645c;
+}
+body.product-body .app-sidebar [data-sidebar-nav-key="settings"] > .sidebar-nav-icon {
+    background: #dfe9ed;
+    color: #496871;
+}
+
+body.product-body .app-sidebar .sidebar-nav-link--primary,
+body.product-body .app-sidebar .sidebar-nav-link--primary:hover,
+body.product-body .app-sidebar .sidebar-nav-link--primary:focus-visible,
+body.product-body .app-sidebar .sidebar-nav-link--primary.is-active {
+    min-height: 54px;
+    margin: 0 0 9px;
+    background: #d7e6b9;
+    color: #214c42;
+    border-color: #e1ecc8;
+    box-shadow: 0 4px 0 #a5bd91, 0 8px 14px #092a3026;
+    transform: none;
+    font-weight: 800;
+}
+body.product-body .app-sidebar .sidebar-nav-link--primary:hover { background: #e3efca; }
+body.product-body .app-sidebar .sidebar-nav-link--primary > .sidebar-nav-icon {
+    background: #c4d89f;
+    color: #315842;
+}
+body.product-body .app-sidebar .sidebar-nav-link--toggle::after { color: currentColor; }
+body.product-body .app-sidebar [data-sidebar-nav-key="classes"] { margin-top: 0; }
+body.product-body .app-sidebar [data-sidebar-nav-key="settings"] { margin-top: 14px; }
+
+body.product-body .app-sidebar .sidebar-subpanel {
+    margin: 0 0 6px;
+    padding: 12px;
+    border: 1px solid #ccdacb;
+    border-radius: 17px;
+    background: #f5f7ec;
+    color: #244b45;
+    gap: 16px;
+}
+body.product-body .app-sidebar .sidebar-subpanel[hidden] { display: none; }
+body.product-body .app-sidebar .sidebar-subgroup-label {
+    color: #536c5d;
+    font-size: .66rem;
+    letter-spacing: .07em;
+}
+body.product-body .app-sidebar .sidebar-subitems { gap: 4px; }
+body.product-body .app-sidebar .sidebar-subitem {
+    min-height: 42px;
+    padding: 9px 10px;
+    background: transparent;
+    color: #294d47;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+body.product-body .app-sidebar .sidebar-subitem:hover,
+body.product-body .app-sidebar .sidebar-subitem:focus-visible {
+    background: #e4eddf;
+    border-color: #becfb8;
+    color: #193f38;
+}
+body.product-body .app-sidebar .sidebar-subitem.is-active {
+    background: #dcebcf;
+    border-color: #a4c099;
+    color: #1e473b;
+    box-shadow: inset 3px 0 0 #527c58;
+}
+body.product-body .app-sidebar .sidebar-format-link { justify-content: flex-start; gap: 10px; }
+body.product-body .app-sidebar .sidebar-format-link::before {
+    content: "";
+    width: 11px;
+    height: 11px;
+    flex: 0 0 11px;
+    border-radius: 4px;
+    background: #a5c2a0;
+    border: 1px solid #173c4329;
+}
+body.product-body .app-sidebar [data-sidebar-tone="1"]::before { background: #c8b4dd; }
+body.product-body .app-sidebar [data-sidebar-tone="2"]::before { background: #e2c991; }
+body.product-body .app-sidebar [data-sidebar-tone="3"]::before { background: #a6cbd1; }
+
+body.product-body .app-sidebar .sidebar-creator-shortcut {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 9px;
+    border: 1px solid #b5ccab;
+    border-radius: 12px;
+    background: #e2edce;
+    color: #244d40;
+    text-decoration: none;
+}
+body.product-body .app-sidebar .sidebar-creator-shortcut:hover { background: #d6e6bd; }
+body.product-body .app-sidebar .sidebar-creator-shortcut .sidebar-nav-icon { color: #3c6749; }
+body.product-body .app-sidebar .sidebar-creator-shortcut > span:nth-child(2) { flex: 1; }
+body.product-body .app-sidebar .sidebar-creator-shortcut strong { display: block; font-size: .85rem; }
+body.product-body .app-sidebar .sidebar-creator-shortcut small { display: block; margin-top: 3px; font-size: .72rem; }
+
+body.product-body .app-sidebar .sidebar-create-card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    border-radius: 0;
+}
+body.product-body .app-sidebar .sidebar-create-card .platform-field label { color: #294e46; }
+body.product-body .app-sidebar .sidebar-create-card :is(input, select) {
+    min-width: 0;
+    background: #fffef8;
+    border-color: #b6c9bb;
+    border-radius: 10px;
+    color: #23473f;
+}
+body.product-body .app-sidebar [data-sidebar-create-class] {
+    background: #24635b;
+    border-color: #24635b;
+    color: #fffef2;
+    box-shadow: 0 3px 0 #17443e;
+}
+body.product-body .app-sidebar [data-sidebar-create-class]:hover { background: #194d46; }
+body.product-body .app-sidebar .sidebar-feedback { color: #315e45; font-size: .82rem; }
+body.product-body .app-sidebar .sidebar-empty-state { border-color: #b7cab6; color: #536954; }
+body.product-body .app-sidebar .sidebar-empty-state strong { color: #2b503d; }
+
+body.product-body .app-sidebar .app-sidebar-footer { border-color: #41605e; }
+body.product-body .app-sidebar .sidebar-logout-button {
+    justify-content: flex-start;
+    min-height: 44px;
+    padding: 10px 14px;
+    color: #ccdcd1;
+}
+body.product-body .app-sidebar .sidebar-logout-button .sidebar-nav-icon { color: inherit; }
+body.product-body .app-sidebar .sidebar-logout-button .sidebar-nav-label { text-align: left; }
+body.product-body .app-sidebar .sidebar-logout-button:hover { background: #4e4943; color: #ffdfca; border-color: #796455; }
+
+body.product-body .app-sidebar :is(a, button):focus-visible {
+    outline: 2px solid #e3edb8;
+    outline-offset: 2px;
+}
+body.product-body .app-sidebar .sidebar-subpanel :is(a, button, input, select):focus-visible {
+    outline: 2px solid #2c6b5b;
+    outline-offset: 2px;
+}
+
+@media (max-width: 860px) {
+    body.product-body .app-shell > .app-sidebar {
+        padding-top: max(70px, calc(env(safe-area-inset-top) + 54px));
+        padding-bottom: max(18px, env(safe-area-inset-bottom));
+        gap: 17px;
+    }
+    body.product-body .app-sidebar .app-sidebar-profile { padding-right: 10px; }
+    body.product-body .app-sidebar-mobile-toggle {
+        background: #f5f7ec;
+        border-color: #aac2b2;
+        color: #1d4944;
+        box-shadow: 0 3px 0 #d0ddc8, 0 6px 16px #153c4114;
+    }
+    body.product-body .app-sidebar-mobile-toggle .sidebar-nav-icon { color: inherit; }
+    body.product-body .app-sidebar .app-sidebar-mobile-close {
+        top: max(12px, env(safe-area-inset-top));
+        width: 44px;
+        height: 44px;
+        background: #31575a;
+        border-color: #6f9184;
+        color: #eff5dc;
+    }
+    body.product-body .app-sidebar-backdrop { background: #0b2d35a8; }
+    body.product-body .app-sidebar .sidebar-subitem { min-height: 44px; }
+    body.product-body .app-sidebar-mobile-toggle:focus-visible { outline: 2px solid #24635b; outline-offset: 3px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body.product-body .app-sidebar,
+    body.product-body .app-sidebar *,
+    body.product-body .app-sidebar-backdrop { transition: none; }
+}

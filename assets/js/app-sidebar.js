@@ -147,12 +147,12 @@ function reorderSidebarNavigation() {
             return panel ? [item, panel] : [item];
         };
         const ordered = [
-            ...itemFor('a[href="index.html"]'),
-            ...itemFor('[data-sidebar-toggle="create-class"]'),
             ...itemFor('[data-sidebar-toggle="formats"]'),
-            ...itemFor('[data-sidebar-classes-page-link]'),
-            ...itemFor('[data-sidebar-toggle="classes"]'),
+            ...itemFor('a[href="index.html"]'),
             ...itemFor('a[href="biblioteca.html"]'),
+            ...itemFor('[data-sidebar-classes-page-link]'),
+            ...itemFor('[data-sidebar-toggle="create-class"]'),
+            ...itemFor('[data-sidebar-toggle="classes"]'),
             ...itemFor('a[href="configuracoes.html"]')
         ];
         ordered.forEach((item) => nav.append(item));
@@ -188,7 +188,9 @@ function enhanceSidebarPanels() {
         const panel = document.querySelector(`[data-sidebar-panel="${key}"]`);
         if (!panel) return;
         panel.id = panel.id || `sidebar-panel-${key}`;
+        button.id = button.id || `sidebar-toggle-${key}`;
         panel.setAttribute("role", "region");
+        panel.setAttribute("aria-labelledby", button.id);
         button.setAttribute("aria-controls", panel.id);
     });
 }
@@ -198,15 +200,16 @@ function ensureSidebarClassesPageLink() {
         const parent = button.parentElement;
         if (!parent) return;
 
-        const previous = button.previousElementSibling;
-        if (!previous || !previous.matches("[data-sidebar-classes-page-link]")) {
-            const link = document.createElement("a");
+        let link = parent.querySelector("[data-sidebar-classes-page-link]");
+        if (!link) {
+            link = document.createElement("a");
             link.href = "turmas.html";
             link.className = "sidebar-nav-link";
-            link.textContent = sidebarTranslate("dashboard.nav.myClasses", "Turmas");
             link.setAttribute("data-sidebar-classes-page-link", "");
             parent.insertBefore(link, button);
         }
+        link.setAttribute("data-i18n", "dashboard.nav.myClasses");
+        link.textContent = sidebarTranslate("dashboard.nav.myClasses", "Minhas turmas");
 
         button.textContent = sidebarTranslate("sidebar.nav.recentClasses", "Turmas recentes");
     });
@@ -222,9 +225,13 @@ function renderSidebarFormats() {
     const currentPath = currentSidebarPath();
 
     document.querySelectorAll('[data-sidebar-panel="formats"]').forEach((panel) => {
-        if (panel.querySelector("[data-sidebar-format-list]")) return;
-
         panel.innerHTML = `
+            <a href="index.html#quick-ai-create" class="sidebar-creator-shortcut">
+                <span class="sidebar-nav-icon" aria-hidden="true">${SIDEBAR_ICONS["create-activity"]}</span>
+                <span><strong>${escapeSidebarHtml(sidebarTranslate("sidebar.creator.title", "Começar com IA"))}</strong>
+                <small>${escapeSidebarHtml(sidebarTranslate("sidebar.creator.hint", "Um tema ou arquivo"))}</small></span>
+                <span aria-hidden="true">↗</span>
+            </a>
             <div class="sidebar-subgroup">
                 <span class="sidebar-subgroup-label">${sidebarTranslate("sidebar.formats.core", "Formatos principais")}</span>
                 <div class="sidebar-subitems" data-sidebar-format-list="core"></div>
@@ -240,10 +247,10 @@ function renderSidebarFormats() {
         const group = root.dataset.sidebarFormatList === "extra" ? "extra" : "core";
         const items = SIDEBAR_FORMATS[group];
 
-        root.innerHTML = items.map((item) => {
+        root.innerHTML = items.map((item, index) => {
             const active = item.href.split("?")[0] === currentPath ? " is-active" : "";
             return `
-                <a href="${item.href}" class="sidebar-subitem${active}">
+                <a href="${item.href}" class="sidebar-subitem sidebar-format-link${active}" data-sidebar-tone="${index % 4}">
                     ${escapeSidebarHtml(sidebarTranslate(item.labelKey, item.label))}
                 </a>
             `;
@@ -263,7 +270,7 @@ function renderSidebarClasses() {
         root.innerHTML = `
             <div class="sidebar-empty-state">
                 <strong>${sidebarTranslate("sidebar.empty.noClasses", "Nenhuma turma criada")}</strong>
-                <span>${sidebarTranslate("sidebar.empty.createFirstClass", "Crie sua primeira turma em Nova turma.")}</span>
+                <span>${sidebarTranslate("sidebar.empty.createFirstClass", "Comece por Criar turma para organizar suas atividades.")}</span>
             </div>
         `;
         return;
@@ -271,7 +278,7 @@ function renderSidebarClasses() {
 
     const visibleClasses = classes.slice(0, 5);
     root.innerHTML = visibleClasses.map((className) => `
-        <a href="turma.html" class="sidebar-subitem ${className === current ? "is-active" : ""}" data-sidebar-class-link="${escapeSidebarHtml(className)}">
+        <a href="turma.html" class="sidebar-subitem" data-sidebar-class-link="${escapeSidebarHtml(className)}">
             ${escapeSidebarHtml(className)}
         </a>
     `).join("") + (classes.length > visibleClasses.length ? `
@@ -279,6 +286,7 @@ function renderSidebarClasses() {
             ${escapeSidebarHtml(sidebarTranslate("sidebar.classes.viewAll", "Ver todas as turmas"))}
         </a>
     ` : "");
+    setActiveSidebarLinks();
 }
 
 function createSidebarClass() {
@@ -384,12 +392,17 @@ function closeSidebarPanels() {
 
 function setActiveSidebarLinks() {
     const currentPath = currentSidebarPath();
+    const currentClass = currentSidebarClass();
 
     document.querySelectorAll(".sidebar-nav-link[href], .sidebar-subitem[href]").forEach((link) => {
         const href = link.getAttribute("href") || "";
         const normalized = href.split(/[?#]/)[0];
-        const isActive = normalized === currentPath;
-        link.classList.toggle("is-active", isActive);
+        const isClassLink = link.hasAttribute("data-sidebar-class-link");
+        const isActive = normalized === currentPath && !href.includes("#")
+            && (!isClassLink || link.dataset.sidebarClassLink === currentClass);
+        const isParentSection = normalized === "turmas.html" && currentPath === "turma.html"
+            && link.classList.contains("sidebar-nav-link");
+        link.classList.toggle("is-active", isActive || isParentSection);
         if (isActive) {
             link.setAttribute("aria-current", "page");
         } else {
@@ -445,6 +458,15 @@ function bindSidebarToggles() {
             }
 
             openSidebarPanel(key);
+            // Scroll only the menu, never the page or the guided tour's target.
+            window.requestAnimationFrame(() => {
+                const nav = button.closest(".app-sidebar-nav");
+                if (!nav || panel.hidden) return;
+                const available = nav.clientHeight - button.offsetHeight - 12;
+                const overflow = Math.min(panel.getBoundingClientRect().bottom,
+                    panel.getBoundingClientRect().top + available) - nav.getBoundingClientRect().bottom;
+                if (overflow > 0) nav.scrollTop += overflow + 8;
+            });
         });
     });
 }
@@ -480,10 +502,75 @@ function hydrateSidebarTeacher() {
     });
 }
 
+let sidebarReturnFocus = null;
+let sidebarBackgroundState = null;
+
 function setMobileSidebarOpen(open) {
-    const shouldOpen = Boolean(open) && window.matchMedia("(max-width: 860px)").matches;
+    const sidebar = document.querySelector(".app-sidebar");
+    if (!sidebar) return;
+    const mobile = window.matchMedia("(max-width: 860px)").matches;
+    const shouldOpen = Boolean(open) && mobile;
+    const wasOpen = document.body.classList.contains("app-sidebar-open");
+    const touring = document.body.classList.contains("dashboard-tour-active");
+    const toggle = document.querySelector("[data-sidebar-mobile-toggle]");
+
+    if (shouldOpen && !wasOpen && !touring) sidebarReturnFocus = document.activeElement;
     document.body.classList.toggle("app-sidebar-open", shouldOpen);
-    document.querySelector("[data-sidebar-mobile-toggle]")?.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+    toggle?.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+    sidebar.inert = mobile && !shouldOpen;
+    if (!touring) document.querySelector("[data-sidebar-backdrop]")?.toggleAttribute("inert", !shouldOpen);
+
+    if (shouldOpen && !touring) {
+        sidebar.removeAttribute("aria-hidden");
+        sidebar.setAttribute("role", "dialog");
+        sidebar.setAttribute("aria-modal", "true");
+        sidebar.setAttribute("aria-label", sidebarTranslate("dashboard.nav.main", "Navegação principal"));
+        if (!wasOpen) document.querySelector("[data-sidebar-mobile-close]")?.focus();
+        const content = document.querySelector(".app-content");
+        if (content && !sidebarBackgroundState) {
+            sidebarBackgroundState = { element: content, inert: content.inert };
+            content.inert = true;
+        }
+    } else {
+        sidebar.removeAttribute("role");
+        sidebar.removeAttribute("aria-modal");
+        sidebar.removeAttribute("aria-label");
+        if (sidebarBackgroundState) {
+            sidebarBackgroundState.element.inert = sidebarBackgroundState.inert;
+            sidebarBackgroundState = null;
+        }
+        if (!touring && (wasOpen || (mobile && sidebar.contains(document.activeElement)))) {
+            const target = mobile ? (sidebarReturnFocus?.isConnected ? sidebarReturnFocus : toggle)
+                : sidebar.querySelector(".app-sidebar-profile");
+            target?.focus();
+            sidebarReturnFocus = null;
+        }
+        if (mobile && !shouldOpen) sidebar.setAttribute("aria-hidden", "true");
+        else sidebar.removeAttribute("aria-hidden");
+    }
+}
+
+function handleSidebarKeydown(event) {
+    if (!document.body.classList.contains("app-sidebar-open")
+        || document.body.classList.contains("dashboard-tour-active")) return;
+    if (event.key === "Escape") {
+        event.preventDefault();
+        setMobileSidebarOpen(false);
+        return;
+    }
+    if (event.key !== "Tab") return;
+    const sidebar = document.querySelector(".app-sidebar");
+    const focusable = [...sidebar.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex="0"]')]
+        .filter(element => element.getClientRects().length && !element.closest("[inert], [hidden]"));
+    const first = focusable[0];
+    const last = focusable.at(-1);
+    if (!first) return;
+    if (!sidebar.contains(document.activeElement)
+        || (event.shiftKey && document.activeElement === first)
+        || (!event.shiftKey && document.activeElement === last)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+    }
 }
 
 function ensureMobileSidebarControls() {
@@ -516,6 +603,8 @@ function ensureMobileSidebarControls() {
     backdrop.className = "app-sidebar-backdrop";
     backdrop.dataset.sidebarBackdrop = "";
     backdrop.setAttribute("aria-label", sidebarTranslate("sidebar.mobile.close", "Fechar menu principal"));
+    backdrop.setAttribute("aria-hidden", "true");
+    backdrop.tabIndex = -1;
 
     document.body.append(toggle, backdrop);
     toggle.addEventListener("click", () => setMobileSidebarOpen(!document.body.classList.contains("app-sidebar-open")));
@@ -524,15 +613,20 @@ function ensureMobileSidebarControls() {
 
     sidebar.addEventListener("click", (event) => {
         if (event.target.closest("a[href]")) setMobileSidebarOpen(false);
+        if (event.target.closest(".sidebar-creator-shortcut")) {
+            closeSidebarPanels();
+            if (currentSidebarPath() === "index.html") {
+                window.requestAnimationFrame(() => document.querySelector("#quick-ai-create textarea")?.focus());
+            }
+        }
     });
 
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") setMobileSidebarOpen(false);
-    });
+    document.addEventListener("keydown", handleSidebarKeydown);
 
     window.addEventListener("resize", () => {
-        if (!window.matchMedia("(max-width: 860px)").matches) setMobileSidebarOpen(false);
+        setMobileSidebarOpen(document.body.classList.contains("app-sidebar-open"));
     });
+    setMobileSidebarOpen(false);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
