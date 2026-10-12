@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Apresentação de Debate Guiado | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261011-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261012-2">
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/presentation-mode.js?v=20261009-2" defer></script>
-    <script src="../assets/js/debate-runtime.js?v=20260927-2" defer></script>
+    <script src="../assets/js/debate-runtime.js?v=20261012-2" defer></script>
 </head>
 <body class="debate-presentation-shell" data-material-type="debate">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -96,7 +96,10 @@
             </article>
 
             <div class="presentation-controls presentation-controls--floating debate-floating-controls">
-                <button type="button" class="presentation-nav-button presentation-nav-button--prev" data-debate-stage-prev aria-label="Etapa anterior">Anterior</button>
+                <button type="button" class="presentation-nav-button presentation-nav-button--prev" data-debate-stage-prev aria-label="Etapa anterior">
+                    <svg class="presentation-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m16 4-8 8 8 8"/></svg>
+                    <span class="presentation-nav-label">Anterior</span>
+                </button>
                 <span class="presentation-counter" data-debate-stage-counter>1 de 3</span>
                 <div class="debate-timer" aria-label="Cronômetro da rodada">
                     <output class="debate-timer-output" data-debate-timer role="timer" aria-live="off">05:00</output>
@@ -104,7 +107,10 @@
                     <button type="button" class="platform-link-button platform-link-secondary" data-debate-timer-reset aria-label="Reiniciar cronômetro da rodada">Reiniciar</button>
                     <span data-debate-timer-status role="status" aria-live="polite"></span>
                 </div>
-                <button type="button" class="presentation-nav-button presentation-nav-button--next" data-debate-stage-next aria-label="Próxima etapa">Próxima</button>
+                <button type="button" class="presentation-nav-button presentation-nav-button--next" data-debate-stage-next aria-label="Próxima etapa">
+                    <svg class="presentation-nav-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m8 4 8 8-8 8"/></svg>
+                    <span class="presentation-nav-label">Próxima</span>
+                </button>
             </div>
         </section>
     </main>

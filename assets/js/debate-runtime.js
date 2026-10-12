@@ -524,7 +524,9 @@ function renderDebateApplication() {
 
         document.querySelectorAll("[data-debate-stage-next]").forEach((button) => {
             button.disabled = runtime.activeIndex === runtime.steps.length - 1;
-            button.textContent = runtime.activeIndex === runtime.steps.length - 1 ? "Última etapa" : "Próxima";
+            const label = button.querySelector(".presentation-nav-label") || button;
+            label.textContent = button.disabled ? "Última etapa" : "Próxima";
+            button.setAttribute("aria-label", button.disabled ? "Última etapa" : "Próxima etapa");
         });
 
         syncDebateGuidanceUi(runtime);

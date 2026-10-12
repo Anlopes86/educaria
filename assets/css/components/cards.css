@@ -225,7 +225,10 @@
     box-shadow: var(--shadow-md);
 }
 
-.editor-disclosure + .editor-disclosure {
+/* The item navigator sits between sections even while hidden. Keep the same
+   rhythm with it hidden, visible, or pinned while editing manual content. */
+.editor-disclosure + .editor-disclosure,
+.activity-builder-pane > .editor-disclosure ~ :is(.editor-disclosure, .builder-item-navigator) {
     margin-top: 14px;
 }
 

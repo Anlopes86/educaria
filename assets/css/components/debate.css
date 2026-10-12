@@ -573,12 +573,12 @@ body.presentation-controls-idle.debate-presentation-shell .debate-floating-contr
     transform: translateY(-1px) scale(1.02);
 }
 
-.debate-floating-controls .presentation-nav-button::before {
+.debate-floating-controls .presentation-nav-icon {
     display: block;
 }
 
-.debate-floating-controls .presentation-nav-button::after {
-    content: none;
+.debate-floating-controls .presentation-nav-label {
+    display: none;
 }
 
 .debate-variant--circle .debate-stage-content {

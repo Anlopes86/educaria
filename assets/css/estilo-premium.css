@@ -6,7 +6,7 @@
 @import url('./components/buttons.css');
 @import url('./components/forms.css');
 @import url('./components/filters.css');
-@import url('./components/cards.css?v=20260928-1');
+@import url('./components/cards.css?v=20261012-2');
 @import url('./components/empty-state.css');
 @import url('./components/lists.css');
 @import url('./components/modals.css?v=20261002-1');
@@ -14,9 +14,9 @@
 @import url('./components/offline-status.css');
 @import url('./components/navigation.css');
 @import url('./components/presentation.css?v=20260930-1');
-@import url('./components/presentation-stages.css?v=20260928-2');
+@import url('./components/presentation-stages.css?v=20261012-2');
 @import url('./components/presentation-activities.css?v=20261010-3');
-@import url('./components/debate.css?v=20260930-1');
+@import url('./components/debate.css?v=20261012-2');
 @import url('./components/lesson-sequence.css?v=20261002-1');
 @import url('./components/previews.css?v=20261010-1');
 @import url('./components/toolbar.css');
@@ -34,7 +34,7 @@
 @import url('./components/mobile.css?v=20260928-2');
 @import url('./pages/editor.css?v=20261003-1');
 @import url('./components/presentation-refinements.css?v=20261003-1');
-@import url('./components/presentation-fit.css?v=20261010-3');
+@import url('./components/presentation-fit.css?v=20261012-2');
 @import url('./components/activity-visual-system.css?v=20261011-2');
 @import url('./pages/collections.css?v=20261011-3');
 @import url('./components/sidebar.css?v=20261012-1');
