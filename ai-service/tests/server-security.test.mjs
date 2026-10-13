@@ -85,7 +85,7 @@ test("AI credits reject unauthenticated requests", async () => {
 });
 
 test("administrative routes reject anonymous access in the production server", async () => {
-    for (const path of ["/api/admin/access", "/api/admin/users"]) {
+    for (const path of ["/api/admin/access", "/api/admin/users", "/api/admin/usage"]) {
         const response = await fetch(`${baseUrl}${path}`);
         assert.equal(response.status, 401);
         assert.match(response.headers.get("cache-control"), /no-store/);

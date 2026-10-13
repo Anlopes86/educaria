@@ -4,7 +4,7 @@
     const pending = new Set();
 
     async function request(path, params = {}, signal) {
-        if (!["/access", "/users"].includes(path)) throw new Error("Consulta administrativa inválida.");
+        if (!["/access", "/users", "/usage"].includes(path)) throw new Error("Consulta administrativa inválida.");
         const version = sessionVersion;
         const controller = new AbortController();
         const abort = () => controller.abort();

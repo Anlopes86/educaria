@@ -12,7 +12,7 @@ const teacher = (index, extra = {}) => ({ uid: `teacher-${index}`, displayName: 
     customClaims: { secret: "never-return-this" }, providerData: [{ accessToken: "never-return-this" }], ...extra });
 
 async function harness(t, options = {}) {
-    const calls = { list: 0, profile: 0, credit: 0, verify: 0 };
+    const calls = { list: 0, profile: 0, credit: 0, verify: 0, usage: 0 };
     const users = options.users || [teacher(1), teacher(2, { displayName: "André de Teste", disabled: true, customClaims: { plan: "pro" } })];
     const services = {
         auth: { listUsers: async (size, token) => {
@@ -32,6 +32,11 @@ async function harness(t, options = {}) {
     const app = express();
     app.use("/api/admin", createAdminRouter({
         getServices: () => services, adminUids: options.adminUids || new Set(["owner"]), now: () => timestamp,
+        usageAnalytics: { read: async () => {
+            calls.usage += 1;
+            if (options.usageError) throw new Error("sensitive-usage-error");
+            return { events: [], collection: { enabled: true, store: "firestore" }, truncated: false, updatedAt: new Date(timestamp).toISOString() };
+        } },
         verifySession: async token => {
             calls.verify += 1;
             if (token === "revoked") throw { code: "auth/id-token-revoked" };
@@ -61,7 +66,7 @@ test("UID configuration fails closed and is not an email, role or wildcard grant
 });
 test("anonymous access never reads the directory or balances", async t => {
     const h = await harness(t);
-    for (const path of ["/access", "/users"]) assert.equal((await h.query(path, "")).status, 401);
+    for (const path of ["/access", "/users", "/usage"]) assert.equal((await h.query(path, "")).status, 401);
     assert.equal(h.calls.list + h.calls.profile + h.calls.credit + h.calls.verify, 0);
 });
 test("ordinary accounts cannot gain access through claimed roles or after owner primes cache", async t => {
@@ -162,4 +167,18 @@ test("Firestore credit snapshots never commit expired reservation cleanup", asyn
     store.commit = () => { throw new Error("peek must never commit"); };
     assert.deepEqual(await store.peek({ key: "anything" }), { used: 25, reserved: 0 });
     assert.equal(bucket.used, 35);
+});
+
+test("usage reporting requires active owner session and never exposes provider errors", async t => {
+    const h = await harness(t);
+    for (const token of ["teacher", "revoked", "disabled", "deleting"]) assert.ok([401, 403].includes((await h.query("/usage", token)).status));
+    assert.equal(h.calls.usage, 0);
+    const response = await h.query("/usage?days=30");
+    assert.equal(response.status, 200); assert.equal(response.headers.get("cache-control"), "private, no-store");
+    assert.equal((await response.json()).summary.generations, 0); assert.equal(h.calls.usage, 1);
+    assert.equal((await h.query("/usage?days=90")).status, 400); assert.equal(h.calls.usage, 1);
+    assert.equal((await h.query("/usage", "owner", "POST")).status, 405);
+    const down = await harness(t, { usageError: true });
+    const failure = await down.query("/usage"); assert.equal(failure.status, 503);
+    assert.doesNotMatch(await failure.text(), /sensitive/);
 });

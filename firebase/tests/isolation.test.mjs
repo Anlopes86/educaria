@@ -40,7 +40,7 @@ test("owners can edit their own tree, but not another teacher's tree or billing/
             await assertFails(deleteDoc(doc(context, path)));
         }
     }
-    for (const path of ["accountDeletionJobs/teacher-a", "aiCreditUsage/teacher-a", "unknown/a"]) {
+    for (const path of ["accountDeletionJobs/teacher-a", "aiCreditUsage/teacher-a", "aiGenerationUsage/event-a", "unknown/a"]) {
         await assertFails(getDoc(doc(own, path)));
         await assertFails(setDoc(doc(own, path), { pending: false }));
         await assertFails(deleteDoc(doc(own, path)));

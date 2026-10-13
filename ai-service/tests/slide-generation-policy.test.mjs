@@ -112,6 +112,8 @@ test("production route passes options to generation and rejects bad fields befor
         schemaFor: () => ({}), normalizeSlideGenerationOptions: options, extractTextFromFile: async () => "",
         normalizeActivityGenerationOptions, applyActivityGenerationSettings,
         activeAiTextProvider: () => "groq", aiCreditUsagePolicy: {}, aiGenerationMaxAttempts: 1,
+        activeAiTextModel: () => "openai/gpt-oss-120b", aiPlanForRequest: () => "free", isAiUnlimitedUser: () => false,
+        createUsageObservation: () => ({ finish: () => null }), usageContext: () => ({}), aiUsageAnalytics: { record: async () => {} },
         estimateAiCreditReservation: () => 10, reserveAiDailyCredit: async () => { reserved++; return { reserved: true, reservation: {} }; },
         estimateProviderTokenReservation: (_, __, ___, value) => { assert.equal(value.audience, "EJA"); return 100; },
         reserveAiProviderTokens: async () => ({ reserved: true, reservation: {} }),

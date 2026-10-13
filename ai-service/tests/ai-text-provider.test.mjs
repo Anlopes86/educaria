@@ -106,3 +106,13 @@ test("preserves Groq rate-limit errors for the API layer", async () => {
             && error.retryAfter === "12"
     );
 });
+
+test("empty content retains provider usage while absent usage is not fabricated as zero", async () => {
+    const generate = payload => generateGroqStructuredMaterial({ apiKey: "test-key", prompt: "test", schemaConfig: { name: "test", schema: {} },
+        fetchImpl: async () => new Response(JSON.stringify(payload), { status: 200 }) });
+    await assert.rejects(generate({ choices: [], usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 } }), error => error.usageMetadata.totalTokenCount === 15);
+    for (const usage of [undefined, {}, { prompt_tokens: "invalid" }]) {
+        const result = await generate({ choices: [{ message: { content: "{}" } }], usage });
+        assert.deepEqual(result.usageMetadata, {});
+    }
+});

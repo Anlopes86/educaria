@@ -23,6 +23,7 @@ import { createAiCreditStore } from "./ai-credit-store.js";
 import { createFirebaseServices, verifyActiveSession, sessionErrorResponse } from "./firebase-admin-services.js";
 import { createDeletionManager, createFirestoreDeletionStore, createDeletionActions } from "./account-deletion.js";
 import { createAdminRouter, parseAdminUids } from "./admin-dashboard.js";
+import { createUsageAnalytics, createUsageObservation, usageContext } from "./ai-usage-analytics.js";
 
 function parseNonNegativeNumber(value, fallback) {
     const parsed = Number(value);
@@ -140,6 +141,12 @@ const billingCheckoutUrl = String(process.env.BILLING_CHECKOUT_URL || "").trim()
 const billingWebhookSecret = String(process.env.BILLING_WEBHOOK_SECRET || "").trim();
 const billingStorePath = path.resolve(process.env.BILLING_STORE_PATH || ".data/billing-events.json");
 const getFirebaseServices = createFirebaseServices();
+const aiUsageAnalytics = createUsageAnalytics({
+    getServices: getFirebaseServices,
+    mode: aiCreditStoreMode === "firestore" ? "firestore" : "memory",
+    enabled: String(process.env.AI_USAGE_ANALYTICS_ENABLED || "true") !== "false",
+    report: code => console.warn(`EducarIA: ${code}`)
+});
 const accountDeletionEnabled = String(process.env.ACCOUNT_DELETION_ENABLED || "false") === "true";
 if (accountDeletionEnabled && (!aiAuthRequired || !process.env.FIREBASE_STORAGE_BUCKET)) {
     throw new Error("Account deletion requires authentication and FIREBASE_STORAGE_BUCKET.");
@@ -147,6 +154,7 @@ if (accountDeletionEnabled && (!aiAuthRequired || !process.env.FIREBASE_STORAGE_
 const accountDeletion = createDeletionManager({
     store: createFirestoreDeletionStore(getFirebaseServices),
     actions: createDeletionActions(getFirebaseServices, async (uid) => {
+        if (!await aiUsageAnalytics.removeUser(uid)) return false;
         await loadBillingStore();
         billingRecords.delete(uid);
         aiProUidAllowList.delete(uid);
@@ -2258,7 +2266,7 @@ function estimateProviderTokenReservation(materialType, action, sourceText, slid
  * @returns {Promise<{ material: object, usageMetadata: object, providerRequests: number, provider: string, model: string }>} Parsed material and accumulated provider usage
  * @throws {Error} If the provider call fails
  */
-async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig, slideOptions, generationOptions) {
+async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig, slideOptions, generationOptions, observation) {
     const provider = activeAiTextProvider();
     const model = activeAiTextModel(provider);
     const basePrompt = promptFor(materialType, action, sourceText, slideOptions, generationOptions);
@@ -2278,7 +2286,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
 
         let result = null;
         try {
-            result = await generateGroqStructuredMaterial({
+            result = await observation.call(() => generateGroqStructuredMaterial({
                 apiKey: groqApiKey,
                 model,
                 prompt: basePrompt,
@@ -2286,7 +2294,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
                 reasoningEffort: groqReasoningEffort,
                 maxCompletionTokens: groqMaxCompletionTokens,
                 timeoutMs: groqRequestTimeoutMs
-            });
+            }));
             return {
                 material: parseGeneratedJson(result.text),
                 usageMetadata: result.usageMetadata,
@@ -2332,11 +2340,11 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
         let result = null;
         try {
             providerRequests += 1;
-            result = await gemini.models.generateContent({
+            result = await observation.call(() => gemini.models.generateContent({
                 model,
                 contents: attempt.contents,
                 config: attempt.config
-            });
+            }));
 
             const material = parseGeneratedJson(result?.text || "");
             accumulatedUsage = mergeAiUsageMetadata(accumulatedUsage, result?.usageMetadata || {});
@@ -2418,6 +2426,7 @@ async function extractTextFromFile(file) {
 
 app.use("/api/admin", createAdminRouter({
     getServices: getFirebaseServices,
+    usageAnalytics: aiUsageAnalytics,
     adminUids: parseAdminUids(process.env.ADMIN_UIDS),
     getPlan: async (user) => {
         await loadBillingStore();
@@ -2604,6 +2613,9 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
     let requestReservation = null;
     let providerTokenReservation = null;
     let providerRequests = 0;
+    let observation, usageMaterial, usageError;
+    let usageSuccess = false;
+    let usageCharged = null;
     try {
         const materialType = String(request.body.materialType || "").trim();
         const action = String(request.body.action || "").trim();
@@ -2689,9 +2701,14 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         }
         requestReservation = dailyRequestReservation.reservation;
 
+        observation = createUsageObservation({
+            uid: request.educariaUser?.uid, plan: aiPlanForRequest(request), unlimited: isAiUnlimitedUser(request),
+            materialType, provider: activeAiTextProvider(), model: activeAiTextModel(),
+            context: usageContext(materialType, generationOptions, slideOptions, Boolean(request.file)), policy: aiCreditUsagePolicy
+        });
         let generated;
         try {
-            generated = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig, slideOptions, generationOptions);
+            generated = await generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig, slideOptions, generationOptions, observation);
             providerRequests = generated.providerRequests;
         } catch (error) {
             providerRequests = Math.max(0, Math.floor(Number(error?.providerRequests) || 0));
@@ -2702,6 +2719,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             ? { ...normalizeSlidesMaterial(generated.material, slideOptions), generation_options: slideOptions }
             : generated.material;
         const material = applyActivityGenerationSettings(materialType, normalizedMaterial, generationOptions);
+        usageMaterial = material;
 
         const providerTokenQuota = await settleAiProviderTokens(
             providerTokenReservation,
@@ -2711,9 +2729,11 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         const requestQuota = await settleAiDailyRequests(requestReservation, providerRequests, request);
         requestReservation = null;
         const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits, request);
+        usageCharged = settlement.charged;
         creditReservation = null;
         settlement.credits.requests = requestQuota;
         settlement.credits.platformTokens = providerTokenQuota;
+        usageSuccess = true;
         return response.json({
             ok: true,
             materialType,
@@ -2731,8 +2751,9 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             }
         });
     } catch (error) {
+        usageError = error;
         if (creditReservation?.reserved) {
-            await refundAiDailyCredit(creditReservation.reservation).catch((refundError) => {
+            await refundAiDailyCredit(creditReservation.reservation).then(() => { usageCharged = 0; }).catch((refundError) => {
                 console.warn("EducarIA AI credit refund failed:", refundError instanceof Error ? refundError.message : refundError);
             });
         }
@@ -2791,6 +2812,8 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             error: "Falha ao gerar material com IA.",
             ...(process.env.NODE_ENV === "development" && { detail: error instanceof Error ? error.message : "unknown_error" })
         });
+    } finally {
+        await aiUsageAnalytics.record(observation?.finish({ success: usageSuccess, material: usageMaterial, creditsCharged: usageCharged, error: usageError }));
     }
 });
 
@@ -2829,6 +2852,9 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, aiGenerationRateL
     let creditReservation = null;
     let requestReservation = null;
     let providerRequests = 0;
+    let observation, usageError;
+    let usageSuccess = false;
+    let usageCharged = null;
     try {
         const title = String(request.body.title || "").trim();
         const subtitle = String(request.body.subtitle || "").trim();
@@ -2874,17 +2900,23 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, aiGenerationRateL
         }
         requestReservation = dailyRequestReservation.reservation;
 
+        observation = createUsageObservation({
+            uid: request.educariaUser?.uid, plan: aiPlanForRequest(request), unlimited: isAiUnlimitedUser(request),
+            materialType: "image", provider: "gemini", model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image-preview",
+            context: usageContext("image"), policy: aiCreditUsagePolicy
+        });
         providerRequests = 1;
-        const result = await gemini.models.generateContent({
+        const result = await observation.call(() => gemini.models.generateContent({
             model: process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-image-preview",
             contents: imagePromptForSlide({ title, subtitle, body, prompt })
-        });
+        }));
 
         const parts = result?.candidates?.[0]?.content?.parts || [];
         const imagePart = parts.find((part) => part.inlineData?.data);
 
         if (!imagePart?.inlineData?.data) {
             await refundAiDailyCredit(creditReservation.reservation);
+            usageCharged = 0;
             creditReservation = null;
             const requestQuota = await settleAiDailyRequests(requestReservation, providerRequests, request);
             requestReservation = null;
@@ -2902,8 +2934,10 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, aiGenerationRateL
         const requestQuota = await settleAiDailyRequests(requestReservation, providerRequests, request);
         requestReservation = null;
         const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits, request);
+        usageCharged = settlement.charged;
         creditReservation = null;
         settlement.credits.requests = requestQuota;
+        usageSuccess = true;
 
         return response.json({
             ok: true,
@@ -2920,8 +2954,9 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, aiGenerationRateL
             }
         });
     } catch (error) {
+        usageError = error;
         if (creditReservation?.reserved) {
-            await refundAiDailyCredit(creditReservation.reservation).catch((refundError) => {
+            await refundAiDailyCredit(creditReservation.reservation).then(() => { usageCharged = 0; }).catch((refundError) => {
                 console.warn("EducarIA image credit refund failed:", refundError instanceof Error ? refundError.message : refundError);
             });
         }
@@ -2938,6 +2973,8 @@ app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, aiGenerationRateL
             error: "Falha ao gerar imagem com IA.",
             ...(process.env.NODE_ENV === "development" && { detail: error instanceof Error ? error.message : "unknown_error" })
         });
+    } finally {
+        await aiUsageAnalytics.record(observation?.finish({ success: usageSuccess, creditsCharged: usageCharged, error: usageError }));
     }
 });
 

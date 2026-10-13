@@ -7,7 +7,7 @@
     <meta name="referrer" content="no-referrer">
     <title>Administração | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261012-2">
-    <link rel="stylesheet" href="../assets/css/pages/admin.css?v=20261012-1">
+    <link rel="stylesheet" href="../assets/css/pages/admin.css?v=20261013-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js" defer></script>
@@ -15,9 +15,10 @@
     <script src="../assets/js/firebase-config.js" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
-    <script src="../assets/js/admin-access.js?v=20261012-1" defer></script>
+    <script src="../assets/js/admin-access.js?v=20261013-1" defer></script>
     <script src="../assets/js/app-sidebar.js?v=20261012-2" defer></script>
-    <script src="../assets/js/admin-dashboard.js?v=20261012-1" defer></script>
+    <script src="../assets/js/admin-usage.js?v=20261013-1" defer></script>
+    <script src="../assets/js/admin-dashboard.js?v=20261013-1" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -43,6 +44,7 @@
                     <h1 id="admin-title">Conheça quem está criando.</h1>
                     <p>Acompanhe os professores cadastrados e o uso diário de IA, em um só lugar.</p>
                     <span class="admin-readonly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg>Acesso restrito · Somente consulta</span>
+                    <nav class="admin-jump" aria-label="Seções da administração"><a href="#admin-directory-title">Professores</a><a href="#admin-usage-title">Consumo de IA ↓</a></nav>
                 </div>
                 <svg class="admin-hero-art" viewBox="0 0 280 190" aria-hidden="true">
                     <circle cx="225" cy="38" r="30" fill="#d7e6b9"/>
@@ -86,6 +88,38 @@
                 </section>
                 <p class="admin-footnote" data-admin-updated></p>
                 <p class="admin-footnote">Os saldos são em créditos de IA, não em tokens. O último login não indica se o professor está online. Materiais privados e arquivos enviados não são exibidos aqui.</p>
+                <section class="admin-directory admin-usage" aria-labelledby="admin-usage-title" data-admin-usage>
+                    <div class="admin-directory-heading"><div><span class="admin-eyebrow">Consumo real de IA</span><h2 id="admin-usage-title">Dados para planejar os próximos passos</h2></div><span class="admin-badge admin-badge--green">Sem alterar os limites</span></div>
+                    <p class="admin-footnote">Compare atividades e acompanhe seus testes. Tokens medem o uso da IA; créditos são o saldo do professor. Edição manual, apresentação e salvamento não entram neste relatório.</p>
+                    <form class="admin-filters admin-usage-filters" aria-label="Filtrar consumo de IA">
+                        <label><span>Período</span><select name="days"><option value="1">Últimas 24 horas</option><option value="7" selected>Últimos 7 dias</option><option value="30">Últimos 30 dias</option></select></label>
+                        <label><span>Atividade</span><select name="materialType"><option value="all">Todas as atividades</option><option value="slides">Slides</option><option value="quiz">Quiz</option><option value="flashcards">Flashcards</option><option value="memory">Memória</option><option value="match">Ligue os pontos</option><option value="wheel">Roleta</option><option value="mindmap">Mapa mental</option><option value="debate">Debate guiado</option><option value="wordsearch">Caça-palavras</option><option value="crossword">Palavras cruzadas</option><option value="hangman">Forca</option><option value="image">Imagem para slide</option></select></label>
+                        <label><span>Resultado</span><select name="status"><option value="all">Todos os resultados</option><option value="success">Concluídas</option><option value="failed">Falhas</option></select></label>
+                        <label><span>Grupo de contas</span><select name="cohort"><option value="all">Todos, incluindo meus testes</option><option value="limited">Com limite individual</option><option value="unlimited">Sem limite individual (testes)</option></select></label>
+                        <label><span>Professor</span><select name="uid"><option value="">Todos os professores</option></select></label>
+                        <button type="submit" class="platform-link-button platform-link-primary">Atualizar relatório</button>
+                    </form>
+                    <p class="admin-footnote" role="status" aria-live="polite" data-usage-status></p>
+                    <div data-usage-results hidden>
+                        <section class="admin-metrics admin-usage-metrics" aria-label="Resumo do consumo">
+                            <article class="admin-metric"><span>Gerações</span><strong data-usage-metric="generations">—</strong><small>Todas as tentativas de criação</small></article>
+                            <article class="admin-metric admin-metric--lilac"><span>Tokens conhecidos</span><strong data-usage-metric="tokens">—</strong><small>Entrada, saída e raciocínio</small></article>
+                            <article class="admin-metric admin-metric--blue"><span>Custo de referência</span><strong data-usage-metric="cost">—</strong><small>Estimativa em dólar, não cobrança</small></article>
+                            <article class="admin-metric admin-metric--sand"><span>Gerações com falha</span><strong data-usage-metric="failed">—</strong><small>Podem consumir tokens do provedor</small></article>
+                        </section>
+                        <p class="admin-usage-notes" data-usage-notes data-usage-output></p>
+                        <h3>Por tipo de atividade</h3>
+                        <p class="admin-footnote">As médias incluem somente medições completas dos filtros selecionados. P95 é o consumo que 95% dessas gerações não ultrapassaram. Use o filtro Concluídas para comparar criações entregues.</p>
+                        <div class="admin-table-wrap" data-usage-materials data-usage-output></div>
+                        <details class="admin-usage-group"><summary>Consumo por professor · até 20 contas com maior uso</summary><div class="admin-table-wrap" data-usage-users data-usage-output></div></details>
+                        <details class="admin-usage-group"><summary>5 gerações mais caras · entre as estimativas conhecidas</summary><div class="admin-table-wrap" data-usage-expensive data-usage-output></div></details>
+                        <details class="admin-usage-group" open><summary>Histórico e detalhes de cada geração</summary><div class="admin-table-wrap" data-usage-events data-usage-output></div>
+                            <nav class="admin-pagination" aria-label="Páginas de consumo"><button type="button" class="platform-link-button platform-link-secondary" data-usage-prev>← Anterior</button><span data-usage-page data-usage-output></span><button type="button" class="platform-link-button platform-link-secondary" data-usage-next>Próxima →</button></nav>
+                        </details>
+                        <p class="admin-footnote" data-usage-updated data-usage-output></p>
+                        <p class="admin-footnote">Custo estimado pela tarifa pública do Groq para GPT-OSS 120B, consultada em 13/10/2026. O plano gratuito pode não gerar cobrança. Outros modelos e imagens ficam sem preço até terem uma tarifa configurada. Não inclui hospedagem, impostos, câmbio ou pagamentos. <a href="https://console.groq.com/docs/model/openai/gpt-oss-120b" target="_blank" rel="noopener noreferrer">Ver tarifa de referência</a>.</p>
+                    </div>
+                </section>
             </div>
         </main>
     </div>

@@ -6,6 +6,12 @@ function positiveInteger(value, fallback) {
     return Math.max(1, Math.floor(parsed));
 }
 
+function reportedGroqUsage(usage) {
+    const reported = usage && ["prompt_tokens", "completion_tokens", "total_tokens"].some(key =>
+        typeof usage[key] === "number" && Number.isFinite(usage[key]) && usage[key] >= 0);
+    return reported ? groqUsageMetadata(usage) : {};
+}
+
 function groqResponseContent(message) {
     if (typeof message?.content === "string") return message.content;
     if (!Array.isArray(message?.content)) return "";
@@ -129,6 +135,7 @@ export async function generateGroqStructuredMaterial({
         error.code = payload?.error?.code || payload?.code || "groq_request_failed";
         error.status = response.status;
         error.retryAfter = response.headers.get("retry-after") || "";
+        error.usageMetadata = reportedGroqUsage(payload?.usage);
         throw error;
     }
 
@@ -137,12 +144,13 @@ export async function generateGroqStructuredMaterial({
         const error = new Error("O Groq não retornou conteúdo estruturado.");
         error.code = "groq_empty_response";
         error.status = 502;
+        error.usageMetadata = reportedGroqUsage(payload?.usage);
         throw error;
     }
 
     return {
         text,
-        usageMetadata: groqUsageMetadata(payload?.usage || {}),
+        usageMetadata: reportedGroqUsage(payload?.usage),
         providerRequestId: payload?.x_groq?.id || payload?.id || ""
     };
 }

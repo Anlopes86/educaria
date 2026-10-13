@@ -28,6 +28,7 @@
         return value && Number.isFinite(Date.parse(value)) ? dates.format(new Date(value)) : fallback;
     }
     function clearPrivateData() {
+        window.educariaAdminUsage?.clear();
         content.hidden = true;
         tbody.replaceChildren();
         root.querySelectorAll("[data-admin-metric]").forEach(node => { node.textContent = "—"; });
@@ -61,7 +62,7 @@
         const credits = user.credits;
         if (!credits) usage.append(element("span", "admin-secondary", "Saldo indisponível"));
         else if (credits.unlimited) {
-            usage.append(element("strong", "", "Sem limite individual"), element("small", "admin-secondary", "Consumo não contabilizado nesta conta"));
+            usage.append(element("strong", "", "Sem limite individual"), element("small", "admin-secondary", "Sem desconto de créditos. Veja o consumo no relatório abaixo."));
         } else {
             usage.append(element("strong", "", `${numbers.format(credits.remaining)} disponíveis`),
                 element("small", "admin-secondary", `${numbers.format(credits.used)} usados de ${numbers.format(credits.limit)}`));
@@ -71,7 +72,7 @@
         }
         return row;
     }
-    function render(payload) {
+    function render(payload, forceRefresh = false) {
         root.querySelectorAll("[data-admin-metric]").forEach(node => { node.textContent = numbers.format(payload.summary[node.dataset.adminMetric] ?? 0); });
         tbody.replaceChildren(...payload.users.map(renderUser));
         empty.hidden = payload.users.length !== 0;
@@ -85,6 +86,7 @@
         root.querySelector("[data-admin-updated]").textContent = `Cadastros consultados em ${dateLabel(payload.directoryUpdatedAt)}. Saldos atualizados em ${dateLabel(payload.balancesUpdatedAt)}.`;
         feedback.hidden = true;
         content.hidden = false;
+        window.educariaAdminUsage?.load(forceRefresh);
     }
     async function load(forceRefresh = false, focusResults = false) {
         const current = ++generation;
@@ -102,7 +104,7 @@
             }, controller.signal);
             if (current !== generation) return;
             if (!payload.ok || !Array.isArray(payload.users) || !payload.pagination || !payload.summary) throw new Error("Resposta inválida.");
-            render(payload);
+            render(payload, forceRefresh);
             if (focusResults) root.querySelector("[data-admin-count]").focus({ preventScroll: true });
         } catch (error) {
             if (current !== generation) return;
@@ -122,6 +124,11 @@
     refresh.addEventListener("click", () => load(true));
     root.querySelector("[data-admin-clear]").addEventListener("click", () => { form.reset(); page = 1; load(false, true); });
     document.addEventListener("educaria-auth-changed", () => { page = 1; load(); });
+    document.addEventListener("educaria-admin-access-denied", event => {
+        generation += 1; controller?.abort(); clearPrivateData();
+        root.setAttribute("aria-busy", "false"); refresh.disabled = false;
+        showStatus(event.detail?.status === 401 ? "Entre novamente para acessar a administração." : "Sua conta não tem permissão para acessar a administração.", event.detail?.status === 401 ? "session" : "denied");
+    });
     window.addEventListener("pagehide", () => { generation += 1; controller?.abort(); clearPrivateData(); });
     window.addEventListener("pageshow", event => { if (event.persisted) load(); });
     load();

@@ -70,10 +70,25 @@ test("admin navigation is added only after server permission, on every sidebar p
     assert.match(sidebar, /if \(!allowed \|\| version !== sidebarAdminRequest\) return/);
     for (const page of ["index", "biblioteca", "turmas", "turma", "configuracoes", "administracao"]) {
         const html = await read(`plataforma/${page}.html`);
-        assert.match(html, /admin-access\.js\?v=20261012-1/);
+        assert.match(html, /admin-access\.js\?v=202610(?:12|13)-1/);
         assert.match(html, /ai-endpoint-config\.js/);
         assert.match(html, /app-sidebar\.js\?v=20261012-2/);
     }
+});
+
+test("usage client uses the protected API and clears private data with the directory", async () => {
+    const h = accessHarness();
+    await h.api.request("/usage", { days: 7 });
+    assert.match(String(h.calls[0].url), /\/api\/admin\/usage\?days=7/);
+    const client = await read("assets/js/admin-usage.js");
+    assert.doesNotMatch(client, /innerHTML|insertAdjacentHTML|localStorage|sessionStorage/);
+    assert.match(client, /current !== version/);
+    assert.match(client, /controller\?\.abort\(\)/);
+    const dashboard = await read("assets/js/admin-dashboard.js");
+    assert.match(dashboard, /function clearPrivateData\(\)\s*\{\s*window\.educariaAdminUsage\?\.clear\(\)/);
+    const html = await read("plataforma/administracao.html");
+    assert.match(html, /data-usage-results hidden/);
+    for (const filter of ["days", "materialType", "status", "cohort", "uid"]) assert.ok(html.includes(`name="${filter}"`));
 });
 test("admin screen is read-only, initially private and has labelled search, pagination and retry", async () => {
     const html = await read("plataforma/administracao.html");

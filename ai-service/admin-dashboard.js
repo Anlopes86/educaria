@@ -1,5 +1,6 @@
 import express from "express";
 import { verifyActiveSession, sessionErrorResponse } from "./firebase-admin-services.js";
+import { buildUsageReport, parseUsageQuery } from "./ai-usage-analytics.js";
 
 const cleanText = (value, limit = 320) => typeof value === "string" ? value.trim().slice(0, limit) : "";
 const isoDate = value => Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
@@ -10,7 +11,7 @@ export function parseAdminUids(value = "") {
     return new Set(String(value).split(",").map(uid => uid.trim()).filter(uid => uid && uid.length <= 128 && !/[\s/*]/.test(uid)));
 }
 
-export function createAdminRouter({ getServices, adminUids = new Set(), getPlan, getCredits,
+export function createAdminRouter({ getServices, adminUids = new Set(), getPlan, getCredits, usageAnalytics,
     verifySession = verifyActiveSession, now = Date.now, cacheTtlMs = 30_000 } = {}) {
     const router = express.Router();
     const rateBuckets = new Map();
@@ -140,6 +141,17 @@ export function createAdminRouter({ getServices, adminUids = new Set(), getPlan,
         } catch {
             // Never log user records, search terms, ID tokens or SDK error bodies.
             response.status(503).json({ code: "admin_unavailable", error: "Não foi possível consultar os usuários agora. Tente novamente." });
+        }
+    });
+    router.get("/usage", async (request, response) => {
+        let filters;
+        try { filters = parseUsageQuery(request.query); }
+        catch { return response.status(400).json({ code: "admin_invalid_query", error: "Confira os filtros e tente novamente." }); }
+        try {
+            const [snapshot, directory] = await Promise.all([usageAnalytics.read(filters), readDirectory(filters.refresh)]);
+            response.json(buildUsageReport(snapshot, filters, directory.users, now()));
+        } catch {
+            response.status(503).json({ code: "admin_usage_unavailable", error: "Não foi possível consultar o consumo de IA agora. Tente novamente." });
         }
     });
     router.use((_request, response) => response.status(405).json({ code: "admin_read_only", error: "O painel permite somente consultas." }));
