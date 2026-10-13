@@ -2,7 +2,9 @@
 
 O projeto ainda usa `assets/css/estilo-premium.css` como ponto unico de entrada para preservar compatibilidade com as paginas HTML existentes.
 
-## Estrutura atual
+O agregador é a referência da ordem real dos imports. A árvore abaixo mostra a organização base, não um inventário completo. As camadas visuais acrescentadas depois estão descritas ao final; não reorganize a cascata alfabeticamente.
+
+## Organização base
 
 ```txt
 assets/css/
@@ -37,7 +39,7 @@ assets/css/
     settings.css
 ```
 
-## Ordem de importacao
+## Ordem de importação base
 
 1. Fonte externa.
 2. `base/tokens.css`: variaveis de cor, tipografia, espacamento, bordas, sombras e transicoes.
@@ -67,12 +69,19 @@ assets/css/
 26. `pages/library.css`: biblioteca geral.
 27. Estilos legados ainda mantidos em `estilo-premium.css`.
 
-## Proximas extracoes recomendadas
+## Camadas visuais atuais
 
-1. `components/tables.css` ou `components/lists.css`: listas mais densas e historicos.
-2. `components/badges.css`: estados pequenos, etiquetas e marcadores de status.
-3. `components/debate.css`: controles e ajustes especificos do debate.
-Ao extrair, mantenha `estilo-premium.css` como agregador ate existir um build CSS dedicado. Isso evita editar todos os HTMLs a cada etapa.
+Além dos componentes básicos, o agregador inclui estilos específicos para landing, editores, aula completa, dispositivos móveis e refinamentos de apresentação. Os arquivos `presentation-activities.css`, `presentation-refinements.css` e `presentation-fit.css` complementam os palcos. `activity-visual-system.css`, `pages/collections.css` e `components/sidebar.css` aplicam o sistema visual recente.
+
+`account-deletion.css` e `pages/admin.css` são carregados diretamente pelas páginas correspondentes; não são arquivos sem uso por estarem fora do agregador.
+
+## Como continuar a organização
+
+1. Identifique o seletor e a regra vencedora antes de criar outro override.
+2. Separe estilos compartilhados de exceções de uma atividade, preservando a prioridade das regras.
+3. Confira notebook pequeno, topo de apresentação aberto/fechado, teclado e celular.
+
+Classes também são criadas pelo JavaScript. Não remova seletores apenas porque não aparecem no HTML inicial. Mantenha `estilo-premium.css` como agregador até existir um build CSS dedicado e equivalência visual verificada.
 
 ## Validacao relacionada
 

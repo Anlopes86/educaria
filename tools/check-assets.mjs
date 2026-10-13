@@ -1,34 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
+import { listProjectFiles, projectRoot } from "./project-files.mjs";
 
-const root = process.cwd();
-const ignoredDirs = new Set([".git", "node_modules"]);
-const checkedExtensions = new Set([".html", ".css"]);
+const root = projectRoot;
 const optionalAssets = new Set(["assets/js/firebase-config.local.js"]);
 const urlAttributes = ["href", "src", "poster", "data-src"];
 
 function normalizeRelative(filePath) {
     return path.relative(root, filePath).replace(/\\/g, "/");
-}
-
-function walk(dir, results = []) {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const fullPath = path.join(dir, entry.name);
-        const relative = normalizeRelative(fullPath);
-
-        if (entry.isDirectory()) {
-            if (!ignoredDirs.has(entry.name) && !ignoredDirs.has(relative)) {
-                walk(fullPath, results);
-            }
-            continue;
-        }
-
-        if (checkedExtensions.has(path.extname(entry.name))) {
-            results.push(fullPath);
-        }
-    }
-
-    return results;
 }
 
 function stripUrlDecorations(value) {
@@ -93,7 +72,7 @@ function resolveAsset(ownerFile, rawUrl) {
 }
 
 const errors = [];
-const checkedFiles = walk(root);
+const checkedFiles = listProjectFiles({ extensions: [".html", ".css"] });
 let referenceCount = 0;
 
 for (const filePath of checkedFiles) {

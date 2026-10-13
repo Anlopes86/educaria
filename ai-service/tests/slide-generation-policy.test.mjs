@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import vm from "node:vm";
 import { normalizeSlideGenerationOptions as options, slideAudienceProfile, slidePedagogyInstructions, normalizeGeneratedSlideBody } from "../slide-generation-policy.js";
 import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } from "../activity-generation-policy.js";
-import { slideIllustrationInstructions } from "../slide-illustration-policy.js";
+import { promptFor } from "../materials/prompts.js";
 
 for (const [label, detail, expected] of [
     ["Mais enxuto", "concise", /1 a 2 blocos curtos/],
@@ -84,12 +84,9 @@ test("body formatting never discards explanations or cuts sentences", () => {
 });
 
 const server = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
-const promptSource = server.slice(server.indexOf("function promptFor("), server.indexOf("function splitIntoShortUnits("));
-const promptContext = vm.createContext({ normalizeSlideGenerationOptions: options, slidePedagogyInstructions, slideIllustrationInstructions });
-vm.runInContext(promptSource, promptContext);
 
 test("actual server prompt includes structured pedagogical fields", () => {
-    const prompt = promptContext.promptFor("slides", "Gerar 8 slides. Modo visual: personalizado.", "Fotossíntese", options({ detail: "detailed", tone: "inspiring", audience: "EJA", subject: "Ciências", objective: "Entender energia" }));
+    const prompt = promptFor("slides", "Gerar 8 slides. Modo visual: personalizado.", "Fotossíntese", options({ detail: "detailed", tone: "inspiring", audience: "EJA", subject: "Ciências", objective: "Entender energia" }));
     assert.match(prompt, /desenvolva o raciocínio no body/);
     assert.match(prompt, /pequenos desafios/);
     assert.match(prompt, /sem infantilização/);
@@ -100,8 +97,8 @@ test("actual server prompt includes structured pedagogical fields", () => {
 });
 
 test("default slides and other activity prompts still work", () => {
-    assert.match(promptContext.promptFor("slides", "Gerar 5 slides.", "Tema"), /EQUILIBRADO/);
-    assert.doesNotMatch(promptContext.promptFor("quiz", "Gerar 5 perguntas.", "Tema"), /CONFIGURAÇÃO PEDAGÓGICA/);
+    assert.match(promptFor("slides", "Gerar 5 slides.", "Tema"), /EQUILIBRADO/);
+    assert.doesNotMatch(promptFor("quiz", "Gerar 5 perguntas.", "Tema"), /CONFIGURAÇÃO PEDAGÓGICA/);
 });
 
 test("production route passes options to generation and rejects bad fields before spending credits", async () => {

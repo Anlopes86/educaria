@@ -1,44 +1,31 @@
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
+import { spawnSync } from "node:child_process";
+import { listProjectFiles, projectRoot } from "./project-files.mjs";
 
-const root = process.cwd();
-const ignoredDirs = new Set([".git", "node_modules"]);
-const checkedExtensions = new Set([".js"]);
-const skippedModuleDirs = new Set(["ai-service"]);
-
-function normalizeRelative(filePath) {
-    return path.relative(root, filePath).replace(/\\/g, "/");
-}
-
-function walk(dir, results = []) {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const fullPath = path.join(dir, entry.name);
-        const relative = normalizeRelative(fullPath);
-
-        if (entry.isDirectory()) {
-            if (!ignoredDirs.has(entry.name) && !ignoredDirs.has(relative) && !skippedModuleDirs.has(relative)) {
-                walk(fullPath, results);
-            }
-            continue;
-        }
-
-        if (checkedExtensions.has(path.extname(entry.name))) {
-            results.push(fullPath);
-        }
-    }
-
-    return results;
-}
-
-const files = walk(root);
+const files = listProjectFiles({
+    directories: ["assets", "plataforma", "ai-service", "tools", "firebase"],
+    extensions: [".js", ".mjs"]
+});
 const errors = [];
+let browserFiles = 0;
+let moduleFiles = 0;
 
-for (const filePath of files) {
-    try {
-        new vm.Script(fs.readFileSync(filePath, "utf8"), { filename: normalizeRelative(filePath) });
-    } catch (error) {
-        errors.push(`Syntax check failed: ${normalizeRelative(filePath)}\n${error.message}`);
+for (const file of files) {
+    const relative = path.relative(projectRoot, file).replaceAll("\\", "/");
+    if (relative.startsWith("ai-service/") || relative.startsWith("firebase/") || file.endsWith(".mjs")) {
+        // --check parses ESM without importing it: no server, secrets or network calls.
+        const result = spawnSync(process.execPath, ["--check", file], { encoding: "utf8", windowsHide: true, timeout: 20000 });
+        if (result.error || result.status !== 0) errors.push(`Syntax check failed: ${relative}\n${result.stderr || result.error || "check failed"}`);
+        moduleFiles++;
+    } else {
+        try {
+            new vm.Script(fs.readFileSync(file, "utf8"), { filename: relative });
+        } catch (error) {
+            errors.push(`Syntax check failed: ${relative}\n${error.message}`);
+        }
+        browserFiles++;
     }
 }
 
@@ -46,5 +33,4 @@ if (errors.length) {
     console.error(errors.join("\n\n"));
     process.exit(1);
 }
-
-console.log(`js syntax ok: ${files.length} browser/commonjs files checked`);
+console.log(`js syntax ok: ${browserFiles} browser/commonjs files and ${moduleFiles} modules checked`);

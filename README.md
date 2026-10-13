@@ -1,6 +1,17 @@
 # EducarIA
 
-Plataforma para professores criarem e organizarem materiais didaticos com apoio de IA.
+Plataforma para professores criarem, organizarem e apresentarem materiais didáticos com apoio de IA.
+
+## Começar a trabalhar no código
+
+Leia [CONTRIBUTING.md](CONTRIBUTING.md) para preparar o ambiente e [o mapa da arquitetura](docs/architecture.md) para localizar cada funcionalidade. Para incluir ferramentas, siga [o roteiro de novas atividades](docs/adding-activities.md).
+
+```bash
+npm ci --prefix ai-service
+npm run verify
+```
+
+O comando verifica sintaxe, referências, traduções, configuração pública e testes de frontend/API sem consumir IA. Os testes de isolamento Firebase são uma etapa separada e exigem Java 21; veja o guia de contribuição.
 
 ## Configuracao local
 
@@ -27,11 +38,7 @@ A pagina de configuracoes mostra o link de pagamento quando `window.EDUCARIA_BIL
 ## Validacao rapida
 
 ```bash
-node tools/check-i18n.mjs
-node tools/check-assets.mjs
-node tools/check-js-syntax.mjs
-node --check ai-service/server.js
-npm test --prefix ai-service
+npm run verify
 ```
 
 Com o Google Chrome instalado, valide tambem as telas publicas e o shell autenticado em viewport movel real:

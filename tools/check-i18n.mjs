@@ -1,36 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
+import { listProjectFiles, projectRoot } from "./project-files.mjs";
 
-const root = process.cwd();
+const root = projectRoot;
 const dictionaryDir = path.join(root, "assets", "i18n");
 const languages = ["pt-BR", "en-US", "es-ES"];
-const ignoredDirs = new Set([".git", "node_modules", "ai-service/node_modules"]);
 
 function readJson(filePath) {
     return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-function walk(dir, results = []) {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        const fullPath = path.join(dir, entry.name);
-        const relative = path.relative(root, fullPath).replace(/\\/g, "/");
-        if (entry.isDirectory()) {
-            if (!ignoredDirs.has(relative) && !ignoredDirs.has(entry.name)) {
-                walk(fullPath, results);
-            }
-            continue;
-        }
-
-        if (/\.(html|js)$/.test(entry.name)) {
-            results.push(fullPath);
-        }
-    }
-    return results;
-}
-
 function collectReferencedKeys() {
     const keys = new Set();
-    const files = walk(root);
+    const files = listProjectFiles({ extensions: [".html", ".js"] });
     const patterns = [
         /\bdata-i18n(?:-[a-z-]+)?="([^"]+)"/g,
         /\b(?:classesTranslate|dashboardTranslate|lessonLibraryTranslate|settingsTranslate|sidebarTranslate)\(\s*"([^"]+)"/g,

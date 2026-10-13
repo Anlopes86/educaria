@@ -3,7 +3,9 @@ import { test } from "node:test";
 import fs from "node:fs/promises";
 import vm from "node:vm";
 import { normalizeSlideIllustration, slideIllustrationSchema, slideIllustrationInstructions } from "../../ai-service/slide-illustration-policy.js";
-import { normalizeSlideGenerationOptions, slidePedagogyInstructions, normalizeGeneratedSlideBody } from "../../ai-service/slide-generation-policy.js";
+import { normalizeSlideGenerationOptions } from "../../ai-service/slide-generation-policy.js";
+import { promptFor } from "../../ai-service/materials/prompts.js";
+import { normalizeSlidesMaterial } from "../../ai-service/materials/slides.js";
 import { groqStrictJsonSchema } from "../../ai-service/ai-text-provider.js";
 
 const renderer = await fs.readFile(new URL("../../assets/js/slide-illustrations.js", import.meta.url), "utf8");
@@ -110,20 +112,15 @@ test("drawings are capped and all supported primitives survive persistence round
 });
 
 test("actual server prompt ties drawings to the complete teacher request and normalization honors No", async () => {
-    const server = await fs.readFile(new URL("../../ai-service/server.js", import.meta.url), "utf8");
-    const ctx = vm.createContext({ normalizeSlideGenerationOptions, slidePedagogyInstructions, slideIllustrationInstructions, normalizeSlideIllustration,
-        normalizeSlideBody: normalizeGeneratedSlideBody, normalizeSlideVisualTheme: value => value, normalizeSlideVisualVariant: value => value });
-    vm.runInContext(server.slice(server.indexOf("function promptFor("), server.indexOf("function splitIntoShortUnits(")), ctx);
-    vm.runInContext(server.slice(server.indexOf("function normalizeSlidesMaterial("), server.indexOf("function aiErrorMessage(")), ctx);
     const request = "Mostre como a gravidade mantém os planetas em órbita. Use um esquema, não uma foto.";
-    const prompt = ctx.promptFor("slides", "Gerar 3 slides.", request, { includeIllustration: true });
+    const prompt = promptFor("slides", "Gerar 3 slides.", request, { includeIllustration: true });
     assert.ok(prompt.includes(request));
     assert.match(prompt, /INCLUIR ILUSTRAÇÃO: SIM/);
     assert.match(prompt, /vinculados ao pedido do professor/);
     assert.doesNotMatch(prompt, /Não prometa nem gere imagens/);
     const material = { slides: [{ body: "Texto preservado", illustration: drawing }] };
-    assert.equal(ctx.normalizeSlidesMaterial(material, { includeIllustration: true }).slides[0].layout, "split");
-    const disabled = ctx.normalizeSlidesMaterial(material, { includeIllustration: false }).slides[0];
+    assert.equal(normalizeSlidesMaterial(material, { includeIllustration: true }).slides[0].layout, "split");
+    const disabled = normalizeSlidesMaterial(material, { includeIllustration: false }).slides[0];
     assert.equal(disabled.illustration.elements.length, 0);
     assert.equal(disabled.layout, "stack");
     assert.equal(disabled.body, "Texto preservado");

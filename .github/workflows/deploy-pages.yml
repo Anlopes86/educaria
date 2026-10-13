@@ -47,22 +47,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Use the validated Node version
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Install AI service dependencies
         run: npm ci --prefix ai-service
 
       - name: Validate static project
         run: |
-          node tools/check-i18n.mjs
-          node tools/check-assets.mjs
-          node tools/check-firebase-config.mjs
-          node tools/check-js-syntax.mjs
-          node --check ai-service/server.js
-          node --check service-worker.js
-          node --check tools/check-assets.mjs
-          node --check tools/check-i18n.mjs
-          node --check tools/check-js-syntax.mjs
-          npm test --prefix ai-service
-          node --test tools/tests/*.test.mjs
+          node tools/verify.mjs
           npm audit --prefix ai-service --omit=dev --audit-level=moderate
           CHROME_PATH=/usr/bin/google-chrome node tools/check-responsive-layout.mjs
           CHROME_PATH=/usr/bin/google-chrome node tools/check-responsive-layout.mjs exclusao-conta.html

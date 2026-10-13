@@ -1,19 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import fs from "node:fs/promises";
-import vm from "node:vm";
 import { normalizeActivityGenerationOptions as normalize, activityGenerationInstructions as instructions, applyActivityGenerationSettings as apply } from "../activity-generation-policy.js";
-import { normalizeSlideGenerationOptions, slidePedagogyInstructions } from "../slide-generation-policy.js";
+import { promptFor } from "../materials/prompts.js";
 
 const types = ["slides", "quiz", "flashcards", "memory", "wheel", "match", "mindmap", "debate", "wordsearch", "crossword", "hangman"];
-const server = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
-const context = vm.createContext({ normalizeSlideGenerationOptions, slidePedagogyInstructions, slideIllustrationInstructions, activityGenerationInstructions: instructions });
-vm.runInContext(server.slice(server.indexOf("function promptFor("), server.indexOf("function splitIntoShortUnits(")), context);
 
 for (const type of types) {
     test(`${type}: count, audience, subject and objective reach the actual provider prompt`, () => {
         const options = normalize(type, { count: 6, audience: "EJA", className: "5º ano A", subject: "Ciências", objective: "Aplicar no cotidiano" });
-        const prompt = context.promptFor(type, "", "Fotossíntese", undefined, options);
+        const prompt = promptFor(type, "", "Fotossíntese", undefined, options);
         assert.match(prompt, /exatamente 6 itens/);
         assert.match(prompt, /sem infantilização/);
         assert.match(prompt, /Aplicar no cotidiano/);
@@ -51,4 +46,3 @@ test("explicit audience overrides the class for every activity", () => {
     assert.match(instructions("memory", normalize("memory", { className: "2º ano A" })), /anos iniciais/);
     assert.match(instructions("memory", normalize("memory", { className: "Turma azul" })), /não invente idade/);
 });
-import { slideIllustrationInstructions } from "../slide-illustration-policy.js";

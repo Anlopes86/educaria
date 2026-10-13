@@ -36,7 +36,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
         aiImageGenerationEnabled: true, imagePromptForSlide: () => "synthetic"
     });
     const functionStart = source.indexOf("async function generateStructuredMaterialWithRetry(");
-    vm.runInContext(source.slice(functionStart, source.indexOf("function imagePromptForSlide(", functionStart)), context);
+    vm.runInContext(source.slice(functionStart, source.indexOf('app.use("/api/admin"', functionStart)), context);
     const routeStart = source.indexOf(`app.post("/api/ai/${image ? "generate-image" : "generate"}",`);
     const routeEnd = image ? source.indexOf("\napp.use((error", routeStart) : source.indexOf("\napp.post(", routeStart + 1);
     vm.runInContext(source.slice(routeStart, routeEnd), context);

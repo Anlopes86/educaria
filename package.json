@@ -1,0 +1,16 @@
+{
+  "name": "educaria",
+  "private": true,
+  "description": "Comandos de desenvolvimento e validação da plataforma EducarIA",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "node tools/verify.mjs --checks-only",
+    "test": "node --test ai-service/tests/*.test.mjs tools/tests/*.test.mjs",
+    "verify": "node tools/verify.mjs",
+    "test:security": "npm test --prefix firebase",
+    "dev:api": "npm run dev --prefix ai-service",
+    "build:pages": "node tools/build-pages.mjs"
+  }
+}

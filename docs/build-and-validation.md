@@ -7,12 +7,7 @@ O projeto continua estatico e nao exige bundler para rodar localmente. A etapa a
 Execute antes de abrir PR ou publicar alteracoes:
 
 ```bash
-node tools/check-i18n.mjs
-node tools/check-assets.mjs
-node tools/check-js-syntax.mjs
-node --check ai-service/server.js
-node --check service-worker.js
-npm test --prefix ai-service
+npm run verify
 ```
 
 Para verificar overflow horizontal em 390 px nas telas publicas, com o Google Chrome instalado:
@@ -33,12 +28,15 @@ Para validar as jornadas autenticadas de Quiz, Slides, Flashcards, Jogo da Memor
 node tools/check-responsive-layout.mjs 'auth:plataforma/quiz-builder.html?new=1' 'auth:plataforma/slides-builder.html?new=1' 'auth:plataforma/flashcards-builder.html?new=1' 'auth:plataforma/jogo-memoria-builder.html?new=1' 'auth:plataforma/forca-builder.html?new=1' 'auth:plataforma/roleta-builder.html?new=1' 'auth:plataforma/ligar-pontos-builder.html?new=1'
 ```
 
+O comando também pode ser chamado com `node tools/verify.mjs`, a mesma entrada usada na integração contínua. Para executar só as verificações estáticas, use `npm run check`; para testes sem emuladores, `npm test`. Os testes de isolamento Firebase continuam separados (`npm run test:security`, com Java 21). Veja [CONTRIBUTING.md](../CONTRIBUTING.md).
+
 ## O que cada check cobre
 
 - `tools/check-i18n.mjs`: verifica se as chaves usadas em HTML/JS existem em `pt-BR`, `en-US` e `es-ES`.
 - `tools/check-assets.mjs`: percorre HTML e CSS e falha quando encontra referencia local para arquivo inexistente.
 - `tools/check-firebase-config.mjs`: confirma que um dispositivo novo recebe a configuração de produção sem depender de arquivo local ou dados salvos no navegador.
-- `tools/check-js-syntax.mjs`: valida sintaxe dos scripts browser/CommonJS do front sem executar a aplicacao.
+- `tools/check-js-syntax.mjs`: valida sintaxe dos scripts browser/CommonJS e dos módulos ESM de backend, ferramentas e testes sem executar a aplicação. O inventário compartilhado em `tools/project-files.mjs` exclui dependências instaladas, arquivos locais e saídas privadas.
+- `npm test`: executa as suítes de `ai-service/tests/` e `tools/tests/`, sem chamadas reais à IA.
 - `node --check ai-service/server.js`: valida sintaxe do backend ESM de IA.
 - `node --check service-worker.js`: valida a sintaxe da camada de cache offline.
 - `npm test --prefix ai-service`: inicia o backend em ambiente isolado e verifica health check, autenticacao obrigatoria, protecao da geracao, CORS e bloqueio de configuracao insegura.

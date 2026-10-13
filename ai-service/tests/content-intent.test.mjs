@@ -1,18 +1,14 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import fs from "node:fs/promises";
-import vm from "node:vm";
 import { normalizeActivityGenerationOptions, activityGenerationInstructions, applyActivityGenerationSettings } from "../activity-generation-policy.js";
-import { normalizeSlideGenerationOptions, slidePedagogyInstructions, normalizeGeneratedSlideBody } from "../slide-generation-policy.js";
+import { normalizeSlideGenerationOptions, normalizeGeneratedSlideBody } from "../slide-generation-policy.js";
 import { interviewText, interviewRequest, expectedInterviewCards, detailedSlide } from "../../tools/fixtures/ai-content-cases.mjs";
 
-const server = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
-const context = vm.createContext({ normalizeActivityGenerationOptions, activityGenerationInstructions, normalizeSlideGenerationOptions, slidePedagogyInstructions, slideIllustrationInstructions });
-vm.runInContext(server.slice(server.indexOf("function promptFor("), server.indexOf("function splitIntoShortUnits(")), context);
+import { promptFor } from "../materials/prompts.js";
 
 test("eight numbered English items and their request reach the real flashcard prompt intact", () => {
     const options = normalizeActivityGenerationOptions("flashcards", { contentMode: "preserve", teacherInstructions: interviewRequest });
-    const prompt = context.promptFor("flashcards", "", interviewText, undefined, options);
+    const prompt = promptFor("flashcards", "", interviewText, undefined, options);
     assert.ok(prompt.includes(interviewText));
     assert.ok(prompt.includes(interviewRequest));
     assert.match(prompt, /front contém só o número/);
@@ -26,7 +22,7 @@ test("eight numbered English items and their request reach the real flashcard pr
 });
 test("a request pasted together with source text is not silently discarded", () => {
     const options = normalizeActivityGenerationOptions("flashcards", {});
-    const prompt = context.promptFor("flashcards", "", `${interviewRequest}\n\n${interviewText}`, undefined, options);
+    const prompt = promptFor("flashcards", "", `${interviewRequest}\n\n${interviewText}`, undefined, options);
     assert.ok(prompt.includes(interviewRequest));
     assert.match(prompt, /Diferencie o pedido dirigido à plataforma do conteúdo/);
     assert.match(prompt, /Não apresente o comando como parte da atividade/);
@@ -47,7 +43,7 @@ test("developing and preserving are different intents and explicit instructions 
 });
 test("detailed slides request substantive visible explanation, with no bullet-only constraint", () => {
     const options = normalizeActivityGenerationOptions("slides", { contentMode: "develop", teacherInstructions: "Explique por que acontece e dê exemplos." });
-    const prompt = context.promptFor("slides", "", "Igualdade de oportunidades", normalizeSlideGenerationOptions({ detail: "detailed" }), options);
+    const prompt = promptFor("slides", "", "Igualdade de oportunidades", normalizeSlideGenerationOptions({ detail: "detailed" }), options);
     assert.match(prompt, /explique o que significa, como ou por que/);
     assert.match(prompt, /exemplos concretos explicados/);
     assert.match(prompt, /60 a 110 palavras/);
@@ -80,4 +76,3 @@ for (const raw of [{ contentMode: "random" }, { contentMode: {} }, { teacherInst
         assert.throws(() => normalizeActivityGenerationOptions("slides", raw), { code: "invalid_generation_options" });
     });
 }
-import { slideIllustrationInstructions } from "../slide-illustration-policy.js";
