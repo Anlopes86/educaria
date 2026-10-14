@@ -3,9 +3,14 @@ services:
     name: educaria-api-anlopes86
     runtime: node
     plan: free
-    rootDir: ai-service
-    buildCommand: npm ci
-    startCommand: npm start
+    # Keep the repository root available: the API imports the shared diagram model.
+    buildCommand: npm ci --prefix ai-service
+    startCommand: npm start --prefix ai-service
+    buildFilter:
+      paths:
+        - ai-service/**
+        - assets/js/slide-diagram-model.js
+        - render.yaml
     healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION

@@ -13,7 +13,7 @@ function escapeAttr(value) {
         .replaceAll(">", "&gt;");
 }
 
-function wheelSegmentTemplate(index, text = "", color = "#22c55e") {
+function wheelSegmentTemplate(index, text = "", color = wheelPalette()[index % wheelPalette().length]) {
     return `
         <section class="platform-question-card activity-content-card wheel-segment-card" data-wheel-segment>
             <div class="activity-card-header">
@@ -40,7 +40,7 @@ function wheelSegmentTemplate(index, text = "", color = "#22c55e") {
 }
 
 function wheelPalette() {
-    return ["#22c55e", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#6366f1", "#84cc16", "#f97316", "#06b6d4", "#a855f7"];
+    return ["#a9d6c7", "#b4cce5", "#e9bc77", "#e9a78e", "#c2b5df", "#b9d9bd"];
 }
 
 function collectWheelSegments() {

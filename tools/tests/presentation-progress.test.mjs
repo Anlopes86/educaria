@@ -37,14 +37,17 @@ test("slides and flashcards return to the same position and face", async () => {
     }
 });
 test("matching retains the randomized order and found pairs", async () => {
-    const { api, context } = await adapter("match-runtime.js", { matchedIds: new Set(["pair-1"]), rightItems: [{id:"pair-1"},{id:"pair-0"}], selectedLeft: "", selectedRight: "", statusRoot: { textContent: "Par correto" }, state: { pairs: [{}, {}] }, renderLists: noop, updateStatus: noop });
+    const { api, context } = await adapter("match-runtime.js", { matchedIds: new Set(["pair-1"]), rightItems: [{id:"pair-1", color:"#ff0000"},{id:"pair-0", color:"#00ff00"}], selectedLeft: "", selectedRight: "", statusRoot: { textContent: "Par correto" }, state: { pairs: [{index:0, right:"A", color:"#527f8c"}, {index:1, right:"B", color:"#527f8c"}] }, renderLists: noop, updateStatus: noop });
     const saved = roundtrip(api.capture()); context.matchedIds = new Set(); context.rightItems = [];
     api.restore(saved); assert.equal(context.matchedIds.has("pair-1"), true); assert.equal(context.rightItems[0].id, "pair-1");
+    assert.equal(context.rightItems[0].color, "#527f8c", "old progress must not restore revealing pair colors");
 });
 test("hangman restores the round and all guesses", async () => {
-    const { api, context } = await adapter("hangman-runtime.js", { rounds: [{}, {}], currentIndex: 1, guessedLetters: new Set(["A", "T"]), wrongLetters: new Set(["T"]), revealAnswer: false, renderStage: noop });
+    const { api, context } = await adapter("hangman-runtime.js", { rounds: [{}, {}], currentIndex: 1, guessedLetters: new Set(["A", "T"]), wrongLetters: new Set(["T"]), revealAnswer: false, hintsHidden: true, renderStage: noop });
     const saved = roundtrip(api.capture()); context.currentIndex = 0; context.guessedLetters.clear();
     api.restore(saved); assert.equal(context.currentIndex, 1); assert.equal(context.guessedLetters.has("T"), true);
+    assert.equal(context.hintsHidden, true);
+    api.restore({ currentIndex: 0 }); assert.equal(context.hintsHidden, false);
 });
 test("mindmap keeps layout, selected topic and explanation scroll", async () => {
     const { api, context } = await adapter("mindmap-runtime.js", { activeIndex: 0, state: { branches: [{}, {}], controls: {} }, detailTextRoot: { scrollTop: 0 }, renderStatic: noop, renderMap: noop, renderDetail: noop });

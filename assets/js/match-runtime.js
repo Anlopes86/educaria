@@ -91,8 +91,8 @@ function renderMatchApplication() {
     const draft = readMatchDraft() || {};
     const controls = { ...(draft.controls || {}) };
     const pairs = parseMatchPairs(draft.stackHtml || "");
-    const colorMode = controls["ligar-cores"] || "manual";
-    const singleColor = controls["ligar-cor-unica"] || "#22c55e";
+    const colorMode = controls["ligar-cores"] || "same";
+    const singleColor = controls["ligar-cor-unica"] || "#527f8c";
     const safePairs = (pairs.length ? pairs : [
         { left: "Brasil", right: "Brasília", color: "#22c55e" },
         { left: "Franca", right: "Paris", color: "#0ea5e9" },
@@ -112,6 +112,8 @@ function renderMatchApplication() {
     controls["ligar-coluna-a"] = controls["ligar-coluna-a"] || "Coluna A";
     controls["ligar-coluna-b"] = controls["ligar-coluna-b"] || "Coluna B";
     controls["ligar-embaralhar"] = controls["ligar-embaralhar"] || "Sim";
+    controls["ligar-cores"] = colorMode;
+    controls["ligar-cor-unica"] = singleColor;
 
     const state = {
         ...draft,
@@ -303,7 +305,11 @@ function renderMatchApplication() {
         restore(saved) {
             if (!saved) return;
             matchedIds = new Set(saved.matchedIds || []);
-            if (saved.rightItems?.length === state.pairs.length) rightItems = saved.rightItems;
+            if (saved.rightItems?.length === state.pairs.length) {
+                const current = new Map(state.pairs.map((pair) => [`pair-${pair.index}`, { id: `pair-${pair.index}`, text: pair.right, color: pair.color }]));
+                const ordered = saved.rightItems.map((item) => current.get(item.id));
+                if (ordered.every(Boolean) && new Set(ordered.map((item) => item.id)).size === current.size) rightItems = ordered;
+            }
             selectedLeft = saved.selectedLeft || ""; selectedRight = saved.selectedRight || "";
             renderLists(); updateStatus(saved.status || "Selecione um item de cada coluna");
         }

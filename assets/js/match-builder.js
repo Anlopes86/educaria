@@ -16,11 +16,11 @@ function escapeMatchAttr(value) {
 const matchPalette = ["#22c55e", "#0ea5e9", "#f59e0b", "#ec4899", "#8b5cf6", "#14b8a6", "#ef4444", "#6366f1", "#84cc16", "#f97316", "#06b6d4", "#a855f7"];
 
 function getMatchColorMode() {
-    return document.getElementById("ligar-cores")?.value || "manual";
+    return document.getElementById("ligar-cores")?.value || "same";
 }
 
 function getSingleMatchColor() {
-    return document.getElementById("ligar-cor-unica")?.value || "#22c55e";
+    return document.getElementById("ligar-cor-unica")?.value || "#527f8c";
 }
 
 function getShuffledPaletteColor(index) {

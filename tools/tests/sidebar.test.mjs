@@ -181,10 +181,13 @@ test("class navigation stays unique after language changes and reordering", () =
 });
 
 test("all sidebar pages request the shared updated assets", async () => {
+    const dashboard = await read("plataforma/index.html");
+    const cssVersion = dashboard.match(/estilo-premium\.css\?v=(\d{8}-\d+)/)?.[1];
+    assert.ok(cssVersion && cssVersion >= "20261012-1", "shared stylesheet must be versioned and include the sidebar release");
     for (const page of ["index","biblioteca","turmas","turma","configuracoes"]) {
         const html = await read(`plataforma/${page}.html`);
         assert.match(html,/app-sidebar\.js\?v=20261012-2/);
-        assert.match(html,/estilo-premium\.css\?v=20261012-1/);
+        assert.equal(html.match(/estilo-premium\.css\?v=(\d{8}-\d+)/)?.[1], cssVersion);
     }
     assert.match(await read("assets/css/estilo-premium.css"), /components\/sidebar\.css\?v=20261012-1/);
 });

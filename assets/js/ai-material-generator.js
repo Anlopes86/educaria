@@ -1075,7 +1075,9 @@ function applyMatchFromStructuredData(payload) {
     if (leftLabelField) leftLabelField.value = payload.left_label || "Coluna A";
     if (rightLabelField) rightLabelField.value = payload.right_label || "Coluna B";
     if (shuffleField) shuffleField.value = payload.shuffle_right ? "Sim" : "Nao";
-    if (colorModeField) colorModeField.value = "manual";
+    if (colorModeField) colorModeField.value = "same";
+    const singleColorField = document.getElementById("ligar-cor-unica");
+    if (singleColorField) singleColorField.value = "#527f8c";
 
     if (typeof setMatchCountSelect === "function") {
         setMatchCountSelect(pairs.length);
@@ -1097,7 +1099,7 @@ function applyMatchFromStructuredData(payload) {
         if (label) label.textContent = `Par ${index + 1}`;
         if (left) left.value = pair.left || "";
         if (right) right.value = pair.right || "";
-        if (color) color.value = pair.color || activityColorPalette()[index % activityColorPalette().length];
+        if (color) color.value = "#527f8c";
     });
 
     if (typeof renderMatchPreview === "function") {
@@ -1186,6 +1188,7 @@ function applyCrosswordFromStructuredData(payload) {
 function applyWheelFromStructuredData(payload) {
     const segments = Array.isArray(payload?.segments) ? payload.segments : [];
     if (!segments.length) return false;
+    const defaultColors = typeof wheelPalette === "function" ? wheelPalette() : ["#a9d6c7", "#b4cce5", "#e9bc77", "#e9a78e", "#c2b5df", "#b9d9bd"];
 
     const titleField = document.getElementById("roleta-titulo");
     const eliminationField = document.getElementById("roleta-eliminacao");
@@ -1211,7 +1214,7 @@ function applyWheelFromStructuredData(payload) {
 
         if (label) label.textContent = `Espaço ${index + 1}`;
         if (text) text.value = segment.text || "";
-        if (color) color.value = segment.color || activityColorPalette()[index % activityColorPalette().length];
+        if (color) color.value = defaultColors[index % defaultColors.length];
     });
 
     if (typeof renderWheelPreview === "function") {

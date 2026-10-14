@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 import { aiCreditsForUsage, mergeAiUsageMetadata, normalizeAiUsageMetadata } from "./ai-credit-policy.js";
 
 export const USAGE_COLLECTION = "aiGenerationUsage";
+export const USAGE_REPORT_MAX_RECORDS = 5000;
+export const USAGE_REPORT_WINDOW_DAYS = 30;
 export const MATERIAL_LABELS = Object.freeze({ slides: "Slides", quiz: "Quiz", flashcards: "Flashcards", memory: "Memória",
     match: "Ligue os pontos", wheel: "Roleta", mindmap: "Mapa mental", debate: "Debate guiado", wordsearch: "Caça-palavras",
     crossword: "Palavras cruzadas", hangman: "Forca", image: "Imagem para slide" });
@@ -98,7 +100,7 @@ export function createUsageObservation({ uid, plan, unlimited, materialType, pro
 }
 
 export function createUsageAnalytics({ getServices, mode = "firestore", enabled = true, now = Date.now,
-    report = () => {}, timeoutMs = 2500, maxRecords = 5000 } = {}) {
+    report = () => {}, timeoutMs = 2500, maxRecords = USAGE_REPORT_MAX_RECORDS } = {}) {
     const memory = new Map();
     const health = { failedWrites: 0, pendingWrites: 0 };
     let cache = null;
@@ -151,7 +153,7 @@ export function createUsageAnalytics({ getServices, mode = "firestore", enabled 
             if (!refresh && cache && now() - cache.loadedAt < 30_000) return { ...cache.value, collection: status() };
             if (!reading) reading = (async () => {
                 const loadedAt = now();
-                const start = new Date(loadedAt - 30 * dayMs).toISOString();
+                const start = new Date(loadedAt - USAGE_REPORT_WINDOW_DAYS * dayMs).toISOString();
                 const end = new Date(loadedAt).toISOString();
                 let events, truncated;
                 if (mode === "memory") {
@@ -184,7 +186,7 @@ export function parseUsageQuery(query) {
     return { days: Number(days), materialType, status, cohort, uid, page: Number(page), refresh: refresh === "true" };
 }
 
-function summarize(events) {
+export function summarizeUsageEvents(events) {
     const complete = events.filter(row => row.usageCoverage === "complete" && row.usage);
     const priced = events.filter(row => row.estimatedCostUsd !== null);
     const values = complete.map(row => row.usage.totalTokens).sort((a, b) => a - b);
@@ -204,18 +206,23 @@ function summarize(events) {
     };
 }
 
-export function buildUsageReport(snapshot, filters, users = [], now = Date.now()) {
-    const directory = new Map(users.map(user => [user.uid, { uid: user.uid, name: user.name, email: user.email }]));
-    const person = uid => directory.get(uid) || { uid: uid || "", name: uid ? "Conta não disponível" : "Teste local sem conta", email: "" };
+export function selectUsageEvents(snapshot, filters, now = Date.now()) {
     const start = new Date(now - filters.days * dayMs).toISOString();
     const eligible = snapshot.events.filter(row => row.createdAt >= start && row.createdAt <= new Date(now).toISOString());
     const matches = eligible.filter(row => (filters.materialType === "all" || row.materialType === filters.materialType)
         && (filters.status === "all" || row.status === filters.status) && (!filters.uid || row.uid === filters.uid)
         && (filters.cohort === "all" || row.unlimited === (filters.cohort === "unlimited")));
+    return { eligible, matches, period: { from: start, to: new Date(now).toISOString(), days: filters.days } };
+}
+
+export function buildUsageReport(snapshot, filters, users = [], now = Date.now()) {
+    const directory = new Map(users.map(user => [user.uid, { uid: user.uid, name: user.name, email: user.email }]));
+    const person = uid => directory.get(uid) || { uid: uid || "", name: uid ? "Conta não disponível" : "Teste local sem conta", email: "" };
+    const { eligible, matches, period } = selectUsageEvents(snapshot, filters, now);
     const group = key => {
         const groups = new Map();
         for (const row of matches) { const id = row[key]; if (!groups.has(id)) groups.set(id, []); groups.get(id).push(row); }
-        return [...groups].map(([id, rows]) => ({ id, ...summarize(rows) })).sort((a, b) => b.knownTokens - a.knownTokens);
+        return [...groups].map(([id, rows]) => ({ id, ...summarizeUsageEvents(rows) })).sort((a, b) => b.knownTokens - a.knownTokens);
     };
     const pageSize = 20;
     const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
@@ -227,13 +234,13 @@ export function buildUsageReport(snapshot, filters, users = [], now = Date.now()
         costCoverage: row.costCoverage, priceVersion: row.priceVersion, durationMs: row.durationMs,
         attempts: row.attempts, errorCategory: row.errorCategory });
     return {
-        ok: true, summary: summarize(matches), byMaterial: group("materialType"),
+        ok: true, summary: summarizeUsageEvents(matches), byMaterial: group("materialType"),
         byUser: group("uid").slice(0, 20).map(row => ({ ...row, user: person(row.id) })),
         userOptions: [...new Set(eligible.map(row => row.uid).filter(Boolean))].map(person),
         expensive: matches.filter(row => row.estimatedCostUsd !== null).sort((a, b) => b.estimatedCostUsd - a.estimatedCostUsd).slice(0, 5).map(eventRow),
         events: matches.slice((page - 1) * pageSize, page * pageSize).map(eventRow),
         pagination: { page, pageSize, totalPages, totalMatches: matches.length },
-        period: { from: start, to: new Date(now).toISOString(), days: filters.days },
+        period,
         truncated: snapshot.truncated, updatedAt: snapshot.updatedAt, collection: snapshot.collection,
         pricing: GROQ_REFERENCE_PRICE
     };

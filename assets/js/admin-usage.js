@@ -39,6 +39,7 @@
         head.append(tr); body.append(...rows.map(values => row(values, headers))); table.append(head, body); wrap.append(table);
     }
     function clear() {
+        window.educariaAdminUsageExport?.clear();
         version += 1; controller?.abort();
         results.hidden = true;
         root.querySelectorAll("[data-usage-output]").forEach(node => node.replaceChildren());
@@ -107,8 +108,10 @@
         root.querySelector("[data-usage-page]").textContent = `Página ${page} de ${payload.pagination.totalPages} · ${number(payload.pagination.totalMatches)} registros`;
         feedback.textContent = summary.generations ? `${quantity(summary.generations, "geração encontrada", "gerações encontradas")}.` : "Ainda não há gerações registradas para estes filtros. Use a plataforma normalmente e atualize o relatório.";
         results.hidden = false;
+        window.educariaAdminUsageExport?.enable();
     }
     async function load(refresh = false) {
+        window.educariaAdminUsageExport?.clear();
         const current = ++version;
         controller?.abort(); controller = new AbortController();
         results.hidden = true; feedback.textContent = "Consultando o consumo de IA…";

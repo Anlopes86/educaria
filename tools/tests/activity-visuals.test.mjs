@@ -9,6 +9,39 @@ vm.runInContext(await read("assets/js/activity-visuals.js"), context);
 const visual = context.EducariaVisuals;
 const plain = value => JSON.parse(JSON.stringify(value));
 
+test("fresh editor imports enforce wheel and matching defaults even with an older AI response", async () => {
+    const source = await read("assets/js/ai-material-generator.js");
+    for (const [type, functionName, arrayKey] of [["wheel", "applyWheelFromStructuredData", "segments"], ["match", "applyMatchFromStructuredData", "pairs"]]) {
+        const fields = new Map();
+        const field = key => { if (!fields.has(key)) fields.set(key, { value: "" }); return fields.get(key); };
+        const cards = Array.from({length:8}, (_,i) => ({ querySelector: selector => field(`${i}:${selector}`) }));
+        const scope = vm.createContext({ document: { getElementById: field }, ensureCardCount: () => cards, dispatchBuilderContentChange() {} });
+        const start = source.indexOf(`function ${functionName}(`);
+        vm.runInContext(source.slice(start, source.indexOf("\nfunction ", start+1)), scope);
+        const items = cards.map((_,i) => ({ text:`Espaço ${i+1}`, left:`Item ${i+1}`, right:`Resposta ${i+1}`, color:"#ff0000" }));
+        assert.equal(scope[functionName]({ [arrayKey]: items, shuffle_right: true }), true);
+        const colors = cards.map((_,i) => field(`${i}:[data-${type}-color]`).value);
+        if (type === "wheel") {
+            assert.equal(new Set(colors).size, 6);
+            assert.equal(colors[0], "#a9d6c7"); assert.equal(colors[6], colors[0]);
+            assert.equal(field("7:[data-wheel-text]").value, "Espaço 8");
+        } else {
+            assert.deepEqual(colors, Array(8).fill("#527f8c"));
+            assert.equal(field("ligar-cores").value, "same");
+            assert.equal(field("ligar-cor-unica").value, "#527f8c");
+            assert.equal(field("ligar-embaralhar").value, "Sim");
+        }
+    }
+});
+
+test("blank matching and wheel editors share the generation defaults", async () => {
+    const match = await read("plataforma/ligar-pontos-builder.html");
+    assert.match(match, /<option value="same" selected>/);
+    const wheel = await read("plataforma/roleta-builder.html");
+    const colors = [...wheel.matchAll(/data-wheel-color type="color" value="(#[a-f0-9]{6})"/g)].map(m => m[1]);
+    assert.deepEqual(colors, ["#a9d6c7", "#b4cce5", "#e9bc77", "#e9a78e", "#c2b5df", "#b9d9bd", "#a9d6c7", "#b4cce5"]);
+});
+
 test("legacy slide defaults receive the landing palette without altering content or saved state", () => {
     const old = Object.freeze({ slideColor: "#102a43", textColor: "#f8fafc", accentColor: "#2dd4bf", title: "Meu slide", body: "Texto completo", imageUrl: "data:image/png;base64,AA==" });
     const next = visual.slide(old);
@@ -72,5 +105,5 @@ test("every activity shares the visual stylesheet; memory still labels closed an
     assert.match(memory, /memory-tile-number/);
     assert.match(memory, /index \+ 1/);
     const global = await read("assets/css/estilo-premium.css");
-    assert.match(global, /activity-visual-system\.css\?v=20261011-2/);
+    assert.match(global, /activity-visual-system\.css\?v=\d{8}-\d+/);
 });

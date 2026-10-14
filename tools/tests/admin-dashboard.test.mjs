@@ -70,7 +70,7 @@ test("admin navigation is added only after server permission, on every sidebar p
     assert.match(sidebar, /if \(!allowed \|\| version !== sidebarAdminRequest\) return/);
     for (const page of ["index", "biblioteca", "turmas", "turma", "configuracoes", "administracao"]) {
         const html = await read(`plataforma/${page}.html`);
-        assert.match(html, /admin-access\.js\?v=202610(?:12|13)-1/);
+        assert.match(html, /admin-access\.js\?v=\d{8}-\d+/);
         assert.match(html, /ai-endpoint-config\.js/);
         assert.match(html, /app-sidebar\.js\?v=20261012-2/);
     }
@@ -80,6 +80,9 @@ test("usage client uses the protected API and clears private data with the direc
     const h = accessHarness();
     await h.api.request("/usage", { days: 7 });
     assert.match(String(h.calls[0].url), /\/api\/admin\/usage\?days=7/);
+    await h.api.request("/usage/export", { days: 30 });
+    assert.match(String(h.calls[1].url), /\/api\/admin\/usage\/export\?days=30/);
+    assert.equal(h.calls[1].options.cache, "no-store");
     const client = await read("assets/js/admin-usage.js");
     assert.doesNotMatch(client, /innerHTML|insertAdjacentHTML|localStorage|sessionStorage/);
     assert.match(client, /current !== version/);

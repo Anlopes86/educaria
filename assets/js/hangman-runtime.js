@@ -67,10 +67,12 @@ function renderHangmanApplication() {
     const nextButton = document.querySelector("[data-hangman-next]");
     const resetButton = document.querySelector("[data-hangman-reset]");
     const revealButton = document.querySelector("[data-hangman-reveal]");
+    const hintsButton = document.querySelector("[data-hangman-toggle-hints]");
     let currentIndex = 0;
     let guessedLetters = new Set();
     let wrongLetters = new Set();
     let revealAnswer = false;
+    let hintsHidden = false;
 
     function currentEntry() {
         return rounds[currentIndex] || rounds[0] || null;
@@ -135,7 +137,7 @@ function renderHangmanApplication() {
         listRoot.innerHTML = rounds.map((entry, index) => {
             const stateClass = index === currentIndex ? "is-current" : "";
             const solved = index === currentIndex && roundSolved(entry) ? "is-solved" : "";
-            const summary = entry.clue || entry.category || "Dica não informada";
+            const summary = hintsHidden ? `Palavra ${index + 1}` : entry.clue || entry.category || "Dica não informada";
             return `
                 <button type="button" class="hangman-round-item ${stateClass} ${solved}" data-hangman-round="${index}">
                     <strong>${index + 1}</strong>
@@ -200,8 +202,12 @@ function renderHangmanApplication() {
         if (countRoot) countRoot.textContent = `${rounds.length} ${rounds.length === 1 ? "palavra" : "palavras"}`;
         if (attemptsRoot) attemptsRoot.textContent = `${wrongLetters.size}/${maxErrors} erros`;
         if (roundRoot) roundRoot.textContent = `Rodada ${currentIndex + 1} de ${rounds.length}`;
-        if (clueRoot) clueRoot.textContent = entry?.clue || "Sem dica informada.";
-        if (categoryRoot) categoryRoot.textContent = entry?.category || "Sem categoria";
+        if (clueRoot) clueRoot.textContent = hintsHidden ? "Dicas ocultas" : entry?.clue || "Sem dica informada.";
+        if (categoryRoot) categoryRoot.textContent = hintsHidden ? "Categoria oculta" : entry?.category || "Sem categoria";
+        if (hintsButton) {
+            hintsButton.textContent = hintsHidden ? "Mostrar dicas" : "Esconder dicas";
+            hintsButton.setAttribute("aria-pressed", String(hintsHidden));
+        }
         if (wrongRoot) wrongRoot.textContent = wrongLetters.size ? [...wrongLetters].join(", ") : "Nenhuma letra errada ainda.";
 
         if (wordRoot) {
@@ -281,6 +287,11 @@ function renderHangmanApplication() {
         renderStage();
     });
 
+    hintsButton?.addEventListener("click", () => {
+        hintsHidden = !hintsHidden;
+        renderStage();
+    });
+
     document.addEventListener("keydown", (event) => {
         if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
         if (event.target?.closest?.("input, textarea, select, [contenteditable='true']")) return;
@@ -294,12 +305,13 @@ function renderHangmanApplication() {
     });
 
     window.educariaPresentationProgress = {
-        capture: () => ({ currentIndex, guessedLetters: [...guessedLetters], wrongLetters: [...wrongLetters], revealAnswer }),
+        capture: () => ({ currentIndex, guessedLetters: [...guessedLetters], wrongLetters: [...wrongLetters], revealAnswer, hintsHidden }),
         restore(saved) {
             if (!saved) return;
             currentIndex = Math.max(0, Math.min(rounds.length - 1, Number(saved.currentIndex) || 0));
             guessedLetters = new Set(saved.guessedLetters || []); wrongLetters = new Set(saved.wrongLetters || []);
             revealAnswer = Boolean(saved.revealAnswer);
+            hintsHidden = saved.hintsHidden === true;
             renderStage();
         }
     };

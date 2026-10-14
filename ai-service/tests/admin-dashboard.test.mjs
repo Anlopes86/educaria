@@ -3,6 +3,7 @@ import { test } from "node:test";
 import express from "express";
 import { createServer } from "node:http";
 import { createAdminRouter, parseAdminUids } from "../admin-dashboard.js";
+import { usageTestSnapshot } from "../../tools/fixtures/ai-usage.mjs";
 import { createAiCreditStore } from "../ai-credit-store.js";
 
 const timestamp = Date.parse("2026-10-12T12:00:00Z");
@@ -32,10 +33,11 @@ async function harness(t, options = {}) {
     const app = express();
     app.use("/api/admin", createAdminRouter({
         getServices: () => services, adminUids: options.adminUids || new Set(["owner"]), now: () => timestamp,
-        usageAnalytics: { read: async () => {
+        usageAnalytics: { read: async (filters = {}) => {
             calls.usage += 1;
+            calls.usageRefresh = filters.refresh;
             if (options.usageError) throw new Error("sensitive-usage-error");
-            return { events: [], collection: { enabled: true, store: "firestore" }, truncated: false, updatedAt: new Date(timestamp).toISOString() };
+            return options.usageSnapshot || { events: [], collection: { enabled: true, store: "firestore" }, truncated: false, updatedAt: new Date(timestamp).toISOString() };
         } },
         verifySession: async token => {
             calls.verify += 1;
@@ -66,7 +68,7 @@ test("UID configuration fails closed and is not an email, role or wildcard grant
 });
 test("anonymous access never reads the directory or balances", async t => {
     const h = await harness(t);
-    for (const path of ["/access", "/users", "/usage"]) assert.equal((await h.query(path, "")).status, 401);
+    for (const path of ["/access", "/users", "/usage", "/usage/export"]) assert.equal((await h.query(path, "")).status, 401);
     assert.equal(h.calls.list + h.calls.profile + h.calls.credit + h.calls.verify, 0);
 });
 test("ordinary accounts cannot gain access through claimed roles or after owner primes cache", async t => {
@@ -181,4 +183,23 @@ test("usage reporting requires active owner session and never exposes provider e
     const down = await harness(t, { usageError: true });
     const failure = await down.query("/usage"); assert.equal(failure.status, 503);
     assert.doesNotMatch(await failure.text(), /sensitive/);
+});
+
+test("usage export requires owner access, ignores screen pagination and never reads the account directory", async t => {
+    const snapshot = usageTestSnapshot(45);
+    snapshot.events.forEach(event => { event.createdAt = new Date(timestamp).toISOString(); });
+    const h = await harness(t, { usageSnapshot:snapshot, listError:true });
+    for (const token of ["teacher", "revoked", "disabled", "deleting"]) assert.ok([401,403].includes((await h.query("/usage/export",token)).status));
+    assert.equal(h.calls.usage, 0);
+    const response = await h.query("/usage/export?days=30&page=2");
+    assert.equal(response.status, 200); assert.equal(response.headers.get("cache-control"), "private, no-store");
+    assert.match(response.headers.get("vary"), /Authorization/);
+    const payload = await response.json();
+    assert.equal(payload.report.events.length, 45); assert.equal(h.calls.usage, 1); assert.equal(h.calls.usageRefresh, true);
+    assert.equal(h.calls.list + h.calls.profile + h.calls.credit, 0);
+    assert.doesNotMatch(JSON.stringify(payload), /private-user-|private-event-|never-return-this|sensitive/);
+    assert.equal((await h.query("/usage/export?days=90")).status, 400); assert.equal(h.calls.usage, 1);
+    for (const method of ["POST","PATCH","DELETE"]) assert.equal((await h.query("/usage/export","owner",method)).status,405);
+    const down = await harness(t, { usageError:true });
+    const failure = await down.query("/usage/export"); assert.equal(failure.status,503); assert.doesNotMatch(await failure.text(),/sensitive/);
 });

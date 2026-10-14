@@ -282,3 +282,10 @@ body.product-body.theme-overview .platform-modal-card { background: #fffefa; bor
     min-height: 0;
     max-height: 420px;
 }
+
+/* Instructional SVGs carry labels and captions: never crop them like photos.
+   This also covers already-saved illustrations and embedded lesson slides. */
+body.presentation-page .presentation-slide--split .presentation-media img[src^="data:image/svg+xml"] {
+    object-fit: contain;
+    min-height: 0;
+}

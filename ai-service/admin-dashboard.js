@@ -1,6 +1,7 @@
 import express from "express";
 import { verifyActiveSession, sessionErrorResponse } from "./firebase-admin-services.js";
 import { buildUsageReport, parseUsageQuery } from "./ai-usage-analytics.js";
+import { buildUsageExport } from "./ai-usage-export.js";
 
 const cleanText = (value, limit = 320) => typeof value === "string" ? value.trim().slice(0, limit) : "";
 const isoDate = value => Number.isFinite(Date.parse(value)) ? new Date(value).toISOString() : null;
@@ -152,6 +153,19 @@ export function createAdminRouter({ getServices, adminUids = new Set(), getPlan,
             response.json(buildUsageReport(snapshot, filters, directory.users, now()));
         } catch {
             response.status(503).json({ code: "admin_usage_unavailable", error: "Não foi possível consultar o consumo de IA agora. Tente novamente." });
+        }
+    });
+    router.get("/usage/export", async (request, response) => {
+        let filters;
+        try { filters = parseUsageQuery(request.query); }
+        catch { return response.status(400).json({ code: "admin_invalid_query", error: "Confira os filtros e tente novamente." }); }
+        try {
+            // One bounded snapshot, all matching rows. No directory lookup and
+            // no pagination loop that could skip/duplicate concurrent generations.
+            const snapshot = await usageAnalytics.read({ refresh: true });
+            response.json({ ok: true, report: buildUsageExport(snapshot, filters, now()) });
+        } catch {
+            response.status(503).json({ code: "admin_usage_export_unavailable", error: "Não foi possível exportar o consumo de IA agora. Tente novamente." });
         }
     });
     router.use((_request, response) => response.status(405).json({ code: "admin_read_only", error: "O painel permite somente consultas." }));

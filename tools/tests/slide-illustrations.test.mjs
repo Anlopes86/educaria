@@ -19,6 +19,45 @@ const drawing = { description: "Órbitas do sistema solar — esquema fora de es
 ] };
 const svgText = (image) => decodeURIComponent(image.url.slice(image.url.indexOf(",") + 1));
 
+const guided = (layout, labels) => ({ description: "Diagrama didático", layout, labels, caption: "Representação esquemática, fora de escala", elements: [] });
+const planets = ["Sol", "Mercúrio", "Vênus", "Terra", "Marte", "Júpiter", "Saturno", "Urano", "Netuno"];
+test("solar overview draws all eight planets in order, with varied colors and no AI coordinates", () => {
+    const normalized = normalizeSlideIllustration(guided("solar-system", planets), true);
+    const image = render(JSON.parse(JSON.stringify(normalized)));
+    const svg = svgText(image);
+    assert.equal((svg.match(/id="guided-sphere-/g) || []).length, 9);
+    let offset = 0;
+    for (const planet of planets) { const next = svg.indexOf(`>${planet}</tspan>`, offset); assert.ok(next >= offset, planet); offset = next + 1; }
+    assert.match(svg, /fora de escala/);
+    assert.ok(image.url.length < 60_000);
+    assert.equal(normalizeSlidesMaterial({ slides:[{ illustration: normalized }] }, { includeIllustration: true }).slides[0].layout, "split");
+});
+test("orbit keeps the star visible, puts the planet on the ellipse and distinguishes radial force from tangent velocity", () => {
+    const svg = svgText(render(normalizeSlideIllustration(guided("orbit", ["Sol", "Terra", "Gravidade", "Velocidade"]), true)));
+    assert.match(svg, /<ellipse cx="300" cy="300" rx="220" ry="207" fill="none"/);
+    assert.match(svg, /<circle cx="225" cy="300" r="39"/);
+    assert.match(svg, /<circle cx="520" cy="300" r="20"/);
+    assert.match(svg, /M490 300 L290 300/);
+    assert.match(svg, /M520 267 L520 158/);
+});
+test("guided layouts handle other subjects, escape text and survive saved JSON", () => {
+    for (const [layout, labels] of [["process", ["Observar", "Levantar hipóteses", "Testar", "Analisar", "Concluir"]], ["cycle", ["Evaporação", "Condensação", "Precipitação", "Infiltração"]], ["comparison", ['<script>alert(1)</script>', "Efeito"]]]) {
+        const raw = guided(layout, labels);
+        const normalized = normalizeSlideIllustration(raw, true);
+        const image = render(JSON.parse(JSON.stringify(normalized)));
+        assert.ok(image, layout);
+        assert.doesNotMatch(svgText(image), /<script|<foreignObject|<image|href=|onload=/);
+        assert.equal(resolveImage({ generation_options: { includeIllustration: false } }, { illustration: raw }, 0).url, "");
+        assert.deepEqual(normalizeSlideIllustration(raw, false), { description:"", elements:[] });
+    }
+});
+test("invalid semantic diagrams fail closed on server and in recovered browser drafts", () => {
+    for (const raw of [guided("solar-system", planets.slice(0, 5)), guided("orbit", ["A","B","C"]), guided("process", ["A"]), guided("cycle", Array(7).fill("A")), guided("comparison", ["A", "B", "C"]), guided("cycle", ["A", {}, "B"]), guided("orbit", ["A".repeat(25), "B", "C", "D"])]) {
+        assert.deepEqual(normalizeSlideIllustration(raw, true), {description:"", elements:[]});
+        assert.equal(render(raw), null);
+    }
+});
+
 test("illustration selection defaults to No and supports both forms", () => {
     assert.equal(normalizeSlideGenerationOptions().includeIllustration, false);
     for (const value of [true, "true"]) assert.equal(normalizeSlideGenerationOptions({ includeIllustration: value }).includeIllustration, true);
@@ -29,8 +68,9 @@ test("illustration selection defaults to No and supports both forms", () => {
 test("schema stays compatible with the existing strict structured provider", () => {
     const strict = groqStrictJsonSchema(slideIllustrationSchema);
     assert.equal(strict.additionalProperties, false);
-    assert.equal(strict.properties.elements.maxItems, 32);
-    assert.deepEqual(strict.properties.elements.items.required, ["kind", "geometry", "color", "text"]);
+    assert.equal(strict.properties.nodes.maxItems, 7);
+    assert.deepEqual(strict.properties.nodes.items.required, ["id", "label", "detail", "icon"]);
+    assert.equal(strict.properties.elements, undefined, "new generations must not improvise coordinates");
     assert.ok(!JSON.stringify(strict).includes("svg"));
 });
 

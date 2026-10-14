@@ -110,7 +110,7 @@ export function normalizeSlidesMaterial(material, options = {}) {
         slides: material.slides.map((slide, index, slides) => {
             const slideType = slide?.type || (index === 0 ? "cover" : index === slides.length - 1 ? "closing" : "content");
             const illustration = normalizeSlideIllustration(slide?.illustration, options.includeIllustration);
-            const layout = illustration.elements.length ? "split" : "stack";
+            const layout = illustration.elements?.length || illustration.labels?.length || illustration.nodes?.length ? "split" : "stack";
 
             return {
                 ...slide,

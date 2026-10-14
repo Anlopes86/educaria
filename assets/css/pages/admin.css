@@ -1,4 +1,10 @@
 .admin-page { color: #173c43; }
+.admin-usage-export { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-top: 16px; padding: 16px; border: 1px solid #d4dfe8; border-radius: 14px; background: #edf3f8; }
+.admin-usage-export > div { flex: 1 1 260px; }
+.admin-usage-export strong { font-size: .85rem; }
+.admin-usage-export p { margin: 5px 0 0; max-width: 70ch; font-size: .78rem; line-height: 1.5; color: #536c6f; }
+.admin-usage-export button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.admin-usage-export button svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .admin-page [hidden] { display: none !important; }
 .admin-hero { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 24px; align-items: center; padding: clamp(24px, 3vw, 40px); border-radius: 24px; background: #153c41; color: #f8f9ec; box-shadow: 0 16px 40px -28px #173c4360; }
 .admin-eyebrow { display: block; margin-bottom: 10px; font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .12em; }

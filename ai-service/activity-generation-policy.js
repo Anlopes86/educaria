@@ -136,9 +136,15 @@ export function applyActivityGenerationSettings(materialType, material, options)
     if (options.title) result.title = options.title;
     if (materialType === "mindmap") result.layout = options.layout;
     if (materialType === "debate") result.format = options.format === "guided-circle" ? "Roda guiada" : "Dois lados";
-    if (materialType === "wheel") result.eliminate_used = options.eliminate;
+    if (materialType === "wheel") {
+        result.eliminate_used = options.eliminate;
+        // Visual defaults belong to the product, not to the language model.
+        const palette = ["#a9d6c7", "#b4cce5", "#e9bc77", "#e9a78e", "#c2b5df", "#b9d9bd"];
+        if (Array.isArray(result.segments)) result.segments = result.segments.map((segment, index) => ({ ...segment, color: palette[index % palette.length] }));
+    }
     if (materialType === "match") {
         result.shuffle_right = options.shuffle;
+        if (Array.isArray(result.pairs)) result.pairs = result.pairs.map((pair) => ({ ...pair, color: "#527f8c" }));
         if (options.leftLabel) result.left_label = options.leftLabel;
         if (options.rightLabel) result.right_label = options.rightLabel;
     }
