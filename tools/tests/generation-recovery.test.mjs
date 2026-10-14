@@ -63,6 +63,40 @@ function libraryHarness() {
     return h;
 }
 
+test("archiving preserves the chosen class even while the class list is not yet available", async () => {
+    const h = libraryHarness(); h.context.getAvailableClasses = () => [];
+    const record = h.create({ className: "7º ano B" });
+    assert.equal(h.api.save(record), true);
+    assert.equal(h.state.lessons[0].className, "7º ano B");
+    assert.equal(h.state.lessons[0].scope, "class");
+    h.open(h.api.get(record.id)); await h.consume();
+    assert.equal(h.state.lessons[0].className, "7º ano B");
+});
+
+test("an archived result's old recovery link reopens later edits without recreating a pending result", async () => {
+    const h = libraryHarness(); const record = h.create(); h.api.save(record);
+    h.open(h.api.get(record.id)); await h.consume();
+    h.state.lessons[0].draft = '{"text":"edição posterior"}';
+    h.api.save(record); h.open(record); await h.consume();
+    assert.equal(h.state.applied, 1);
+    assert.equal(h.state.lessons.length, 1);
+    assert.match(h.state.lessons[0].draft, /edição posterior/);
+    assert.equal(h.api.list().length, 0);
+    assert.equal(h.state.navigations.length, 1);
+});
+
+test("the original recovery link never opens a pending copy instead of its edited original", async () => {
+    const h = libraryHarness(); const record = h.create(); h.api.save(record);
+    const copy = { ...h.state.lessons[0], id: "independent-copy", scope: "class", className: "Turma B" };
+    h.open(h.api.get(record.id)); await h.consume();
+    h.state.lessons.unshift(copy);
+    assert.equal(h.api.get(record.id).libraryId, h.api.lessonId(record));
+    assert.equal(h.api.get(record.id, copy.id).libraryId, copy.id);
+    h.open(record); await h.consume();
+    assert.equal(h.state.applied, 1);
+    assert.ok(h.api.fromLesson(h.state.lessons.find(lesson => lesson.id === copy.id)));
+});
+
 test("a dashboard result becomes a separate library draft before opening an editor", () => {
     const h = libraryHarness(); const first = h.create(); const second = h.create();
     assert.equal(h.api.save(first), true); assert.equal(h.api.save(second), true);

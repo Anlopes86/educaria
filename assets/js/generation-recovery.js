@@ -39,7 +39,9 @@
             if (record.ownerUid === currentUid() && typeof writeLessonsLibrary === "function") {
                 const lessons = readLessonsLibrary();
                 if (!lessons.some((lesson) => lesson.id === lessonId(record))) {
-                    const className = typeof getAvailableClasses === "function" && getAvailableClasses().includes(record.className) ? record.className : "";
+                    // The teacher chose this destination before generation. The
+                    // class list may still be syncing when the result returns.
+                    const className = String(record.className || "").trim();
                     const now = new Date(record.createdAt).toISOString();
                     writeLessonsLibrary([{
                         id: lessonId(record), materialType: record.materialType, type: record.label,
@@ -88,7 +90,21 @@
             return { ...record, libraryId: lesson.id, className: lesson.scope === "class" ? lesson.className : "" };
         } catch { return null; }
     }
-    function get(id, libraryId) { return list().find((record) => record.id === id && (!libraryId || lessonId(record) === libraryId)) || null; }
+    function get(id, libraryId) {
+        const targetId = libraryId || `lesson-ai-${id}`;
+        const pending = list().find((record) => record.id === id && lessonId(record) === targetId);
+        if (pending) return pending;
+        // A saved editor may be reopened from its original recovery link. Only
+        // locate an existing record in this account; never recreate its content.
+        const uid = currentUid();
+        if (!uid || !/^[a-zA-Z0-9_-]{1,100}$/.test(id || "") || typeof readLessonsLibrary !== "function") return null;
+        const saved = readLessonsLibrary().find((lesson) => lesson.id === targetId);
+        try {
+            if (!saved?.draft || JSON.parse(saved.draft).pendingAiResult || !Object.hasOwn(routes, saved.materialType)) return null;
+            return { id, libraryId: saved.id, ownerUid: uid, materialType: saved.materialType, material: {},
+                topic: saved.title || "", className: saved.scope === "class" ? saved.className : "", createdAt: Date.now() };
+        } catch { return null; }
+    }
     function isDurable(record) {
         try { return valid(record, currentUid()) && ((typeof readLessonsLibrary === "function"
             && readLessonsLibrary().some((lesson) => lesson.id === lessonId(record) && lesson.draft))
