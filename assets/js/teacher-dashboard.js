@@ -601,7 +601,7 @@ function openDashboardQuickResultModal(result) {
 
     const saved = window.educariaGenerationRecovery?.isDurable(result);
     modal.querySelector("[data-dashboard-ai-result-storage]").textContent = saved
-        ? "Resultado guardado neste navegador. Você pode retomá-lo neste painel, mesmo após atualizar a página."
+        ? "Atividade guardada em Rascunhos, na biblioteca pessoal, ou na turma escolhida. A sincronização com sua conta ocorre quando há conexão."
         : "Não foi possível guardar o resultado neste navegador. Não feche nem atualize a página. Baixe uma cópia de segurança ou libere espaço e tente abrir o editor novamente.";
     modal.querySelector("[data-dashboard-ai-result-download]").hidden = Boolean(saved);
     modal.hidden = false;

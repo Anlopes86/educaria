@@ -13,6 +13,24 @@ const sample = (title = "Original", extra = {}) => ({
     createdAt: "2026-09-30T10:00:00.000Z", updatedAt: "2026-09-30T10:00:00.000Z", ...extra
 });
 
+test("a new format does not inherit ready status or history from another active material", () => {
+    const context = vm.createContext({
+        LESSON_SCOPE_CLASS: "class", LESSON_SCOPE_LIBRARY: "library", LESSON_STATUS_DRAFT: "draft",
+        currentClassName: () => "8º Ano A", forceSyncDraftFromPage() {},
+        summarizeCurrentDraft: () => ({ rawDraft: "{}", materialType: "wordsearch", summary: { title: "Novo caça-palavras", type: "Caça-palavras" } }),
+        document: { getElementById: () => null },
+        readLessonsLibrary: () => [sample("Quiz anterior", { status: "ready", usageCount: 9 })],
+        readActiveLessonId: () => "lesson-test", normalizeLessonScope: (record) => record.scope,
+        normalizeStringList: (items) => items || [], extractBnccCodesFromText: () => [], inferPedagogicalTags: () => []
+    });
+    vm.runInContext(source.slice(source.indexOf("function buildLessonRecord("), source.indexOf("function persistLessonRecord(")), context);
+    const record = context.buildLessonRecord("wordsearch", "library");
+    assert.equal(record.status, "draft");
+    assert.equal(record.autoFiled, true);
+    assert.equal(record.usageCount, 0);
+    assert.notEqual(record.id, "lesson-test");
+});
+
 function storage() {
     const values = new Map();
     return {
@@ -358,4 +376,55 @@ test("retrying pending multi-class sync uses the same records and does not dupli
     assert.equal((await h.sync()).synced, true);
     assert.deepEqual(h.local().map((record) => record.id).sort(), ids);
     assert.equal(h.db.docs.size, 3);
+});
+
+test("batch move preserves identities, drafts and history without leaving original copies", async () => {
+    const h = harness();
+    h.context.input = [sample("Um", {id:"one",scope:"class",className:"8º Ano A",usageCount:3}), sample("Dois",{id:"two",draft:'{"text":"dois"}'}), sample("Fora",{id:"other"})];
+    h.run("writeLessonsLibrary(input,{skipSync:true})");
+    h.run('organizeLessons(["one","two"],"move",{scope:"class",className:"8º Ano B"})');
+    await h.sync();
+    assert.equal(h.local().length,3);
+    assert.equal(h.local().find(item=>item.id==="one").usageCount,3);
+    assert.equal(h.local().find(item=>item.id==="two").draft,'{"text":"dois"}');
+    assert.equal(h.local().filter(item=>item.className==="8º Ano B").length,2);
+    assert.equal(h.local().find(item=>item.id==="other").scope,"library");
+});
+
+test("batch copies receive new identities and independent cloud revisions", async () => {
+    const h = harness(); h.put(sample("Original",{scope:"class",className:"8º Ano A",syncRevision:"r1",usageCount:7}));
+    h.run('organizeLessons(["lesson-test"],"copy",{scope:"class",className:"8º Ano B"})');
+    const copy=h.local().find(item=>item.id!=="lesson-test");
+    assert.ok(copy); assert.equal(copy.syncRevision,""); assert.equal(copy.usageCount,0);
+    assert.equal(h.local().find(item=>item.id==="lesson-test").className,"8º Ano A");
+    h.context.copyId=copy.id;
+    h.run('updateLessonRecordById(copyId,record=>({...record,draft:"changed"}),{skipSync:true})');
+    assert.equal(h.local().find(item=>item.id==="lesson-test").draft,"{}");
+    await h.sync();
+});
+
+test("batch validation and failed deletion leave all original records intact", () => {
+    const h = harness(); h.put(sample());
+    for (const command of ['organizeLessons(["lesson-test","missing"],"delete")','organizeLessons(["lesson-test"],"move",{scope:"class",className:"missing"})']) assert.throws(()=>h.run(command));
+    const originalSet=h.localStorage.setItem;
+    h.localStorage.setItem=(key,value)=>{if(key.startsWith("educaria:lessons:"))throw new Error("Disk full");originalSet(key,value);};
+    assert.throws(()=>h.run('organizeLessons(["lesson-test"],"delete")'),/Disk full/);
+    assert.equal(h.local().length,1); assert.equal(h.run("readDeletedLessonIds().length"),0);
+});
+
+test("batch deletion works offline and later sync cannot resurrect the originals", async () => {
+    const h=harness(); h.put(sample()); await h.sync();
+    h.db.failTransactions=true;
+    h.run('organizeLessons(["lesson-test"],"delete")'); await h.sync();
+    assert.equal(h.local().length,0); assert.equal(h.run("readDeletedLessonIds().length"),1);
+    h.db.failTransactions=false; await h.sync(); await h.sync();
+    assert.ok(h.db.docs.get("lesson-test").deletedAt); assert.equal(h.local().length,0);
+});
+
+test("explicit save promotes an automatically filed draft instead of leaving an orphan", () => {
+    const h=harness(); h.put(sample("Auto",{autoFiled:true}));
+    h.run('saveLessonToDestinations(readLessonsLibrary()[0],[{scope:"class",className:"8º Ano A"},{scope:"class",className:"8º Ano B"}])');
+    assert.equal(h.local().length,2);
+    assert.equal(h.local().find(item=>item.id==="lesson-test").className,"8º Ano A");
+    assert.ok(h.local().every(item=>!item.autoFiled));
 });

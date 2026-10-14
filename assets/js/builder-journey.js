@@ -58,6 +58,10 @@ const EDUCARIA_BUILDER_JOURNEY_CONFIGS = {
         titleId: "roleta-titulo",
         meaningfulSelector: "[data-wheel-text]"
     },
+    wordsearch: { draftKey: "educaria:builder:wordsearch", sourceId: "caca-fonte-texto", fileId: "caca-arquivo", titleId: "caca-titulo", meaningfulSelector: "[data-wordsearch-term], [data-wordsearch-clue]", cardSelector: "[data-wordsearch-word]" },
+    crossword: { draftKey: "educaria:builder:crossword", sourceId: "cruzada-fonte-texto", fileId: "cruzada-arquivo", titleId: "cruzada-titulo", meaningfulSelector: "[data-crossword-answer], [data-crossword-clue]", cardSelector: "[data-crossword-entry]" },
+    mindmap: { draftKey: "educaria:builder:mindmap", sourceId: "mind-fonte-texto", fileId: "mind-arquivo", titleId: "mapa-centro", meaningfulSelector: "[data-mind-title], [data-mind-detail]", cardSelector: "[data-mind-branch]" },
+    debate: { draftKey: "educaria:builder:debate", sourceId: "debate-fonte-texto", fileId: "debate-arquivo", titleId: "debate-titulo", meaningfulSelector: "[data-debate-title], [data-debate-question]", cardSelector: "[data-debate-step]" },
     match: {
         draftKey: "educaria:builder:match",
         classId: "ligar-turma",
@@ -103,6 +107,9 @@ function educariaBuilderJourneyConfig() {
     let autosaveQueued = false;
     let journeyStarted = false;
     let lastSavedFingerprint = "";
+    let initialFingerprint = "";
+    const ownerUid = typeof readCurrentTeacher === "function" ? readCurrentTeacher()?.uid : "";
+    const isOwner = () => !ownerUid || (typeof readCurrentTeacher === "function" && readCurrentTeacher()?.uid === ownerUid);
 
     function statusNodes() {
         return {
@@ -139,7 +146,7 @@ function educariaBuilderJourneyConfig() {
             wheel: "[data-wheel-segment]",
             match: "[data-match-pair]"
         };
-        const cardSelector = cardSelectors[materialType] || "[data-builder-card]";
+        const cardSelector = config.cardSelector || cardSelectors[materialType] || "[data-builder-card]";
         const questions = [...document.querySelectorAll(cardSelector)].map((card) => {
             return [...card.querySelectorAll("input, textarea, select")]
                 .map((field) => field.value)
@@ -165,8 +172,7 @@ function educariaBuilderJourneyConfig() {
 
         const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
         const activeLesson = typeof readActiveLesson === "function" ? readActiveLesson() : null;
-        const selectedClass = activeLesson?.className
-            || (typeof readSelectedClass === "function" ? readSelectedClass() : "");
+        const selectedClass = activeLesson?.materialType === materialType ? activeLesson.className || "" : "";
         const options = [
             '<option value="">Biblioteca pessoal</option>',
             ...classes.map((className) => `<option value="${escapeBuilderJourneyHtml(className)}">${escapeBuilderJourneyHtml(className)}</option>`)
@@ -196,16 +202,16 @@ function educariaBuilderJourneyConfig() {
     }
 
     function persistBeforeLeaving() {
+        if (!isOwner() || (builderFingerprint() === initialFingerprint && !journeyStarted)) return;
         if (window.educariaQuickImportPending) return;
         if (!builderHasMeaningfulContent()) return;
         try {
             if (typeof forceSyncDraftFromPage === "function") forceSyncDraftFromPage(materialType);
             if (typeof buildLessonRecord !== "function" || typeof persistLessonRecord !== "function") return;
             const active = typeof readActiveLesson === "function" ? readActiveLesson() : null;
-            const selectedClass = document.getElementById(config.classId)?.value || "";
-            const scope = active
+            const scope = active?.materialType === materialType
                 ? (typeof normalizeLessonScope === "function" ? normalizeLessonScope(active) : (active.className ? "class" : "library"))
-                : (selectedClass ? "class" : "library");
+                : (document.getElementById(config.classId)?.value ? "class" : "library");
             persistLessonRecord(buildLessonRecord(materialType, scope), { skipSync: true, source: "pagehide" });
         } catch (error) {
             console.warn("EducarIA builder local recovery unavailable:", error);
@@ -214,6 +220,7 @@ function educariaBuilderJourneyConfig() {
 
     async function runAutosave(reason = "editing") {
         window.clearTimeout(autosaveTimer);
+        if (!isOwner()) return;
         if (window.educariaQuickImportPending) return;
         if (!builderHasMeaningfulContent() || typeof autosaveCurrentLesson !== "function") {
             setSaveStatus("local", "Comece a editar para salvar");
@@ -230,7 +237,7 @@ function educariaBuilderJourneyConfig() {
         autosaveRunning = true;
         setSaveStatus("saving", "Salvando…");
         try {
-            const result = await autosaveCurrentLesson(materialType);
+            const result = await autosaveCurrentLesson(materialType, { className: document.getElementById(config.classId)?.value || "" });
             // Never acknowledge edits made while this save was awaiting the network.
             lastSavedFingerprint = fingerprint;
             const changedWhileSaving = builderFingerprint() !== fingerprint;
@@ -280,6 +287,15 @@ function educariaBuilderJourneyConfig() {
 
     function bindJourney() {
         hydrateClassContext();
+        initialFingerprint = builderFingerprint();
+        if (document.querySelector(".activity-editor-shell") && !document.querySelector("[data-builder-save-status], [data-quiz-save-status]")) {
+            const status = document.createElement("p");
+            status.className = "builder-draft-status";
+            status.dataset.builderSaveStatus = "";
+            status.setAttribute("role", "status");
+            status.innerHTML = '<span data-builder-save-status-label>Comece a editar para salvar</span> · <a href="biblioteca.html#rascunhos">Ver rascunhos</a>';
+            document.querySelector(".activity-editor-shell")?.before(status);
+        }
 
         const activeLesson = typeof readActiveLesson === "function" ? readActiveLesson() : null;
         if (activeLesson?.materialType === materialType) {
@@ -336,6 +352,10 @@ function educariaBuilderJourneyConfig() {
             await runAutosave("connection-restored");
         });
         document.addEventListener("educaria-retry-save", () => runAutosave("retry"));
+        document.addEventListener("educaria-material-generated", () => { journeyStarted = true; runAutosave("generation"); });
+        document.addEventListener("click", (event) => {
+            if (event.target.closest?.(".activity-editor-shell button")) window.setTimeout(() => scheduleAutosave("structure"), 0);
+        });
         document.addEventListener("educaria-storage-error", () => {
             setSaveStatus("error", "Não foi possível salvar — mantenha esta página aberta");
         });

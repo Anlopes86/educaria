@@ -33,6 +33,9 @@ function journeyHarness(materialType, classes, selected = "") {
 }
 
 for (const materialType of Object.keys(configs)) {
+    test(`${materialType}: a new draft does not inherit the last visited class`, () => {
+        assert.equal(journeyHarness(materialType, ["7º Ano A"], "7º Ano A").field.value, "");
+    });
     test(`${materialType}: the class chooser remains available without a selected class`, () => {
         const h = journeyHarness(materialType, ["7º Ano A", "7º Ano B"]);
         assert.equal(h.field.value, "");
@@ -50,6 +53,43 @@ for (const materialType of Object.keys(configs)) {
     });
     test(`${materialType}: teachers with no classes can still open the destination dialog`, () => {
         assert.equal(journeyHarness(materialType, []).button.disabled, false);
+    });
+}
+
+for (const [materialType, titleId] of Object.entries({ wordsearch: "caca-titulo", crossword: "cruzada-titulo", mindmap: "mapa-centro", debate: "debate-titulo" })) {
+    test(`${materialType}: a manual change is preserved on page exit and isolated by account`, () => {
+        const listeners = new Map();
+        const pageListeners = new Map();
+        let uid = "teacher-a";
+        const title = { id: titleId, value: "" };
+        const saved = [];
+        const context = vm.createContext({
+            URLSearchParams, console,
+            window: { location: { search: "" }, addEventListener: (name, fn) => pageListeners.set(name, fn) },
+            document: {
+                body: { dataset: { materialType } },
+                getElementById: (id) => id === titleId ? title : null,
+                querySelector: () => null,
+                querySelectorAll: (selector) => selector === "input[id], textarea[id], select[id]" ? [title] : [],
+                addEventListener: (name, fn) => listeners.set(name, fn)
+            },
+            readCurrentTeacher: () => ({ uid }), readActiveLesson: () => null,
+            buildLessonRecord: (type, scope) => ({ type, scope, title: title.value }),
+            persistLessonRecord: (record) => saved.push(record)
+        });
+        vm.runInContext(journeySource, context);
+        listeners.get("DOMContentLoaded")();
+        pageListeners.get("pagehide")();
+        assert.equal(saved.length, 0);
+        title.value = "Atividade manual";
+        pageListeners.get("pagehide")();
+        assert.equal(saved.length, 1);
+        assert.equal(saved[0].scope, "library");
+        assert.equal(saved[0].type, materialType);
+        uid = "teacher-b";
+        title.value = "Não deve passar para outra conta";
+        pageListeners.get("pagehide")();
+        assert.equal(saved.length, 1);
     });
 }
 

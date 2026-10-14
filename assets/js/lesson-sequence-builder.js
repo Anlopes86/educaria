@@ -1454,6 +1454,11 @@ function readAllActivityLessons() {
     return readLessonsLibrary().filter((lesson) => (lesson.materialType || "slides") !== "lesson");
 }
 
+function isPendingSequenceLesson(lesson) {
+    try { return Boolean(JSON.parse(lesson?.draft || "{}").pendingAiResult); }
+    catch { return false; }
+}
+
 function classLessonsForSequence() {
     const turma = currentTurmaName();
     return readAllActivityLessons().filter((lesson) => detectLessonScope(lesson) === "class" && lesson.className === turma);
@@ -1465,7 +1470,7 @@ function libraryLessonsForSequence() {
 
 function lessonsForSource(type, source) {
     const base = source === "library" ? libraryLessonsForSequence() : classLessonsForSequence();
-    return base.filter((lesson) => (lesson.materialType || "slides") === type);
+    return base.filter((lesson) => (lesson.materialType || "slides") === type && !isPendingSequenceLesson(lesson));
 }
 
 function lessonCountsForType(type) {
@@ -1645,7 +1650,7 @@ function buildBaseBlock(type) {
 }
 
 function applyLessonToBlock(block, lesson, sourceScope) {
-    if (!block || !lesson) return block;
+    if (!block || !lesson || isPendingSequenceLesson(lesson)) return block;
 
     const previousTitle = block.lessonTitle || block.label || "";
     block.lessonRefId = lesson.id;
@@ -1704,7 +1709,7 @@ function addTypeToSequence(type) {
 
 function addSavedLessonToSequence(lessonId) {
     const lesson = findLessonById(lessonId);
-    if (!lesson || (lesson.materialType || "slides") === "lesson") return;
+    if (!lesson || (lesson.materialType || "slides") === "lesson" || isPendingSequenceLesson(lesson)) return;
 
     const block = buildBaseBlock(lesson.materialType || "slides");
     applyLessonToBlock(block, lesson, detectLessonScope(lesson));
@@ -2048,9 +2053,27 @@ function syncEditedBlockFromMarker() {
     clearEditingBlockMarker();
 }
 
+let lessonSequenceSaveTimer = 0;
+let lessonSequenceOwnerUid = "";
 function persistLessonSequence() {
+    if (lessonSequenceOwnerUid && readCurrentTeacher()?.uid !== lessonSequenceOwnerUid) return;
     syncStateFromFields();
     writeLessonSequenceDraft(lessonSequenceState);
+    const active = activeLessonSequenceRecord();
+    if (!lessonSequenceState.blocks.length && !active) return;
+    const rawDraft = JSON.stringify(lessonSequenceState);
+    const summary = summarizeLessonSequenceDraft(rawDraft);
+    const record = persistLessonRecord({
+        ...active, ...summary, id: active?.id || newLessonRecordId(),
+        scope: active?.scope || "library", className: active?.className || "",
+        status: active?.status || "draft", autoFiled: active ? Boolean(active.autoFiled) : true, materialType: "lesson",
+        updatedAt: new Date().toISOString(), draft: rawDraft
+    }, { skipSync: true, source: "sequence-autosave" });
+    localStorage.setItem(scopedStorageKey(ACTIVE_LESSON_SEQUENCE_KEY), record.id);
+    window.clearTimeout(lessonSequenceSaveTimer);
+    lessonSequenceSaveTimer = window.setTimeout(() => {
+        if (!lessonSequenceOwnerUid || readCurrentTeacher()?.uid === lessonSequenceOwnerUid) void syncLessonsWithFirebase();
+    }, 1100);
 }
 
 function normalizeLessonSequenceSearch(value) {
@@ -2099,6 +2122,7 @@ function renderSequenceMaterialCard(lesson) {
     const selectedCount = lessonSequenceState.blocks.filter((block) => block.lessonRefId === lesson.id).length;
     const scope = detectLessonScope(lesson);
     const sourceName = scope === "library" ? "Biblioteca pessoal" : (lesson.className || "Turma");
+    const pending = isPendingSequenceLesson(lesson);
 
     return `
         <article class="lesson-sequence-material-card ${selectedCount ? "is-selected" : ""}">
@@ -2108,12 +2132,12 @@ function renderSequenceMaterialCard(lesson) {
             </div>
             <div class="lesson-sequence-material-card-copy">
                 <strong>${escapeHtml(lesson.title || materialGroupLabel(materialType))}</strong>
-                <p>${escapeHtml(lesson.summary || materialGroupDescription(materialType))}</p>
+                <p>${escapeHtml(pending ? "Abra no editor para preparar este rascunho antes de adicioná-lo à aula. Não é necessário gerar novamente." : lesson.summary || materialGroupDescription(materialType))}</p>
             </div>
-            <button type="button" class="lesson-sequence-material-add" data-add-saved-lesson="${escapeAttr(lesson.id)}">
+            ${pending ? `<a class="lesson-sequence-material-add" href="${escapeAttr(editorPathForLesson(lesson))}">Revisar no editor</a>` : `<button type="button" class="lesson-sequence-material-add" data-add-saved-lesson="${escapeAttr(lesson.id)}">
                 <span aria-hidden="true">+</span>
                 <span>${selectedCount ? `Adicionar novamente · ${selectedCount} na aula` : "Adicionar à aula"}</span>
-            </button>
+            </button>`}
         </article>
     `;
 }
@@ -2895,7 +2919,8 @@ function bindLessonSequenceEvents() {
         }
     });
 
-    document.addEventListener("educaria-lessons-updated", () => {
+    document.addEventListener("educaria-lessons-updated", (event) => {
+        if (event.detail?.source === "sequence-autosave") return;
         syncBlocksWithSavedMaterials();
         renderLessonSequence();
     });
@@ -3023,6 +3048,7 @@ function saveLessonSequenceToLibrary(scope = "class") {
 
 function initLessonSequenceBuilder() {
     if (!document.body.matches('[data-material-type="lesson"]')) return;
+    lessonSequenceOwnerUid = typeof readCurrentTeacher === "function" ? readCurrentTeacher()?.uid || "" : "";
 
     loadInitialLessonSequence();
     syncEditedBlockFromMarker();

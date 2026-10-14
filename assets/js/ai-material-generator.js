@@ -2184,6 +2184,7 @@ async function generateMaterial(materialType, button, options = {}) {
         if (!applied) {
             throw new Error("A resposta da IA não trouxe dados suficientes para preencher o editor.");
         }
+        document.dispatchEvent(new CustomEvent("educaria-material-generated"));
 
         educariaTrackAiEvent("ai_generate_succeeded", {
             materialType,
@@ -2272,13 +2273,13 @@ function readDashboardQuickResult() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("quickApply") !== "1") return null;
     const destination = params.get("quickDestination") === "present" ? "present" : "edit";
-    const request = window.educariaGenerationRecovery?.get(params.get("quickResult"));
+    const request = window.educariaGenerationRecovery?.get(params.get("quickResult"), params.get("quickLesson"));
     return request ? { ...request, destination } : null;
 }
 
 function clearDashboardQuickResultQuery() {
     const params = new URLSearchParams(window.location.search);
-    ["new", "quickApply", "quickResult", "quickDestination"].forEach((key) => params.delete(key));
+    ["new", "quickApply", "quickResult", "quickLesson", "quickDestination"].forEach((key) => params.delete(key));
     const query = params.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
 }
@@ -2331,7 +2332,7 @@ async function consumeDashboardQuickResult() {
         if (request.materialType !== materialType || !config || !textField) throw new Error("Editor incompatível.");
         const id = recovery.lessonId(request);
         const existing = readLessonsLibrary().find((lesson) => lesson.id === id);
-        if (existing) {
+        if (existing && !recovery.fromLesson(existing)) {
             // A reload/retry after saving must not replace the teacher's later edits.
             activateLessonById(id);
             recovery.complete(request.id, existing);
@@ -2356,7 +2357,8 @@ async function consumeDashboardQuickResult() {
         await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
         if (recovery.currentUid() !== request.ownerUid) throw new Error("A conta foi alterada.");
         const scope = request.className ? "class" : "library";
-        const record = { ...buildLessonRecord(materialType, scope), id, className: request.className || "", scope };
+        const record = { ...buildLessonRecord(materialType, scope), id, className: request.className || "", scope,
+            ...(existing ? { title: existing.title, status: existing.status, autoFiled: existing.autoFiled, createdAt: existing.createdAt, syncRevision: existing.syncRevision } : {}) };
         const saved = persistLessonRecord(record, { skipSync: true, source: "quick-ai-recovery" });
         if (!saved?.draft) throw new Error("Rascunho não salvo.");
         recovery.complete(request.id, saved);

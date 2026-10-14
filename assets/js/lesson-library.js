@@ -43,7 +43,7 @@ let activeLibraryMaterialFilter = "all";
 let activeLibraryStatusFilter = "all";
 let activeLibrarySort = "recent";
 let librarySearchQuery = "";
-let activeLibraryScope = "library";
+let activeLibraryScope = typeof window !== "undefined" && window.location?.hash === "#rascunhos" ? "drafts" : "library";
 
 function scopedStorageKey(baseKey) {
     return typeof educariaScopedKey === "function" ? educariaScopedKey(baseKey) : baseKey;
@@ -174,6 +174,7 @@ function normalizeLessonRecord(lesson) {
         createdAt,
         updatedAt,
         status: normalizeLessonStatus(lesson.status),
+        autoFiled: Boolean(lesson.autoFiled),
         bnccCodes,
         tags: normalizeStringList([
             ...normalizeStringList(lesson.tags, 6),
@@ -383,6 +384,46 @@ function removeLessonById(id) {
     }
 }
 
+// Batch operations share the same local-first persistence and cloud conflict handling.
+function organizeLessons(ids, action, destination = null) {
+    const selected = new Set(ids);
+    const lessons = readLessonsLibrary();
+    const records = lessons.filter((lesson) => selected.has(lesson.id));
+    if (!records.length || records.length !== selected.size) throw new Error("A seleção mudou. Confira os materiais e tente novamente.");
+    if (!["move", "copy", "delete"].includes(action)) throw new Error("Ação inválida.");
+    if (action !== "delete") {
+        const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
+        if (!destination || !["library", "class"].includes(destination.scope)
+            || (destination.scope === "class" && !classes.includes(destination.className))) {
+            throw new Error("Escolha uma turma disponível ou a biblioteca pessoal.");
+        }
+    }
+    const previousDeleted = readDeletedLessonIds();
+    const now = new Date().toISOString();
+    let next = lessons;
+    let changed = [];
+    if (action === "delete") {
+        writeDeletedLessonIds([...previousDeleted, ...selected]);
+        next = lessons.filter((lesson) => !selected.has(lesson.id));
+    } else {
+        changed = records.map((lesson) => ({
+            ...lesson, autoFiled: false, scope: destination.scope, className: destination.scope === "class" ? destination.className : "", updatedAt: now,
+            ...(action === "copy" ? { id: newLessonRecordId(), createdAt: now, syncRevision: "", conflictOf: "",
+                lastOpenedAt: "", lastPresentedAt: "", lastUsedAt: "", usageCount: 0 } : {})
+        }));
+        next = [...changed, ...lessons.filter((lesson) => action === "copy" || !selected.has(lesson.id))];
+    }
+    try {
+        writeLessonsLibrary(next, { skipSync: true, source: `bulk-${action}` });
+    } catch (error) {
+        if (action === "delete") writeDeletedLessonIds(previousDeleted);
+        throw error;
+    }
+    if (action === "delete" && selected.has(readActiveLessonId())) writeActiveLessonId("");
+    void syncLessonsWithFirebase();
+    return { count: records.length, records: changed };
+}
+
 function updateLessonRecordById(id, updater, options = {}) {
     const lessonId = String(id || "").trim();
     if (!lessonId || typeof updater !== "function") return null;
@@ -450,14 +491,16 @@ function saveLessonToDestinations(source, destinations, { updateSource = true, m
     const lessons = readLessonsLibrary();
     const existing = lessons.find((lesson) => lesson.id === source.id);
     const now = new Date().toISOString();
-    const records = [...unique.values()].map(({ scope, className }) => {
-        const updatesExisting = updateSource && existing && normalizeLessonScope(existing) === scope && existing.className === className;
+    const promoteDraft = updateSource && existing?.autoFiled && existing.scope === LESSON_SCOPE_LIBRARY && existing.status === LESSON_STATUS_DRAFT && !unique.has("library:");
+    const records = [...unique.values()].map(({ scope, className }, index) => {
+        const updatesExisting = updateSource && existing && ((normalizeLessonScope(existing) === scope && existing.className === className) || (promoteDraft && index === 0));
         return {
             ...source, scope, className,
             id: updatesExisting ? existing.id : newLessonRecordId(),
             createdAt: updatesExisting ? existing.createdAt : now,
             updatedAt: now,
             status: markReady ? LESSON_STATUS_READY : source.status,
+            autoFiled: false,
             syncRevision: updatesExisting ? existing.syncRevision : "",
             conflictOf: updatesExisting ? existing.conflictOf : "",
             lastOpenedAt: updatesExisting ? existing.lastOpenedAt : "",
@@ -1287,7 +1330,7 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
     const hasSourceFile = Boolean(document.getElementById(metadataControls.file)?.files?.length);
     const lessons = readLessonsLibrary();
     const activeId = readActiveLessonId();
-    const existing = lessons.find((lesson) => lesson.id === activeId);
+    const existing = lessons.find((lesson) => lesson.id === activeId && (lesson.materialType || "slides") === materialType);
     const lessonId = existing
         && (existing.materialType || "slides") === materialType
         && normalizeLessonScope(existing) === scope
@@ -1320,6 +1363,7 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
         createdAt,
         updatedAt: now,
         status: existing?.status || LESSON_STATUS_DRAFT,
+        autoFiled: existing?.id === lessonId ? Boolean(existing.autoFiled) : scope === LESSON_SCOPE_LIBRARY,
         bnccCodes,
         tags,
         lastOpenedAt: existing?.lastOpenedAt || "",
@@ -1354,12 +1398,11 @@ function persistLessonRecord(record, options = {}) {
     return savedLessons.find((lesson) => lesson.id === normalizedRecord.id);
 }
 
-async function autosaveCurrentLesson(preferredType = "quiz") {
+async function autosaveCurrentLesson(preferredType = "quiz", { className = "" } = {}) {
     const activeLesson = readLessonsLibrary().find((lesson) => lesson.id === readActiveLessonId());
-    const selectedClass = currentClassName();
-    const scope = activeLesson
+    const scope = activeLesson?.materialType === preferredType
         ? normalizeLessonScope(activeLesson)
-        : (selectedClass ? LESSON_SCOPE_CLASS : LESSON_SCOPE_LIBRARY);
+        : (className && getAvailableClasses().includes(className) ? LESSON_SCOPE_CLASS : LESSON_SCOPE_LIBRARY);
     const record = buildLessonRecord(preferredType, scope);
     const savedRecord = persistLessonRecord(record, { skipSync: true, source: "autosave" });
     const remote = await syncLessonRecordWithFirebase(savedRecord);
@@ -1430,6 +1473,8 @@ function readActiveLesson() {
 }
 
 function editorPathForLesson(lesson) {
+    const pending = window.educariaGenerationRecovery?.fromLesson(lesson);
+    if (pending) return window.educariaGenerationRecovery.editorUrl(pending);
     if (lesson.materialType === "lesson") return "criar-aula.html";
     if (lesson.materialType === "quiz") return "quiz-builder.html";
     if (lesson.materialType === "flashcards") return "flashcards-builder.html";
@@ -1445,6 +1490,8 @@ function editorPathForLesson(lesson) {
 }
 
 function presentationPathForLesson(lesson) {
+    const pending = window.educariaGenerationRecovery?.fromLesson(lesson);
+    if (pending) return window.educariaGenerationRecovery.editorUrl(pending, "present");
     const materialPath = typeof presentationPathForMaterial === "function"
         ? presentationPathForMaterial(lesson.materialType || "slides")
         : "apresentacao.html";
@@ -1656,6 +1703,7 @@ function classFilterSummaryLabel(filterId, statusFilterId, filteredCount, totalC
 }
 
 function libraryScopeLabel(scope = activeLibraryScope) {
+    if (scope === "drafts") return "rascunhos da biblioteca pessoal";
     if (scope === "all") return lessonLibraryTranslate("library.filters.scope.all", "todos os materiais");
     if (scope.startsWith("class:")) return scope.slice(6);
     return lessonLibraryTranslate("library.filters.scope.library", "biblioteca pessoal");
@@ -1686,6 +1734,7 @@ function libraryFilterSummaryLabel(filterId, filteredCount, totalCount) {
 }
 
 function libraryMaterialsForActiveScope() {
+    if (activeLibraryScope === "drafts") return libraryMaterials().filter((lesson) => lesson.status === LESSON_STATUS_DRAFT);
     if (activeLibraryScope === "all") return readLessonsLibrary();
     if (activeLibraryScope.startsWith("class:")) return classMaterials(activeLibraryScope.slice(6));
     return libraryMaterials();
@@ -1694,11 +1743,12 @@ function libraryMaterialsForActiveScope() {
 function hydrateLibraryScopeFilter(select) {
     if (!select) return;
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
-    const validScopes = new Set(["library", "all", ...classes.map((className) => `class:${className}`)]);
+    const validScopes = new Set(["library", "drafts", "all", ...classes.map((className) => `class:${className}`)]);
     if (!validScopes.has(activeLibraryScope)) activeLibraryScope = "library";
 
     select.innerHTML = `
         <option value="library">${escapeHtml(lessonLibraryTranslate("library.filters.scope.library", "Biblioteca pessoal"))}</option>
+        <option value="drafts">Rascunhos · Biblioteca pessoal</option>
         <option value="all">${escapeHtml(lessonLibraryTranslate("library.filters.scope.all", "Todos os materiais"))}</option>
         ${classes.map((className) => `<option value="class:${escapeHtml(className)}">${escapeHtml(lessonLibraryTranslate("library.filters.scope.classPrefix", "Turma"))}: ${escapeHtml(className)}</option>`).join("")}
     `;
@@ -2315,7 +2365,7 @@ function hydrateClassPage() {
                             ${filteredLessons.map((lesson) => {
                                 const key = lesson.materialType || "slides";
                                 return `
-                                <article class="lesson-history-card lesson-history-card--grouped" data-material-type="${escapeHtml(key)}">
+                                <article class="lesson-history-card lesson-history-card--grouped" data-lesson-card="${escapeHtml(lesson.id)}" data-material-type="${escapeHtml(key)}">
                                     ${window.EducariaCollections?.cover(key) || ""}
                                     <span class="route-tag">${escapeHtml(materialGroupLabel(key))}</span>
                                     <h3>${escapeHtml(lesson.title)}</h3>
@@ -2554,6 +2604,13 @@ function bindClassPageRefresh() {
 }
 
 function bindLibraryFilterControls() {
+    document.querySelector("[data-library-drafts]")?.addEventListener("click", () => {
+        activeLibraryScope = activeLibraryScope === "drafts" ? "library" : "drafts";
+        activeLibraryStatusFilter = "all";
+        activeLibraryMaterialFilter = "all";
+        librarySearchQuery = "";
+        hydrateLibraryPage();
+    });
     document.addEventListener("input", (event) => {
         const target = event.target instanceof Element ? event.target : null;
         const classSearchInput = target?.closest("[data-class-material-search]");
@@ -2619,6 +2676,12 @@ function hydrateLibraryPage() {
     }
 
     hydrateLibraryScopeFilter(scopeFilter);
+    const draftsButton = document.querySelector("[data-library-drafts]");
+    if (draftsButton) {
+        const count = libraryMaterials().filter((lesson) => lesson.status === LESSON_STATUS_DRAFT).length;
+        draftsButton.querySelector("[data-drafts-count]").textContent = count;
+        draftsButton.setAttribute("aria-pressed", String(activeLibraryScope === "drafts"));
+    }
     const lessons = libraryMaterialsForActiveScope();
     if (countNode) {
         const noun = lessonLibraryTranslate(lessons.length === 1 ? "library.count.material" : "library.count.materials", lessons.length === 1 ? "material" : "materiais");
@@ -2690,6 +2753,11 @@ function hydrateLibraryPage() {
 
     if (!root) return;
     if (!lessons.length) {
+        if (activeLibraryScope === "drafts") {
+            root.innerHTML = '<article class="lesson-history-card"><span class="route-tag">Rascunhos</span><h3>Nenhum rascunho por aqui</h3><p>Atividades criadas sem uma turma de destino ficam guardadas automaticamente aqui. Você pode voltar para editar e organizar quando quiser.</p></article>';
+            root.setAttribute("aria-busy", "false");
+            return;
+        }
         const classScope = activeLibraryScope.startsWith("class:");
         root.innerHTML = `
             <article class="lesson-history-card">
@@ -2729,7 +2797,7 @@ function hydrateLibraryPage() {
                         ${filteredLessons.map((lesson) => {
                             const key = lesson.materialType || "slides";
                             return `
-                            <article class="lesson-history-card lesson-history-card--grouped" data-material-type="${escapeHtml(key)}">
+                            <article class="lesson-history-card lesson-history-card--grouped" data-lesson-card="${escapeHtml(lesson.id)}" data-material-type="${escapeHtml(key)}">
                                 ${window.EducariaCollections?.cover(key) || ""}
                                 <span class="route-tag">${escapeHtml(materialGroupLabel(key))}</span>
                                 <h3>${escapeHtml(lesson.title)}</h3>

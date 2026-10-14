@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="library.title">Biblioteca | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261013-3">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js" defer></script>
@@ -18,10 +18,12 @@
     <script src="../assets/js/turma-context.js?v=20260930-2" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/collection-visuals.js?v=20261011-3" defer></script>
-    <script src="../assets/js/lesson-library.js?v=20261011-3" defer></script>
+    <script src="../assets/js/generation-recovery.js?v=20261014-1" defer></script>
+    <script src="../assets/js/lesson-library.js?v=20261014-1" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/admin-access.js?v=20261012-1" defer></script>
     <script src="../assets/js/app-sidebar.js?v=20261012-2" defer></script>
+    <script src="../assets/js/library-bulk-actions.js?v=20261014-1" defer></script>
 </head>
 <body class="product-body theme-overview collection-page" data-requires-auth="true" data-page="library-overview">
     <a class="skip-link" href="#main-content" data-i18n="library.skip">Pular para o conteúdo principal</a>
@@ -139,6 +141,10 @@
                 </div>
             </section>
 
+            <section class="library-drafts-entry" aria-label="Rascunhos">
+                <div><strong>Rascunhos</strong><p>As criações sem turma ficam aqui automaticamente. Retome, revise e organize quando quiser.</p></div>
+                <button type="button" class="platform-link-button platform-link-secondary" data-library-drafts aria-pressed="false">Ver rascunhos <span data-drafts-count>0</span></button>
+            </section>
             <section class="focus-card library-overview-panel">
                 <div class="page-section-title workspace-section-title">
                     <div>

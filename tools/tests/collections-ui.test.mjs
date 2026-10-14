@@ -8,6 +8,7 @@ const visualSource = await read("assets/js/collection-visuals.js");
 const librarySource = await read("assets/js/lesson-library.js");
 const materialSource = await read("assets/js/material-context.js");
 const classesSource = await read("assets/js/classes-overview.js");
+const sequenceSource = await read("assets/js/lesson-sequence-builder.js");
 const types = ["slides", "quiz", "flashcards", "memory", "wheel", "mindmap", "match", "debate", "hangman", "lesson", "wordsearch", "crossword"];
 const records = types.map((type, i) => ({id: `item-${i}`, title: `${String(i).padStart(2, "0")} Teste`, summary: `Resumo ${i}`, materialType: type, scope: "library", status: i === 0 ? "draft" : "ready", updatedAt: `2026-10-${String(i + 1).padStart(2, "0")}T12:00:00.000Z`, draft: "{}"}));
 
@@ -26,6 +27,39 @@ function harness() {
     const run = code => vm.runInContext(code, scope);
     return {root, scope, run, visual: scope.window.EducariaCollections};
 }
+
+test("drafts is a personal-library filter, excluding ready materials and class drafts", () => {
+    const h = harness();
+    h.scope.readLessonsLibrary = () => [...structuredClone(records), { ...records[1], id: "class-draft", scope: "class", className: "7º Ano A", status: "draft" }];
+    h.run('activeLibraryScope="drafts"; hydrateLibraryPage()');
+    assert.equal((h.root.innerHTML.match(/<article/g) || []).length, 1);
+    assert.match(h.root.innerHTML, /data-lesson-card="item-0"/);
+    assert.doesNotMatch(h.root.innerHTML, /class-draft/);
+    h.scope.readLessonsLibrary = () => [];
+    h.run('hydrateLibraryPage()');
+    assert.match(h.root.innerHTML, /Nenhum rascunho por aqui/);
+});
+
+test("lesson sequence routes pending generated drafts to review instead of inserting blank blocks", () => {
+    const pending = { id: "pending", title: "Sistema Solar", materialType: "quiz", scope: "library", draft: JSON.stringify({ pendingAiResult: { material: {} } }) };
+    const scope = vm.createContext({
+        lessonSequenceState: { blocks: [] }, findLessonById: () => pending,
+        detectLessonScope: (lesson) => lesson.scope, materialGroupLabel: () => "Quiz",
+        materialGroupDescription: () => "Revisão", editorPathForLesson: () => "quiz-builder.html?quickApply=1",
+        escapeHtml: String, escapeAttr: String,
+        buildBaseBlock: () => assert.fail("Must not create a blank block before review")
+    });
+    for (const [start, end] of [
+        ["function isPendingSequenceLesson(", "function classLessonsForSequence("],
+        ["function addSavedLessonToSequence(", "function setBlockSource("],
+        ["function renderSequenceMaterialCard(", "function refreshLessonSequenceMaterialResults("]
+    ]) vm.runInContext(sequenceSource.slice(sequenceSource.indexOf(start), sequenceSource.indexOf(end)), scope);
+    scope.addSavedLessonToSequence("pending");
+    const markup = scope.renderSequenceMaterialCard(pending);
+    assert.match(markup, /Revisar no editor/);
+    assert.doesNotMatch(markup, /data-add-saved-lesson/);
+    assert.match(scope.renderSequenceMaterialCard({ ...pending, draft: "{}" }), /data-add-saved-lesson/);
+});
 
 test("12 decorative covers are distinct, inert and fall back safely for unknown types", () => {
     const {visual} = harness();

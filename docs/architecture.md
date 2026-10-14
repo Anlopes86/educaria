@@ -22,7 +22,7 @@ O EducarIA tem frontend estático, uma API Node/Express e dados protegidos por F
 | Painel e criador principal | `teacher-dashboard.js`, `dashboard-creation.js` |
 | Menu lateral | `app-sidebar.js` |
 | Turmas e filtros | `classes-overview.js`, `class-detail.js`, `turma-context.js` |
-| Biblioteca, destinos e sincronização de materiais | `lesson-library.js` |
+| Biblioteca, destinos e sincronização de materiais | `lesson-library.js`, `library-bulk-actions.js` |
 | Pedido à IA e aplicação do resultado no editor | `ai-material-generator.js`, `generation-recovery.js` |
 | Opções e ações comuns dos editores | `editor-disclosure.js`, `builder-actions.js`, `builder-journey.js` |
 | Aula completa | `lesson-sequence-builder.js`, `lesson-sequence-player.js` |
@@ -35,6 +35,16 @@ As atividades seguem principalmente os pares `*-builder.js` e `*-runtime.js`. Qu
 Fluxo principal: painel/editor → `ai-material-generator.js` → API `/api/ai/generate` → resultado no editor → `lesson-library.js`/Firebase → apresentação. A aula completa compõe materiais já criados. Arquivos do professor são processados no backend; upload de imagem própria tem seu fluxo no frontend.
 
 Os scripts clássicos compartilham funções globais. Renomear uma função ou mudar a ordem de carregamento pode afetar outras páginas. A camada de persistência também atende materiais antigos: não renomeie chaves de armazenamento para “padronizar” sem migração.
+
+### Rascunhos e organização de materiais
+
+`Rascunhos` é um filtro da biblioteca pessoal (`scope: library`, `status: draft`), não outra coleção. `builder-journey.js` cobre os onze editores; a Aula completa salva pelo seu próprio builder. Sem destino explícito, novas criações vão para a biblioteca. Salvamentos são locais primeiro e sincronizam pelo protocolo existente; falhas de armazenamento não devem ser apresentadas como sucesso.
+
+`generation-recovery.js` arquiva o resultado do criador do painel antes de abrir o editor. Até a primeira abertura, `draft` contém `{pendingAiResult: ...}`. Os links da biblioteca encaminham pelo editor, que converte o resultado sem nova chamada à IA. Cópias usam `quickLesson` para distinguir registros originados da mesma geração. A Aula completa mostra “Revisar no editor” para esses resultados, em vez de inserir conteúdo vazio. O cache legado de gerações pendentes é migrado por conta.
+
+`autoFiled` identifica apenas materiais guardados automaticamente: ao escolher uma turma no salvamento explícito, o registro é promovido para ela sem deixar um rascunho duplicado. Materiais organizados explicitamente preservam a semântica anterior de cópia para novos destinos.
+
+`library-bulk-actions.js` mantém seleção somente dos cartões visíveis e a limpa quando muda a conta/origem. `organizeLessons` valida todos os IDs e o destino antes da gravação local única. Mover preserva o ID; copiar cria IDs independentes e reinicia revisão/histórico de uso; excluir registra tombstones antes de remover e exige confirmação na interface. Não substitua esse fluxo por exclusão direta no Firebase: isso permitiria ressuscitar materiais ao sincronizar outro dispositivo.
 
 ## Organização do serviço de IA
 

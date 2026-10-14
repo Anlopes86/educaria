@@ -24,7 +24,7 @@ function harness(values = new Map()) {
         requestAnimationFrame(callback) { state.onFrame?.(); callback(); } };
     const field = { value: "", dispatchEvent() {} };
     const document = {
-        getElementById: () => field, querySelector: () => null, dispatchEvent() {},
+        getElementById: () => field, querySelector: () => null, dispatchEvent() {}, addEventListener() {},
         body: { classList: { remove() {} } }
     };
     const context = vm.createContext({ window, document, localStorage: storage, crypto: { randomUUID }, URLSearchParams,
@@ -48,8 +48,60 @@ function harness(values = new Map()) {
             payload: { material: { title: "Ciências", questions: [{ prompt: "O que é energia?" }] }, charge: { cost: 12 } }, ...extra });
     }
     function open(record) { location.search = new URL(api.editorUrl(record), "https://example.test").search; }
-    return { api, state, values, storage, teacher, create, open, consume: () => vm.runInContext("consumeDashboardQuickResult()", context) };
+    return { api, state, values, storage, teacher, create, open, context, consume: () => vm.runInContext("consumeDashboardQuickResult()", context) };
 }
+
+function libraryHarness() {
+    const h = harness();
+    h.context.getAvailableClasses = () => ["Turma A", "Turma B"];
+    h.context.writeLessonsLibrary = records => { if (h.state.failWrite) throw new Error("Disk full"); h.state.lessons = records; };
+    h.context.persistLessonRecord = record => {
+        if (h.state.failImport) throw new Error("Disk full");
+        h.state.lessons = [record, ...h.state.lessons.filter(item => item.id !== record.id)];
+        return record;
+    };
+    return h;
+}
+
+test("a dashboard result becomes a separate library draft before opening an editor", () => {
+    const h = libraryHarness(); const first = h.create(); const second = h.create();
+    assert.equal(h.api.save(first), true); assert.equal(h.api.save(second), true);
+    assert.equal(h.state.lessons.length, 2);
+    assert.equal(h.state.lessons[0].scope, "library"); assert.equal(h.state.lessons[0].status, "draft");
+    assert.equal(h.api.isDurable(first), true);
+    assert.equal(h.api.list().length, 2);
+    assert.equal([...h.values.keys()].filter(key => key.startsWith("educaria:ai-result:")).length, 0);
+    h.state.lessons = h.state.lessons.filter(lesson => lesson.id !== h.api.lessonId(first));
+    assert.equal(h.api.get(first.id), null, "deleting an archived draft must not leave a dashboard copy");
+});
+
+test("an archived, moved draft opens without another generation and preserves its identity", async () => {
+    const h = libraryHarness(); const record = h.create(); h.api.save(record);
+    const lesson = h.state.lessons[0]; lesson.scope = "class"; lesson.className = "Turma B";
+    const recovered = h.api.fromLesson(lesson); h.open(recovered);
+    await h.consume();
+    assert.equal(h.state.applied, 1); assert.equal(h.state.lessons.length, 1);
+    assert.equal(h.state.lessons[0].id, lesson.id); assert.equal(h.state.lessons[0].className, "Turma B");
+    assert.equal(h.api.list().length, 0);
+});
+
+test("copied pending drafts open their own copy, not the original", async () => {
+    const h = libraryHarness(); const record = h.create(); h.api.save(record);
+    const original = h.state.lessons[0]; const copy = { ...original, id: "lesson-copy", scope: "class", className: "Turma A" };
+    h.state.lessons.push(copy); h.open(h.api.fromLesson(copy)); await h.consume();
+    assert.equal(h.state.lessons.length, 2);
+    assert.equal(h.api.fromLesson(h.state.lessons.find(lesson => lesson.id === "lesson-copy")), null);
+    assert.ok(h.api.fromLesson(h.state.lessons.find(lesson => lesson.id === original.id)));
+});
+
+test("archive failures retain a downloadable result and cannot leak it into another account", () => {
+    const h = libraryHarness(); const record = h.create(); h.state.failWrite = true;
+    assert.equal(h.api.save(record), false); assert.equal(h.api.hasUnsaved(), true);
+    h.state.failWrite = false; h.teacher("Teacher-B");
+    assert.equal(h.api.save(record), true); assert.equal(h.state.lessons.length, 0);
+    h.teacher("Teacher-A"); h.api.save(record); assert.equal(h.state.lessons.length, 1);
+    h.teacher("Teacher-B"); assert.equal(h.api.fromLesson(h.state.lessons[0]), null);
+});
 
 test("pending results survive reload and do not expire after fifteen minutes", () => {
     const first = harness(); const record = first.create(); record.createdAt -= 48 * 60 * 60 * 1000;
