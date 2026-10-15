@@ -9,16 +9,18 @@ import {
 test("makes every object field required for Groq strict structured outputs", () => {
     const schema = groqStrictJsonSchema({
         type: "object",
+        maxItems: 4,
         required: ["title"],
         properties: {
-            title: { type: "string" },
+            title: { type: "string", maxLength: 80 },
             cards: {
                 type: "array",
+                maxItems: 3,
                 items: {
                     type: "object",
                     required: ["front"],
                     properties: {
-                        front: { type: "string" },
+                        front: { type: "string", maxLength: 50 },
                         back: { type: "string" }
                     }
                 }
@@ -28,6 +30,10 @@ test("makes every object field required for Groq strict structured outputs", () 
 
     assert.deepEqual(schema.required, ["title", "cards"]);
     assert.equal(schema.additionalProperties, false);
+    assert.equal(schema.maxItems, 4);
+    assert.equal("maxLength" in schema.properties.title, false);
+    assert.equal(schema.properties.cards.maxItems, 3);
+    assert.equal("maxLength" in schema.properties.cards.items.properties.front, false);
     assert.deepEqual(schema.properties.cards.items.required, ["front", "back"]);
     assert.equal(schema.properties.cards.items.additionalProperties, false);
 });

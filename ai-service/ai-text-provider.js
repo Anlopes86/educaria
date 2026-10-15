@@ -31,6 +31,7 @@ export function groqStrictJsonSchema(schema) {
     const normalized = Object.fromEntries(
         Object.entries(schema).map(([key, value]) => [key, groqStrictJsonSchema(value)])
     );
+    delete normalized.maxLength;
     if (normalized.type === "object" && normalized.properties && typeof normalized.properties === "object") {
         normalized.required = Object.keys(normalized.properties);
         normalized.additionalProperties = false;
