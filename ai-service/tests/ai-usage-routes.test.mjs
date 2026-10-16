@@ -6,18 +6,21 @@ import { createUsageObservation, usageContext } from "../ai-usage-analytics.js";
 import { buildAiCreditUsagePolicy, aiCreditsForUsage, mergeAiUsageMetadata, normalizeAiUsageMetadata } from "../ai-credit-policy.js";
 import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } from "../activity-generation-policy.js";
 import { normalizeSlideGenerationOptions } from "../slide-generation-policy.js";
+import { normalizeSlidesMaterial } from "../materials/slides.js";
+import { parseGeneratedJson } from "../materials/generated-json.js";
+import { schemaFor } from "../materials/schemas.js";
 
 const source = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
 const usageMetadata = { promptTokenCount: 100, candidatesTokenCount: 200, thoughtsTokenCount: 50, totalTokenCount: 350 };
 function harness({ provider = "groq", unlimited = false, results = [{ text: '{"cards":[{"front":"PRIVATE","back":"PRIVATE"}]}', usageMetadata }], image = false, blocked = false, refundFails = false } = {}) {
-    const events = []; let handler, calls = 0;
+    const events = [], providerAmounts = []; let handler, calls = 0, refunds = 0;
     const providerCall = async () => { const result = results[calls++]; if (result instanceof Error) throw result; return result; };
     const context = vm.createContext({
         Error, console: { error() {}, warn() {} }, process: { env: {} },
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
-        schemaFor: () => ({}), normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings,
-        extractTextFromFile: async () => "", normalizeSlidesMaterial: value => value, isUploadValidationError: () => false,
+        schemaFor, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings,
+        extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial: (_type, value) => value, isUploadValidationError: () => false,
         activeAiTextProvider: () => provider, activeAiTextModel: () => provider === "groq" ? "openai/gpt-oss-120b" : "gemini-test",
         aiPlanForRequest: () => "free", isAiUnlimitedUser: () => unlimited,
         createUsageObservation, usageContext, aiUsageAnalytics: { record: async row => { if (row) events.push(row); } },
@@ -26,11 +29,11 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
         reserveAiDailyCredit: async () => ({ reserved: !blocked, reservation: {}, credits: { plan: "free", limits: { pro: 4000 }, limit: 500 } }),
         reserveAiProviderTokens: async () => ({ reserved: true, reservation: {} }),
         reserveAiDailyRequests: async () => ({ reserved: true, reservation: {} }),
-        settleAiProviderTokens: async () => ({}), settleAiDailyRequests: async () => ({}),
+        settleAiProviderTokens: async (_, amount) => { providerAmounts.push(amount); return {}; }, settleAiDailyRequests: async () => ({}),
         settleAiDailyCredit: async (_, amount) => ({ credits: {}, charged: unlimited ? 0 : amount, measuredCost: amount }),
-        refundAiDailyCredit: async () => { if (refundFails) throw new Error("PRIVATE"); }, refundAiDailyRequests: async () => {}, refundAiProviderTokens: async () => {},
+        refundAiDailyCredit: async () => { if (refundFails) throw new Error("PRIVATE"); refunds++; }, refundAiDailyRequests: async () => {}, refundAiProviderTokens: async () => {},
         aiDailyCreditsFor: async () => ({}), aiDailyRequestLimitError: () => ({}), aiTextProviderConfigurationError: () => "not-configured",
-        promptFor: () => "synthetic test", parseGeneratedJson: JSON.parse, fallbackJsonPrompt: () => "", aiErrorMessage: e => e.message,
+        promptFor: () => "synthetic test", parseGeneratedJson, fallbackJsonPrompt: () => "", aiErrorMessage: e => e.message,
         aiGenerationMaxAttempts: 2, groqMaxPromptTokens: 4000, groqApiKey: "fake", groqReasoningEffort: "low", groqMaxCompletionTokens: 3500, groqRequestTimeoutMs: 90000,
         generateGroqStructuredMaterial: providerCall, gemini: { models: { generateContent: providerCall } },
         aiImageGenerationEnabled: true, imagePromptForSlide: () => "synthetic"
@@ -41,7 +44,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
     const routeEnd = image ? source.indexOf("\napp.use((error", routeStart) : source.indexOf("\napp.post(", routeStart + 1);
     vm.runInContext(source.slice(routeStart, routeEnd), context);
     return {
-        events, calls: () => calls,
+        events, providerAmounts, calls: () => calls, refunds: () => refunds,
         async run(body = image ? { title: "PRIVATE" } : { materialType: "flashcards", sourceText: "PRIVATE", generationOptions: { count: 3 } }) {
             const response = { statusCode: 200, setHeader() {}, status(value) { this.statusCode = value; return this; }, json(value) { this.body = value; return this; } };
             await handler({ educariaUser: { uid: "test-owner" }, body }, response);
@@ -67,7 +70,7 @@ test("provider rate-limit errors leave an unknown measurement and a confirmed re
 });
 test("invalid JSON still counts provider consumption once even when generation fails", async () => {
     const h = harness({ results: [{ text: "PRIVATE INVALID JSON", usageMetadata }] });
-    assert.equal((await h.run()).statusCode, 500);
+    assert.equal((await h.run()).statusCode, 502);
     assert.equal(h.events[0].usage.totalTokens, 350); assert.equal(h.events[0].attempts.length, 1);
     assert.equal(h.events[0].creditsCharged, 0); assert.equal(h.events[0].usageCoverage, "complete");
 });
@@ -75,6 +78,38 @@ test("Gemini JSON retry accumulates both provider responses without counting twi
     const h = harness({ provider: "gemini", results: [{ text: "bad-json", usageMetadata }, { text: '{"cards":[]}', usageMetadata }] });
     assert.equal((await h.run()).statusCode, 200); assert.equal(h.calls(), 2);
     assert.equal(h.events[0].attempts.length, 2); assert.equal(h.events[0].usage.totalTokens, 700); assert.equal(h.events[0].estimatedCostUsd, null);
+});
+
+test("unmetered slide recovery refunds user credits but retains the platform token estimate", async () => {
+    const text = JSON.stringify({ title: "Revisão", slides: [{ title: "Tema", body: "Texto preservado", illustration: { version: 2, status: "invalid" } }] });
+    const h = harness({ results: [{ text, usageMetadata: {}, unmeteredRecovery: true }] });
+    const response = await h.run({ materialType: "slides", sourceText: "PRIVATE", slideOptions: { includeIllustration: true } });
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body.material.slides[0].body, "Texto preservado");
+    assert.equal(response.body.material.slides[0].layout, "stack");
+    assert.equal(response.body.charge.basis, "unavailable");
+    assert.equal(response.body.charge.cost, 0);
+    assert.equal(response.body.charge.measuredCost, null);
+    assert.equal(response.body.charge.usage, null);
+    assert.equal(h.refunds(), 1); assert.equal(h.calls(), 1);
+    assert.deepEqual(h.providerAmounts, [100]);
+    assert.equal(h.events[0].status, "success");
+    assert.equal(h.events[0].usageCoverage, "unknown");
+    assert.equal(h.events[0].measuredCredits, null);
+    assert.equal(h.events[0].creditsCharged, 0);
+    assert.equal(h.events[0].attempts.length, 1);
+});
+
+for (const code of ["json_validate_failed", "groq_empty_response", "groq_response_incomplete"]) test(`unrecoverable ${code} returns a useful error and refunds credits`, async () => {
+    const h = harness({ results: [Object.assign(new Error("PRIVATE"), { code, status: 400, usageMetadata })] });
+    const response = await h.run({ materialType: "slides", sourceText: "PRIVATE", slideOptions: { includeIllustration: true } });
+    assert.equal(response.statusCode, 502);
+    assert.equal(response.body.code, "ai_response_incomplete");
+    assert.match(response.body.error, /material anterior foi preservado/);
+    assert.doesNotMatch(JSON.stringify(response.body), /PRIVATE/);
+    assert.equal(h.refunds(), 1); assert.equal(h.calls(), 1);
+    assert.equal(h.events[0].creditsCharged, 0);
+    assert.equal(h.events[0].usage.totalTokens, 350);
 });
 test("Gemini retry after missing usage keeps the result explicitly partial", async () => {
     const h = harness({ provider: "gemini", results: [new Error("PRIVATE"), { text: '{"cards":[]}', usageMetadata }] });

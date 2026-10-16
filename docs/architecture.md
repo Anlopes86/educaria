@@ -86,6 +86,16 @@ No Render, `render.yaml` usa a raiz do repositório (sem `rootDir`) e os comando
 
 Para ampliar o mecanismo, atualize o contrato compartilhado, as instruções e o renderer. Use `tools/fixtures/slide-diagrams.mjs` e `tools/tests/slide-diagrams.test.mjs` para testar várias disciplinas, topologias inválidas, textos longos, conteúdo malicioso, acessibilidade e persistência. Confira o resultado dentro de um slide real. As fixtures não são respostas de IA: uma avaliação de aderência do modelo exige geração real, respeitando cotas e sem expor credenciais. Preserve os testes de compatibilidade em `slide-illustrations.test.mjs`.
 
+### Falhas de geração e ilustrações opcionais
+
+`schemaFor("slides", slideOptions)` remove o campo `illustration` do contrato enviado ao provedor quando a opção está desativada. Isso evita que slides sem desenhos falhem por campos de uma ilustração vazia. O contrato completo continua disponível para o modo com ilustração e para compatibilidade.
+
+O Groq pode rejeitar uma resposta com `json_validate_failed` e fornecer o JSON completo em `error.failed_generation`. `materials/slide-response-recovery.js` recupera somente Slides: exige JSON completo e limitado, conteúdo não vazio e conformidade dos demais campos com o contrato estrito. Não completa JSON truncado, texto de aula, nós ou conexões. Metadados auxiliares ausentes do desenho usam o título e os rótulos já existentes; toda geometria semântica continua passando pelo validador compartilhado. Um desenho irrecuperável vira `invalid`, preservando o texto e acionando o aviso existente no editor/painel. Nenhum código gerado é executado, e a recuperação não faz outra chamada à IA.
+
+Se o provedor informar consumo, ele é contabilizado uma vez. Quando uma resposta recuperada não contém essa medição, `charge.basis` é `unavailable`, `usage` e `measuredCost` são `null` e os créditos individuais reservados são devolvidos. A cota global mantém a estimativa conservadora da reserva; o relatório registra medição desconhecida, não zero tokens. Respostas truncadas ou inválidas sem recuperação segura retornam `ai_response_incomplete` (HTTP 502), sem substituir o material anterior.
+
+Regressões: `ai-service/tests/slide-response-recovery.test.mjs` cobre ambos os modos, os campos ausentes relatados em produção, validação restrita e preservação de uso; `ai-usage-routes.test.mjs` cobre devolução de créditos, cota global e mensagens de erro. Uma alteração no prompt deve continuar cabendo no limite padrão de entrada, sem enfraquecer os limites globais.
+
 ## Testes e ferramentas
 
 - `ai-service/tests/`: contratos e integração da API, segurança, provedores, créditos e consumo.

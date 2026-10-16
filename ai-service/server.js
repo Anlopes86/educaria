@@ -1182,6 +1182,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
             return {
                 material: parseGeneratedJson(result.text),
                 usageMetadata: result.usageMetadata,
+                unmeteredRecovery: result.unmeteredRecovery === true,
                 providerRequests: 1,
                 provider,
                 model
@@ -1447,7 +1448,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
     try {
         const materialType = String(request.body.materialType || "").trim();
         const action = String(request.body.action || "").trim();
-        const schemaConfig = schemaFor(materialType);
+        let schemaConfig = schemaFor(materialType);
 
         if (!schemaConfig) {
             return response.status(400).json({ error: "Tipo de material não suportado." });
@@ -1459,6 +1460,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
 
         const slideOptions = materialType === "slides"
             ? normalizeSlideGenerationOptions(request.body.slideOptions, action) : undefined;
+        if (slideOptions) schemaConfig = schemaFor(materialType, slideOptions);
         const generationOptions = normalizeActivityGenerationOptions(materialType, request.body.generationOptions, action);
         if (slideOptions) Object.assign(generationOptions, {
             audience: slideOptions.audience, className: slideOptions.className,
@@ -1551,12 +1553,22 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
 
         const providerTokenQuota = await settleAiProviderTokens(
             providerTokenReservation,
-            measuredCharge.usage.totalTokens
+            // A recovered error may omit usage: retain the conservative platform
+            // reservation, but never present estimated tokens as measured usage.
+            generated.unmeteredRecovery ? providerTokenEstimate : measuredCharge.usage.totalTokens
         );
         providerTokenReservation = null;
         const requestQuota = await settleAiDailyRequests(requestReservation, providerRequests, request);
         requestReservation = null;
-        const settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits, request);
+        let settlement;
+        if (generated.unmeteredRecovery) {
+            await refundAiDailyCredit(creditReservation.reservation);
+            creditReservation = null;
+            usageCharged = 0;
+            settlement = { charged: 0, measuredCost: null, credits: await aiDailyCreditsFor(request) };
+        } else {
+            settlement = await settleAiDailyCredit(creditReservation.reservation, measuredCharge.credits, request);
+        }
         usageCharged = settlement.charged;
         creditReservation = null;
         settlement.credits.requests = requestQuota;
@@ -1571,11 +1583,11 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
                 materialType,
                 provider: generated.provider,
                 model: generated.model,
-                basis: "usage",
+                basis: generated.unmeteredRecovery ? "unavailable" : "usage",
                 cost: settlement.charged,
                 measuredCost: settlement.measuredCost,
-                weightedTokens: measuredCharge.weightedTokens,
-                usage: measuredCharge.usage
+                weightedTokens: generated.unmeteredRecovery ? null : measuredCharge.weightedTokens,
+                usage: generated.unmeteredRecovery ? null : measuredCharge.usage
             }
         });
     } catch (error) {
@@ -1615,6 +1627,16 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(413).json({
                 error: "O conteúdo é longo demais para a geração gratuita. Reduza o texto ou envie apenas os trechos mais importantes.",
                 code: "content_too_long"
+            });
+        }
+
+        if (["json_validate_failed", "groq_empty_response", "groq_response_incomplete"].includes(error?.code)
+            || /^(empty_model_response|invalid_json_response)/.test(error?.message || "")) {
+            return response.status(502).json({
+                error: error?.code === "groq_response_incomplete"
+                    ? "A IA não conseguiu concluir todos os slides ou itens. Tente uma quantidade menor ou um pedido mais curto. Seu material anterior foi preservado."
+                    : "A IA retornou um material incompleto que não pôde ser recuperado com segurança. Tente novamente; seu material anterior foi preservado.",
+                code: "ai_response_incomplete"
             });
         }
 

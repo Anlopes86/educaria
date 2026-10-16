@@ -1,3 +1,5 @@
+import { recoverRejectedSlideResponse } from "./materials/slide-response-recovery.js";
+
 const GROQ_CHAT_COMPLETIONS_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 function positiveInteger(value, fallback) {
@@ -128,6 +130,16 @@ export async function generateGroqStructuredMaterial({
 
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) {
+        // Groq can return a complete generation alongside a schema error. Recover
+        // only slide illustration defects, locally, without another paid request.
+        const recovered = response.status === 400 && payload?.error?.code === "json_validate_failed"
+            ? recoverRejectedSlideResponse(payload.error.failed_generation, schemaConfig) : null;
+        if (recovered) return {
+            text: JSON.stringify(recovered),
+            usageMetadata: reportedGroqUsage(payload?.usage),
+            unmeteredRecovery: !Object.keys(reportedGroqUsage(payload?.usage)).length,
+            providerRequestId: payload?.x_groq?.id || payload?.id || ""
+        };
         const error = new Error(
             payload?.error?.message
             || payload?.message
@@ -140,6 +152,13 @@ export async function generateGroqStructuredMaterial({
         throw error;
     }
 
+    if (payload?.choices?.[0]?.finish_reason === "length") {
+        const error = new Error("A IA atingiu o limite de resposta antes de concluir o material.");
+        error.code = "groq_response_incomplete";
+        error.status = 502;
+        error.usageMetadata = reportedGroqUsage(payload?.usage);
+        throw error;
+    }
     const text = groqResponseContent(payload?.choices?.[0]?.message);
     if (!text) {
         const error = new Error("O Groq não retornou conteúdo estruturado.");

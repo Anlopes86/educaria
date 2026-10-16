@@ -340,7 +340,15 @@ const materialSchemas = new Map([
 export const MATERIAL_TYPES = Object.freeze([...materialSchemas.keys()]);
 
 /** Return a fresh provider config while preserving the existing schema contract. */
-export function schemaFor(materialType) {
+export function schemaFor(materialType, slideOptions) {
     const config = materialSchemas.get(materialType);
-    return config ? { ...config } : null;
+    if (!config) return null;
+    if (materialType === "slides" && slideOptions?.includeIllustration === false) {
+        const schema = structuredClone(config.schema);
+        const slide = schema.properties.slides.items;
+        delete slide.properties.illustration;
+        slide.required = slide.required.filter(key => key !== "illustration");
+        return { ...config, schema };
+    }
+    return { ...config };
 }

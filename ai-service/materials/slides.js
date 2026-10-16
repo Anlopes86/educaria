@@ -1,5 +1,5 @@
 import { normalizeGeneratedSlideBody } from "../slide-generation-policy.js";
-import { normalizeSlideIllustration } from "../slide-illustration-policy.js";
+import { normalizeSlideIllustration, normalizeGeneratedSlideIllustration } from "../slide-illustration-policy.js";
 
 function trimWords(text, maxWords = 12) {
     const words = String(text || "").trim().split(/\s+/).filter(Boolean);
@@ -109,7 +109,10 @@ export function normalizeSlidesMaterial(material, options = {}) {
         visual_theme: normalizeSlideVisualTheme(material.visual_theme),
         slides: material.slides.map((slide, index, slides) => {
             const slideType = slide?.type || (index === 0 ? "cover" : index === slides.length - 1 ? "closing" : "content");
-            const illustration = normalizeSlideIllustration(slide?.illustration, options.includeIllustration);
+            const rawIllustration = slide?.illustration;
+            const illustration = options.includeIllustration === true && (rawIllustration?.version === 2 || !Array.isArray(rawIllustration?.elements))
+                ? normalizeGeneratedSlideIllustration(rawIllustration, slide?.title)
+                : normalizeSlideIllustration(rawIllustration, options.includeIllustration);
             const layout = illustration.elements?.length || illustration.labels?.length || illustration.nodes?.length ? "split" : "stack";
 
             return {
