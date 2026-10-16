@@ -1074,7 +1074,7 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
 }
 
 .presentation-slide-kicker span:last-child {
-    opacity: 0.56;
+    opacity: 1;
 }
 
 .presentation-page .presentation-slide h1 {
@@ -1084,7 +1084,7 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
 }
 
 .presentation-page .presentation-slide h2 {
-    opacity: 0.78;
+    opacity: 1;
 }
 
 .presentation-page .presentation-slide-body {
@@ -1093,7 +1093,7 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
 
 .presentation-page .presentation-slide-body p {
     color: inherit;
-    opacity: 0.84;
+    opacity: 1;
 }
 
 .presentation-page .presentation-slide-body ul {

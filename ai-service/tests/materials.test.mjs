@@ -68,7 +68,7 @@ test("slide theme rejects invalid visual tokens and repairs low-contrast text", 
     const result = normalizeSlidesMaterial({ visual_theme: { font: "unknown", accent: "url(secret)", background: "#FFFFFF", text: "#FFFFFF", alternate_background: "#000000" }, slides: [] });
     assert.equal(result.visual_theme.background, "#ffffff");
     assert.equal(result.visual_theme.text, "#0f172a");
-    assert.equal(result.visual_theme.alternate_background, "#ffffff");
+    assert.equal(result.visual_theme.alternate_background, "#f2f2f2");
     assert.equal(result.visual_theme.font, "Destaque moderno");
     assert.equal(result.visual_theme.accent, "#0ea5e9");
 });

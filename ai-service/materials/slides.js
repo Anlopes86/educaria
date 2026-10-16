@@ -43,26 +43,44 @@ function slideColorContrast(first, second) {
     return (lighter + 0.05) / (darker + 0.05);
 }
 
+function mixSlideColor(color, target, amount) {
+    return "#" + [1, 3, 5].map(offset => {
+        const from = Number.parseInt(color.slice(offset, offset + 2), 16);
+        const to = Number.parseInt(target.slice(offset, offset + 2), 16);
+        return Math.round(from + (to - from) * amount).toString(16).padStart(2, "0");
+    }).join("");
+}
+
+// Only AI-generated palettes pass here. Keep the hue, but separate the bright
+// reading canvas from the dark opening/closing; never rewrite saved manual colours.
+function slideCanvasColor(value, fallback, dark = false) {
+    const color = normalizeHexColor(value, fallback);
+    for (let step = 0; step <= 20; step++) {
+        const candidate = mixSlideColor(color, dark ? "#000000" : "#ffffff", step / 20);
+        const luminance = hexColorLuminance(candidate);
+        if (dark ? luminance <= 0.09 : luminance >= 0.88) return candidate;
+    }
+    return dark ? "#000000" : "#ffffff";
+}
+
 function readableSlideText(background, proposed, fallbackDark = "#0f172a", fallbackLight = "#f8fafc") {
     const safeBackground = normalizeHexColor(background, "#ffffff");
     const safeProposed = normalizeHexColor(proposed, fallbackDark);
-    if (slideColorContrast(safeBackground, safeProposed) >= 4.5) return safeProposed;
+    if (slideColorContrast(safeBackground, safeProposed) >= 7) return safeProposed;
 
-    const candidates = [fallbackDark, fallbackLight];
-    return candidates.sort((left, right) => (
-        slideColorContrast(safeBackground, right) - slideColorContrast(safeBackground, left)
-    ))[0];
+    return [fallbackDark, fallbackLight, "#000000", "#ffffff"]
+        .find(candidate => slideColorContrast(safeBackground, candidate) >= 7);
 }
 
 function normalizeSlideVisualTheme(theme) {
     const source = theme && typeof theme === "object" ? theme : {};
-    const background = normalizeHexColor(source.background, DEFAULT_SLIDE_VISUAL_THEME.background);
+    const background = slideCanvasColor(source.background, DEFAULT_SLIDE_VISUAL_THEME.background);
     const text = readableSlideText(background, source.text, DEFAULT_SLIDE_VISUAL_THEME.text, DEFAULT_SLIDE_VISUAL_THEME.contrast_text);
-    const proposedAlternate = normalizeHexColor(source.alternate_background, DEFAULT_SLIDE_VISUAL_THEME.alternate_background);
-    const alternateBackground = slideColorContrast(proposedAlternate, text) >= 4.5
+    const proposedAlternate = slideCanvasColor(source.alternate_background, DEFAULT_SLIDE_VISUAL_THEME.alternate_background);
+    const alternateBackground = slideColorContrast(proposedAlternate, text) >= 7
         ? proposedAlternate
         : background;
-    const contrastBackground = normalizeHexColor(source.contrast_background, DEFAULT_SLIDE_VISUAL_THEME.contrast_background);
+    const contrastBackground = slideCanvasColor(source.contrast_background, DEFAULT_SLIDE_VISUAL_THEME.contrast_background, true);
     const contrastText = readableSlideText(
         contrastBackground,
         source.contrast_text,
@@ -86,11 +104,10 @@ function normalizeSlideVisualTheme(theme) {
 }
 
 function normalizeSlideVisualVariant(value, slideType, index) {
-    const allowedVariants = new Set(["hero", "light", "alternate", "question", "contrast"]);
-    if (allowedVariants.has(value)) return value;
     if (slideType === "cover") return "hero";
     if (slideType === "question") return "question";
     if (slideType === "closing") return "contrast";
+    if (value === "light" || value === "alternate") return value;
     return index % 2 === 0 ? "light" : "alternate";
 }
 

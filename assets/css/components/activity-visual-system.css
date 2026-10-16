@@ -87,7 +87,7 @@ body.presentation-runtime-page { background: #f4f6f1; color: var(--activity-ink)
 .presentation-page .presentation-slide::before { background: var(--slide-accent); width: 6px; }
 .presentation-page .presentation-slide::after { opacity: .07; }
 .presentation-page .presentation-slide h1 { font-weight: 600; letter-spacing: -.045em; }
-.presentation-page .presentation-slide h2 { opacity: .8; font-weight: 400; }
+.presentation-page .presentation-slide h2 { opacity: 1; font-weight: 400; }
 .presentation-page .presentation-slide-kicker > span {
     color: var(--slide-text); background: color-mix(in srgb, var(--slide-text) 9%, transparent);
     border-color: color-mix(in srgb, var(--slide-text) 20%, transparent);

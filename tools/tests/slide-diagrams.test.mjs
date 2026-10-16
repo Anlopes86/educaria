@@ -147,3 +147,52 @@ test("Render deploy includes the shared diagram contract and rebuilds when it ch
         assert.ok(blueprint.includes(`- ${path}`), `missing deploy trigger: ${path}`);
     }
 });
+
+test("processes have numbered steps and enough separation to see arrowheads", () => {
+    for (const count of [2, 3, 4, 5]) {
+        const nodes = Array.from({ length: count }, (_, index) => ({ id: `n${index}`, label: `Etapa ${index + 1}`, detail: "Uma ação bem definida", icon: "idea" }));
+        const diagram = { ...diagramExamples[0], nodes, links: nodes.slice(1).map((node, index) => ({ from: nodes[index].id, to: node.id, kind: "arrow" })) };
+        const original = plain(diagram);
+        const image = api.render(diagram); assert.ok(image);
+        const drawing = svg(image);
+        assert.deepEqual([...drawing.matchAll(/data-diagram-step="(\d+)"/g)].map(match => Number(match[1])), Array.from({ length: count }, (_, i) => i + 1));
+        assert.equal((drawing.match(/marker-end=/g) || []).length, count - 1);
+        assert.doesNotMatch(drawing, /data-diagram-icon=/);
+        const boxes = renderer.positions(diagram);
+        boxes.slice(1).forEach((box, index) => assert.ok(box.y - boxes[index].y - boxes[index].height >= 25.9));
+        assert.deepEqual(diagram, original, "display refinements must not change the material");
+    }
+});
+
+test("repeated decorative icons are omitted without losing labels, details or inventing relationships", () => {
+    const diagram = plain(diagramExamples[6]);
+    diagram.nodes = diagram.nodes.map(node => ({ ...node, icon: "idea" }));
+    const original = plain(diagram);
+    const drawing = svg(api.render(diagram));
+    assert.doesNotMatch(drawing, /data-diagram-icon=|data-diagram-step=|marker-end=/);
+    assert.equal((drawing.match(/data-diagram-accent=/g) || []).length, diagram.nodes.length);
+    for (const node of diagram.nodes) assert.ok(drawing.includes(node.label));
+    assert.deepEqual(diagram, original);
+    const varied = svg(api.render(diagramExamples[6]));
+    assert.match(varied, /data-diagram-icon="sun"/);
+    assert.match(varied, /data-diagram-icon="water"/);
+});
+
+test("comparison colours group each side consistently even without icons", () => {
+    const diagram = plain(diagramExamples[1]);
+    diagram.nodes = diagram.nodes.map(node => ({ ...node, icon: "none" }));
+    const drawing = svg(api.render(diagram));
+    const colours = [...drawing.matchAll(/<rect data-diagram-accent="\d+"[^>]*fill="(#[a-f0-9]+)"/g)].map(match => match[1]);
+    assert.equal(colours.length, 4);
+    assert.equal(colours[0], colours[2]); assert.equal(colours[1], colours[3]);
+    assert.notEqual(colours[0], colours[1]);
+    assert.doesNotMatch(drawing, /data-diagram-step=|marker-end=/);
+});
+
+test("illustration guidance selects relationships without a ready-made cards example or a specific topic", () => {
+    const instructions = slideIllustrationInstructions({ includeIllustration: true }).join("\n");
+    for (const fragment of ["ordem ou transformação", "repetição com retorno real", "mesmo critério", "classificação", "conceito central", "exemplos realmente independentes", "símbolos diferentes a conceitos equivalentes", "apenas repetir os bullets", "não comprova causalidade", "concordam com o texto do slide"]) assert.ok(instructions.includes(fragment), fragment);
+    assert.doesNotMatch(instructions, /"status":"ready".*"layout":"cards"/);
+    assert.doesNotMatch(instructions, /Polônia|Alemanha|Sistema Solar|Mercúrio/i);
+    assert.match(slideIllustrationInstructions({ includeIllustration: false }).join("\n"), /Não inclua o campo illustration/);
+});
