@@ -59,6 +59,8 @@ const EDUCARIA_BUILDER_JOURNEY_CONFIGS = {
         meaningfulSelector: "[data-wheel-text]"
     },
     wordsearch: { draftKey: "educaria:builder:wordsearch", sourceId: "caca-fonte-texto", fileId: "caca-arquivo", titleId: "caca-titulo", meaningfulSelector: "[data-wordsearch-term], [data-wordsearch-clue]", cardSelector: "[data-wordsearch-word]" },
+    wordtrail: { draftKey: "educaria:builder:wordtrail", sourceId: "discovery-source", fileId: "discovery-file", titleId: "discovery-title", meaningfulSelector: "[data-discovery-term]", cardSelector: "[data-discovery-item]" },
+    connections: { draftKey: "educaria:builder:connections", sourceId: "discovery-source", fileId: "discovery-file", titleId: "discovery-title", meaningfulSelector: "[data-discovery-answer], [data-discovery-clues]", cardSelector: "[data-discovery-item]" },
     crossword: { draftKey: "educaria:builder:crossword", sourceId: "cruzada-fonte-texto", fileId: "cruzada-arquivo", titleId: "cruzada-titulo", meaningfulSelector: "[data-crossword-answer], [data-crossword-clue]", cardSelector: "[data-crossword-entry]" },
     mindmap: { draftKey: "educaria:builder:mindmap", sourceId: "mind-fonte-texto", fileId: "mind-arquivo", titleId: "mapa-centro", meaningfulSelector: "[data-mind-title], [data-mind-detail]", cardSelector: "[data-mind-branch]" },
     debate: { draftKey: "educaria:builder:debate", sourceId: "debate-fonte-texto", fileId: "debate-arquivo", titleId: "debate-titulo", meaningfulSelector: "[data-debate-title], [data-debate-question]", cardSelector: "[data-debate-step]" },

@@ -79,6 +79,11 @@ function captureDebateStepsFromDocument() {
 }
 
 function builderConfig() {
+    const discoveryType = document.body?.dataset.materialType;
+    if (["wordtrail", "connections"].includes(discoveryType) && document.querySelector("[data-discovery-items]")) {
+        return { key: scopedStorageKey(`educaria:builder:${discoveryType}`), stackSelector: "[data-discovery-items]",
+            cardSelector: "[data-discovery-item]", labelPrefix: discoveryType === "wordtrail" ? "Palavra" : "Desafio", labelSelector: "[data-discovery-label]" };
+    }
     if (document.querySelector("[data-quiz-stack]")) {
         return {
             key: scopedStorageKey("educaria:builder:quiz"),

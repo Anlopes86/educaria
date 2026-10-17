@@ -7,6 +7,7 @@ import { parseGeneratedJson } from "../materials/generated-json.js";
 import { extractTextFromFile, isUploadValidationError, parseWheelTemplateText } from "../materials/upload.js";
 
 const collections = {
+    wordtrail: "words", connections: "rounds",
     quiz: "questions", slides: "slides", flashcards: "cards", memory: "pairs",
     hangman: "entries", match: "pairs", wheel: "segments", wordsearch: "words",
     mindmap: "branches", debate: "steps", crossword: "entries"

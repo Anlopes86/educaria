@@ -1,4 +1,5 @@
 import { slideIllustrationSchema } from "../slide-illustration-policy.js";
+import { discoverySchemas } from "./discovery.js";
 
 const quizSchema = {
     type: "object",
@@ -323,6 +324,8 @@ const crosswordSchema = {
 
 // Explicit registry: unsupported keys must never fall through to another activity.
 const materialSchemas = new Map([
+    ["wordtrail", { name: "educaria_wordtrail", description: "Trilha de Palavras para sala de aula", schema: discoverySchemas.wordtrail }],
+    ["connections", { name: "educaria_connections", description: "O que há em comum? — pistas e conexões", schema: discoverySchemas.connections }],
     ["quiz", { name: "educaria_quiz", description: "Quiz estruturado para o builder da EducarIA", schema: quizSchema }],
     ["slides", { name: "educaria_slides", description: "Slides estruturados para o builder da EducarIA", schema: slidesSchema }],
     ["flashcards", { name: "educaria_flashcards", description: "Flashcards estruturados para o builder da EducarIA", schema: flashcardsSchema }],

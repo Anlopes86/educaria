@@ -9,6 +9,7 @@ function scopedStorageKey(baseKey) {
 }
 
 function draftStorageKeyForType(type) {
+    if (["wordtrail", "connections"].includes(type)) return scopedStorageKey(`educaria:builder:${type}`);
     if (type === "lesson") return scopedStorageKey("educaria:builder:lesson");
     if (type === "quiz") return scopedStorageKey("educaria:builder:quiz");
     if (type === "flashcards") return scopedStorageKey("educaria:builder:flashcards");
@@ -109,6 +110,8 @@ function normalizeMaterialType(type) {
     if (value === "ligar-pontos") return "match";
     if (value === "mapa-mental") return "mindmap";
     if (value === "debate-guiado") return "debate";
+    if (value === "trilha-palavras") return "wordtrail";
+    if (value === "em-comum") return "connections";
     return value || "slides";
 }
 
@@ -125,6 +128,8 @@ function materialTypeFromPath(pathname = window.location.pathname) {
     if (fileName === "ligar-pontos-apresentacao.html") return "match";
     if (fileName === "mapa-mental-apresentacao.html") return "mindmap";
     if (fileName === "debate-guiado-apresentacao.html") return "debate";
+    if (fileName === "trilha-palavras-apresentacao.html") return "wordtrail";
+    if (fileName === "em-comum-apresentacao.html") return "connections";
     if (fileName === "apresentacao.html") return "slides";
     return "";
 }
@@ -142,6 +147,8 @@ function presentationPathForMaterial(type) {
     if (normalizedType === "match") return "ligar-pontos-apresentacao.html";
     if (normalizedType === "mindmap") return "mapa-mental-apresentacao.html";
     if (normalizedType === "debate") return "debate-guiado-apresentacao.html";
+    if (normalizedType === "wordtrail") return "trilha-palavras-apresentacao.html";
+    if (normalizedType === "connections") return "em-comum-apresentacao.html";
     return "apresentacao.html";
 }
 
@@ -157,6 +164,8 @@ function presentationLabelForMaterial(type) {
     if (type === "match") return "Ligar pontos";
     if (type === "mindmap") return "Mapa mental";
     if (type === "debate") return "Debate guiado";
+    if (type === "wordtrail") return "Trilha de Palavras";
+    if (type === "connections") return "O que há em comum?";
     return "Aula com slides";
 }
 
@@ -164,7 +173,7 @@ function materialTypeFromUrl() {
     try {
         const params = new URLSearchParams(window.location.search);
         const value = params.get("material");
-        if (["lesson", "flashcards", "slides", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"].includes(value)) {
+        if (["lesson", "flashcards", "slides", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate", "wordtrail", "connections"].includes(value)) {
             return value;
         }
     } catch (error) {

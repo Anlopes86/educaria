@@ -9,6 +9,7 @@ import { normalizeSlideGenerationOptions } from "../slide-generation-policy.js";
 import { normalizeSlidesMaterial } from "../materials/slides.js";
 import { parseGeneratedJson } from "../materials/generated-json.js";
 import { schemaFor } from "../materials/schemas.js";
+import { normalizeDiscoveryMaterial, validateDiscoverySource } from "../materials/discovery.js";
 
 const source = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
 const usageMetadata = { promptTokenCount: 100, candidatesTokenCount: 200, thoughtsTokenCount: 50, totalTokenCount: 350 };
@@ -20,7 +21,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
         schemaFor, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings,
-        extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial: (_type, value) => value, isUploadValidationError: () => false,
+        extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial, validateDiscoverySource, isUploadValidationError: () => false,
         activeAiTextProvider: () => provider, activeAiTextModel: () => provider === "groq" ? "openai/gpt-oss-120b" : "gemini-test",
         aiPlanForRequest: () => "free", isAiUnlimitedUser: () => unlimited,
         createUsageObservation, usageContext, aiUsageAnalytics: { record: async row => { if (row) events.push(row); } },
@@ -57,6 +58,25 @@ test("text route logs actual provider usage and returned quantity without storin
     assert.equal(response.statusCode, 200); assert.equal(h.calls(), 1); assert.equal(h.events.length, 1);
     assert.equal(h.events[0].usage.totalTokens, 350); assert.equal(h.events[0].generatedCount, 1); assert.equal(h.events[0].context.requestedCount, 3);
     assert.equal(h.events[0].creditsCharged, response.body.charge.cost); assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE/);
+});
+
+test("discovery routes return valid materials with measured usage and reject bad lists before the provider", async () => {
+    for (const [materialType, material, sourceText] of [
+        ["wordtrail", { title: "Trilha", words: [{ term: "Água", clue: "Líquido" }, { term: "Sol", clue: "Estrela" }] }, "Água;Sol"],
+        ["connections", { title: "Conexões", rounds: [{ answer: "Planetas", clues: ["Marte", "Vênus", "Terra"], explanation: "Orbitam o Sol." }] }, "Marte;Vênus;Terra"]
+    ]) {
+        const h = harness({ results: [{ text: JSON.stringify(material), usageMetadata }] });
+        const response = await h.run({ materialType, sourceText, generationOptions: { inputMode: "words" } });
+        assert.equal(response.statusCode, 200);
+        assert.equal(response.body.materialType, materialType);
+        assert.ok(response.body.charge.cost > 0);
+        assert.equal(h.events[0].materialType, materialType);
+        const invalid = harness();
+        const failure = await invalid.run({ materialType, sourceText: "Uma", generationOptions: { inputMode: "words" } });
+        assert.equal(failure.statusCode, 400);
+        assert.equal(invalid.calls(), 0);
+        assert.equal(invalid.events.length, 0);
+    }
 });
 test("owner route records measured usage even though settlement charges zero", async () => {
     const h = harness({ unlimited: true }); await h.run();

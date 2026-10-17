@@ -7,6 +7,8 @@ function scopedStorageKey(baseKey) {
 }
 
 const LESSON_SEQUENCE_TYPES = [
+    { value: "wordtrail", label: "Trilha de Palavras" },
+    { value: "connections", label: "O que há em comum?" },
     { value: "slides", label: "Slides" },
     { value: "flashcards", label: "Flashcards" },
     { value: "quiz", label: "Quiz" },
@@ -21,6 +23,20 @@ const LESSON_SEQUENCE_TYPES = [
 ];
 
 const INLINE_BLOCK_EDITOR_CONFIG = {
+    wordtrail: {
+        itemSelector: "[data-discovery-item]", itemLabel: "Palavra",
+        emptyPayload: () => ({ words: [{ term: "", clue: "" }] }),
+        controls: [{ key: "discovery-title", label: "Título" }, { key: "discovery-subtitle", label: "Orientação" }],
+        fields: [{ selector: "[data-discovery-term]", label: "Palavra" }, { selector: "[data-discovery-clue]", label: "Pista", wide: true }]
+    },
+    connections: {
+        itemSelector: "[data-discovery-item]", itemLabel: "Desafio",
+        emptyPayload: () => ({ rounds: [{ answer: "", clues: ["", "", ""], explanation: "" }] }),
+        controls: [{ key: "discovery-title", label: "Título" }, { key: "discovery-subtitle", label: "Orientação" }],
+        fields: [{ selector: "[data-discovery-answer]", label: "Conexão (resposta)" },
+            { selector: "[data-discovery-clues]", label: "Pistas — uma por linha (3 a 5)", kind: "textarea", wide: true },
+            { selector: "[data-discovery-explanation]", label: "Explicação", kind: "textarea", wide: true }]
+    },
     slides: {
         itemSelector: "[data-slide-card]",
         itemLabel: "Slide",
@@ -382,6 +398,13 @@ function renderInlineEditorField(block, config, itemIndex, descriptor, occurrenc
     `;
 }
 
+function hasEditableSlideDiagram(card) {
+    const editing = window.EducariaSlideDiagramEditing;
+    if (!editing) return false;
+    const saved = editing.readCard(card);
+    return Boolean(editing.decode(saved.data, saved.url));
+}
+
 function renderInlineEditor(block) {
     const config = inlineEditorConfig(block.materialType || "slides");
     const draftState = parseLessonDraftState(effectiveDraftForBlock(block));
@@ -421,6 +444,8 @@ function renderInlineEditor(block) {
             ${(block.materialType || "slides") === "slides"
                 ? `
                 <div class="lesson-sequence-inline-actions">
+                    ${hasEditableSlideDiagram(section)
+                        ? `<button type="button" class="platform-link-button platform-link-secondary" data-edit-lesson-diagram="${escapeAttr(block.id)}" data-diagram-slide-index="${index}">Editar ilustração</button>` : ""}
                     <button type="button" class="platform-link-button platform-link-primary" data-apply-slide-image="${block.id}" data-apply-slide-index="${index}">
                         Aplicar imagem
                     </button>
@@ -463,6 +488,30 @@ function updateBlockDraftControlField(blockId, controlKey, value) {
     updateBlockDraftSnapshot(block, JSON.stringify(draftState));
     persistLessonSequence();
     refreshLessonSequencePanels(blockId);
+}
+
+function editLessonSlideDiagram(blockId, slideIndex, trigger) {
+    const block = lessonSequenceState.blocks.find(item => item.id === blockId);
+    if (!block || (block.materialType || "slides") !== "slides") return;
+    const editing = window.EducariaSlideDiagramEditing;
+    if (!editing || !window.EducariaSlideDiagramEditor) return;
+    const before = effectiveDraftForBlock(block);
+    const draft = parseLessonDraftState(before);
+    const doc = new DOMParser().parseFromString(`<div>${draft.stackHtml || ""}</div>`, "text/html");
+    const card = doc.querySelectorAll("[data-slide-card]")[slideIndex];
+    if (!card) return;
+    window.EducariaSlideDiagramEditor.open({ ...editing.readCard(card), trigger, onApply(result) {
+        if (!lessonSequenceState.blocks.includes(block) || effectiveDraftForBlock(block) !== before) return false;
+        if (!editing.writeCard(card, result)) return false;
+        draft.stackHtml = doc.body.firstElementChild.innerHTML;
+        updateBlockDraftSnapshot(block, JSON.stringify(draft));
+        persistLessonSequence();
+        refreshLessonSequencePanels(blockId);
+        showLibraryToast("Textos da ilustração atualizados neste bloco.");
+        requestAnimationFrame(() => [...document.querySelectorAll("[data-edit-lesson-diagram]")]
+            .find(button => button.dataset.editLessonDiagram === blockId && Number(button.dataset.diagramSlideIndex) === slideIndex)?.focus());
+        return true;
+    } });
 }
 
 async function uploadLessonSlideImage(fileField) {
@@ -531,6 +580,9 @@ function updateBlockDraftStackField(blockId, itemSelector, itemIndex, fieldSelec
     if (!target) return;
 
     const safeValue = value ?? "";
+    if ((block.materialType || "slides") === "slides" && fieldSelector === '[data-field="slide-image-url"]' && target.value !== String(safeValue)) {
+        window.EducariaSlideDiagramEditing?.writeField(section, "slide-illustration", "");
+    }
     if (target.tagName === "TEXTAREA") {
         target.textContent = String(safeValue);
     } else if (target.tagName === "INPUT") {
@@ -702,6 +754,7 @@ function buildDraftSummary(type, rawDraft) {
     if (type === "match" && typeof summarizeMatchDraft === "function") return summarizeMatchDraft(rawDraft);
     if (type === "mindmap" && typeof summarizeMindmapDraft === "function") return summarizeMindmapDraft(rawDraft);
     if (type === "debate" && typeof summarizeDebateDraft === "function") return summarizeDebateDraft(rawDraft);
+    if (["wordtrail", "connections"].includes(type)) return summarizeDiscoveryDraft(rawDraft, type);
     if (typeof summarizeSlidesDraft === "function") return summarizeSlidesDraft(rawDraft);
 
     return {
@@ -937,6 +990,8 @@ function selectedLessonSequenceContext() {
 }
 
 function blockSpecificGenerationHint(materialType) {
+    if (materialType === "wordtrail") return "Crie palavras curtas e pistas para conectar letras vizinhas em uma trilha; não gere coordenadas.";
+    if (materialType === "connections") return "Crie desafios de conexão com 3 a 5 pistas progressivas, resposta e explicação coerente.";
     if (materialType === "slides") return "Crie slides com abertura, desenvolvimento e fechamento.";
     if (materialType === "flashcards") return "Crie flashcards curtos e claros para revisão rápida.";
     if (materialType === "quiz") return "Crie um quiz de verificação alinhado ao que veio antes.";
@@ -1166,6 +1221,9 @@ function fallbackHangmanPayload(sourceText, blockLabel) {
 }
 
 function fallbackPayloadForType(materialType, sourceText, blockLabel) {
+    // A failed generation is not an excuse to invent a connection or change its format.
+    if (materialType === "wordtrail") return { title: blockLabel, words: [{ term: "", clue: "" }, { term: "", clue: "" }] };
+    if (materialType === "connections") return { title: blockLabel, rounds: [{ answer: "", clues: ["", "", ""], explanation: "" }] };
     if (materialType === "slides") return fallbackSlidesPayload(sourceText, blockLabel);
     if (materialType === "quiz") return fallbackQuizPayload(sourceText, blockLabel);
     if (materialType === "flashcards") return fallbackFlashcardsPayload(sourceText, blockLabel);
@@ -1180,10 +1238,11 @@ function fallbackPayloadForType(materialType, sourceText, blockLabel) {
 }
 
 function lessonAiSupported(materialType) {
-    return ["slides", "quiz", "flashcards", "memory", "match", "wheel", "wordsearch", "mindmap", "debate", "crossword"].includes(materialType);
+    return ["slides", "quiz", "flashcards", "memory", "match", "wheel", "wordsearch", "mindmap", "debate", "crossword", "wordtrail", "connections"].includes(materialType);
 }
 
 function controlStateForDraft(materialType, payload) {
+    if (["wordtrail", "connections"].includes(materialType)) return { "discovery-title": payload.title || "", "discovery-subtitle": payload.subtitle || "" };
     if (materialType === "flashcards") {
         return { "cards-tema": payload.title || "Flashcards" };
     }
@@ -1255,6 +1314,7 @@ function controlStateForDraft(materialType, payload) {
 }
 
 function buildDraftStackHtml(materialType, payload) {
+    if (["wordtrail", "connections"].includes(materialType)) return window.EducariaDiscovery.stackHtml(materialType, payload, true);
     const colors = lessonColorPalette();
 
     if (materialType === "slides") {
@@ -1271,6 +1331,7 @@ function buildDraftStackHtml(materialType, payload) {
                 <input data-field="slide-image-mode" type="text" value="${escapeAttr(image?.url ? image.mode : imageUrl ? "Enviar imagem" : "Sem imagem")}">
                 <textarea data-field="slide-image-prompt">${escapeHtml(imageDescription)}</textarea>
                 <input data-field="slide-image-url" type="text" value="${escapeAttr(imageUrl)}">
+                <textarea data-field="slide-illustration" hidden>${escapeHtml(image?.diagramData || "")}</textarea>
                 <input data-field="slide-accent-color" type="color" value="#d7e6b9">
                 <input data-field="slide-color" type="color" value="#153c41">
                 <input data-field="slide-text-color" type="color" value="#f8f9ec">
@@ -1396,6 +1457,9 @@ function buildLessonDraftFromPayload(materialType, payload) {
 }
 
 function payloadHasContent(materialType, payload) {
+    if (["wordtrail", "connections"].includes(materialType)) {
+        try { window.EducariaDiscovery.normalize(materialType, payload); return true; } catch { return false; }
+    }
     if (!payload || typeof payload !== "object") return false;
     if (materialType === "slides") return Array.isArray(payload.slides) && payload.slides.length > 0;
     if (materialType === "quiz") return Array.isArray(payload.questions) && payload.questions.length > 0;
@@ -2770,6 +2834,13 @@ function bindLessonSequenceEvents() {
                 || "";
             const block = lessonSequenceState.blocks.find((item) => item.id === blockId);
             prepareBlockNavigation(block);
+            return;
+        }
+
+        const diagramTrigger = event.target.closest("[data-edit-lesson-diagram]");
+        if (diagramTrigger) {
+            event.preventDefault();
+            editLessonSlideDiagram(diagramTrigger.dataset.editLessonDiagram, Number(diagramTrigger.dataset.diagramSlideIndex), diagramTrigger);
             return;
         }
 

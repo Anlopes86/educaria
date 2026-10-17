@@ -18,6 +18,7 @@ function updateHiddenField(card, name, value) {
 function clearImageSelection(card) {
     updateHiddenField(card, "slide-image-url", "");
     updateHiddenField(card, "slide-image-prompt", "");
+    updateHiddenField(card, "slide-illustration", "");
 }
 
 function setUploadStatus(card, message, tone = "neutral") {
@@ -50,6 +51,7 @@ async function handleLocalUpload(card, file, input) {
         const readableName = file.name.replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ").trim();
         updateHiddenField(card, "slide-image-prompt", readableName || "Imagem enviada pelo professor");
         updateHiddenField(card, "slide-image-url", optimizedUrl);
+        updateHiddenField(card, "slide-illustration", "");
         const modeField = modeFieldFor(card);
         if (modeField) modeField.value = SLIDE_UPLOAD_MODE;
         setUploadStatus(card, "Imagem adicionada. A prévia foi atualizada.", "success");

@@ -90,6 +90,12 @@ A escolha do diagrama segue a relação pedagógica (ordem, ciclo, comparação,
 
 Para ampliar o mecanismo, atualize o contrato compartilhado, as instruções e o renderer. Use `tools/fixtures/slide-diagrams.mjs` e `tools/tests/slide-diagrams.test.mjs` para testar várias disciplinas, topologias inválidas, textos longos, conteúdo malicioso, acessibilidade e persistência. Confira o resultado dentro de um slide real. As fixtures não são respostas de IA: uma avaliação de aderência do modelo exige geração real, respeitando cotas e sem expor credenciais. Preserve os testes de compatibilidade em `slide-illustrations.test.mjs`.
 
+### Edição dos textos internos
+
+Novas ilustrações v2 guardam também um campo oculto `slide-illustration` no cartão do slide, junto do SVG final. `slide-diagram-editing.js` serializa apenas o modelo normalizado, limita o tamanho do envelope e o associa à imagem por uma assinatura compacta (proteção contra imagem substituída, não autenticação). Sem estrutura válida, imagens legadas ou enviadas pelo professor não são reinterpretadas. Não faça parsing de SVG nem tente inferir relações a partir de pixels.
+
+`slide-diagram-editor.js` oferece o mesmo diálogo acessível nos Slides e nos blocos da Aula completa. Altera somente título, legenda, descrição acessível, rótulos e detalhes; mantém layout, IDs, ícones e conexões. A prévia usa o renderer local: texto inválido ou que não cabe bloqueia a aplicação sem alterar o original. Cancelar/Escape descarta a cópia temporária, e a troca de conta fecha o diálogo. Aplicar atualiza imagem e estrutura juntas pelo salvamento existente; edição na Aula completa vale apenas para aquele bloco. Não há requisição à IA nem consumo de créditos. Upload, remoção e substituição não podem reutilizar metadados de uma imagem anterior. A apresentação preserva o campo ao editar os textos normais do slide. Testes: `tools/tests/slide-diagram-editing.test.mjs` e conferência visual de salvar/reabrir, cancelar, teclado e celular.
+
 ### Falhas de geração e ilustrações opcionais
 
 `schemaFor("slides", slideOptions)` remove o campo `illustration` do contrato enviado ao provedor quando a opção está desativada. Isso evita que slides sem desenhos falhem por campos de uma ilustração vazia. O contrato completo continua disponível para o modo com ilustração e para compatibilidade.
@@ -101,6 +107,14 @@ Se o provedor informar consumo, ele é contabilizado uma vez. Quando uma respost
 Regressões: `ai-service/tests/slide-response-recovery.test.mjs` cobre ambos os modos, os campos ausentes relatados em produção, validação restrita e preservação de uso; `ai-usage-routes.test.mjs` cobre devolução de créditos, cota global e mensagens de erro. Uma alteração no prompt deve continuar cabendo no limite padrão de entrada, sem enfraquecer os limites globais.
 
 ## Testes e ferramentas
+
+### Atividades de descoberta: trilha e conexões
+
+`wordtrail` (Trilha de Palavras) e `connections` (O que há em comum?) compartilham `discovery-core.js`, um módulo puro usado no navegador e na API. Ele valida o conteúdo, serializa campos escapados no formato de rascunho existente e monta tabuleiros determinísticos. A IA fornece termos/pistas, nunca HTML nem coordenadas. A trilha usa caminhos ortogonais sem sobreposição e divide listas grandes ou pistas extensas em tabuleiros menores, sem perder palavras.
+
+`materials/discovery.js` reúne schemas, prompts e preservação das listas fornecidas pelo professor. `inputMode` distingue tópico de lista; no modo lista a quantidade genérica é desconsiderada, termos da trilha mantêm a grafia original e as pistas de conexões não podem ser adicionadas, omitidas ou reutilizadas. Listas inválidas são recusadas antes da reserva de créditos. Os formatos usam a rota, a autenticação e as métricas comuns.
+
+`discovery-builder.js` e `discovery-runtime.js` atendem as páginas `trilha-palavras-*` e `em-comum-*`, com estilo compartilhado em `components/discovery.css`. Os rascunhos são isolados por conta, os destinos/bulk actions usam a biblioteca existente e a Aula completa usa o mesmo player, com captura/restauração do progresso. Na impressão, somente o desafio e o estado de revelação atuais são impressos; não há um gabarito oculto adicionado ao PDF. A edição não consome IA. Testes: `tools/tests/discovery.test.mjs` e `ai-service/tests/ai-usage-routes.test.mjs`.
 
 - `ai-service/tests/`: contratos e integração da API, segurança, provedores, créditos e consumo.
 - `tools/tests/`: comportamento do frontend, fluxos de materiais, design e artefato público.

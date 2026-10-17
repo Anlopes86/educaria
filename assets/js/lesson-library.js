@@ -24,7 +24,7 @@ const CLASS_MATERIAL_FILTERS = [
     { id: "slides", label: "Slides", labelKey: "classDetail.filters.slides", types: ["slides"] },
     { id: "quiz", label: "Quizzes", labelKey: "classDetail.filters.quiz", types: ["quiz"] },
     { id: "flashcards", label: "Flashcards", labelKey: "classDetail.filters.flashcards", types: ["flashcards"] },
-    { id: "others", label: "Outros", labelKey: "classDetail.filters.others", types: ["wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"] }
+    { id: "others", label: "Outros", labelKey: "classDetail.filters.others", types: ["wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate", "wordtrail", "connections"] }
 ];
 const CLASS_STATUS_FILTERS = [
     { id: "all", label: "Todos os status", labelKey: "classDetail.statusFilters.all", status: null },
@@ -50,6 +50,7 @@ function scopedStorageKey(baseKey) {
 }
 
 function draftKeyForType(type) {
+    if (["wordtrail", "connections"].includes(type)) return scopedStorageKey(`educaria:builder:${type}`);
     if (type === "lesson") return scopedStorageKey("educaria:builder:lesson");
     if (type === "quiz") return scopedStorageKey("educaria:builder:quiz");
     if (type === "flashcards") return scopedStorageKey("educaria:builder:flashcards");
@@ -65,6 +66,7 @@ function draftKeyForType(type) {
 }
 
 function stackSelectorForType(type) {
+    if (["wordtrail", "connections"].includes(type)) return "[data-discovery-items]";
     if (type === "lesson") return "[data-lesson-sequence-list]";
     if (type === "quiz") return "[data-quiz-stack]";
     if (type === "flashcards") return "[data-flashcards-stack]";
@@ -1034,11 +1036,21 @@ function summarizeLessonSequenceDraft(rawDraft) {
     }
 }
 
+function summarizeDiscoveryDraft(rawDraft, type) {
+    const label = type === "wordtrail" ? "Trilha de Palavras" : "O que há em comum?";
+    const { parsed, doc } = parseDraftHtml(rawDraft) || {};
+    const count = doc?.querySelectorAll("[data-discovery-item]").length || 0;
+    return { title: parsed?.controls?.["discovery-title"] || label,
+        summary: `${count} ${type === "wordtrail" ? "palavras para conectar" : "desafios de conexão"}`,
+        type: label, materialType: type };
+}
+
 function summarizeCurrentDraft(preferredType = "") {
     const currentType = preferredType || (typeof readCurrentMaterialType === "function" ? readCurrentMaterialType() : "slides");
     const currentDraft = readCurrentDraftByType(currentType);
 
     if (currentDraft) {
+        if (["wordtrail", "connections"].includes(currentType)) return { rawDraft: currentDraft, summary: summarizeDiscoveryDraft(currentDraft, currentType), materialType: currentType };
         if (currentType === "lesson") return { rawDraft: currentDraft, summary: summarizeLessonSequenceDraft(currentDraft), materialType: "lesson" };
         if (currentType === "flashcards") return { rawDraft: currentDraft, summary: summarizeFlashcardsDraft(currentDraft), materialType: "flashcards" };
         if (currentType === "quiz") return { rawDraft: currentDraft, summary: summarizeQuizDraft(currentDraft), materialType: "quiz" };
@@ -1053,7 +1065,7 @@ function summarizeCurrentDraft(preferredType = "") {
         return { rawDraft: currentDraft, summary: summarizeSlidesDraft(currentDraft), materialType: "slides" };
     }
 
-    const fallbackOrder = ["lesson", "slides", "flashcards", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate"];
+    const fallbackOrder = ["lesson", "slides", "flashcards", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate", "wordtrail", "connections"];
     for (const type of fallbackOrder) {
         const draft = readCurrentDraftByType(type);
         if (!draft) continue;
@@ -1486,6 +1498,8 @@ function editorPathForLesson(lesson) {
     if (lesson.materialType === "match") return "ligar-pontos-builder.html";
     if (lesson.materialType === "mindmap") return "mapa-mental-builder.html";
     if (lesson.materialType === "debate") return "debate-guiado-builder.html";
+    if (lesson.materialType === "wordtrail") return "trilha-palavras-builder.html";
+    if (lesson.materialType === "connections") return "em-comum-builder.html";
     return "slides-builder.html";
 }
 
@@ -1524,6 +1538,8 @@ function materialGroupLabel(type) {
     if (type === "match") return "Ligar pontos";
     if (type === "mindmap") return "Mapa mental";
     if (type === "debate") return "Debate guiado";
+    if (type === "wordtrail") return "Trilha de Palavras";
+    if (type === "connections") return "O que há em comum?";
     return "Slides";
 }
 
@@ -1539,6 +1555,8 @@ function materialGroupDescription(type) {
     if (type === "match") return "Associações em duas colunas para ligar e revisar em sala.";
     if (type === "mindmap") return "Tópicos conectados para organizar, explicar e revisar conteúdos.";
     if (type === "debate") return "Roteiros de mediação para discutir, argumentar e fechar o tema em sala.";
+    if (type === "wordtrail") return "Caminhos de letras para explorar palavras e significados com a turma.";
+    if (type === "connections") return "Pistas progressivas para descobrir uma conexão em comum.";
     return "Sequências para conduzir a aula projetada.";
 }
 

@@ -151,6 +151,8 @@ function builderPresentationPath(materialType = currentBuilderMaterialType()) {
         match: "ligar-pontos-apresentacao.html",
         mindmap: "mapa-mental-apresentacao.html",
         debate: "debate-guiado-apresentacao.html",
+        wordtrail: "trilha-palavras-apresentacao.html",
+        connections: "em-comum-apresentacao.html",
         slides: "apresentacao.html"
     };
     return paths[materialType] || paths.slides;
@@ -939,6 +941,7 @@ function applySlidesFromStructuredData(payload) {
             || { url: uploadedImage, description: "", mode: uploadedImage ? "Enviar imagem" : "Sem imagem" };
         if (imagePrompt) imagePrompt.value = resolvedImage.description;
         if (imageUrl) imageUrl.value = resolvedImage.url;
+        window.EducariaSlideDiagramEditing?.writeField(card, "slide-illustration", resolvedImage.diagramData || "");
         if (accentColor) accentColor.value = visual.accent;
         if (slideColor) slideColor.value = visual.background;
         if (textColor) textColor.value = visual.text;
@@ -1870,6 +1873,11 @@ async function requestTemplateStructuredMaterial(materialType, file) {
 }
 
 function materialConfig(materialType) {
+    if (["wordtrail", "connections"].includes(materialType)) {
+        return { textId: "discovery-source", fileId: "discovery-file", countId: "discovery-count",
+            audienceId: "discovery-audience", inputModeId: "discovery-input-mode",
+            apply: (material) => window.EducariaDiscoveryBuilder?.apply(materialType, material) };
+    }
     if (materialType === "quiz") {
         return {
             textId: "quiz-fonte-texto",
@@ -2119,6 +2127,7 @@ async function generateMaterial(materialType, button, options = {}) {
         className: classText, subject: subjectText, objective: objectiveText
     } : undefined;
     const generationOptions = {
+        inputMode: config.inputModeId ? document.getElementById(config.inputModeId)?.value || "topic" : "topic",
         count: requestedCount, approach: action, format: formatText, layout: layoutText,
         contentMode: config.contentModeId ? document.getElementById(config.contentModeId)?.value || "auto"
             : materialType === "slides" ? (/aprofundar/i.test(action) ? "develop" : /^Resumir/i.test(action) ? "summarize" : /^Organizar texto/i.test(action) ? "preserve" : "auto") : "auto",
@@ -2227,6 +2236,12 @@ async function generateMaterial(materialType, button, options = {}) {
 }
 
 function applyGenerationOptionsToEditor(materialType, options) {
+    if (["wordtrail", "connections"].includes(materialType) && options) {
+        for (const [id, value] of [["discovery-count", options.count], ["discovery-input-mode", options.inputMode], ["discovery-audience", options.audience]]) {
+            const field = document.getElementById(id);
+            if (field && value != null) { field.value = String(value); field.dispatchEvent(new Event("change", { bubbles: true })); }
+        }
+    }
     if (!options) return;
     const config = materialConfig(materialType);
     const values = [[config?.countId, options.count], [config?.subjectId, options.subject],

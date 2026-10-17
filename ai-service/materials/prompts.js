@@ -1,6 +1,7 @@
 import { normalizeSlideGenerationOptions, slidePedagogyInstructions } from "../slide-generation-policy.js";
 import { slideIllustrationInstructions } from "../slide-illustration-policy.js";
 import { activityGenerationInstructions } from "../activity-generation-policy.js";
+import { discoveryPrompt } from "./discovery.js";
 
 /**
  * Builds the Portuguese-language provider prompt for a given activity type.
@@ -17,6 +18,7 @@ export function promptFor(materialType, action, sourceText, slideOptions, genera
 }
 
 function basePromptFor(materialType, action, sourceText, slideOptions) {
+    if (["wordtrail", "connections"].includes(materialType)) return discoveryPrompt(materialType, action, sourceText);
     if (materialType === "quiz") {
         return [
             "Você é um assistente pedagógico de uma plataforma educacional brasileira.",

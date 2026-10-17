@@ -10,6 +10,7 @@ services:
       paths:
         - ai-service/**
         - assets/js/slide-diagram-model.js
+        - assets/js/discovery-core.js
         - render.yaml
     healthCheckPath: /api/health
     envVars:

@@ -14,6 +14,7 @@ import { parseGeneratedJson } from "./materials/generated-json.js";
 import { createMaterialUpload, extractTextFromFile, isUploadValidationError, parseWheelTemplateText } from "./materials/upload.js";
 import { normalizeSlideGenerationOptions } from "./slide-generation-policy.js";
 import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } from "./activity-generation-policy.js";
+import { normalizeDiscoveryMaterial, validateDiscoverySource } from "./materials/discovery.js";
 import {
     aiCreditsForUsage,
     buildAiCreditUsagePolicy,
@@ -1482,6 +1483,9 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(400).json({ error: "Texto-base muito longo (max 50 000 caracteres)." });
         }
 
+        // Validate supplied word lists before reserving credits or calling the provider.
+        validateDiscoverySource(materialType, generationOptions, sourceText);
+
         if (!activeAiTextProvider()) {
             return response.status(503).json({ error: aiTextProviderConfigurationError() });
         }
@@ -1547,7 +1551,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         const measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
         const normalizedMaterial = materialType === "slides"
             ? { ...normalizeSlidesMaterial(generated.material, slideOptions), generation_options: slideOptions }
-            : generated.material;
+            : normalizeDiscoveryMaterial(materialType, generated.material, generationOptions, sourceText);
         const material = applyActivityGenerationSettings(materialType, normalizedMaterial, generationOptions);
         usageMaterial = material;
 
@@ -1619,7 +1623,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(400).json({ error: "Arquivo não suportado. Envie TXT, RTF, DOCX ou PDF válidos." });
         }
 
-        if (["invalid_slide_options", "invalid_generation_options"].includes(error?.code)) {
+        if (["invalid_slide_options", "invalid_generation_options", "invalid_discovery_material"].includes(error?.code)) {
             return response.status(400).json({ error: error.message, code: error.code });
         }
 

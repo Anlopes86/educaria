@@ -160,7 +160,7 @@
         if (uploaded) return { url: material.cover_image, description: "Imagem enviada pelo professor", mode: "Enviar imagem" };
         const enabled = material?.generation_options?.includeIllustration;
         const illustration = enabled === true || enabled === "true" ? render(slide?.illustration) : null;
-        return illustration ? { ...illustration, mode: "Ilustração da IA" } : { url: "", description: "", mode: "Sem imagem" };
+        return illustration ? { ...illustration, mode: "Ilustração da IA", diagramData: root.EducariaSlideDiagramEditing?.encode(slide.illustration, illustration.url) || "" } : { url: "", description: "", mode: "Sem imagem" };
     }
 
     function feedback(material) {

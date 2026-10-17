@@ -7,7 +7,8 @@
         slides: "slides-builder.html", quiz: "quiz-builder.html", flashcards: "flashcards-builder.html",
         memory: "jogo-memoria-builder.html", wheel: "roleta-builder.html", match: "ligar-pontos-builder.html",
         mindmap: "mapa-mental-builder.html", debate: "debate-guiado-builder.html",
-        wordsearch: "caca-palavras-builder.html", crossword: "palavras-cruzadas-builder.html", hangman: "forca-builder.html"
+        wordsearch: "caca-palavras-builder.html", crossword: "palavras-cruzadas-builder.html", hangman: "forca-builder.html",
+        wordtrail: "trilha-palavras-builder.html", connections: "em-comum-builder.html"
     });
     function currentUid() {
         try { return String(JSON.parse(localStorage.getItem("educaria:auth:teacher-cache") || "null")?.uid || ""); }

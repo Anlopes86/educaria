@@ -1,0 +1,29 @@
+.slide-diagram-dialog {
+    margin: auto; padding: 0; border: 1px solid #c9ded8; border-radius: 24px;
+    width: min(1040px, calc(100vw - 28px)); max-width: none; max-height: calc(100dvh - 28px);
+    color: #173c43; background: #fbfcf8; box-shadow: 0 28px 80px #173c4333;
+}
+.slide-diagram-dialog::backdrop { background: #183e486b; backdrop-filter: blur(4px); }
+body:has(.slide-diagram-dialog[open]) { overflow: hidden; }
+.slide-diagram-editor { display: flex; flex-direction: column; max-height: calc(100dvh - 30px); }
+.slide-diagram-editor header { flex-shrink: 0; padding: 20px 24px 16px; background: #eaf5ef; border-bottom: 1px solid #d5e6df; }
+.slide-diagram-editor h2 { margin: 4px 0 8px; font-size: clamp(1.2rem, 2vw, 1.5rem); }
+.slide-diagram-editor p { margin: 0; line-height: 1.5; }
+.slide-diagram-editor-body { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; min-height: 0; padding: 20px 24px; overflow: auto; }
+.slide-diagram-editor-fields { display: grid; gap: 16px; min-width: 0; }
+.slide-diagram-editor-fields fieldset { display: grid; gap: 12px; margin: 0; padding: 14px; min-width: 0; border: 1px solid #d5e6df; border-radius: 16px; background: white; }
+.slide-diagram-editor-fields legend { padding: 0 8px; font-weight: 700; }
+.slide-diagram-editor-fields small { color: #526a70; font-size: .78rem; }
+.slide-diagram-editor-preview { position: sticky; top: 0; align-self: start; display: grid; gap: 12px; min-width: 0; }
+.slide-diagram-editor-preview img { width: 100%; max-height: min(48dvh, 420px); object-fit: contain; border: 1px solid #d5e6df; border-radius: 18px; background: #eef5f3; }
+.slide-diagram-editor-preview p { font-size: .88rem; color: #526a70; }
+.slide-diagram-editor-preview [data-error="true"] { color: #9b3029; background: #fff0eb; padding: 12px; border-radius: 12px; }
+.slide-diagram-editor footer { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 10px; justify-content: flex-end; padding: 14px 24px; border-top: 1px solid #d5e6df; background: white; }
+.slide-diagram-toolbar:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 0; }
+.slide-diagram-toolbar small { color: #526a70; line-height: 1.5; max-width: 50ch; }
+@media (max-width: 680px) {
+    .slide-diagram-editor-body { grid-template-columns: 1fr; padding: 16px; }
+    .slide-diagram-editor-preview { position: static; }
+    .slide-diagram-editor header, .slide-diagram-editor footer { padding: 16px; }
+    .slide-diagram-editor footer > button { flex: 1; }
+}

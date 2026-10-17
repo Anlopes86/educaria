@@ -76,6 +76,7 @@ function parseSlideCards(stackHtml) {
             imageMode: fieldLabel("slide-image-mode") || "Sem imagem",
             imageUrl,
             imagePrompt,
+            illustrationData: fieldValue("slide-illustration"),
             fontChoice: fieldLabel("slide-font") || "Destaque moderno",
             accentColor: fieldValue("slide-accent-color") || "#0ea5e9",
             slideColor: fieldValue("slide-color") || "#d7f5f6",
@@ -120,6 +121,7 @@ function serializeSlideCards(slides, originalStackHtml = "") {
                     <textarea data-field="slide-body" rows="4">${escapeHtml(slide.body || "")}</textarea>
                 </div>
                 <input data-field="slide-layout" type="hidden" value="Lado a lado">
+                <textarea data-field="slide-illustration" hidden>${escapeHtml(slide.illustrationData || "")}</textarea>
                 <div class="platform-field platform-field-wide">
                     <label>Endereço da imagem (opcional)</label>
                     <input data-field="slide-image-url" type="url" value="${escapeHtml(slide.imageUrl || "")}" placeholder="Cole o endereço de uma imagem real">

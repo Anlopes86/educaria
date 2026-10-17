@@ -7,6 +7,10 @@ const limits = { slides: [1, 30], quiz: [1, 50], flashcards: [2, 30], memory: [2
 function invalid() {
     return Object.assign(new Error("Opções da atividade inválidas. Revise os campos e tente novamente."), { code: "invalid_generation_options" });
 }
+arrays.wordtrail = "words";
+arrays.connections = "rounds";
+limits.wordtrail = [2, 12];
+limits.connections = [1, 8];
 function text(value, max) {
     if (value == null) return "";
     if (typeof value !== "string" || value.length > max) throw invalid();
@@ -35,10 +39,13 @@ export function normalizeActivityGenerationOptions(materialType, raw, action = "
     const format = key(text(source.format ?? legacy(action, "Formato desejado"), 140));
     const layout = key(text(source.layout ?? legacy(action, "Leitura desejada"), 40));
     const contentMode = text(source.contentMode, 20) || "auto";
+    const inputMode = text(source.inputMode, 20) || "topic";
+    if (!["topic", "words"].includes(inputMode)) throw invalid();
     if (!["auto", "preserve", "summarize", "develop"].includes(contentMode)) throw invalid();
     return {
-        count,
+        count: ["wordtrail", "connections"].includes(materialType) && inputMode === "words" ? null : count,
         contentMode,
+        inputMode,
         teacherInstructions: text(source.teacherInstructions, 1500),
         audience: text(source.audience ?? legacy(action, "Ano ou público|Público ou ano"), 160),
         className: text(source.className ?? legacy(action, "Turma"), 160),
@@ -76,6 +83,9 @@ export function activityGenerationInstructions(materialType, options) {
         `Disciplina: ${JSON.stringify(options.subject || "não informada")}. Objetivo: ${JSON.stringify(options.objective || "não informado")}.`,
         options.approach ? `Como ajudar: ${JSON.stringify(options.approach)}.` : ""
     ];
+    if (["wordtrail", "connections"].includes(materialType)) instructions.push(options.inputMode === "words"
+        ? "ENTRADA POR PALAVRAS: use todas e somente as palavras fornecidas (separadas por linha, vírgula ou ponto e vírgula). Não invente outras. Na trilha, preserve os termos literalmente e crie pistas opcionais. Em O que há em comum?, essas palavras são as PISTAS: organize-as em grupos de 3 a 5 e crie uma conexão pedagógica e explicação por grupo. A quantidade necessária para preservar a lista tem prioridade sobre a quantidade genérica de itens."
+        : "ENTRADA POR TÓPICO: crie conteúdo coerente com o pedido e apropriado ao público. Não revele respostas no título ou subtítulo da atividade.");
     if (materialType === "quiz") instructions.push({
         mixed: "Varie os tipos: multiple_choice, true_false e open. Com pelo menos 3 perguntas, inclua os três tipos.",
         choice: "TODAS as perguntas devem ter type multiple_choice, quatro alternativas plausíveis e apenas uma correta. Não inclua questões abertas ou verdadeiro/falso.",

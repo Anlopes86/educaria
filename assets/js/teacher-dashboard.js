@@ -10,6 +10,8 @@ const DASHBOARD_CORE_FORMATS = [
     { href: "criar-aula.html", label: "Aula completa" }
 ];
 const DASHBOARD_EXTRA_FORMATS = [
+    { href: "trilha-palavras-builder.html?new=1", label: "Trilha de Palavras", materialType: "wordtrail", category: "Explorar", description: "Conecte letras e descubra palavras", icon: "↝", tone: "mint" },
+    { href: "em-comum-builder.html?new=1", label: "O que há em comum?", materialType: "connections", category: "Relacionar", description: "Descubra a conexão entre as pistas", icon: "✧", tone: "violet" },
     { href: "flashcards-builder.html?new=1", label: "Flashcards", materialType: "flashcards", category: "Revisar", description: "Retomada rápida de conceitos", icon: "⚡", tone: "teal" },
     { href: "jogo-memoria-builder.html?new=1", label: "Jogo da memória", materialType: "memory", category: "Associar", description: "Conecte pares e significados", icon: "▦", tone: "green" },
     { href: "roleta-builder.html?new=1", label: "Roleta", materialType: "wheel", category: "Engajar", description: "Sorteie perguntas e desafios", icon: "✦", tone: "orange" },
@@ -23,6 +25,18 @@ const DASHBOARD_EXTRA_FORMATS = [
 const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_EXTRA_FORMATS]
     .filter((format) => format.materialType);
 const DASHBOARD_QUICK_OPTION_CONFIGS = {
+    wordtrail: [
+        { key: "inputMode", type: "select", label: "Criar a partir de", value: "topic", options: [
+            { value: "topic", label: "Tópico ou texto" }, { value: "words", label: "Minha lista de palavras" }
+        ] },
+        { key: "count", type: "number", label: "Quantidade de palavras", min: 2, max: 12, value: 6, instruction: (value) => `Gerar ${value} palavras; se houver lista própria, preservar a lista inteira.` }
+    ],
+    connections: [
+        { key: "inputMode", type: "select", label: "Criar a partir de", value: "topic", options: [
+            { value: "topic", label: "Tópico ou texto" }, { value: "words", label: "Minha lista de pistas" }
+        ] },
+        { key: "count", type: "number", label: "Quantidade de desafios", min: 1, max: 8, value: 3, instruction: (value) => `Gerar ${value} desafios; se houver lista própria, agrupar todas as pistas.` }
+    ],
     slides: [
         { key: "count", type: "number", labelKey: "dashboard.quick.count.slides", label: "Quantidade de slides", min: 1, max: 20, value: "", allowAuto: true, instruction: (value) => `Gerar ${value} slides.` },
         {
@@ -166,6 +180,8 @@ function dashboardRecentMaterialVisual(type) {
         match: { slug: "match", mark: "LP", label: "Ligar pontos" },
         mindmap: { slug: "mindmap", mark: "MM", label: "Mapa mental" },
         debate: { slug: "debate", mark: "DB", label: "Debate guiado" },
+        wordtrail: { slug: "wordtrail", mark: "TP", label: "Trilha de Palavras" },
+        connections: { slug: "connections", mark: "EC", label: "O que há em comum?" },
         wordsearch: { slug: "wordsearch", mark: "CP", label: "Caça-palavras" },
         crossword: { slug: "crossword", mark: "PC", label: "Palavras cruzadas" },
         hangman: { slug: "hangman", mark: "FO", label: "Força" }
@@ -364,7 +380,7 @@ function syncDashboardFormatHierarchy() {
                 <strong>${dashboardTranslate("dashboard.toolkit.moreFormats", "Dê outro ritmo à sua aula")}</strong>
                 <p>${dashboardTranslate("dashboard.toolkit.moreFormats.copy", "Atividades rápidas para aquecer, praticar, organizar ideias ou fechar a aula com participação.")}</p>
             </div>
-            <span class="dashboard-toolkit-count">${dashboardTranslate("dashboard.toolkit.moreFormats.count", "9 formatos prontos para criar")}</span>
+            <span class="dashboard-toolkit-count">${dashboardTranslate("dashboard.toolkit.moreFormats.count", "11 formatos prontos para criar")}</span>
         </div>
         <div class="dashboard-toolkit-links">
             ${DASHBOARD_EXTRA_FORMATS.map((format) => `
@@ -489,7 +505,22 @@ function renderDashboardQuickOptions(materialType) {
         <div class="dashboard-quick-options-grid dashboard-quick-options-grid--${basics.length}">
             ${basics.map(renderField).join("")}
         </div>
+        ${["wordtrail", "connections"].includes(materialType) ? '<p data-dashboard-discovery-help></p>' : ""}
     `;
+    syncDashboardDiscoveryOptions();
+}
+
+function syncDashboardDiscoveryOptions() {
+    const root = document.querySelector("[data-dashboard-quick-options]");
+    if (!["wordtrail", "connections"].includes(root?.dataset.materialType)) return;
+    const ownList = root.querySelector('[data-dashboard-quick-option="inputMode"]')?.value === "words";
+    const count = root.querySelector('[data-dashboard-quick-option="count"]');
+    if (count) count.disabled = ownList || root.closest("[data-dashboard-quick-form]")?.dataset.generating === "true";
+    const help = root.querySelector("[data-dashboard-discovery-help]");
+    if (help) help.textContent = ownList
+        ? (root.dataset.materialType === "wordtrail" ? "Cole de 2 a 12 palavras no campo inicial, uma por linha ou separadas por vírgula. Todas serão usadas."
+            : "Cole de 3 a 40 pistas no campo inicial, uma por linha ou separadas por vírgula. A IA organizará conexões em grupos de 3 a 5, usando toda a lista.")
+        : "Descreva o assunto no campo inicial. Depois você poderá editar cada item.";
 }
 
 function collectDashboardQuickOptions(form, materialType) {
@@ -521,6 +552,10 @@ function collectDashboardQuickOptions(form, materialType) {
         instructions.push(field.instruction(value));
     });
 
+    if (["wordtrail", "connections"].includes(materialType) && values.inputMode === "words") {
+        values.count = null;
+        instructions.length = 0;
+    }
     dashboardQuickOptionState.set(materialType, values);
     ["audience", "subject", "objective", "className"].forEach((key) => {
         values[key] = form.querySelector(`[data-dashboard-context="${key}"]`)?.value.trim() || "";
@@ -629,6 +664,7 @@ function setDashboardQuickGenerating(form, isGenerating) {
             : button.dataset.idleHtml;
     }
     if (progress) progress.hidden = !isGenerating;
+    syncDashboardDiscoveryOptions();
 }
 
 async function requestDashboardQuickMaterial(materialType, topic, label, generationOptions, ownerUid, file) {
@@ -821,6 +857,9 @@ function bindQuickCreateForm() {
     const formatSelect = form.querySelector("[data-dashboard-quick-format]");
     bindDashboardCreationAttachments(form);
     hydrateDashboardCreationClasses();
+    form.addEventListener("change", (event) => {
+        if (event.target.matches('[data-dashboard-quick-option="inputMode"]')) syncDashboardDiscoveryOptions();
+    });
 
     topicField?.addEventListener("input", () => {
         topicField.setCustomValidity("");

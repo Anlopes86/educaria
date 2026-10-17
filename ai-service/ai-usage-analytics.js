@@ -4,10 +4,10 @@ import { aiCreditsForUsage, mergeAiUsageMetadata, normalizeAiUsageMetadata } fro
 export const USAGE_COLLECTION = "aiGenerationUsage";
 export const USAGE_REPORT_MAX_RECORDS = 5000;
 export const USAGE_REPORT_WINDOW_DAYS = 30;
-export const MATERIAL_LABELS = Object.freeze({ slides: "Slides", quiz: "Quiz", flashcards: "Flashcards", memory: "Memória",
+export const MATERIAL_LABELS = Object.freeze({ wordtrail: "Trilha de Palavras", connections: "O que há em comum?", slides: "Slides", quiz: "Quiz", flashcards: "Flashcards", memory: "Memória",
     match: "Ligue os pontos", wheel: "Roleta", mindmap: "Mapa mental", debate: "Debate guiado", wordsearch: "Caça-palavras",
     crossword: "Palavras cruzadas", hangman: "Forca", image: "Imagem para slide" });
-const arrays = { slides: "slides", quiz: "questions", flashcards: "cards", memory: "pairs", match: "pairs", wheel: "segments",
+const arrays = { wordtrail: "words", connections: "rounds", slides: "slides", quiz: "questions", flashcards: "cards", memory: "pairs", match: "pairs", wheel: "segments",
     mindmap: "branches", debate: "steps", wordsearch: "words", crossword: "entries", hangman: "words" };
 const dayMs = 86_400_000;
 const integer = value => Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.floor(Number(value) || 0)));

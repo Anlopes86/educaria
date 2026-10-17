@@ -102,12 +102,13 @@ test("default slides and other activity prompts still work", () => {
 });
 
 test("production route passes options to generation and rejects bad fields before spending credits", async () => {
+    const { validateDiscoverySource } = await import("../materials/discovery.js");
     let handler, received, reserved = 0;
     const context = vm.createContext({
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
         schemaFor: () => ({}), normalizeSlideGenerationOptions: options, extractTextFromFile: async () => "",
-        normalizeActivityGenerationOptions, applyActivityGenerationSettings,
+        normalizeActivityGenerationOptions, applyActivityGenerationSettings, validateDiscoverySource,
         activeAiTextProvider: () => "groq", aiCreditUsagePolicy: {}, aiGenerationMaxAttempts: 1,
         activeAiTextModel: () => "openai/gpt-oss-120b", aiPlanForRequest: () => "free", isAiUnlimitedUser: () => false,
         createUsageObservation: () => ({ finish: () => null }), usageContext: () => ({}), aiUsageAnalytics: { record: async () => {} },

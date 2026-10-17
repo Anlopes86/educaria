@@ -2,6 +2,7 @@
     const runtimeScriptUrl = document.currentScript?.src || "";
     const IDLE_DELAY_MS = 2600;
     const NEXT_SELECTORS = [
+        "[data-discovery-next]",
         "[data-presentation-next]",
         "[data-flashcard-next]",
         "[data-quiz-application-next]",
@@ -10,6 +11,7 @@
         "[data-wheel-spin]"
     ];
     const PREV_SELECTORS = [
+        "[data-discovery-prev]",
         "[data-presentation-prev]",
         "[data-flashcard-prev]",
         "[data-quiz-application-prev]",

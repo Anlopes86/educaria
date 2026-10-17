@@ -22,7 +22,7 @@ Use a rota de geração e os controles existentes. Não crie uma chamada direta 
 
 - Crie a página de edição e seu script em `plataforma/` e `assets/js/`. Adote `*-builder.js` para ferramentas novas; as exceções antigas continuam compatíveis.
 - Crie a apresentação e `*-runtime.js`, usando o shell/controles compartilhados. Reutilize tokens, cores e componentes antes de criar estilos próprios.
-- Registre as opções de criação no painel (`dashboard-creation.js`), a interpretação do resultado da IA (`ai-material-generator.js`) e os atalhos necessários (`class-format-picker.js`, `builder-actions.js` e contextos do material).
+- Registre os formatos e opções de criação no painel (`teacher-dashboard.js`), a interpretação do resultado da IA (`ai-material-generator.js`) e os atalhos necessários (`app-sidebar.js` e contextos do material). `dashboard-creation.js` contém os anexos/contexto de criação, não o catálogo de formatos. Confira também recuperação (`generation-recovery.js`), salvamento automático (`builder-journey.js`) e restauração dos campos (`local-persistence.js`).
 - Confira `lesson-library.js`: tipo, rascunho, salvamento, destino em turmas, duplicação, abrir editor e abrir apresentação. Os identificadores ficam associados à conta por `storage-scope.js`.
 - Integre a aula completa em `lesson-sequence-builder.js` e `lesson-sequence-player.js`, incluindo edição do bloco, ordem e apresentação. Se não houver suporte, apresente a limitação claramente; não deixe um bloco vazio.
 - Confira ícones, rótulos, traduções e ilustrações em `activity-visuals.js`, `collection-visuals.js` e `assets/i18n/`. Carregue os scripts na ordem usada pelos editores atuais.
