@@ -1463,6 +1463,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             ? normalizeSlideGenerationOptions(request.body.slideOptions, action) : undefined;
         if (slideOptions) schemaConfig = schemaFor(materialType, slideOptions);
         const generationOptions = normalizeActivityGenerationOptions(materialType, request.body.generationOptions, action);
+        if (materialType === "connections") schemaConfig = schemaFor(materialType, generationOptions);
         if (slideOptions) Object.assign(generationOptions, {
             audience: slideOptions.audience, className: slideOptions.className,
             subject: slideOptions.subject, objective: slideOptions.objective

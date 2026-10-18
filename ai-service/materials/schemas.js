@@ -346,6 +346,12 @@ export const MATERIAL_TYPES = Object.freeze([...materialSchemas.keys()]);
 export function schemaFor(materialType, slideOptions) {
     const config = materialSchemas.get(materialType);
     if (!config) return null;
+    if (materialType === "connections" && Number.isInteger(slideOptions?.clueCount)) {
+        const schema = structuredClone(config.schema);
+        schema.properties.rounds.items.properties.clues.minItems = slideOptions.clueCount;
+        schema.properties.rounds.items.properties.clues.maxItems = slideOptions.clueCount;
+        return { ...config, schema };
+    }
     if (materialType === "slides" && slideOptions?.includeIllustration === false) {
         const schema = structuredClone(config.schema);
         const slide = schema.properties.slides.items;

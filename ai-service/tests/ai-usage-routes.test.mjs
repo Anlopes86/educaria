@@ -63,16 +63,20 @@ test("text route logs actual provider usage and returned quantity without storin
 test("discovery routes return valid materials with measured usage and reject bad lists before the provider", async () => {
     for (const [materialType, material, sourceText] of [
         ["wordtrail", { title: "Trilha", words: [{ term: "Água", clue: "Líquido" }, { term: "Sol", clue: "Estrela" }] }, "Água;Sol"],
-        ["connections", { title: "Conexões", rounds: [{ answer: "Planetas", clues: ["Marte", "Vênus", "Terra"], explanation: "Orbitam o Sol." }] }, "Marte;Vênus;Terra"]
+        ["connections", { title: "Conexões", rounds: [{ answer: "Planetas", clues: ["Marte", "Vênus", "Terra"], explanation: "Orbitam o Sol." }] }, "Planetas"]
     ]) {
         const h = harness({ results: [{ text: JSON.stringify(material), usageMetadata }] });
-        const response = await h.run({ materialType, sourceText, generationOptions: { inputMode: "words" } });
+        const response = await h.run({ materialType, sourceText, generationOptions: { inputMode: "words", clueCount: 3, difficulty: "hard", includeClues: false } });
         assert.equal(response.statusCode, 200);
         assert.equal(response.body.materialType, materialType);
         assert.ok(response.body.charge.cost > 0);
         assert.equal(h.events[0].materialType, materialType);
+        if (materialType === "connections") {
+            assert.equal(response.body.material.rounds[0].answer, "Planetas");
+            assert.equal(response.body.material.generation_options.difficulty, "hard");
+        } else assert.equal(response.body.material.showClues, false);
         const invalid = harness();
-        const failure = await invalid.run({ materialType, sourceText: "Uma", generationOptions: { inputMode: "words" } });
+        const failure = await invalid.run({ materialType, sourceText: "Uma;uma", generationOptions: { inputMode: "words" } });
         assert.equal(failure.statusCode, 400);
         assert.equal(invalid.calls(), 0);
         assert.equal(invalid.events.length, 0);

@@ -42,10 +42,16 @@ export function normalizeActivityGenerationOptions(materialType, raw, action = "
     const inputMode = text(source.inputMode, 20) || "topic";
     if (!["topic", "words"].includes(inputMode)) throw invalid();
     if (!["auto", "preserve", "summarize", "develop"].includes(contentMode)) throw invalid();
+    const clueCount = source.clueCount == null || source.clueCount === "" ? 5 : Number(source.clueCount);
+    const difficulty = text(source.difficulty, 20) || "medium";
+    if (materialType === "connections" && ((source.clueCount != null && !["string", "number"].includes(typeof source.clueCount))
+        || !Number.isInteger(clueCount) || clueCount < 2 || clueCount > 8 || !["easy", "medium", "hard"].includes(difficulty))) throw invalid();
     return {
         count: ["wordtrail", "connections"].includes(materialType) && inputMode === "words" ? null : count,
         contentMode,
         inputMode,
+        ...(materialType === "connections" ? { clueCount, difficulty } : {}),
+        ...(materialType === "wordtrail" ? { includeClues: boolean(source.includeClues, true) } : {}),
         teacherInstructions: text(source.teacherInstructions, 1500),
         audience: text(source.audience ?? legacy(action, "Ano ou público|Público ou ano"), 160),
         className: text(source.className ?? legacy(action, "Turma"), 160),
@@ -84,8 +90,18 @@ export function activityGenerationInstructions(materialType, options) {
         options.approach ? `Como ajudar: ${JSON.stringify(options.approach)}.` : ""
     ];
     if (["wordtrail", "connections"].includes(materialType)) instructions.push(options.inputMode === "words"
-        ? "ENTRADA POR PALAVRAS: use todas e somente as palavras fornecidas (separadas por linha, vírgula ou ponto e vírgula). Não invente outras. Na trilha, preserve os termos literalmente e crie pistas opcionais. Em O que há em comum?, essas palavras são as PISTAS: organize-as em grupos de 3 a 5 e crie uma conexão pedagógica e explicação por grupo. A quantidade necessária para preservar a lista tem prioridade sobre a quantidade genérica de itens."
+        ? (materialType === "connections"
+            ? "MINHAS RESPOSTAS: cada palavra ou expressão fornecida é a RESPOSTA (answer) de um desafio separado, NÃO uma pista. Use todas e somente essas respostas, na mesma ordem e grafia. Não agrupe a lista em uma nova resposta. Crie apenas pistas e explicação coerentes para cada resposta. Um item da lista = um desafio; a lista tem prioridade sobre a quantidade genérica."
+            : "MINHAS PALAVRAS: preserve literalmente todas e somente as palavras fornecidas, na mesma ordem. Não invente outras. A lista tem prioridade sobre a quantidade genérica.")
         : "ENTRADA POR TÓPICO: crie conteúdo coerente com o pedido e apropriado ao público. Não revele respostas no título ou subtítulo da atividade.");
+    if (materialType === "connections") instructions.push(
+        `Cada desafio deve ter EXATAMENTE ${options.clueCount || 5} pistas no array clues. As pistas são indícios ou exemplos cuja conexão é a resposta, não perguntas nem repetições da resposta.`,
+        ({ easy: "DIFICULDADE FÁCIL: pistas diretas, concretas e familiares; use características marcantes e exemplos comuns, adequados ao público.",
+            medium: "DIFICULDADE MÉDIA: combine exemplos e características menos óbvias; exija relacionar conceitos, avançando de pistas indiretas para uma pista final clara.",
+            hard: "DIFICULDADE DIFÍCIL: use relações indiretas, aplicações e exemplos menos evidentes, mas verificáveis e adequados ao público. Exija inferência; não use ambiguidade, fatos obscuros ou vocabulário difícil como único desafio. A última pista deve permitir resolver." })[options.difficulty || "medium"]);
+    if (materialType === "wordtrail") instructions.push(options.includeClues === false
+        ? "SEM PISTAS: clue deve ser string vazia em todas as palavras. O jogo apresentará apenas as letras e o tamanho das palavras."
+        : "COM PISTAS: crie uma pista curta e útil para cada palavra, sem repetir o termo nem revelar a resposta.");
     if (materialType === "quiz") instructions.push({
         mixed: "Varie os tipos: multiple_choice, true_false e open. Com pelo menos 3 perguntas, inclua os três tipos.",
         choice: "TODAS as perguntas devem ter type multiple_choice, quatro alternativas plausíveis e apenas uma correta. Não inclua questões abertas ou verdadeiro/falso.",

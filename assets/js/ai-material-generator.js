@@ -1876,6 +1876,7 @@ function materialConfig(materialType) {
     if (["wordtrail", "connections"].includes(materialType)) {
         return { textId: "discovery-source", fileId: "discovery-file", countId: "discovery-count",
             audienceId: "discovery-audience", inputModeId: "discovery-input-mode",
+            clueCountId: "discovery-clue-count", difficultyId: "discovery-difficulty", includeCluesId: "discovery-show-clues",
             apply: (material) => window.EducariaDiscoveryBuilder?.apply(materialType, material) };
     }
     if (materialType === "quiz") {
@@ -2128,6 +2129,8 @@ async function generateMaterial(materialType, button, options = {}) {
     } : undefined;
     const generationOptions = {
         inputMode: config.inputModeId ? document.getElementById(config.inputModeId)?.value || "topic" : "topic",
+        ...(materialType === "connections" ? { clueCount: Number(document.getElementById(config.clueCountId)?.value || 5), difficulty: document.getElementById(config.difficultyId)?.value || "medium" } : {}),
+        ...(materialType === "wordtrail" ? { includeClues: document.getElementById(config.includeCluesId)?.value !== "false" } : {}),
         count: requestedCount, approach: action, format: formatText, layout: layoutText,
         contentMode: config.contentModeId ? document.getElementById(config.contentModeId)?.value || "auto"
             : materialType === "slides" ? (/aprofundar/i.test(action) ? "develop" : /^Resumir/i.test(action) ? "summarize" : /^Organizar texto/i.test(action) ? "preserve" : "auto") : "auto",
@@ -2237,7 +2240,7 @@ async function generateMaterial(materialType, button, options = {}) {
 
 function applyGenerationOptionsToEditor(materialType, options) {
     if (["wordtrail", "connections"].includes(materialType) && options) {
-        for (const [id, value] of [["discovery-count", options.count], ["discovery-input-mode", options.inputMode], ["discovery-audience", options.audience]]) {
+        for (const [id, value] of [["discovery-count", options.count], ["discovery-input-mode", options.inputMode], ["discovery-audience", options.audience], ["discovery-clue-count", options.clueCount], ["discovery-difficulty", options.difficulty], ["discovery-show-clues", options.includeClues]]) {
             const field = document.getElementById(id);
             if (field && value != null) { field.value = String(value); field.dispatchEvent(new Event("change", { bubbles: true })); }
         }

@@ -6,7 +6,7 @@
     function read() {
         const stack = $("[data-discovery-items]");
         if (typeof persistMaterializedFields === "function") persistMaterializedFields(stack);
-        return core.readDraft(type, { controls: { "discovery-title": $("#discovery-title").value, "discovery-subtitle": $("#discovery-subtitle").value }, stackHtml: stack.innerHTML }, DOMParser);
+        return core.readDraft(type, { controls: { "discovery-title": $("#discovery-title").value, "discovery-subtitle": $("#discovery-subtitle").value, "discovery-show-clues": $("#discovery-show-clues")?.value }, stackHtml: stack.innerHTML }, DOMParser);
     }
     function preview() {
         const target = $("[data-discovery-preview]");
@@ -14,7 +14,7 @@
             const data = core.normalize(type, read());
             if (type === "wordtrail") {
                 const boards = core.createBoards(data), board = boards[0];
-                target.innerHTML = `<div class="discovery-mini-grid" style="--cols:${board.cols}">${board.cells.map(cell => `<span class="${cell ? "" : "blocked"}">${cell?.letter || ""}</span>`).join("")}</div><p>${data.words.length} palavras · ${boards.length} ${boards.length === 1 ? "tabuleiro" : "tabuleiros"}. Prévia do primeiro tabuleiro.</p><p>O conteúdo é dividido para manter letras e pistas legíveis.</p>`;
+                target.innerHTML = `<div class="discovery-mini-grid" style="--cols:${board.cols}">${board.cells.map(cell => `<span class="${cell ? "" : "blocked"}">${cell?.letter || ""}</span>`).join("")}</div><p>${data.words.length} palavras · ${boards.length} ${boards.length === 1 ? "tabuleiro" : "tabuleiros"} · ${data.showClues ? "com pistas" : "sem pistas"}. Prévia do primeiro tabuleiro.</p><p>O conteúdo é dividido para manter letras e pistas legíveis.</p>`;
             } else {
                 target.innerHTML = `<div class="discovery-mini-clues">${data.rounds[0].clues.map((clue, i) => `<div><small>Pista ${i + 1}</small><strong>${core.escape(i ? "•••" : clue)}</strong></div>`).join("")}</div><p>${data.rounds.length} desafios · revele uma pista por vez.</p>`;
             }
@@ -43,6 +43,7 @@
             const data = core.normalize(type, payload);
             $("#discovery-title").value = data.title;
             $("#discovery-subtitle").value = data.subtitle;
+            if (type === "wordtrail") $("#discovery-show-clues").value = String(data.showClues);
             $("[data-discovery-items]").innerHTML = core.stackHtml(type, data);
             $("[data-discovery-manual]").open = true;
             changed();

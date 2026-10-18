@@ -26,7 +26,7 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
     wordtrail: {
         itemSelector: "[data-discovery-item]", itemLabel: "Palavra",
         emptyPayload: () => ({ words: [{ term: "", clue: "" }] }),
-        controls: [{ key: "discovery-title", label: "Título" }, { key: "discovery-subtitle", label: "Orientação" }],
+        controls: [{ key: "discovery-title", label: "Título" }, { key: "discovery-subtitle", label: "Orientação" }, { key: "discovery-show-clues", label: "Pistas na apresentação", kind: "select", options: [{ value: "true", label: "Com pistas" }, { value: "false", label: "Sem pistas" }] }],
         fields: [{ selector: "[data-discovery-term]", label: "Palavra" }, { selector: "[data-discovery-clue]", label: "Pista", wide: true }]
     },
     connections: {
@@ -34,7 +34,7 @@ const INLINE_BLOCK_EDITOR_CONFIG = {
         emptyPayload: () => ({ rounds: [{ answer: "", clues: ["", "", ""], explanation: "" }] }),
         controls: [{ key: "discovery-title", label: "Título" }, { key: "discovery-subtitle", label: "Orientação" }],
         fields: [{ selector: "[data-discovery-answer]", label: "Conexão (resposta)" },
-            { selector: "[data-discovery-clues]", label: "Pistas — uma por linha (3 a 5)", kind: "textarea", wide: true },
+            { selector: "[data-discovery-clues]", label: "Pistas — uma por linha (2 a 8)", kind: "textarea", wide: true },
             { selector: "[data-discovery-explanation]", label: "Explicação", kind: "textarea", wide: true }]
     },
     slides: {
@@ -991,7 +991,7 @@ function selectedLessonSequenceContext() {
 
 function blockSpecificGenerationHint(materialType) {
     if (materialType === "wordtrail") return "Crie palavras curtas e pistas para conectar letras vizinhas em uma trilha; não gere coordenadas.";
-    if (materialType === "connections") return "Crie desafios de conexão com 3 a 5 pistas progressivas, resposta e explicação coerente.";
+    if (materialType === "connections") return "Crie desafios de conexão com a quantidade de pistas escolhida, resposta e explicação coerente.";
     if (materialType === "slides") return "Crie slides com abertura, desenvolvimento e fechamento.";
     if (materialType === "flashcards") return "Crie flashcards curtos e claros para revisão rápida.";
     if (materialType === "quiz") return "Crie um quiz de verificação alinhado ao que veio antes.";
@@ -1242,7 +1242,10 @@ function lessonAiSupported(materialType) {
 }
 
 function controlStateForDraft(materialType, payload) {
-    if (["wordtrail", "connections"].includes(materialType)) return { "discovery-title": payload.title || "", "discovery-subtitle": payload.subtitle || "" };
+    if (["wordtrail", "connections"].includes(materialType)) return { "discovery-title": payload.title || "", "discovery-subtitle": payload.subtitle || "",
+        ...(materialType === "wordtrail" ? { "discovery-show-clues": String(payload.showClues !== false) } : {}),
+        "discovery-clue-count": String(payload.generation_options?.clueCount || 5), "discovery-difficulty": payload.generation_options?.difficulty || "medium",
+        "discovery-input-mode": payload.generation_options?.inputMode || "topic" };
     if (materialType === "flashcards") {
         return { "cards-tema": payload.title || "Flashcards" };
     }

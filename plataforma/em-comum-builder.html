@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>O que há em comum? | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
-    <link rel="stylesheet" href="../assets/css/components/discovery.css">
+    <link rel="stylesheet" href="../assets/css/components/discovery.css?v=20261017-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -21,9 +21,9 @@
     <script src="../assets/js/editor-disclosure.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
-    <script src="../assets/js/discovery-core.js" defer></script>
-    <script src="../assets/js/discovery-builder.js" defer></script>
-    <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/discovery-core.js?v=20261017-2" defer></script>
+    <script src="../assets/js/discovery-builder.js?v=20261017-2" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261017-2" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
 </head>
 <body class="product-body theme-editor discovery-builder" data-material-type="connections" data-requires-auth="true">
@@ -39,7 +39,7 @@
             <a href="em-comum-apresentacao.html" class="platform-link-button platform-link-secondary" data-discovery-present>Apresentar</a>
         </div>
         <section class="activity-editor-context">
-            <div><span class="focus-eyebrow">Observe · converse · conecte</span><h1>Uma pista de cada vez. Uma descoberta em conjunto.</h1><p>Escolha um tema ou envie pistas para a IA organizar. A turma tenta descobrir a conexão antes da última pista.</p></div>
+            <div><span class="focus-eyebrow">Observe · converse · conecte</span><h1>Uma pista de cada vez. Uma descoberta em conjunto.</h1><p>Escolha um tema ou informe as respostas. A IA cria as pistas e a turma tenta descobrir o que elas têm em comum.</p></div>
         </section>
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
@@ -48,9 +48,11 @@
                     <div class="editor-disclosure-body">
                         <div class="platform-form-grid ai-structure-grid">
                             <div class="platform-field platform-field-wide"><label for="discovery-source">Seu pedido ou sua lista</label><textarea id="discovery-source" rows="5" placeholder="Ex.: conexões entre seres vivos para o 7º ano."></textarea></div>
-                            <div class="platform-field"><label for="discovery-input-mode">Criar a partir de</label><select id="discovery-input-mode"><option value="topic">Tópico ou texto</option><option value="words">Minhas pistas</option></select></div>
+                            <div class="platform-field"><label for="discovery-input-mode">Criar a partir de</label><select id="discovery-input-mode"><option value="topic">Tópico ou texto</option><option value="words">Minhas respostas</option></select></div>
                             <div class="platform-field"><label for="discovery-count">Quantidade de desafios</label><input id="discovery-count" type="number" min="1" max="8" value="3" step="1"></div>
-                            <p class="platform-field-wide discovery-source-help" data-discovery-source-help>Ao escolher uma lista própria, separe os itens por linha ou vírgula. Todos serão preservados; a quantidade acima se aplica ao modo tópico.</p>
+                            <div class="platform-field"><label for="discovery-clue-count">Pistas por desafio</label><input id="discovery-clue-count" type="number" min="2" max="8" value="5" step="1"></div>
+                            <div class="platform-field"><label for="discovery-difficulty">Dificuldade</label><select id="discovery-difficulty"><option value="easy">Fácil</option><option value="medium" selected>Médio</option><option value="hard">Difícil</option></select></div>
+                            <p class="platform-field-wide discovery-source-help" data-discovery-source-help>Em “Minhas respostas”, informe de 1 a 8 palavras ou expressões, uma por linha ou separadas por vírgula. Cada uma será a resposta de um desafio. A IA cria apenas as pistas e a explicação. Quantidade de pistas e dificuldade valem para a próxima geração.</p>
                             <div class="platform-field"><label for="discovery-audience">Ano ou público (opcional)</label><input id="discovery-audience" maxlength="160" placeholder="Ex.: 6º ano"></div>
                             <div class="platform-field"><label for="discovery-file">Arquivo de apoio (opcional)</label><input id="discovery-file" type="file" accept=".txt,.rtf,.docx,.pdf"></div>
                         </div>
@@ -64,7 +66,7 @@
                             <div class="platform-field platform-field-wide"><label for="discovery-title">Título da atividade</label><input id="discovery-title" type="text" maxlength="180" placeholder="O que há em comum?"></div>
                             <div class="platform-field platform-field-wide"><label for="discovery-subtitle">Orientação para a turma (opcional)</label><input id="discovery-subtitle" type="text" maxlength="280" placeholder="Não revele a resposta aqui."></div>
                         </div>
-                        <p class="activity-manual-guide">Cada desafio tem uma resposta e 3 a 5 pistas. Coloque primeiro as menos óbvias. A explicação aparece só quando você revelar a conexão.</p>
+                        <p class="activity-manual-guide">Cada desafio tem uma resposta e 2 a 8 pistas. Adicione ou remova linhas para ajustar as pistas sem gerar novamente. A apresentação se adapta à quantidade de cada desafio.</p>
                         <div class="platform-question-stack activity-card-stack" data-discovery-items></div>
                         <div class="utility-actions"><button type="button" class="platform-link-button platform-link-secondary" data-discovery-add>+ Adicionar desafio</button></div>
                     </div>

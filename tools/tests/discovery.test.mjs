@@ -25,7 +25,7 @@ test("discovery contracts preserve accents and reject unusable content", () => {
     for (const words of [[], [{ term: "Sol" }], [{ term: "Água" }, { term: "agua" }], [{ term: "a" }, { term: "Sol" }], [{ term: "H2O" }, { term: "Sol" }], [{ term: "a".repeat(19) }, { term: "Sol" }]]) {
         assert.throws(() => core.normalize("wordtrail", { words }), { code: "invalid_discovery_material" });
     }
-    for (const clues of [["A", "B"], ["A", "a", "C"], ["A", "B", "C", "D", "E", "F"], ["A".repeat(101), "B", "C"]]) {
+    for (const clues of [["A"], ["A", "a", "C"], Array.from({ length: 9 }, (_, i) => String(i)), ["A".repeat(101), "B", "C"]]) {
         assert.throws(() => core.normalize("connections", { rounds: [{ answer: "Resposta", clues }] }));
     }
     assert.throws(() => core.normalize("connections", { rounds: [{ clues: ["A", "B", "C"] }] }));
@@ -85,11 +85,11 @@ test("list mode preserves teacher spelling and cancels generic count instruction
     assert.deepEqual(result.words.map(w => w.term), ["Luz", "Água"]);
     assert.equal(result.words[0].clue, "Permite enxergar");
     assert.throws(() => validateDiscoverySource("wordtrail", options, "Água\nagua"));
-    assert.throws(() => validateDiscoverySource("connections", options, "Um;Dois"));
+    assert.throws(() => validateDiscoverySource("connections", options, "Um;um"));
 });
 
-test("connections lists cannot silently add, omit or reuse a teacher's clues", () => {
-    const source = "Gelo;Vapor;Água líquida;Vênus;Marte;Terra;Saturno";
+test("connections lists preserve teacher answers rather than treating them as clues", () => {
+    const source = "Estados físicos da água;Planetas";
     validateDiscoverySource("connections", { inputMode: "words" }, source);
     assert.deepEqual(normalizeDiscoveryMaterial("connections", connections, { inputMode: "words" }, source), core.normalize("connections", connections));
     for (const material of [
@@ -97,6 +97,63 @@ test("connections lists cannot silently add, omit or reuse a teacher's clues", (
         { ...connections, rounds: [...connections.rounds, connections.rounds[0]] },
         { rounds: [{ answer: "Inventada", clues: ["Gelo", "Vapor", "Sol"] }] }
     ]) assert.throws(() => normalizeDiscoveryMaterial("connections", material, { inputMode: "words" }, source));
+    const reordered = { rounds: [...connections.rounds].reverse().map(round => ({ ...round, answer: round.answer.toUpperCase() })) };
+    assert.deepEqual(normalizeDiscoveryMaterial("connections", reordered, { inputMode: "words" }, source).rounds, connections.rounds);
+    validateDiscoverySource("connections", { inputMode: "words" }, "Sistema Solar");
+    assert.throws(() => validateDiscoverySource("connections", { inputMode: "words" }, Array.from({ length: 9 }, (_, i) => `Resposta ${i}`).join(";")));
+});
+
+test("clue counts, difficulty and hidden trail clues reach generation and validation", () => {
+    for (const clueCount of [2, 3, 5, 6, 8]) {
+        const options = normalizeActivityGenerationOptions("connections", { clueCount, difficulty: "hard", inputMode: "words" });
+        const material = { rounds: [{ answer: "Água", clues: Array.from({ length: clueCount }, (_, i) => `Pista ${i + 1}`) }] };
+        assert.equal(normalizeDiscoveryMaterial("connections", material, options, "Água").rounds[0].clues.length, clueCount);
+        const schema = schemaFor("connections", options).schema.properties.rounds.items.properties.clues;
+        assert.equal(schema.minItems, clueCount); assert.equal(schema.maxItems, clueCount);
+        assert.match(activityGenerationInstructions("connections", options), new RegExp(`EXATAMENTE ${clueCount}`));
+        assert.match(activityGenerationInstructions("connections", options), /DIFICULDADE DIFÍCIL/);
+        assert.match(activityGenerationInstructions("connections", options), /RESPOSTA.*NÃO uma pista/);
+        assert.throws(() => normalizeDiscoveryMaterial("connections", material, { ...options, clueCount: clueCount === 2 ? 3 : 2 }, "Água"));
+    }
+    for (const [difficulty, label] of [["easy", "FÁCIL"], ["medium", "MÉDIA"], ["hard", "DIFÍCIL"]]) {
+        assert.match(activityGenerationInstructions("connections", normalizeActivityGenerationOptions("connections", { difficulty })), new RegExp(`DIFICULDADE ${label}`));
+    }
+    for (const raw of [{ clueCount: 1 }, { clueCount: 9 }, { clueCount: 2.5 }, { clueCount: [] }, { difficulty: "unknown" }]) assert.throws(() => normalizeActivityGenerationOptions("connections", raw));
+    assert.equal(schemaFor("connections").schema.properties.rounds.items.properties.clues.minItems, 2);
+    const withoutClues = normalizeActivityGenerationOptions("wordtrail", { includeClues: "false" });
+    assert.match(activityGenerationInstructions("wordtrail", withoutClues), /SEM PISTAS/);
+    const hidden = normalizeDiscoveryMaterial("wordtrail", trail, withoutClues);
+    assert.equal(hidden.showClues, false); assert.ok(hidden.words.every(word => word.clue === ""));
+    assert.equal(core.normalize("wordtrail", trail).showClues, true);
+    assert.deepEqual(core.normalize("wordtrail", { ...trail, showClues: false }).words, trail.words);
+});
+
+test("click and drag traces keep adjacency, undo and reverse-path behavior", () => {
+    const board = { cols: 3, cells: [{}, {}, {}, {}, null, {}, {}, {}, {}] };
+    assert.deepEqual(core.advancePath(board, [], 0).path, [0]);
+    assert.deepEqual(core.advancePath(board, [0, 1], 1).path, [0]);
+    assert.deepEqual(core.advancePath(board, [0, 1], 1, true).path, [0, 1]);
+    assert.deepEqual(core.advancePath(board, [0, 1], 0, true).path, [0]);
+    assert.deepEqual(core.advancePath(board, [0, 1], 2, true).path, [0, 1, 2]);
+    assert.equal(core.advancePath(board, [0], 4, true).error, "blocked");
+    assert.equal(core.advancePath(board, [0], 2, true).error, "distant");
+    assert.equal(core.advancePath(board, [0, 1, 2], 0, true).error, "repeated");
+    assert.equal(core.advancePath(board, [2], 3, true).error, "distant");
+});
+
+test("clue pages adapt to short lesson frames without dropping clues", () => {
+    const clues = Array.from({ length: 8 }, () => "Pista educativa com uma descrição de até cinquenta letras.");
+    assert.equal(core.cluePageSize(clues, 941, 218), 4);
+    assert.equal(core.cluePageSize(clues, 941, 400), 8);
+    assert.equal(core.cluePageSize(["Marte", "Vênus"], 941, 218), 2);
+    for (const count of [2, 3, 5, 6, 8]) {
+        for (const height of [120, 218, 350, 650]) {
+            const entries = Array.from({ length: count }, (_, i) => `${i} ${"Palavra ".repeat(12)}`);
+            const size = core.cluePageSize(entries, 941, height);
+            assert.ok(size >= 1 && size <= count);
+            assert.deepEqual(Array.from({ length: Math.ceil(count / size) }, (_, page) => entries.slice(page * size, (page + 1) * size)).flat(), entries);
+        }
+    }
 });
 
 test("both formats use registered schemas, audience guidance and plain-text prompts", () => {
@@ -144,6 +201,10 @@ test("lesson sequence builds editable drafts, supports AI and keeps failed gener
         assert.equal(context.payloadHasContent(type, payload), true);
         const draft = JSON.parse(context.buildLessonDraftFromPayload(type, payload));
         assert.equal(draft.controls["discovery-title"], payload.title);
+        if (type === "wordtrail") {
+            assert.equal(draft.controls["discovery-show-clues"], "true");
+            assert.equal(JSON.parse(context.buildLessonDraftFromPayload(type, { ...payload, showClues: false })).controls["discovery-show-clues"], "false");
+        }
         assert.match(draft.stackHtml, /data-discovery-item/);
         const fallback = context.fallbackPayloadForType(type, "Texto", "Falhou");
         assert.equal(context.payloadHasContent(type, fallback), false);

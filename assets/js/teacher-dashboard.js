@@ -29,13 +29,16 @@ const DASHBOARD_QUICK_OPTION_CONFIGS = {
         { key: "inputMode", type: "select", label: "Criar a partir de", value: "topic", options: [
             { value: "topic", label: "Tópico ou texto" }, { value: "words", label: "Minha lista de palavras" }
         ] },
-        { key: "count", type: "number", label: "Quantidade de palavras", min: 2, max: 12, value: 6, instruction: (value) => `Gerar ${value} palavras; se houver lista própria, preservar a lista inteira.` }
+        { key: "count", type: "number", label: "Quantidade de palavras", min: 2, max: 12, value: 6, instruction: (value) => `Gerar ${value} palavras; se houver lista própria, preservar a lista inteira.` },
+        { key: "includeClues", type: "select", label: "Pistas", value: "true", options: [{ value: "true", label: "Com pistas" }, { value: "false", label: "Sem pistas" }] }
     ],
     connections: [
         { key: "inputMode", type: "select", label: "Criar a partir de", value: "topic", options: [
-            { value: "topic", label: "Tópico ou texto" }, { value: "words", label: "Minha lista de pistas" }
+            { value: "topic", label: "Tópico ou texto" }, { value: "words", label: "Minhas respostas" }
         ] },
-        { key: "count", type: "number", label: "Quantidade de desafios", min: 1, max: 8, value: 3, instruction: (value) => `Gerar ${value} desafios; se houver lista própria, agrupar todas as pistas.` }
+        { key: "count", type: "number", label: "Quantidade de desafios", min: 1, max: 8, value: 3, instruction: (value) => `Gerar ${value} desafios; se houver lista própria, criar um desafio por resposta.` },
+        { key: "clueCount", type: "number", label: "Pistas por desafio", min: 2, max: 8, value: 5, instruction: (value) => `Cada desafio deve ter exatamente ${value} pistas.` },
+        { key: "difficulty", type: "select", label: "Dificuldade", value: "medium", options: [{ value: "easy", label: "Fácil" }, { value: "medium", label: "Médio" }, { value: "hard", label: "Difícil" }] }
     ],
     slides: [
         { key: "count", type: "number", labelKey: "dashboard.quick.count.slides", label: "Quantidade de slides", min: 1, max: 20, value: "", allowAuto: true, instruction: (value) => `Gerar ${value} slides.` },
@@ -519,7 +522,7 @@ function syncDashboardDiscoveryOptions() {
     const help = root.querySelector("[data-dashboard-discovery-help]");
     if (help) help.textContent = ownList
         ? (root.dataset.materialType === "wordtrail" ? "Cole de 2 a 12 palavras no campo inicial, uma por linha ou separadas por vírgula. Todas serão usadas."
-            : "Cole de 3 a 40 pistas no campo inicial, uma por linha ou separadas por vírgula. A IA organizará conexões em grupos de 3 a 5, usando toda a lista.")
+            : "Cole de 1 a 8 respostas no campo inicial, uma por linha ou separadas por vírgula. A IA criará as pistas para cada resposta, preservando suas palavras.")
         : "Descreva o assunto no campo inicial. Depois você poderá editar cada item.";
 }
 
