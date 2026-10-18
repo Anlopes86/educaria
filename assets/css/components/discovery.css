@@ -17,8 +17,9 @@
 .discovery-mini-grid span { display: grid; place-items: center; aspect-ratio: 1; border-radius: 6px; background: #fffefa; font-size: clamp(15px, 1.6vw, 25px); font-weight: 750; color: #173c43; }
 .discovery-mini-grid .blocked { background: #9daea1; }
 .discovery-mini-clues { display: grid; gap: 8px; margin: 24px 0; }
-.discovery-mini-clues > div { padding: 18px; display: grid; gap: 5px; border-radius: 16px; background: #e1d7f0; color: #463563; }
-.discovery-mini-clues > div:nth-child(even) { background: #dbe5f6; }
+.discovery-mini-clues > div { padding: 18px; display: grid; gap: 5px; border-radius: 16px; background: #e1d7f0; color: #463563; text-align: center; }
+.discovery-mini-clues > div:first-child { border: 2px solid #80639f; }
+.discovery-mini-clues > div:not(:first-child) { background: #f5f0fa; border: 1px dashed #cabbdf; }
 .discovery-mini-clues strong { font-size: 1.4rem; overflow-wrap: anywhere; }
 .discovery-stage { min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; gap: clamp(6px, 1.2vh, 16px); padding: clamp(12px, 2vw, 28px); background: var(--activity-canvas); border: 1px solid var(--activity-border); border-radius: 26px; box-shadow: var(--activity-shadow); color: var(--activity-ink); }
 .discovery-stage-head { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-width: 0; }
@@ -28,55 +29,78 @@
 .discovery-stage-head p { margin: 6px 0 0; font-size: clamp(13px, 1.25vw, 21px); line-height: 1.35; }
 .discovery-counter { flex-shrink: 0; background: #fffefa; border: 1px solid var(--activity-border); border-radius: 24px; padding: 9px 14px; font-weight: 700; }
 .discovery-content { min-width: 0; min-height: 0; overflow: hidden; }
-.discovery-trail-layout, .discovery-connections-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: clamp(16px, 2vw, 34px); height: 100%; min-height: 0; }
+.discovery-trail-layout { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr); gap: clamp(16px, 2.5vw, 42px); height: 100%; min-height: 0; }
+.discovery-trail-layout.without-clues { grid-template-columns: minmax(0, 2.6fr) minmax(210px, 1fr); }
+.discovery-trail-play { display: grid; grid-template-rows: minmax(0, 1fr); min-height: 0; min-width: 0; }
 .discovery-grid-area { display: grid; place-items: center; min-width: 0; min-height: 0; }
-.discovery-grid { display: grid; grid-template-columns: repeat(var(--cols), var(--cell, 40px)); grid-auto-rows: var(--cell, 40px); padding: 6px; background: #b8c7b9; border: 2px solid #496657; border-radius: 18px; box-shadow: 0 5px 0 #173c431c; touch-action: none; user-select: none; }
-.discovery-letter, .discovery-blocked { margin: 2px; min-width: 0; min-height: 0; border-radius: 7px; }
-.discovery-letter { position: relative; display: grid; place-items: center; padding: 0; border: 1px solid #d4ded2; background: #fffefa; color: #173c43; font-family: inherit; font-size: calc(var(--cell) * .46); line-height: 1; font-weight: 750; cursor: pointer; }
-.discovery-letter > span { position: relative; z-index: 1; }
-.discovery-letter small { position: absolute; top: 3px; left: 4px; font-size: max(10px, calc(var(--cell) * .17)); }
-.discovery-letter.selected { background: #f6da88; border-color: #97732a; }
-.discovery-letter:focus-visible { outline: 3px solid #173c43; outline-offset: -3px; z-index: 2; }
+.discovery-grid { position: relative; isolation: isolate; display: grid; grid-template-columns: repeat(var(--cols), var(--cell, 40px)); grid-auto-rows: var(--cell, 40px); padding: 6px; background: #fdfdf8; border: 2px solid #496657; border-radius: 20px; box-shadow: 0 6px 0 #173c431c; touch-action: none; user-select: none; }
+.discovery-letter, .discovery-blocked { margin: 0; min-width: 0; min-height: 0; border-radius: 3px; }
+.discovery-letter { position: relative; display: grid; place-items: center; padding: 0; border: 1px solid #e2e8de; background: #fdfdf8; color: #173c43; font-family: inherit; font-size: calc(var(--cell) * .43); line-height: 1; font-weight: 750; cursor: pointer; }
+.discovery-letter > span { position: relative; z-index: 2; pointer-events: none; }
+.discovery-letter small { position: absolute; z-index: 2; top: 2px; left: 2px; min-width: 1.3em; text-align: center; border-radius: 50%; background: #173c43; color: #fffefa; font-size: max(9px, calc(var(--cell) * .16)); line-height: 1.3; pointer-events: none; }
+.discovery-letter:focus-visible { outline: 3px solid #173c43; outline-offset: -4px; }
 .discovery-letter:hover:not([aria-disabled="true"]) { box-shadow: inset 0 0 0 2px #226963; }
-.discovery-letter[data-next]::after { content: ""; position: absolute; background: inherit; z-index: 0; }
-.discovery-letter[data-next="right"]::after { right: -5px; top: 25%; width: 6px; height: 50%; }
-.discovery-letter[data-next="left"]::after { left: -5px; top: 25%; width: 6px; height: 50%; }
-.discovery-letter[data-next="down"]::after { bottom: -5px; left: 25%; height: 6px; width: 50%; }
-.discovery-letter[data-next="up"]::after { top: -5px; left: 25%; height: 6px; width: 50%; }
-.discovery-blocked { background: #8c9d8e; border: 1px solid #7b8e7e; }
-.discovery-word-bank { height: 100%; min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); padding: 0 0 5px; }
-.discovery-word-bank h2 { margin: 0 0 10px; font-size: clamp(24px, 2.5vw, 38px); line-height: 1.1; }
-.discovery-word-bank ol { padding: 0; margin: 0; list-style: none; display: grid; grid-auto-rows: minmax(0, 1fr); gap: 8px; min-height: 0; }
-.discovery-word-bank li { display: flex; flex-direction: column; justify-content: center; gap: 3px; min-height: 0; padding: 8px 14px; border: 1px solid #c6d8ce; border-radius: 16px; background: #fffefa; box-shadow: 0 3px 0 #173c430d; overflow-wrap: anywhere; }
-.discovery-word-bank strong { font-size: clamp(17px, 1.6vw, 28px); line-height: 1.2; }
-.discovery-word-bank li span { font-size: clamp(15px, 1.35vw, 23px); line-height: 1.3; }
-.discovery-stage .color-0 { background: #a9d6c7; color: #173c43; }
-.discovery-stage .color-1 { background: #b4cce5; color: #173c43; }
-.discovery-stage .color-2 { background: #e9bc77; color: #473e24; }
-.discovery-stage .color-3 { background: #c2b5df; color: #463563; }
+.discovery-blocked { background: #a1afa0; border: 1px solid #94a591; }
+.discovery-stage .color-0 { --trail-color: #a9d6c7; }
+.discovery-stage .color-1 { --trail-color: #b4cce5; }
+.discovery-stage .color-2 { --trail-color: #e9bc77; }
+.discovery-stage .color-3 { --trail-color: #c2b5df; }
+.discovery-paths { position: absolute; inset: 6px; width: calc(100% - 12px); height: calc(100% - 12px); z-index: 1; pointer-events: none; overflow: visible; }
+.discovery-path { color: var(--trail-color); }
+.discovery-path.is-tracing { color: #f3d47f; }
+.discovery-path polyline { fill: none; stroke: currentColor; stroke-width: 64; stroke-linecap: round; stroke-linejoin: round; }
+.discovery-path-start { fill: currentColor; stroke: #42645c; stroke-width: 3; }
+.discovery-path-arrow { fill: none; stroke: #36564e; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.discovery-trace { flex: 1; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-width: 0; height: 66px; padding: 7px 14px; border: 1px solid #b9ceaa; border-radius: 16px; background: #e1edce; }
+.discovery-trace > span { font-size: 11px; line-height: 1.1; text-transform: uppercase; font-weight: 750; letter-spacing: .1em; }
+.discovery-trace strong { display: block; max-width: 100%; font-size: clamp(18px, 1.8vw, 28px); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.discovery-trace.is-complete { background: #a9d6c7; }
+.discovery-word-bank { height: 100%; min-height: 0; min-width: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); padding-bottom: 5px; gap: 12px; }
+.discovery-word-bank header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.discovery-word-bank .discovery-kicker { margin: 0; }
+.discovery-word-bank h2 { margin: 0; font-size: clamp(24px, 2.5vw, 38px); line-height: 1.1; white-space: nowrap; }
+.discovery-word-bank h2 span { font-size: .6em; font-weight: 500; }
+.discovery-word-bank ol { padding: 0; margin: 0; list-style: none; display: grid; grid-auto-rows: minmax(0, 1fr); gap: 10px; min-height: 0; }
+.discovery-word-bank li { display: flex; flex-direction: column; justify-content: center; gap: 6px; min-height: 0; padding: 8px 14px; border: 1px solid #c6d8ce; border-radius: 16px; background: #fffefa; box-shadow: 0 3px 0 #173c430d; overflow-wrap: anywhere; }
+.discovery-word-bank li.is-solved { border-color: #668a79; background: color-mix(in srgb, var(--trail-color) 38%, #fffefa); }
+.discovery-word-head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.discovery-word-number { display: grid; place-items: center; flex: 0 0 auto; width: 24px; height: 24px; border-radius: 8px; color: #173c43; background: var(--trail-color, #e1e9dc); font-size: 14px; font-weight: 750; }
+.discovery-word-term { flex: 1; min-width: 0; font-size: clamp(19px, 1.7vw, 30px); line-height: 1.2; }
+.discovery-word-result { flex-shrink: 0; font-size: 21px; color: #226963; font-weight: 800; }
+.discovery-word-slots { flex: 1; min-width: 0; display: flex; gap: 3px; }
+.discovery-word-slots i { width: var(--slot, 20px); height: 22px; flex-shrink: 0; border-radius: 5px; background: #e4e9df; border-bottom: 2px solid #afbea6; }
+.discovery-word-clue { margin: 0; font-size: clamp(15px, 1.4vw, 23px); line-height: 1.3; }
+.discovery-connections-layout { display: grid; grid-template-rows: minmax(0, 1fr); gap: 12px; height: 100%; min-height: 0; }
+.discovery-connections-layout.is-revealed { grid-template-rows: minmax(0, 1fr) auto; }
 .discovery-clue-area { display: flex; flex-direction: column; min-height: 0; gap: 9px; }
+.discovery-clue-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 32px; }
+.discovery-clue-toolbar > p { margin: 0; font-size: 14px; color: #655573; }
 .discovery-clue-stack { flex: 1; display: grid; grid-auto-rows: minmax(0, 1fr); gap: 9px; min-height: 0; }
 .discovery-clue-pages { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; font-weight: 700; }
 .discovery-clue-pages button { display: grid; place-items: center; width: 38px; height: 32px; padding: 0; border: 1px solid var(--activity-border); border-radius: 10px; background: #fffefa; color: var(--activity-ink); font: inherit; cursor: pointer; }
 .discovery-clue-pages button:disabled { opacity: .4; cursor: default; }
 .discovery-clue-pages button:focus-visible { outline: 3px solid var(--activity-accent); outline-offset: 2px; }
 .discovery-clue[hidden] { display: none; }
-.discovery-clue { display: grid; grid-template-columns: 70px minmax(0, 1fr); align-items: center; gap: 14px; min-height: 0; padding: clamp(10px, 1.2vw, 20px); background: #e1d7f0; border: 1px solid #baaaca; border-radius: 18px; box-shadow: 0 4px 0 #46356313; }
-.discovery-clue:nth-child(2n) { background: #dbe5f6; border-color: #bacce7; }
-.discovery-clue:nth-child(3n) { background: #dcebdc; border-color: #b6cdb6; }
-.discovery-clue span { font-size: clamp(12px, 1.1vw, 18px); font-weight: 700; }
-.discovery-clue strong { font-size: clamp(19px, 2.1vw, 34px); line-height: 1.15; overflow-wrap: anywhere; }
+.discovery-clue { display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: center; gap: 14px; min-height: 0; padding: 10px 18px; background: hsl(267 38% calc(93% - var(--clue-step, 0) * 2%)); border: 1px solid #bcaaca; border-radius: 18px; box-shadow: 0 3px 0 #46356312; }
+.discovery-clue > span { display: grid; justify-items: center; gap: 1px; font-size: 11px; font-weight: 650; text-transform: uppercase; letter-spacing: .04em; }
+.discovery-clue b { font-size: clamp(18px, 2vw, 28px); line-height: 1; }
+.discovery-clue strong { font-size: clamp(22px, 2.6vw, 42px); line-height: 1.15; overflow-wrap: anywhere; text-align: center; }
+.discovery-clue.is-current { border: 2px solid #80639f; box-shadow: inset 0 0 0 1px #80639f, 0 3px 0 #46356318; }
 .discovery-clue.is-hidden { background: #fffdf87a; border-style: dashed; box-shadow: none; color: #776b84; }
-.discovery-clue.is-hidden strong { font-size: 28px; }
-.discovery-connections-layout--many { grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); }
+.discovery-clue.is-hidden strong { font-size: 25px; letter-spacing: .2em; }
 .discovery-connections-layout--many .discovery-clue-stack { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.discovery-connections-layout--many .discovery-clue { grid-template-columns: minmax(0, 1fr); align-content: center; gap: 5px; padding: 10px 14px; }
-.discovery-connections-layout--many .discovery-clue strong { font-size: clamp(18px, 1.8vw, 30px); }
-.discovery-answer-panel { min-height: 0; display: flex; flex-direction: column; justify-content: safe center; align-items: flex-start; padding: clamp(14px, 2.2vw, 36px); border-radius: 24px; background: #fffefa; border: 1px solid #d2c5e0; overflow-y: auto; }
-.discovery-answer-symbol { display: grid; place-items: center; width: clamp(40px, 6vw, 88px); aspect-ratio: 1; margin-bottom: 14px; border-radius: 24%; background: #e1d7f0; color: #695086; font-size: clamp(26px, 4vw, 56px); font-weight: 700; }
-.discovery-answer-panel h2 { margin: 0 0 12px; font-size: clamp(24px, 3vw, 48px); line-height: 1.1; overflow-wrap: anywhere; }
-.discovery-answer-panel p:not(.discovery-kicker) { margin: 0 0 18px; font-size: clamp(17px, 1.6vw, 26px); line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; }
-.discovery-answer-panel strong { font-size: clamp(15px, 1.2vw, 20px); }
+.discovery-connections-layout--many .discovery-clue strong { font-size: clamp(20px, 2.1vw, 34px); }
+.discovery-answer-banner { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 12px 24px; border: 1px solid #8fae9f; border-radius: 20px; background: #d5e8da; color: #214e44; box-shadow: 0 3px 0 #214e4414; animation: discovery-reveal .24s ease-out; }
+.discovery-answer-check { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: #226963; color: #fffefa; font-size: 28px; }
+.discovery-answer-banner .discovery-kicker { margin: 0 0 3px; }
+.discovery-answer-banner h2 { margin: 0; font-size: clamp(22px, 2.7vw, 42px); line-height: 1.12; overflow-wrap: anywhere; }
+.discovery-explanation-dialog { width: min(780px, calc(100% - 32px)); max-height: calc(100dvh - 32px); padding: clamp(20px, 3vw, 42px); border: 1px solid #b5cbbf; border-radius: 24px; background: #fffefa; color: #214e44; box-shadow: 0 20px 80px #173c4333; }
+.discovery-explanation-dialog::backdrop { background: #122c35b3; }
+.discovery-explanation-dialog form { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+.discovery-explanation-dialog h2 { margin: 0 0 20px; font-size: clamp(26px, 3vw, 42px); overflow-wrap: anywhere; }
+.discovery-explanation-dialog [data-explanation-text] { margin: 0; font-size: clamp(19px, 2vw, 28px); line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+@keyframes discovery-reveal { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .discovery-answer-banner { animation: none; } }
 .discovery-status { margin: 0; min-height: 1.5em; font-size: clamp(14px, 1.3vw, 21px); font-weight: 650; }
 .discovery-controls { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 .discovery-controls > div { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -87,13 +111,22 @@
     .discovery-stage-head h1 { font-size: clamp(20px, 2.2vw, 30px); }
     .discovery-stage-head p { font-size: 14px; }
     .discovery-kicker { margin-bottom: 4px; }
-    .discovery-answer-symbol { display: none; }
-    .discovery-answer-panel { padding: 14px 20px; }
-    .discovery-answer-panel h2 { font-size: 28px; }
     .discovery-clue { padding: 8px 14px; }
-    .discovery-clue strong { font-size: 21px; }
-    .discovery-word-bank li { padding: 9px 14px; }
-    .discovery-word-bank li span { font-size: 16px; }
+    .discovery-clue strong { font-size: 25px; }
+    .discovery-answer-banner { padding: 8px 16px; gap: 10px; }
+    .discovery-answer-banner h2 { font-size: 24px; }
+    .discovery-answer-check { width: 32px; height: 32px; font-size: 22px; }
+    .discovery-trace { height: 48px; padding: 4px 10px; }
+    .discovery-trace strong { font-size: 19px; }
+    .discovery-word-bank { gap: 6px; }
+    .discovery-word-bank h2 { font-size: 24px; }
+    .discovery-word-bank ol { gap: 6px; }
+    .discovery-word-bank li { padding: 6px 10px; gap: 4px; }
+    .discovery-word-number { width: 22px; height: 22px; font-size: 13px; }
+    .discovery-word-slots i { height: 18px; }
+    .discovery-word-clue { font-size: 15px; line-height: 1.2; }
+    .discovery-controls, .discovery-controls > div { gap: 6px; }
+    .discovery-controls .platform-link-button { font-size: 13px; padding: 7px 8px; min-height: 36px; }
 }
 @media (max-width: 760px) {
     body.presentation-runtime-page:has(.discovery-stage) { overflow: auto; }
@@ -103,18 +136,32 @@
     .discovery-stage-head { align-items: flex-start; flex-direction: column; gap: 8px; }
     .discovery-counter { font-size: 13px; padding: 6px 10px; }
     .discovery-content { overflow: visible; }
-    .discovery-trail-layout, .discovery-connections-layout { grid-template-columns: 1fr; height: auto; }
+    .discovery-trail-layout, .discovery-trail-layout.without-clues, .discovery-connections-layout { grid-template-columns: 1fr; height: auto; }
+    .discovery-trail-play { grid-template-rows: auto; }
     .discovery-grid-area { height: min(84vw, 400px); }
     .discovery-word-bank { height: auto; }
-    .discovery-word-bank ol { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: auto; }
+    .discovery-word-bank ol { grid-auto-rows: auto; }
+    .discovery-word-bank li { min-height: 65px; }
     .discovery-clue { min-height: 66px; }
     .discovery-connections-layout--many .discovery-clue-stack { grid-template-columns: 1fr; }
-    .discovery-answer-panel { overflow: visible; }
-    .discovery-answer-symbol { display: none; }
+    .discovery-clue-toolbar { flex-wrap: wrap; }
+    .discovery-clue { grid-template-columns: 34px minmax(0, 1fr); padding: 10px; gap: 8px; }
+    .discovery-answer-banner { grid-template-columns: auto minmax(0, 1fr); padding: 14px; }
+    .discovery-answer-banner button { grid-column: 1 / -1; }
     .discovery-controls { padding-bottom: 8px; }
 }
+@media (max-height: 500px) and (min-width: 761px) {
+    .discovery-trail-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 18px; }
+    .discovery-word-bank li { display: grid; grid-template-columns: 110px minmax(0, 1fr); align-items: center; gap: 10px; padding: 4px 8px; }
+    .discovery-word-bank li:not(:has(.discovery-word-clue)) { grid-template-columns: 1fr; }
+    .discovery-word-head { gap: 6px; }
+    .discovery-word-clue { font-size: 15px; }
+    .discovery-trace { height: 42px; padding: 3px 10px; }
+    .discovery-trace strong { font-size: 18px; line-height: 1.1; }
+    .discovery-status { font-size: 13px; }
+}
 @media print {
-    .discovery-controls, .discovery-status, .discovery-clue-pages { display: none !important; }
+    .discovery-controls, .discovery-status, .discovery-clue-pages, .discovery-explanation-dialog, .discovery-answer-banner button { display: none !important; }
     .discovery-clue[hidden] { display: grid; }
     .discovery-stage { display: block; height: auto; overflow: visible; box-shadow: none; break-inside: avoid; }
     .discovery-stage-head { margin-bottom: 20px; }
@@ -124,5 +171,7 @@
     .discovery-word-bank { height: auto; }
     .discovery-word-bank ol, .discovery-clue-stack { grid-auto-rows: auto; }
     .discovery-word-bank li, .discovery-clue { min-height: 40px; break-inside: avoid; }
-    .discovery-answer-panel { overflow: visible; }
+    .discovery-trail-play { display: block; }
+    .discovery-grid, .discovery-paths, .discovery-clue, .discovery-word-bank li { print-color-adjust: exact; }
+    .discovery-answer-banner { animation: none; margin-top: 16px; }
 }

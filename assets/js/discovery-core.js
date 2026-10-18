@@ -101,12 +101,13 @@
         // Reserve readable lines for every clue, including those not revealed yet.
         // Short embedded lesson frames use pages instead of clipped cards or tiny text.
         const columns = clues.length > 5 ? 2 : 1;
-        const textWidth = Math.max(90, (width - 24) * (columns === 2 ? .615 : .574) / columns - (columns === 2 ? 34 : 112));
-        const lines = Math.max(...clues.map(clue => Math.ceil(clue.length / Math.max(10, Math.floor(textWidth / 8)))));
-        const rowHeight = Math.max(56, lines * 20 + (columns === 2 ? 36 : 20));
+        const textWidth = Math.max(90, (width - (columns - 1) * 12) / columns - 94);
+        const lines = Math.max(...clues.map(clue => Math.ceil(clue.length / Math.max(10, Math.floor(textWidth / 10)))));
+        const rowHeight = Math.max(52, lines * 24 + 20);
         const rows = Math.ceil(clues.length / columns);
-        if (rows * rowHeight + (rows - 1) * 9 <= height) return clues.length;
-        return Math.min(clues.length, columns * Math.max(1, Math.floor((height - 32 - 9) / (rowHeight + 9))));
+        const available = height - 40;
+        if (rows * rowHeight + (rows - 1) * 10 <= available) return clues.length;
+        return Math.min(clues.length, columns * Math.max(1, Math.floor((available + 10) / (rowHeight + 10))));
     }
     function stackHtml(type, material, allowIncomplete = false) {
         const data = allowIncomplete ? material : normalize(type, material);

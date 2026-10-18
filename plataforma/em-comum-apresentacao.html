@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>O que há em comum? — apresentação | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
-    <link rel="stylesheet" href="../assets/css/components/discovery.css?v=20261017-2">
+    <link rel="stylesheet" href="../assets/css/components/discovery.css?v=20261018-1">
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
-    <script src="../assets/js/discovery-core.js?v=20261017-2" defer></script>
+    <script src="../assets/js/discovery-core.js?v=20261018-1" defer></script>
+    <script src="../assets/js/discovery-view.js?v=20261018-1" defer></script>
     <script src="../assets/js/presentation-mode.js?v=20261016-discovery" defer></script>
-    <script src="../assets/js/discovery-runtime.js?v=20261017-2" defer></script>
+    <script src="../assets/js/discovery-runtime.js?v=20261018-1" defer></script>
 </head>
 <body data-material-type="connections">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -33,6 +34,12 @@
                 </div>
             </nav>
         </section>
+        <dialog class="discovery-explanation-dialog" data-discovery-explanation-dialog aria-labelledby="discovery-explanation-title">
+            <form method="dialog"><button class="platform-link-button platform-link-secondary" autofocus>Fechar explicação ×</button></form>
+            <p class="discovery-kicker">Por que as pistas se conectam?</p>
+            <h2 id="discovery-explanation-title"></h2>
+            <p data-explanation-text></p>
+        </dialog>
     </main>
 </body>
 </html>

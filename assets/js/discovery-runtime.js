@@ -1,15 +1,10 @@
 (function () {
     "use strict";
-    const core = window.EducariaDiscovery, type = document.body.dataset.materialType;
+    const core = window.EducariaDiscovery, view = window.EducariaDiscoveryView, type = document.body.dataset.materialType;
     const $ = selector => document.querySelector(selector);
     let material, boards, pointerInput, state = { index: 0, rounds: {}, showClues: true };
     const current = () => state.rounds[state.index] ||= { found: [], path: [], clues: 1, clueFocus: 0, revealed: false };
     const status = text => { $("[data-discovery-status]").textContent = text; };
-    function direction(path, cell, cols) {
-        const index = path.indexOf(cell), next = path[index + 1];
-        if (index < 0 || next == null) return "";
-        return next === cell + 1 ? "right" : next === cell - 1 ? "left" : next > cell ? "down" : "up";
-    }
     function fit() {
         if (type === "connections" && material) {
             const layout = $("[data-clue-page-size]");
@@ -18,7 +13,7 @@
         // Keep short clues legible without a scrollable bank on the projector.
         for (const card of document.querySelectorAll(".discovery-word-bank li, .discovery-clue")) {
             if (card.hidden) continue;
-            const fields = [...card.querySelectorAll("strong, span")];
+            const fields = [...card.querySelectorAll(".discovery-word-term, .discovery-word-clue, .discovery-clue > strong")];
             fields.forEach(field => { field.style.fontSize = ""; });
             const bounds = card.getBoundingClientRect(), style = getComputedStyle(card);
             const top = bounds.top + parseFloat(style.paddingTop), bottom = bounds.bottom - parseFloat(style.paddingBottom);
@@ -30,14 +25,17 @@
                 fields.forEach(field => { const size = parseFloat(getComputedStyle(field).fontSize); field.style.fontSize = `${Math.max(Math.min(14, size), size - 1)}px`; });
             }
         }
+        for (const slots of document.querySelectorAll(".discovery-word-slots")) {
+            slots.style.setProperty("--slot", `${Math.min(26, Math.max(6, (slots.clientWidth - (slots.children.length - 1) * 3) / slots.children.length))}px`);
+        }
         const grid = $("[data-trail-grid]");
         if (!grid || !boards) return;
         const area = grid.parentElement, board = boards[state.index];
-        const size = Math.max(18, Math.floor(Math.min((area.clientWidth - 18) / board.cols, (area.clientHeight - 18) / board.rows, 96)));
+        const size = Math.max(18, Math.floor(Math.min((area.clientWidth - 18) / board.cols, (area.clientHeight - 18) / board.rows, 112)));
         grid.style.setProperty("--cell", `${size}px`);
     }
     function cluePageSize() {
-        const clues = material.rounds[state.index].clues, area = $("[data-discovery-content]");
+        const clues = material.rounds[state.index].clues, area = $(".discovery-clue-area") || $("[data-discovery-content]");
         return window.innerWidth <= 760 ? clues.length : core.cluePageSize(clues, area.clientWidth, area.clientHeight);
     }
     function select(cell, drag = false) {
@@ -53,19 +51,14 @@
         if (match >= 0) {
             round.found.push(match); round.path = [];
             status(round.found.length === board.entries.length ? "Trilha concluída! Todas as palavras foram encontradas." : `Encontrada: ${board.entries[match].term}.`);
-        } else status(round.path.map(index => board.cells[index].letter).join(" ") || "Escolha a primeira letra de uma palavra.");
+        } else status(round.path.length ? `${round.path.length} ${round.path.length === 1 ? "letra no caminho" : "letras no caminho"}. Continue pelas letras vizinhas.` : "Escolha a primeira letra de uma palavra.");
         renderTrail();
         if (!drag) $("[data-trail-grid]").querySelector(`[data-cell="${cell}"]`)?.focus({ preventScroll: true });
         return match >= 0;
     }
     function renderTrail() {
         const board = boards[state.index], round = current();
-        $("[data-discovery-content]").innerHTML = `<div class="discovery-trail-layout"><div class="discovery-grid-area"><div class="discovery-grid" data-trail-grid role="group" aria-label="Tabuleiro de letras" style="--cols:${board.cols}">${board.cells.map((cell, index) => {
-            if (!cell) return '<span class="discovery-blocked" aria-hidden="true"></span>';
-            const found = round.found.includes(cell.word), selected = round.path.includes(index), marked = found || round.revealed;
-            const next = direction(marked ? board.entries[cell.word].path : round.path, index, board.cols);
-            return `<button type="button" data-cell="${index}" ${next ? `data-next="${next}"` : ""} class="discovery-letter ${marked ? `found color-${cell.word % 4}` : ""} ${selected ? "selected" : ""}" aria-label="${core.escape(cell.letter)}, linha ${Math.floor(index / board.cols) + 1}, coluna ${index % board.cols + 1}${found ? ", encontrada" : ""}" aria-pressed="${selected}" ${found || round.revealed ? 'aria-disabled="true"' : ""}><span>${cell.letter}</span>${marked ? `<small>${cell.word + 1}</small>` : ""}</button>`;
-        }).join("")}</div></div><aside class="discovery-word-bank"><p class="discovery-kicker">Encontre os caminhos</p><h2>${round.found.length} de ${board.entries.length}</h2><ol>${board.entries.map((entry, index) => `<li class="${round.found.includes(index) ? `found color-${index % 4}` : ""}"><strong>${index + 1}. ${round.found.includes(index) || round.revealed ? core.escape(entry.term) : `${entry.letters.length} letras`}${round.found.includes(index) ? " ✓" : ""}</strong>${state.showClues ? `<span>${core.escape(entry.clue || "Siga as letras vizinhas.")}</span>` : ""}</li>`).join("")}</ol></aside></div>`;
+        $("[data-discovery-content]").innerHTML = view.trail(board, round, state.showClues);
         const cluesToggle = $("[data-discovery-toggle-clues]");
         if (cluesToggle) {
             cluesToggle.textContent = state.showClues ? "Ocultar pistas" : "Mostrar pistas";
@@ -80,9 +73,7 @@
     }
     function renderConnections() {
         const data = material.rounds[state.index], round = current();
-        const size = cluePageSize(), start = Math.floor((round.clueFocus || 0) / size) * size, end = Math.min(start + size, data.clues.length);
-        const pages = size < data.clues.length ? `<nav class="discovery-clue-pages" aria-label="Páginas de pistas"><button type="button" data-clue-page="${start - size}" aria-label="Pistas anteriores" ${start === 0 ? "disabled" : ""}>←</button><span role="status">Pistas ${start + 1}–${end} de ${data.clues.length}</span><button type="button" data-clue-page="${start + size}" aria-label="Pistas seguintes" ${end === data.clues.length ? "disabled" : ""}>→</button></nav>` : "";
-        $("[data-discovery-content]").innerHTML = `<div class="discovery-connections-layout ${data.clues.length > 5 ? "discovery-connections-layout--many" : ""} ${round.revealed ? "is-revealed" : ""}" data-clue-count="${data.clues.length}" data-clue-page-size="${size}"><div class="discovery-clue-area">${pages}<div class="discovery-clue-stack">${data.clues.map((clue, index) => `<div class="discovery-clue ${index < round.clues || round.revealed ? "is-visible" : "is-hidden"}" ${index < start || index >= end ? "hidden" : ""}><span>Pista ${index + 1}</span><strong>${index < round.clues || round.revealed ? core.escape(clue) : "?"}</strong></div>`).join("")}</div></div><aside class="discovery-answer-panel"><span class="discovery-answer-symbol" aria-hidden="true">${round.revealed ? "✓" : "?"}</span><p class="discovery-kicker">${round.revealed ? "A conexão é…" : "O que há em comum?"}</p>${round.revealed ? `<h2>${core.escape(data.answer)}</h2><p>${core.escape(data.explanation)}</p>` : `<h2>Conecte as pistas.</h2><p>Converse com a turma e tente descobrir com o menor número de pistas.</p><strong>${round.clues} de ${data.clues.length} pistas reveladas</strong>`}</aside></div>`;
+        $("[data-discovery-content]").innerHTML = view.connections(data, round, cluePageSize());
         $("[data-discovery-clue]").disabled = round.clues >= data.clues.length || round.revealed;
         $("[data-discovery-reveal]").textContent = round.revealed ? "Ocultar conexão" : "Mostrar conexão";
         $("[data-discovery-reveal]").setAttribute("aria-pressed", String(round.revealed));
@@ -90,6 +81,7 @@
     }
     function render() {
         pointerInput?.cancel();
+        $("[data-discovery-explanation-dialog]")?.close();
         const total = type === "wordtrail" ? boards.length : material.rounds.length;
         $("[data-discovery-title]").textContent = material.title;
         $("[data-discovery-subtitle]").textContent = material.subtitle || (type === "wordtrail" ? "Clique ou arraste pelas letras vizinhas. Vale fazer curvas, mas não diagonais." : "Revele as pistas e descubra a conexão com a turma.");
@@ -118,11 +110,24 @@
         $("[data-discovery-reveal]").addEventListener("click", () => { current().revealed = !current().revealed; status(""); render(); });
         $("[data-discovery-clue]").addEventListener("click", () => { current().clues = Math.min(current().clues + 1, material.rounds[state.index].clues.length); current().clueFocus = current().clues - 1; renderConnections(); });
         $("[data-discovery-content]").addEventListener("click", event => {
+            if (event.target.closest("[data-discovery-explanation]") && type === "connections" && current().revealed) {
+                const data = material.rounds[state.index], dialog = $("[data-discovery-explanation-dialog]");
+                dialog.querySelector("h2").textContent = data.answer;
+                dialog.querySelector("[data-explanation-text]").textContent = data.explanation;
+                dialog.showModal();
+                return;
+            }
             const button = event.target.closest("[data-clue-page]");
             if (!button || type !== "connections") return;
             current().clueFocus = Math.max(0, Math.min(material.rounds[state.index].clues.length - 1, Number(button.dataset.cluePage)));
             renderConnections();
             $("[data-discovery-content]").querySelector(`[aria-label="${button.getAttribute("aria-label")}"]`)?.focus({ preventScroll: true });
+        });
+        $("[data-discovery-explanation-dialog]")?.addEventListener("close", () => {
+            // Closed dialogs must not retain a previous answer in the accessible/print tree.
+            $("[data-discovery-explanation-dialog] h2").textContent = "";
+            $("[data-explanation-text]").textContent = "";
+            $("[data-discovery-explanation]")?.focus({ preventScroll: true });
         });
         $("[data-discovery-undo]").addEventListener("click", () => { current().path.pop(); status(""); renderTrail(); });
         $("[data-discovery-clear]").addEventListener("click", () => { current().path = []; status(""); renderTrail(); });
