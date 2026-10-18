@@ -10,8 +10,6 @@ const DASHBOARD_CORE_FORMATS = [
     { href: "criar-aula.html", label: "Aula completa" }
 ];
 const DASHBOARD_EXTRA_FORMATS = [
-    { href: "trilha-palavras-builder.html?new=1", label: "Trilha de Palavras", materialType: "wordtrail", category: "Explorar", description: "Conecte letras e descubra palavras", icon: "↝", tone: "mint" },
-    { href: "em-comum-builder.html?new=1", label: "O que há em comum?", materialType: "connections", category: "Relacionar", description: "Descubra a conexão entre as pistas", icon: "✧", tone: "violet" },
     { href: "flashcards-builder.html?new=1", label: "Flashcards", materialType: "flashcards", category: "Revisar", description: "Retomada rápida de conceitos", icon: "⚡", tone: "teal" },
     { href: "jogo-memoria-builder.html?new=1", label: "Jogo da memória", materialType: "memory", category: "Associar", description: "Conecte pares e significados", icon: "▦", tone: "green" },
     { href: "roleta-builder.html?new=1", label: "Roleta", materialType: "wheel", category: "Engajar", description: "Sorteie perguntas e desafios", icon: "✦", tone: "orange" },
@@ -20,21 +18,23 @@ const DASHBOARD_EXTRA_FORMATS = [
     { href: "debate-guiado-builder.html?new=1", label: "Debate guiado", materialType: "debate", category: "Discutir", description: "Estruture falas e argumentos", icon: "◉", tone: "rose" },
     { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras", materialType: "wordsearch", category: "Aquecer", description: "Explore o vocabulário da aula", icon: "⌕", tone: "mint" },
     { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas", materialType: "crossword", category: "Fixar", description: "Reforce conceitos com pistas", icon: "#", tone: "sky" },
-    { href: "forca-builder.html?new=1", label: "Forca", materialType: "hangman", category: "Descobrir", description: "Revele palavras com a turma", icon: "?", tone: "yellow" }
+    { href: "forca-builder.html?new=1", label: "Forca", materialType: "hangman", category: "Descobrir", description: "Revele palavras com a turma", icon: "?", tone: "yellow" },
+    { href: "trilha-palavras-builder.html?new=1", label: "Trilha de Palavras", materialType: "wordtrail", category: "Explorar", description: "Conecte letras e descubra palavras", icon: "↝", tone: "mint" },
+    { href: "em-comum-builder.html?new=1", label: "O que há em comum?", materialType: "connections", category: "Relacionar", description: "Descubra a conexão entre as pistas", icon: "✧", tone: "violet" }
 ];
 const DASHBOARD_QUICK_CREATE_FORMATS = [...DASHBOARD_CORE_FORMATS, ...DASHBOARD_EXTRA_FORMATS]
     .filter((format) => format.materialType);
 const DASHBOARD_QUICK_OPTION_CONFIGS = {
     wordtrail: [
-        { key: "inputMode", type: "select", label: "Criar a partir de", value: "topic", options: [
-            { value: "topic", label: "Tópico ou texto" }, { value: "words", label: "Minha lista de palavras" }
+        { key: "inputMode", type: "select", label: "Criar a partir de", value: "auto", options: [
+            { value: "auto", label: "Reconhecer meu pedido" }, { value: "topic", label: "Tema — IA escolhe as palavras" }, { value: "words", label: "Minhas palavras" }
         ] },
         { key: "count", type: "number", label: "Quantidade de palavras", min: 2, max: 12, value: 6, instruction: (value) => `Gerar ${value} palavras; se houver lista própria, preservar a lista inteira.` },
         { key: "includeClues", type: "select", label: "Pistas", value: "true", options: [{ value: "true", label: "Com pistas" }, { value: "false", label: "Sem pistas" }] }
     ],
     connections: [
-        { key: "inputMode", type: "select", label: "Criar a partir de", value: "topic", options: [
-            { value: "topic", label: "Tópico ou texto" }, { value: "words", label: "Minhas respostas" }
+        { key: "inputMode", type: "select", label: "Criar a partir de", value: "auto", options: [
+            { value: "auto", label: "Reconhecer meu pedido" }, { value: "topic", label: "Tema — IA escolhe as respostas" }, { value: "words", label: "Minhas respostas" }
         ] },
         { key: "count", type: "number", label: "Quantidade de desafios", min: 1, max: 8, value: 3, instruction: (value) => `Gerar ${value} desafios; se houver lista própria, criar um desafio por resposta.` },
         { key: "clueCount", type: "number", label: "Pistas por desafio", min: 2, max: 8, value: 5, instruction: (value) => `Cada desafio deve ter exatamente ${value} pistas.` },
@@ -508,7 +508,7 @@ function renderDashboardQuickOptions(materialType) {
         <div class="dashboard-quick-options-grid dashboard-quick-options-grid--${basics.length}">
             ${basics.map(renderField).join("")}
         </div>
-        ${["wordtrail", "connections"].includes(materialType) ? '<p data-dashboard-discovery-help></p>' : ""}
+        ${["wordtrail", "connections"].includes(materialType) ? '<p data-dashboard-discovery-help role="status"></p>' : ""}
     `;
     syncDashboardDiscoveryOptions();
 }
@@ -516,14 +516,22 @@ function renderDashboardQuickOptions(materialType) {
 function syncDashboardDiscoveryOptions() {
     const root = document.querySelector("[data-dashboard-quick-options]");
     if (!["wordtrail", "connections"].includes(root?.dataset.materialType)) return;
-    const ownList = root.querySelector('[data-dashboard-quick-option="inputMode"]')?.value === "words";
+    const mode = root.querySelector('[data-dashboard-quick-option="inputMode"]')?.value;
+    const input = window.EducariaDiscoveryInput.resolve(document.querySelector("[data-dashboard-quick-topic]")?.value || "", mode || "auto");
+    const ownList = input.mode === "words";
     const count = root.querySelector('[data-dashboard-quick-option="count"]');
+    if (count) {
+        if (ownList && input.answers.length) {
+            count.dataset.topicCount ??= count.value;
+            count.value = String(input.answers.length);
+        } else if (count.dataset.topicCount !== undefined) {
+            count.value = count.dataset.topicCount;
+            delete count.dataset.topicCount;
+        }
+    }
     if (count) count.disabled = ownList || root.closest("[data-dashboard-quick-form]")?.dataset.generating === "true";
     const help = root.querySelector("[data-dashboard-discovery-help]");
-    if (help) help.textContent = ownList
-        ? (root.dataset.materialType === "wordtrail" ? "Cole de 2 a 12 palavras no campo inicial, uma por linha ou separadas por vírgula. Todas serão usadas."
-            : "Cole de 1 a 8 respostas no campo inicial, uma por linha ou separadas por vírgula. A IA criará as pistas para cada resposta, preservando suas palavras.")
-        : "Descreva o assunto no campo inicial. Depois você poderá editar cada item.";
+    if (help) help.textContent = window.EducariaDiscoveryInput.describe(input, root.dataset.materialType);
 }
 
 function collectDashboardQuickOptions(form, materialType) {
@@ -555,7 +563,9 @@ function collectDashboardQuickOptions(form, materialType) {
         instructions.push(field.instruction(value));
     });
 
-    if (["wordtrail", "connections"].includes(materialType) && values.inputMode === "words") {
+    const ownDiscoveryList = ["wordtrail", "connections"].includes(materialType) && window.EducariaDiscoveryInput.resolve(
+        form.querySelector("[data-dashboard-quick-topic]")?.value || "", values.inputMode).mode === "words";
+    if (ownDiscoveryList) {
         values.count = null;
         instructions.length = 0;
     }
@@ -866,6 +876,7 @@ function bindQuickCreateForm() {
 
     topicField?.addEventListener("input", () => {
         topicField.setCustomValidity("");
+        syncDashboardDiscoveryOptions();
         const feedback = form.querySelector("[data-dashboard-quick-feedback]");
         if (feedback) feedback.hidden = true;
     });

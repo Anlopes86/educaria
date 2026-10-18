@@ -22,7 +22,8 @@
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/discovery-core.js?v=20261018-1" defer></script>
-    <script src="../assets/js/discovery-builder.js?v=20261017-2" defer></script>
+    <script src="../assets/js/discovery-input.js" defer></script>
+    <script src="../assets/js/discovery-builder.js?v=20261018-answers" defer></script>
     <script src="../assets/js/ai-material-generator.js?v=20261017-2" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
 </head>
@@ -47,12 +48,12 @@
                     <summary><span>Montar com IA</span><small class="ai-credits-pill" data-ai-credits>Créditos de IA</small><small>Expandir</small></summary>
                     <div class="editor-disclosure-body">
                         <div class="platform-form-grid ai-structure-grid">
-                            <div class="platform-field platform-field-wide"><label for="discovery-source">Seu pedido ou sua lista</label><textarea id="discovery-source" rows="5" placeholder="Ex.: conexões entre seres vivos para o 7º ano."></textarea></div>
-                            <div class="platform-field"><label for="discovery-input-mode">Criar a partir de</label><select id="discovery-input-mode"><option value="topic">Tópico ou texto</option><option value="words">Minhas respostas</option></select></div>
+                            <div class="platform-field platform-field-wide"><label for="discovery-source">Seu pedido ou sua lista</label><textarea id="discovery-source" rows="5" aria-describedby="connections-input-help" placeholder="Digite um tema ou suas respostas. Ex.: água, fotossíntese e Sistema Solar"></textarea></div>
+                            <p id="connections-input-help" class="platform-field-wide discovery-source-help" data-discovery-source-help role="status">Digite um tema ou de 1 a 8 respostas. Cada resposta da lista será um desafio separado.</p>
+                            <div class="platform-field"><label for="discovery-input-mode">Criar a partir de</label><select id="discovery-input-mode"><option value="auto">Reconhecer meu pedido</option><option value="topic">Tema — IA escolhe as respostas</option><option value="words">Minhas respostas</option></select></div>
                             <div class="platform-field"><label for="discovery-count">Quantidade de desafios</label><input id="discovery-count" type="number" min="1" max="8" value="3" step="1"></div>
                             <div class="platform-field"><label for="discovery-clue-count">Pistas por desafio</label><input id="discovery-clue-count" type="number" min="2" max="8" value="5" step="1"></div>
                             <div class="platform-field"><label for="discovery-difficulty">Dificuldade</label><select id="discovery-difficulty"><option value="easy">Fácil</option><option value="medium" selected>Médio</option><option value="hard">Difícil</option></select></div>
-                            <p class="platform-field-wide discovery-source-help" data-discovery-source-help>Em “Minhas respostas”, informe de 1 a 8 palavras ou expressões, uma por linha ou separadas por vírgula. Cada uma será a resposta de um desafio. A IA cria apenas as pistas e a explicação. Quantidade de pistas e dificuldade valem para a próxima geração.</p>
                             <div class="platform-field"><label for="discovery-audience">Ano ou público (opcional)</label><input id="discovery-audience" maxlength="160" placeholder="Ex.: 6º ano"></div>
                             <div class="platform-field"><label for="discovery-file">Arquivo de apoio (opcional)</label><input id="discovery-file" type="file" accept=".txt,.rtf,.docx,.pdf"></div>
                         </div>

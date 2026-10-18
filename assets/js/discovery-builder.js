@@ -67,8 +67,23 @@
         });
         document.addEventListener("input", preview);
         document.addEventListener("change", preview);
-        const syncMode = () => { $("#discovery-count").disabled = $("#discovery-input-mode").value === "words"; };
+        const syncMode = () => {
+            const mode = $("#discovery-input-mode").value;
+            const input = window.EducariaDiscoveryInput.resolve($("#discovery-source").value, mode || "auto");
+            const count = $("#discovery-count");
+            if (input.mode === "words" && input.answers.length) {
+                count.dataset.topicCount ??= count.value;
+                count.value = String(input.answers.length);
+            } else if (count.dataset.topicCount !== undefined) {
+                count.value = count.dataset.topicCount;
+                delete count.dataset.topicCount;
+            }
+            count.disabled = input.mode === "words";
+            $("[data-discovery-source-help]").textContent = window.EducariaDiscoveryInput.describe(input, type);
+        };
         $("#discovery-input-mode").addEventListener("change", syncMode);
+        $("#discovery-source").addEventListener("input", syncMode);
+        document.addEventListener("change", syncMode);
         syncMode();
         $("[data-discovery-present]").addEventListener("click", event => {
             try {

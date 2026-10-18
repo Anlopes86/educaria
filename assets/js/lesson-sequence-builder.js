@@ -7,8 +7,6 @@ function scopedStorageKey(baseKey) {
 }
 
 const LESSON_SEQUENCE_TYPES = [
-    { value: "wordtrail", label: "Trilha de Palavras" },
-    { value: "connections", label: "O que há em comum?" },
     { value: "slides", label: "Slides" },
     { value: "flashcards", label: "Flashcards" },
     { value: "quiz", label: "Quiz" },
@@ -19,7 +17,9 @@ const LESSON_SEQUENCE_TYPES = [
     { value: "debate", label: "Debate guiado" },
     { value: "hangman", label: "Força" },
     { value: "crossword", label: "Palavras cruzadas" },
-    { value: "wordsearch", label: "Caça-palavras" }
+    { value: "wordsearch", label: "Caça-palavras" },
+    { value: "wordtrail", label: "Trilha de Palavras" },
+    { value: "connections", label: "O que há em comum?" }
 ];
 
 const INLINE_BLOCK_EDITOR_CONFIG = {

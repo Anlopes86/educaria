@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import fs from "node:fs/promises";
 import vm from "node:vm";
+import discoveryInput from "../../assets/js/discovery-input.js";
 const source = await fs.readFile(new URL("../../assets/js/teacher-dashboard.js", import.meta.url), "utf8");
 const attachments = await fs.readFile(new URL("../../assets/js/dashboard-creation.js", import.meta.url), "utf8");
 const generator = await fs.readFile(new URL("../../assets/js/ai-material-generator.js", import.meta.url), "utf8");
@@ -13,7 +14,7 @@ function harness() {
     const fields = new Map();
     const form = { querySelector: (selector) => fields.get(selector) || null };
     const context = vm.createContext({
-        FormData, window: { educariaAiEndpoint: () => "https://example.test/ai", educariaGenerationRecovery: { currentUid: () => "teacher" }, educariaAiAuthHeaders: async () => ({ Authorization: "Bearer fixture" }) },
+        FormData, window: { EducariaDiscoveryInput: discoveryInput, educariaAiEndpoint: () => "https://example.test/ai", educariaGenerationRecovery: { currentUid: () => "teacher" }, educariaAiAuthHeaders: async () => ({ Authorization: "Bearer fixture" }) },
         document: { dispatchEvent() {} }, CustomEvent: class {}, dashboardQuickOptionState: new Map(),
         dashboardTranslate: (_, fallback) => fallback,
         fetch: async (url, options) => { request = options; return { ok: true, json: async () => ({ material: { slides: [] } }) }; }
@@ -44,6 +45,39 @@ for (const type of ["slides", "quiz", "flashcards", "memory", "wheel", "match", 
         assert.ok(h.configs[type].filter((field) => !field.advanced).length <= 2);
     });
 }
+test("connections recognize teacher answers in the primary field and suppress generic counts", async () => {
+    const h = harness(); h.populate("connections");
+    const source = "Homer simpson, Neymar e star wars";
+    h.fields.set('[data-dashboard-quick-topic]', { value: source });
+    assert.equal(h.configs.connections[0].value, "auto");
+    const options = h.context.collectDashboardQuickOptions(h.form, "connections");
+    assert.equal(options.values.count, null);
+    await h.context.requestDashboardQuickMaterial("connections", source, "O que há em comum?", options, "teacher");
+    const sent = JSON.parse(h.request.body.get("generationOptions"));
+    assert.equal(sent.inputMode, "auto");
+    assert.equal(sent.clueCount, 5);
+    assert.equal(sent.difficulty, "medium");
+    assert.equal(h.request.body.get("sourceText"), source);
+    assert.doesNotMatch(h.request.body.get("action"), /Gerar \d+ desafios/);
+});
+
+test("word trail recognizes an exact list while keeping topic-driven generation and clue choices", async () => {
+    const h = harness(); h.populate("wordtrail");
+    h.fields.set('[data-dashboard-quick-topic]', { value: "took, came, began, drove e went" });
+    h.fields.set('[data-dashboard-quick-option="includeClues"]', { value: "false" });
+    assert.equal(h.configs.wordtrail[0].value, "auto");
+    const options = h.context.collectDashboardQuickOptions(h.form, "wordtrail");
+    assert.equal(options.values.count, null);
+    await h.context.requestDashboardQuickMaterial("wordtrail", "took, came, began, drove e went", "Trilha de Palavras", options, "teacher");
+    const sent = JSON.parse(h.request.body.get("generationOptions"));
+    assert.equal(sent.inputMode, "auto");
+    assert.equal(sent.includeClues, "false");
+    assert.doesNotMatch(h.request.body.get("action"), /Gerar \d+ palavras/);
+    h.populate("wordtrail");
+    h.fields.set('[data-dashboard-quick-topic]', { value: "palavras em inglês no passado" });
+    assert.equal(h.context.collectDashboardQuickOptions(h.form, "wordtrail").values.count, 6);
+});
+
 test("file-only creation sends the original file, with no cover image sent to AI", async () => {
     const h = harness(); h.populate("slides");
     const options = h.context.collectDashboardQuickOptions(h.form, "slides");

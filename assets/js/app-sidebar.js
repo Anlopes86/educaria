@@ -35,10 +35,10 @@ const SIDEBAR_FORMATS = {
         { href: "mapa-mental-builder.html?new=1", label: "Mapa mental", labelKey: "sidebar.formats.mindmap" },
         { href: "debate-guiado-builder.html?new=1", label: "Debate guiado", labelKey: "sidebar.formats.debate" },
         { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras", labelKey: "sidebar.formats.wordsearch" },
-        { href: "trilha-palavras-builder.html?new=1", label: "Trilha de Palavras", labelKey: "sidebar.formats.wordtrail" },
-        { href: "em-comum-builder.html?new=1", label: "O que há em comum?", labelKey: "sidebar.formats.connections" },
         { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas", labelKey: "sidebar.formats.crossword" },
-        { href: "forca-builder.html?new=1", label: "Forca", labelKey: "sidebar.formats.hangman" }
+        { href: "forca-builder.html?new=1", label: "Forca", labelKey: "sidebar.formats.hangman" },
+        { href: "trilha-palavras-builder.html?new=1", label: "Trilha de Palavras", labelKey: "sidebar.formats.wordtrail" },
+        { href: "em-comum-builder.html?new=1", label: "O que há em comum?", labelKey: "sidebar.formats.connections" }
     ]
 };
 

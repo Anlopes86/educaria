@@ -13,12 +13,12 @@ import { discoveryPrompt } from "./discovery.js";
  * @returns {string} Full prompt string ready to send to the text provider
  */
 export function promptFor(materialType, action, sourceText, slideOptions, generationOptions) {
-    const base = basePromptFor(materialType, action, sourceText, slideOptions);
+    const base = basePromptFor(materialType, action, sourceText, slideOptions, generationOptions);
     return generationOptions ? `${base}\n\n${activityGenerationInstructions(materialType, generationOptions)}` : base;
 }
 
-function basePromptFor(materialType, action, sourceText, slideOptions) {
-    if (["wordtrail", "connections"].includes(materialType)) return discoveryPrompt(materialType, action, sourceText);
+function basePromptFor(materialType, action, sourceText, slideOptions, generationOptions) {
+    if (["wordtrail", "connections"].includes(materialType)) return discoveryPrompt(materialType, action, sourceText, generationOptions);
     if (materialType === "quiz") {
         return [
             "Você é um assistente pedagógico de uma plataforma educacional brasileira.",

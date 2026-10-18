@@ -22,7 +22,8 @@
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js" defer></script>
     <script src="../assets/js/discovery-core.js?v=20261018-1" defer></script>
-    <script src="../assets/js/discovery-builder.js?v=20261017-2" defer></script>
+    <script src="../assets/js/discovery-input.js" defer></script>
+    <script src="../assets/js/discovery-builder.js?v=20261018-answers" defer></script>
     <script src="../assets/js/ai-material-generator.js?v=20261017-2" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
 </head>
@@ -48,10 +49,10 @@
                     <summary><span>Montar com IA</span><small class="ai-credits-pill" data-ai-credits>Créditos de IA</small><small>Expandir</small></summary>
                     <div class="editor-disclosure-body">
                         <div class="platform-form-grid ai-structure-grid">
-                            <div class="platform-field platform-field-wide"><label for="discovery-source">Seu pedido ou sua lista</label><textarea id="discovery-source" rows="5" placeholder="Ex.: crie palavras sobre o ciclo da água para o 6º ano."></textarea></div>
-                            <div class="platform-field"><label for="discovery-input-mode">Criar a partir de</label><select id="discovery-input-mode"><option value="topic">Tópico ou texto</option><option value="words">Minhas palavras</option></select></div>
+                            <div class="platform-field platform-field-wide"><label for="discovery-source">Seu pedido ou sua lista</label><textarea id="discovery-source" rows="5" aria-describedby="wordtrail-input-help" placeholder="Ex.: palavras em inglês no passado. Ou uma lista: took, came, began, drove e went."></textarea></div>
+                            <p id="wordtrail-input-help" class="platform-field-wide discovery-source-help" data-discovery-source-help role="status">Digite um tema ou de 2 a 12 palavras. Uma lista será preservada sem tradução.</p>
+                            <div class="platform-field"><label for="discovery-input-mode">Criar a partir de</label><select id="discovery-input-mode"><option value="auto">Reconhecer meu pedido</option><option value="topic">Tema — IA escolhe as palavras</option><option value="words">Minhas palavras</option></select></div>
                             <div class="platform-field"><label for="discovery-count">Quantidade de palavras</label><input id="discovery-count" type="number" min="2" max="12" value="6" step="1"></div>
-                            <p class="platform-field-wide discovery-source-help" data-discovery-source-help>Ao escolher uma lista própria, separe os itens por linha ou vírgula. Todos serão preservados; a quantidade acima se aplica ao modo tópico.</p>
                             <div class="platform-field"><label for="discovery-audience">Ano ou público (opcional)</label><input id="discovery-audience" maxlength="160" placeholder="Ex.: 6º ano"></div>
                             <div class="platform-field"><label for="discovery-file">Arquivo de apoio (opcional)</label><input id="discovery-file" type="file" accept=".txt,.rtf,.docx,.pdf"></div>
                         </div>

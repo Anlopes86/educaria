@@ -81,9 +81,10 @@ test("list mode preserves teacher spelling and cancels generic count instruction
     assert.equal(options.count, null);
     assert.doesNotMatch(activityGenerationInstructions("wordtrail", options), /Gere exatamente 8/);
     validateDiscoverySource("wordtrail", options, "Água;Luz");
-    const result = normalizeDiscoveryMaterial("wordtrail", trail, options, "Luz;Água");
+    const result = normalizeDiscoveryMaterial("wordtrail", { ...trail, words: [trail.words[0], trail.words[2]] }, options, "Luz;Água");
     assert.deepEqual(result.words.map(w => w.term), ["Luz", "Água"]);
     assert.equal(result.words[0].clue, "Permite enxergar");
+    assert.throws(() => normalizeDiscoveryMaterial("wordtrail", trail, options, "Luz;Água"), /não preservou/);
     assert.throws(() => validateDiscoverySource("wordtrail", options, "Água\nagua"));
     assert.throws(() => validateDiscoverySource("connections", options, "Um;um"));
 });

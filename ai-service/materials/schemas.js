@@ -346,10 +346,22 @@ export const MATERIAL_TYPES = Object.freeze([...materialSchemas.keys()]);
 export function schemaFor(materialType, slideOptions) {
     const config = materialSchemas.get(materialType);
     if (!config) return null;
+    if (materialType === "wordtrail" && slideOptions?.inputMode === "words" && slideOptions.answers?.length) {
+        const schema = structuredClone(config.schema);
+        schema.properties.words.minItems = slideOptions.answers.length;
+        schema.properties.words.maxItems = slideOptions.answers.length;
+        schema.properties.words.items.properties.term.enum = [...slideOptions.answers];
+        return { ...config, schema };
+    }
     if (materialType === "connections" && Number.isInteger(slideOptions?.clueCount)) {
         const schema = structuredClone(config.schema);
         schema.properties.rounds.items.properties.clues.minItems = slideOptions.clueCount;
         schema.properties.rounds.items.properties.clues.maxItems = slideOptions.clueCount;
+        if (slideOptions.inputMode === "words" && slideOptions.answers?.length) {
+            schema.properties.rounds.minItems = slideOptions.answers.length;
+            schema.properties.rounds.maxItems = slideOptions.answers.length;
+            schema.properties.rounds.items.properties.answer.enum = [...slideOptions.answers];
+        }
         return { ...config, schema };
     }
     if (materialType === "slides" && slideOptions?.includeIllustration === false) {

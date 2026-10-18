@@ -14,8 +14,8 @@ import { normalizeDiscoveryMaterial, validateDiscoverySource } from "../material
 const source = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
 const usageMetadata = { promptTokenCount: 100, candidatesTokenCount: 200, thoughtsTokenCount: 50, totalTokenCount: 350 };
 function harness({ provider = "groq", unlimited = false, results = [{ text: '{"cards":[{"front":"PRIVATE","back":"PRIVATE"}]}', usageMetadata }], image = false, blocked = false, refundFails = false } = {}) {
-    const events = [], providerAmounts = []; let handler, calls = 0, refunds = 0;
-    const providerCall = async () => { const result = results[calls++]; if (result instanceof Error) throw result; return result; };
+    const events = [], providerAmounts = [], providerInputs = []; let handler, calls = 0, refunds = 0;
+    const providerCall = async input => { providerInputs.push(input); const result = results[calls++]; if (result instanceof Error) throw result; return result; };
     const context = vm.createContext({
         Error, console: { error() {}, warn() {} }, process: { env: {} },
         app: { post: (...args) => { handler = args.at(-1); } },
@@ -45,7 +45,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
     const routeEnd = image ? source.indexOf("\napp.use((error", routeStart) : source.indexOf("\napp.post(", routeStart + 1);
     vm.runInContext(source.slice(routeStart, routeEnd), context);
     return {
-        events, providerAmounts, calls: () => calls, refunds: () => refunds,
+        events, providerAmounts, providerInputs, calls: () => calls, refunds: () => refunds,
         async run(body = image ? { title: "PRIVATE" } : { materialType: "flashcards", sourceText: "PRIVATE", generationOptions: { count: 3 } }) {
             const response = { statusCode: 200, setHeader() {}, status(value) { this.statusCode = value; return this; }, json(value) { this.body = value; return this; } };
             await handler({ educariaUser: { uid: "test-owner" }, body }, response);
@@ -82,6 +82,51 @@ test("discovery routes return valid materials with measured usage and reject bad
         assert.equal(invalid.events.length, 0);
     }
 });
+test("connections route infers a bare list, constrains provider answers and rejects unrelated categories", async () => {
+    const sourceText = "Homer simpson, Neymar e star wars";
+    const answers = ["Homer simpson", "Neymar", "star wars"];
+    const rounds = answers.map(answer => ({ answer, clues: ["Indício inicial", "Indício final"], explanation: "Explicação" }));
+    const h = harness({ results: [{ text: JSON.stringify({ rounds }), usageMetadata }] });
+    const response = await h.run({ materialType: "connections", sourceText, generationOptions: { count: 7, clueCount: 2 } });
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.body.material.rounds.map(r => r.answer), answers);
+    assert.deepEqual(h.providerInputs[0].schemaConfig.schema.properties.rounds.items.properties.answer.enum, answers);
+    assert.equal(h.providerInputs[0].schemaConfig.schema.properties.rounds.minItems, 3);
+    assert.equal(h.calls(), 1);
+    assert.doesNotMatch(JSON.stringify(h.events), /Homer|Neymar|star wars/);
+    const wrong = harness({ results: [{ text: JSON.stringify({ rounds: rounds.map(r => ({ ...r, answer: "Personagens que se tornaram memes" })) }), usageMetadata }] });
+    const failure = await wrong.run({ materialType: "connections", sourceText, generationOptions: { clueCount: 2 } });
+    assert.equal(failure.statusCode, 400);
+    assert.equal(failure.body.code, "invalid_discovery_material");
+    assert.equal(wrong.refunds(), 1);
+    assert.equal(wrong.events[0].creditsCharged, 0);
+    const invalid = harness();
+    assert.equal((await invalid.run({ materialType: "connections", sourceText: "Neymar, Neymar" })).statusCode, 400);
+    assert.equal(invalid.calls(), 0);
+});
+
+test("trail route constrains the teacher list and refunds a translated response", async () => {
+    const sourceText = "took, came, began, drove e went";
+    const terms = ["took", "came", "began", "drove", "went"];
+    const h = harness({ results: [{ text: JSON.stringify({ words: terms.map(term => ({ term, clue: "Indício" })) }), usageMetadata }] });
+    const response = await h.run({ materialType: "wordtrail", sourceText, generationOptions: { count: 6, includeClues: false } });
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.body.material.words.map(w => w.term), terms);
+    assert.equal(response.body.material.showClues, false);
+    assert.deepEqual(h.providerInputs[0].schemaConfig.schema.properties.words.items.properties.term.enum, terms);
+    assert.equal(h.providerInputs[0].schemaConfig.schema.properties.words.minItems, 5);
+    assert.equal(h.calls(), 1);
+    const wrong = harness({ results: [{ text: JSON.stringify({ words: ["pegou", "veio", "começou", "conduziu", "foi"].map(term => ({ term, clue: "Indício" })) }), usageMetadata }] });
+    const failure = await wrong.run({ materialType: "wordtrail", sourceText });
+    assert.equal(failure.statusCode, 400);
+    assert.match(failure.body.error, /idioma original/);
+    assert.equal(wrong.refunds(), 1);
+    assert.equal(wrong.events[0].creditsCharged, 0);
+    const invalid = harness();
+    assert.equal((await invalid.run({ materialType: "wordtrail", sourceText: "took, took" })).statusCode, 400);
+    assert.equal(invalid.calls(), 0);
+});
+
 test("owner route records measured usage even though settlement charges zero", async () => {
     const h = harness({ unlimited: true }); await h.run();
     assert.equal(h.events[0].creditsCharged, 0); assert.ok(h.events[0].measuredCredits > 0); assert.equal(h.events[0].unlimited, true);
