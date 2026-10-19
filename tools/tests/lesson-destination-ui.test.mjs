@@ -56,7 +56,7 @@ for (const materialType of Object.keys(configs)) {
     });
 }
 
-for (const [materialType, titleId] of Object.entries({ wordsearch: "caca-titulo", crossword: "cruzada-titulo", mindmap: "mapa-centro", debate: "debate-titulo" })) {
+for (const [materialType, titleId] of Object.entries({ worksheet: "worksheet-title", wordsearch: "caca-titulo", crossword: "cruzada-titulo", mindmap: "mapa-centro", debate: "debate-titulo" })) {
     test(`${materialType}: a manual change is preserved on page exit and isolated by account`, () => {
         const listeners = new Map();
         const pageListeners = new Map();

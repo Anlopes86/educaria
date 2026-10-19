@@ -79,6 +79,10 @@ function captureDebateStepsFromDocument() {
 }
 
 function builderConfig() {
+    if (document.querySelector("[data-worksheet-items]")) {
+        return { key: scopedStorageKey("educaria:builder:worksheet"), stackSelector: "[data-worksheet-items]",
+            cardSelector: "[data-worksheet-activity]", labelPrefix: "Atividade", labelSelector: "[data-ws-auto-label]" };
+    }
     const discoveryType = document.body?.dataset.materialType;
     if (["wordtrail", "connections"].includes(discoveryType) && document.querySelector("[data-discovery-items]")) {
         return { key: scopedStorageKey(`educaria:builder:${discoveryType}`), stackSelector: "[data-discovery-items]",
@@ -403,7 +407,10 @@ function restoreBuilderState(config) {
         }
 
         if (state?.stackHtml) {
-            stack.innerHTML = state.stackHtml;
+            // Rebuild the new print editor from its fields, not arbitrary saved markup.
+            stack.innerHTML = config.stackSelector === "[data-worksheet-items]" && window.EducariaWorksheet
+                ? window.EducariaWorksheet.stackHtml(window.EducariaWorksheet.readDraft(state, DOMParser))
+                : state.stackHtml;
             normalizeSlideBuilder(stack);
             normalizeFlashcardsBuilder(stack);
             renumberRestoredCards(config.cardSelector, config.labelPrefix, config.labelSelector);

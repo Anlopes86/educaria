@@ -25,7 +25,8 @@ const SIDEBAR_FORMATS = {
     core: [
         { href: "slides-builder.html?new=1", label: "Slides", labelKey: "dashboard.formats.slides" },
         { href: "quiz-builder.html?new=1", label: "Quiz", labelKey: "dashboard.formats.quiz" },
-        { href: "criar-aula.html", label: "Aula completa", labelKey: "dashboard.formats.lesson" }
+        { href: "criar-aula.html", label: "Aula completa", labelKey: "dashboard.formats.lesson" },
+        { href: "folha-atividades-builder.html?new=1", label: "Folha para imprimir" }
     ],
     extra: [
         { href: "flashcards-builder.html?new=1", label: "Flashcards", labelKey: "sidebar.formats.flashcards" },
@@ -256,7 +257,7 @@ function renderSidebarFormats() {
             const active = item.href.split("?")[0] === currentPath ? " is-active" : "";
             return `
                 <a href="${item.href}" class="sidebar-subitem sidebar-format-link${active}" data-sidebar-tone="${index % 4}">
-                    ${escapeSidebarHtml(sidebarTranslate(item.labelKey, item.label))}
+                    ${escapeSidebarHtml(item.labelKey ? sidebarTranslate(item.labelKey, item.label) : item.label)}
                 </a>
             `;
         }).join("");

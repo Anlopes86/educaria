@@ -133,6 +133,20 @@ Em conexões, a apresentação organiza mais de cinco pistas em duas colunas. `c
 - `tools/verify.mjs`: entrada única para verificações estáticas e testes sem IA real.
 - `tools/build-pages.mjs`: política independente de publicação, restrita a arquivos públicos versionados. Não substitua pela lista dos validadores.
 
+## Folhas de atividades para impressão
+
+`worksheet` é um material próprio, aberto em `folha-atividades-builder.html`. O professor seleciona os formatos e informa um tema, lista ou arquivo; a rota autenticada `/api/ai/generate` gera a folha inteira em um pedido (com as tentativas e cotas existentes). `materials/worksheet.js` cria um schema estrito contendo somente os formatos selecionados: `wordtrail`, `connections`, `wordsearch` e `crossword`. O retorno não contém HTML nem coordenadas; o servidor valida a estrutura e preserva listas exatas antes de cobrar o consumo medido. Formatos não imprimíveis são recusados antes de usar IA. O relatório registra a quantidade de formatos, não textos nem respostas.
+
+`worksheet-core.js` é o contrato compartilhado: normalização, edição escapada e leitura de rascunhos. `worksheet-view.js` monta exercícios e gabarito usando os mesmos algoritmos determinísticos dos jogos. Cruzadas sem cruzamentos suficientes são distribuídas em grades adicionais, sem omitir palavras. O limite é de oito termos/desafios por formato; grades aceitam até 18 letras (17 nas cruzadas). A IA recebe limites mais compactos, priorizando palavras curtas. A Trilha inclui linhas numeradas ao lado da grade.
+
+`worksheet-builder.js` mede os blocos em páginas A4 reais (210 × 297 mm, margens internas de 12 mm), em duas colunas. Conteúdo que não cabe vai para outra página; grades grandes podem usar uma linha inteira para preservar legibilidade. Um exercício maior que uma página bloqueia a impressão e informa o ajuste necessário. A prévia é escalada apenas para a tela: o CSS de impressão desfaz essa escala. Não há exportador PDF separado: “Salvar PDF” usa a janela de impressão do navegador, com A4, escala 100% e cabeçalhos/rodapés do navegador desativados.
+
+A versão do aluno e o gabarito são renderizados separadamente. A versão do aluno não contém respostas ocultas das conexões/cruzadas nem caminhos de solução; o banco opcional de palavras do caça-palavras é intencional. Reabrir sempre começa na versão do aluno. O professor revisa os textos, reordena os formatos e altera os itens sem consumir IA. Não há correção automática de provas nem verificação factual independente.
+
+Persistência e destinos usam o mesmo rascunho `controls + stackHtml`, chave `educaria:builder:worksheet` isolada por conta, salvamento automático, biblioteca, turmas e operações em lote. Ao restaurar, o editor é reconstruído a partir dos campos escapados. As ações da biblioteca exibem “Ver folha”. A ferramenta tem entrada própria no painel/menu; não está no seletor de criação de uma única atividade nem na Aula completa, que serve para projeção.
+
+Testes: `tools/tests/worksheet.test.mjs`, testes de coleções/destinos e `ai-service/tests/ai-usage-routes.test.mjs`. A validação visual deve conferir uma folha compacta com quatro formatos, uma folha extensa, o gabarito, recarga/salvamento, teclado, celular e impressão real/PDF. Testes unitários não substituem essa conferência.
+
 ## Compatibilidade e próximos cortes
 
 Nesta etapa foram extraídas as regras de materiais do servidor, removidos um helper sem chamadas (`splitIntoShortUnits`), uma configuração calculada mas nunca lida (`legacyAiDailyCreditLimitFree`) e um wrapper redundante de normalização. Os testes de prompts passaram a importar os módulos reais. Nenhuma rota pública, formato salvo, chave de persistência, tela ou regra de cobrança foi removida.

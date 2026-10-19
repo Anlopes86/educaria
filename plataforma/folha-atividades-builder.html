@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Folha de atividades | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
+    <link rel="stylesheet" href="../assets/css/components/worksheet.css">
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+    <script src="../assets/js/firebase-config.js"></script>
+    <script src="../assets/js/i18n.js" defer></script>
+    <script src="../assets/js/auth-flow.js" defer></script>
+    <script src="../assets/js/storage-scope.js" defer></script>
+    <script src="../assets/js/generation-recovery.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
+    <script src="../assets/js/local-persistence.js" defer></script>
+    <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/lesson-library.js" defer></script>
+    <script src="../assets/js/ai-endpoint-config.js" defer></script>
+    <script src="../assets/js/ai-credits.js" defer></script>
+    <script src="../assets/js/discovery-core.js" defer></script>
+    <script src="../assets/js/discovery-input.js" defer></script>
+    <script src="../assets/js/wordsearch-core.js" defer></script>
+    <script src="../assets/js/crossword-core.js" defer></script>
+    <script src="../assets/js/worksheet-core.js" defer></script>
+    <script src="../assets/js/worksheet-view.js" defer></script>
+    <script src="../assets/js/worksheet-builder.js" defer></script>
+    <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/builder-journey.js" defer></script>
+</head>
+<body class="product-body theme-editor worksheet-page" data-material-type="worksheet" data-requires-auth="true">
+    <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
+    <main id="main-content" class="worksheet-shell activity-editor-shell" tabindex="-1">
+        <header class="platform-topbar">
+            <a href="index.html" class="platform-brand"><img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo" width="48" height="48"><div><span>EducarIA</span><strong>Folha de atividades</strong></div></a>
+            <div class="platform-top-actions"><a href="index.html" class="platform-link-button platform-link-secondary">Painel</a><a href="biblioteca.html" class="platform-link-button platform-link-secondary">Biblioteca</a></div>
+        </header>
+        <section class="worksheet-intro"><div><span class="focus-eyebrow">Da sua ideia para o papel</span><h1>Uma folha. Várias formas de aprender.</h1><p>Escolha as atividades, conte o tema e deixe a IA montar. Revise, imprima e leve para a turma.</p></div><span class="worksheet-a4-badge" aria-hidden="true">A4<br><small>2 colunas</small></span></section>
+        <section class="worksheet-workspace">
+            <div class="worksheet-editor">
+                <section class="worksheet-panel worksheet-create-panel">
+                    <h2><span>1</span> Monte sua folha com IA</h2>
+                    <fieldset class="worksheet-selection"><legend>Quais atividades você quer?</legend>
+                        <label><input type="checkbox" id="worksheet-select-wordtrail" data-ws-select="wordtrail" checked><span><b>Trilha de Palavras</b><small>Grade + espaço para escrever</small></span></label>
+                        <label><input type="checkbox" id="worksheet-select-connections" data-ws-select="connections" checked><span><b>O que há em comum?</b><small>Pistas e resposta escrita</small></span></label>
+                        <label><input type="checkbox" id="worksheet-select-wordsearch" data-ws-select="wordsearch" checked><span><b>Caça-palavras</b><small>Encontre e circule</small></span></label>
+                        <label><input type="checkbox" id="worksheet-select-crossword" data-ws-select="crossword" checked><span><b>Palavras cruzadas</b><small>Complete a grade pelas pistas</small></span></label>
+                    </fieldset>
+                    <input type="hidden" id="worksheet-selected-types" value='["wordtrail","connections","wordsearch","crossword"]'>
+                    <label class="worksheet-field">Qual é o tema?<textarea id="worksheet-source" rows="4" maxlength="12000" placeholder="Ex.: verbos em inglês no passado para o 7º ano. Também pode colar um texto ou uma lista de palavras."></textarea></label>
+                    <p class="worksheet-help" data-worksheet-source-help role="status"></p>
+                    <div class="worksheet-field-pair"><label class="worksheet-field">Ano ou público<input id="worksheet-audience" maxlength="160" placeholder="Ex.: 7º ano"></label><label class="worksheet-field">Dificuldade<select id="worksheet-difficulty"><option value="easy">Fácil</option><option value="medium" selected>Média</option><option value="hard">Difícil</option></select></label></div>
+                    <label class="worksheet-field">Tamanho da atividade<select id="worksheet-page-mode"><option value="compact">Compacta — tentar uma página</option><option value="roomy">Mais exercícios — permitir várias páginas</option></select></label>
+                    <details><summary>Usar meu conteúdo</summary><label class="worksheet-field">Interpretar o campo como<select id="worksheet-input-mode"><option value="auto">Reconhecer meu pedido</option><option value="topic">Tema ou texto-base</option><option value="words">Minha lista exata de palavras</option></select></label><label class="worksheet-field">Arquivo de apoio (opcional)<input id="worksheet-file" type="file" accept=".txt,.rtf,.docx,.pdf"></label></details>
+                    <p class="worksheet-help">A folha inteira é gerada em um único pedido à IA. O consumo segue os créditos utilizados.</p>
+                    <button type="button" class="platform-link-button platform-link-primary worksheet-generate" data-generate-material="worksheet">Gerar folha com IA</button>
+                    <span class="ai-credits-pill" data-ai-credits>Créditos de IA</span>
+                    <p data-worksheet-generation-status role="status"></p>
+                </section>
+                <section class="worksheet-panel">
+                    <h2><span>2</span> Revise e personalize</h2>
+                    <details open><summary>Cabeçalho e impressão</summary>
+                        <label class="worksheet-field">Título da folha<input id="worksheet-title" maxlength="100" placeholder="Folha de atividades"></label>
+                        <label class="worksheet-field">Orientação geral<textarea id="worksheet-subtitle" maxlength="200" rows="2" placeholder="Leia com atenção e responda aos desafios."></textarea></label>
+                        <div class="worksheet-field-pair"><label class="worksheet-field">Escola (opcional)<input id="worksheet-school" maxlength="100"></label><label class="worksheet-field">Turma no cabeçalho<input id="worksheet-class-name" maxlength="40"></label></div>
+                        <div class="worksheet-field-pair"><label class="worksheet-field">Pistas na trilha<select id="worksheet-trail-clues"><option value="true">Mostrar pistas</option><option value="false">Sem pistas</option></select></label><label class="worksheet-field">Caça-palavras<select id="worksheet-word-bank"><option value="true">Mostrar palavras</option><option value="false">Mostrar somente pistas</option></select></label></div>
+                    </details>
+                    <details data-worksheet-manual><summary>Editar exercícios e mudar a ordem</summary><p class="worksheet-help">Edite palavras, pistas e instruções sem usar IA. As setas mudam a ordem na folha.</p><div data-worksheet-items></div><button type="button" class="platform-link-button platform-link-secondary" data-worksheet-blank>Adicionar formatos selecionados em branco</button></details>
+                    <div class="worksheet-save-actions"><button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="worksheet" data-save-scope="library" data-save-target="biblioteca.html">Salvar na biblioteca</button><button type="button" class="platform-link-button platform-link-secondary" data-save-lesson data-save-material="worksheet" data-save-target="turma.html">Salvar na turma</button></div>
+                    <p class="worksheet-help">Feita para papel: esta folha não entra na apresentação da Aula completa.</p>
+                </section>
+            </div>
+            <aside class="worksheet-preview" aria-label="Prévia da impressão" tabindex="-1">
+                <div class="worksheet-preview-toolbar"><div><span class="focus-eyebrow">Prévia A4 · duas colunas</span><strong data-worksheet-page-count>Prepare sua folha</strong></div><div role="group" aria-label="Versão da prévia"><button type="button" data-worksheet-preview-mode="student" aria-pressed="true">Folha do aluno</button><button type="button" data-worksheet-preview-mode="answers" aria-pressed="false">Gabarito</button></div></div>
+                <p class="worksheet-validation" data-worksheet-validation role="status"></p>
+                <div class="worksheet-print-actions"><button type="button" class="platform-link-button platform-link-primary" data-worksheet-print="student" disabled>Imprimir folha / Salvar PDF</button><button type="button" class="platform-link-button platform-link-secondary" data-worksheet-print="answers" disabled>Imprimir gabarito</button></div>
+                <p class="worksheet-help">Na janela de impressão: papel A4, escala 100% e cabeçalhos/rodapés do navegador desativados. Para PDF, escolha “Salvar como PDF”.</p>
+                <div class="worksheet-pages" data-worksheet-pages><div class="worksheet-empty"><span aria-hidden="true">▤</span><h2>Sua próxima atividade começa aqui</h2><p>Selecione os formatos ao lado e informe o tema. A IA prepara uma folha pronta para você revisar.</p><small>Nome, turma e data · Exercícios em duas colunas · Gabarito separado</small></div></div>
+            </aside>
+        </section>
+    </main>
+</body>
+</html>

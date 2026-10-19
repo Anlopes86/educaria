@@ -4,7 +4,7 @@ import { aiCreditsForUsage, mergeAiUsageMetadata, normalizeAiUsageMetadata } fro
 export const USAGE_COLLECTION = "aiGenerationUsage";
 export const USAGE_REPORT_MAX_RECORDS = 5000;
 export const USAGE_REPORT_WINDOW_DAYS = 30;
-export const MATERIAL_LABELS = Object.freeze({ wordtrail: "Trilha de Palavras", connections: "O que há em comum?", slides: "Slides", quiz: "Quiz", flashcards: "Flashcards", memory: "Memória",
+export const MATERIAL_LABELS = Object.freeze({ worksheet: "Folha de atividades", wordtrail: "Trilha de Palavras", connections: "O que há em comum?", slides: "Slides", quiz: "Quiz", flashcards: "Flashcards", memory: "Memória",
     match: "Ligue os pontos", wheel: "Roleta", mindmap: "Mapa mental", debate: "Debate guiado", wordsearch: "Caça-palavras",
     crossword: "Palavras cruzadas", hangman: "Forca", image: "Imagem para slide" });
 const arrays = { wordtrail: "words", connections: "rounds", slides: "slides", quiz: "questions", flashcards: "cards", memory: "pairs", match: "pairs", wheel: "segments",
@@ -85,7 +85,7 @@ export function createUsageObservation({ uid, plan, unlimited, materialType, pro
                 status: success === true ? "success" : "failed", durationMs: integer(now() - startedAt),
                 context: usageContext(materialType, { count: context?.requestedCount, contentMode: context?.contentMode },
                     { detail: context?.detail, includeIllustration: context?.illustration }, context?.hasFile),
-                generatedCount: success && materialType === "image" ? 1 : Array.isArray(material?.[arrays[materialType]]) ? material[arrays[materialType]].length : null,
+                generatedCount: success && materialType === "image" ? 1 : success && materialType === "worksheet" && material?.activities ? Object.keys(material.activities).length : Array.isArray(material?.[arrays[materialType]]) ? material[arrays[materialType]].length : null,
                 creditsCharged: creditsCharged === null ? null : integer(creditsCharged),
                 measuredCredits: known === attempts.length ? charge?.credits ?? null : null,
                 usage: charge?.usage ?? null,

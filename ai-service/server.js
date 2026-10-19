@@ -15,6 +15,7 @@ import { createMaterialUpload, extractTextFromFile, isUploadValidationError, par
 import { normalizeSlideGenerationOptions } from "./slide-generation-policy.js";
 import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } from "./activity-generation-policy.js";
 import { normalizeDiscoveryMaterial, validateDiscoverySource } from "./materials/discovery.js";
+import { normalizeWorksheetMaterial, validateWorksheetSource } from "./materials/worksheet.js";
 import {
     aiCreditsForUsage,
     buildAiCreditUsagePolicy,
@@ -1485,6 +1486,10 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
 
         // Validate supplied word lists before reserving credits or calling the provider.
         Object.assign(generationOptions, validateDiscoverySource(materialType, generationOptions, sourceText));
+        if (materialType === "worksheet") {
+            Object.assign(generationOptions, validateWorksheetSource(generationOptions, sourceText));
+            schemaConfig = schemaFor(materialType, generationOptions);
+        }
         if (["wordtrail", "connections"].includes(materialType)) schemaConfig = schemaFor(materialType, generationOptions);
 
         if (!activeAiTextProvider()) {
@@ -1552,7 +1557,8 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         const measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
         const normalizedMaterial = materialType === "slides"
             ? { ...normalizeSlidesMaterial(generated.material, slideOptions), generation_options: slideOptions }
-            : normalizeDiscoveryMaterial(materialType, generated.material, generationOptions, sourceText);
+            : materialType === "worksheet" ? normalizeWorksheetMaterial(generated.material, generationOptions)
+                : normalizeDiscoveryMaterial(materialType, generated.material, generationOptions, sourceText);
         const material = applyActivityGenerationSettings(materialType, normalizedMaterial, generationOptions);
         usageMaterial = material;
 
@@ -1624,7 +1630,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(400).json({ error: "Arquivo não suportado. Envie TXT, RTF, DOCX ou PDF válidos." });
         }
 
-        if (["invalid_slide_options", "invalid_generation_options", "invalid_discovery_material"].includes(error?.code)) {
+        if (["invalid_slide_options", "invalid_generation_options", "invalid_discovery_material", "invalid_worksheet_material"].includes(error?.code)) {
             return response.status(400).json({ error: error.message, code: error.code });
         }
 

@@ -93,11 +93,12 @@ test("class names are escaped and the empty state starts with creating a class",
     assert.match(h.nodes.root.innerHTML, /Criar turma/);
 });
 
-test("all fourteen formats remain available, with a shortcut to the main AI creator", () => {
+test("all fourteen formats and the printable worksheet remain available, with a shortcut to the main AI creator", () => {
     const h = harness(); h.run("renderSidebarFormats()");
     assert.match(h.nodes.formats.innerHTML, /index.html#quick-ai-create/);
     assert.match(h.nodes.formats.innerHTML, /Começar com IA/);
-    assert.equal((h.nodes.core.innerHTML.match(/<a /g) || []).length,3);
+    assert.equal((h.nodes.core.innerHTML.match(/<a /g) || []).length,4);
+    assert.match(h.nodes.core.innerHTML, /folha-atividades-builder/);
     assert.equal((h.nodes.extra.innerHTML.match(/<a /g) || []).length,11);
     h.scope.window.educariaTranslate = (key,fallback) => key === "sidebar.creator.title" ? "Start with AI" : fallback;
     h.run("renderSidebarFormats()");

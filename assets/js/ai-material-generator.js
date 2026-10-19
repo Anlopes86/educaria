@@ -140,6 +140,7 @@ function builderPresentationPath(materialType = currentBuilderMaterialType()) {
     }
 
     const paths = {
+        worksheet: "folha-atividades-builder.html",
         lesson: "aula-completa-apresentacao.html",
         quiz: "quiz-aplicacao.html",
         flashcards: "flashcards-apresentacao.html",
@@ -342,6 +343,7 @@ function openProjectorPreview(materialType = currentBuilderMaterialType()) {
 }
 
 function ensureBuilderProjectorAction() {
+    if (currentBuilderMaterialType() === "worksheet") return;
     const actions = document.querySelector(".activity-editor-shell .platform-top-actions");
     if (!actions || actions.querySelector("[data-projector-preview]")) return;
 
@@ -1761,6 +1763,7 @@ function aiErrorCodeFromMessage(message) {
 
 function aiErrorToUserMessage(error) {
     const detail = error instanceof Error ? error.message : "Erro desconhecido.";
+    if (error?.code === "invalid_worksheet_material") return detail;
     const normalizedDetail = String(detail).toLowerCase();
     const status = Number(error?.status || 0);
     const credits = error?.credits || null;
@@ -1873,6 +1876,10 @@ async function requestTemplateStructuredMaterial(materialType, file) {
 }
 
 function materialConfig(materialType) {
+    if (materialType === "worksheet") {
+        return { textId: "worksheet-source", fileId: "worksheet-file", audienceId: "worksheet-audience", inputModeId: "worksheet-input-mode",
+            apply: material => window.EducariaWorksheetBuilder.apply(material) };
+    }
     if (["wordtrail", "connections"].includes(materialType)) {
         return { textId: "discovery-source", fileId: "discovery-file", countId: "discovery-count",
             audienceId: "discovery-audience", inputModeId: "discovery-input-mode",
@@ -2154,6 +2161,7 @@ async function generateMaterial(materialType, button, options = {}) {
     button.textContent = "Gerando...";
 
     try {
+        if (materialType === "worksheet") Object.assign(generationOptions, window.EducariaWorksheetBuilder.generationOptions());
         const coverFile = materialType === "slides" ? document.getElementById("slides-imagem-propria")?.files?.[0] : null;
         const coverImage = coverFile ? await window.educariaImages.optimize(coverFile) : null;
         educariaTrackAiEvent("ai_generate_started", {
@@ -2208,7 +2216,9 @@ async function generateMaterial(materialType, button, options = {}) {
             creditsCharged: Number(payload?.charge?.cost ?? 0),
             plan: payload?.credits?.plan || ""
         });
-        if (options.reviewAfterGeneration) {
+        if (materialType === "worksheet") {
+            window.EducariaWorksheetBuilder.render();
+        } else if (options.reviewAfterGeneration) {
             reviewGeneratedMaterial(materialType);
         } else {
             openAiReadyModal(materialType, payload);
@@ -2239,6 +2249,12 @@ async function generateMaterial(materialType, button, options = {}) {
 }
 
 function applyGenerationOptionsToEditor(materialType, options) {
+    if (materialType === "worksheet" && options) {
+        for (const [id, value] of [["worksheet-page-mode", options.pageMode], ["worksheet-difficulty", options.difficulty], ["worksheet-input-mode", options.inputMode]]) {
+            const field = document.getElementById(id);
+            if (field && value != null) field.value = String(value);
+        }
+    }
     if (["wordtrail", "connections"].includes(materialType) && options) {
         for (const [id, value] of [["discovery-count", options.count], ["discovery-input-mode", options.inputMode], ["discovery-audience", options.audience], ["discovery-clue-count", options.clueCount], ["discovery-difficulty", options.difficulty], ["discovery-show-clues", options.includeClues]]) {
             const field = document.getElementById(id);

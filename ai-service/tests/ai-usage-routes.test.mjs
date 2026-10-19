@@ -10,6 +10,8 @@ import { normalizeSlidesMaterial } from "../materials/slides.js";
 import { parseGeneratedJson } from "../materials/generated-json.js";
 import { schemaFor } from "../materials/schemas.js";
 import { normalizeDiscoveryMaterial, validateDiscoverySource } from "../materials/discovery.js";
+import { normalizeWorksheetMaterial, validateWorksheetSource } from "../materials/worksheet.js";
+import { worksheetFixture } from "../../tools/fixtures/worksheet.mjs";
 
 const source = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
 const usageMetadata = { promptTokenCount: 100, candidatesTokenCount: 200, thoughtsTokenCount: 50, totalTokenCount: 350 };
@@ -21,7 +23,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
         schemaFor, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings,
-        extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial, validateDiscoverySource, isUploadValidationError: () => false,
+        extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial, validateDiscoverySource, normalizeWorksheetMaterial, validateWorksheetSource, isUploadValidationError: () => false,
         activeAiTextProvider: () => provider, activeAiTextModel: () => provider === "groq" ? "openai/gpt-oss-120b" : "gemini-test",
         aiPlanForRequest: () => "free", isAiUnlimitedUser: () => unlimited,
         createUsageObservation, usageContext, aiUsageAnalytics: { record: async row => { if (row) events.push(row); } },
@@ -58,6 +60,33 @@ test("text route logs actual provider usage and returned quantity without storin
     assert.equal(response.statusCode, 200); assert.equal(h.calls(), 1); assert.equal(h.events.length, 1);
     assert.equal(h.events[0].usage.totalTokens, 350); assert.equal(h.events[0].generatedCount, 1); assert.equal(h.events[0].context.requestedCount, 3);
     assert.equal(h.events[0].creditsCharged, response.body.charge.cost); assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE/);
+});
+
+test("worksheet route generates all and only the selected activities in one metered request", async () => {
+    const selected = ["wordtrail", "crossword"];
+    const material = { ...worksheetFixture, activities: Object.fromEntries(selected.map(type => [type, worksheetFixture.activities[type]])) };
+    const h = harness({ results: [{ text: JSON.stringify(material), usageMetadata }] });
+    const response = await h.run({ materialType: "worksheet", sourceText: "verbos em inglês no passado", generationOptions: { worksheetTypes: selected, audience: "7º ano", difficulty: "hard" } });
+    assert.equal(response.statusCode, 200); assert.equal(h.calls(), 1);
+    assert.deepEqual(response.body.material.order, selected);
+    assert.deepEqual(h.providerInputs[0].schemaConfig.schema.properties.activities.required, selected);
+    assert.equal(response.body.material.generation_options.difficulty, "hard");
+    assert.equal(h.events[0].generatedCount, 2);
+    assert.ok(response.body.charge.cost > 0);
+    assert.doesNotMatch(JSON.stringify(h.events), /took|came|Past simple|7º ano/);
+});
+
+test("worksheet route rejects unsupported selections before usage and refunds malformed results", async () => {
+    for (const worksheetTypes of [[], ["quiz"], ["slides"], ["wordtrail", "wordtrail"]]) {
+        const h = harness();
+        const response = await h.run({ materialType: "worksheet", sourceText: "Tema", generationOptions: { worksheetTypes } });
+        assert.equal(response.statusCode, 400); assert.equal(h.calls(), 0); assert.equal(h.events.length, 0);
+    }
+    const h = harness({ results: [{ text: JSON.stringify({ title: "Folha", activities: {} }), usageMetadata }] });
+    const response = await h.run({ materialType: "worksheet", sourceText: "Tema", generationOptions: { worksheetTypes: ["wordtrail"] } });
+    assert.equal(response.statusCode, 400); assert.equal(h.refunds(), 1);
+    assert.equal(h.events[0].creditsCharged, 0);
+    assert.equal(response.body.code, "invalid_worksheet_material");
 });
 
 test("discovery routes return valid materials with measured usage and reject bad lists before the provider", async () => {

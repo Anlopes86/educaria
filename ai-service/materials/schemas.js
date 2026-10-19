@@ -1,5 +1,6 @@
 import { slideIllustrationSchema } from "../slide-illustration-policy.js";
 import { discoverySchemas } from "./discovery.js";
+import { worksheetSchema } from "./worksheet.js";
 
 const quizSchema = {
     type: "object",
@@ -324,6 +325,7 @@ const crosswordSchema = {
 
 // Explicit registry: unsupported keys must never fall through to another activity.
 const materialSchemas = new Map([
+    ["worksheet", { name: "educaria_worksheet", description: "Folha de atividades A4 para impressão", schema: worksheetSchema() }],
     ["wordtrail", { name: "educaria_wordtrail", description: "Trilha de Palavras para sala de aula", schema: discoverySchemas.wordtrail }],
     ["connections", { name: "educaria_connections", description: "O que há em comum? — pistas e conexões", schema: discoverySchemas.connections }],
     ["quiz", { name: "educaria_quiz", description: "Quiz estruturado para o builder da EducarIA", schema: quizSchema }],
@@ -346,6 +348,7 @@ export const MATERIAL_TYPES = Object.freeze([...materialSchemas.keys()]);
 export function schemaFor(materialType, slideOptions) {
     const config = materialSchemas.get(materialType);
     if (!config) return null;
+    if (materialType === "worksheet") return { ...config, schema: worksheetSchema(slideOptions) };
     if (materialType === "wordtrail" && slideOptions?.inputMode === "words" && slideOptions.answers?.length) {
         const schema = structuredClone(config.schema);
         schema.properties.words.minItems = slideOptions.answers.length;

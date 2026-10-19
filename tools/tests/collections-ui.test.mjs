@@ -101,6 +101,17 @@ test("library gallery preserves global sorting, every format, and existing actio
     assert.match(h.root.innerHTML, /quiz-aplicacao\.html\?lesson=item-1&amp;material=quiz/);
 });
 
+test("worksheets open their print editor from the library instead of a projection player", () => {
+    const h = harness();
+    h.scope.readLessonsLibrary = () => [{ ...records[0], id: "sheet", materialType: "worksheet", title: "Folha impressa" }];
+    h.run("hydrateLibraryPage()");
+    assert.match(h.root.innerHTML, /folha-atividades-builder\.html\?lesson=sheet&amp;material=worksheet/);
+    assert.match(h.root.innerHTML, />Ver folha</);
+    assert.doesNotMatch(h.root.innerHTML, /apresentacao\.html/);
+    assert.notEqual(h.visual.cover("worksheet"), h.visual.cover("slides"));
+    assert.equal(h.run('draftKeyForType("worksheet")'), "educaria:builder:worksheet");
+});
+
 test("gallery still applies search, status, and material filters without changing saved records", () => {
     const h = harness();
     h.run('activeLibraryStatusFilter="draft"; hydrateLibraryPage()');

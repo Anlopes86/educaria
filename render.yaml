@@ -12,6 +12,7 @@ services:
         - assets/js/slide-diagram-model.js
         - assets/js/discovery-core.js
         - assets/js/discovery-input.js
+        - assets/js/worksheet-core.js
         - render.yaml
     healthCheckPath: /api/health
     envVars:

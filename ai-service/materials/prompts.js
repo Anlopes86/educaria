@@ -2,6 +2,7 @@ import { normalizeSlideGenerationOptions, slidePedagogyInstructions } from "../s
 import { slideIllustrationInstructions } from "../slide-illustration-policy.js";
 import { activityGenerationInstructions } from "../activity-generation-policy.js";
 import { discoveryPrompt } from "./discovery.js";
+import { worksheetPrompt } from "./worksheet.js";
 
 /**
  * Builds the Portuguese-language provider prompt for a given activity type.
@@ -18,6 +19,7 @@ export function promptFor(materialType, action, sourceText, slideOptions, genera
 }
 
 function basePromptFor(materialType, action, sourceText, slideOptions, generationOptions) {
+    if (materialType === "worksheet") return worksheetPrompt(action, sourceText, generationOptions);
     if (["wordtrail", "connections"].includes(materialType)) return discoveryPrompt(materialType, action, sourceText, generationOptions);
     if (materialType === "quiz") {
         return [

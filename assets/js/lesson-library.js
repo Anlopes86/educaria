@@ -24,7 +24,7 @@ const CLASS_MATERIAL_FILTERS = [
     { id: "slides", label: "Slides", labelKey: "classDetail.filters.slides", types: ["slides"] },
     { id: "quiz", label: "Quizzes", labelKey: "classDetail.filters.quiz", types: ["quiz"] },
     { id: "flashcards", label: "Flashcards", labelKey: "classDetail.filters.flashcards", types: ["flashcards"] },
-    { id: "others", label: "Outros", labelKey: "classDetail.filters.others", types: ["wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate", "wordtrail", "connections"] }
+    { id: "others", label: "Outros", labelKey: "classDetail.filters.others", types: ["worksheet", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate", "wordtrail", "connections"] }
 ];
 const CLASS_STATUS_FILTERS = [
     { id: "all", label: "Todos os status", labelKey: "classDetail.statusFilters.all", status: null },
@@ -50,7 +50,7 @@ function scopedStorageKey(baseKey) {
 }
 
 function draftKeyForType(type) {
-    if (["wordtrail", "connections"].includes(type)) return scopedStorageKey(`educaria:builder:${type}`);
+    if (["wordtrail", "connections", "worksheet"].includes(type)) return scopedStorageKey(`educaria:builder:${type}`);
     if (type === "lesson") return scopedStorageKey("educaria:builder:lesson");
     if (type === "quiz") return scopedStorageKey("educaria:builder:quiz");
     if (type === "flashcards") return scopedStorageKey("educaria:builder:flashcards");
@@ -67,6 +67,7 @@ function draftKeyForType(type) {
 
 function stackSelectorForType(type) {
     if (["wordtrail", "connections"].includes(type)) return "[data-discovery-items]";
+    if (type === "worksheet") return "[data-worksheet-items]";
     if (type === "lesson") return "[data-lesson-sequence-list]";
     if (type === "quiz") return "[data-quiz-stack]";
     if (type === "flashcards") return "[data-flashcards-stack]";
@@ -1050,6 +1051,13 @@ function summarizeCurrentDraft(preferredType = "") {
     const currentDraft = readCurrentDraftByType(currentType);
 
     if (currentDraft) {
+        if (currentType === "worksheet") {
+            const { parsed, doc } = parseDraftHtml(currentDraft) || {};
+            return { rawDraft: currentDraft, materialType: currentType, summary: {
+                title: parsed?.controls?.["worksheet-title"] || "Folha de atividades", type: "Folha de atividades", materialType: currentType,
+                summary: `${doc?.querySelectorAll("[data-worksheet-activity]").length || 0} formatos · Folha A4 para imprimir`
+            } };
+        }
         if (["wordtrail", "connections"].includes(currentType)) return { rawDraft: currentDraft, summary: summarizeDiscoveryDraft(currentDraft, currentType), materialType: currentType };
         if (currentType === "lesson") return { rawDraft: currentDraft, summary: summarizeLessonSequenceDraft(currentDraft), materialType: "lesson" };
         if (currentType === "flashcards") return { rawDraft: currentDraft, summary: summarizeFlashcardsDraft(currentDraft), materialType: "flashcards" };
@@ -1065,7 +1073,7 @@ function summarizeCurrentDraft(preferredType = "") {
         return { rawDraft: currentDraft, summary: summarizeSlidesDraft(currentDraft), materialType: "slides" };
     }
 
-    const fallbackOrder = ["lesson", "slides", "flashcards", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate", "wordtrail", "connections"];
+    const fallbackOrder = ["worksheet", "lesson", "slides", "flashcards", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate", "wordtrail", "connections"];
     for (const type of fallbackOrder) {
         const draft = readCurrentDraftByType(type);
         if (!draft) continue;
@@ -1329,6 +1337,7 @@ function buildLessonRecord(preferredType = "", scope = LESSON_SCOPE_CLASS) {
         draftControls = {};
     }
     const metadataControlsByType = {
+        worksheet: { grade: "worksheet-audience", source: "worksheet-source", file: "worksheet-file" },
         quiz: { subject: "quiz-disciplina", grade: "quiz-ano", source: "quiz-fonte-texto", file: "quiz-arquivo" },
         slides: { subject: "slides-disciplina", grade: "slides-publico", source: "slides-fonte-texto", file: "slides-arquivo" },
         flashcards: { subject: "cards-disciplina", grade: "cards-ano", source: "cards-fonte-texto", file: "cards-arquivo" },
@@ -1499,6 +1508,7 @@ function editorPathForLesson(lesson) {
     if (lesson.materialType === "mindmap") return "mapa-mental-builder.html";
     if (lesson.materialType === "debate") return "debate-guiado-builder.html";
     if (lesson.materialType === "wordtrail") return "trilha-palavras-builder.html";
+    if (lesson.materialType === "worksheet") return "folha-atividades-builder.html";
     if (lesson.materialType === "connections") return "em-comum-builder.html";
     return "slides-builder.html";
 }
@@ -1539,6 +1549,7 @@ function materialGroupLabel(type) {
     if (type === "mindmap") return "Mapa mental";
     if (type === "debate") return "Debate guiado";
     if (type === "wordtrail") return "Trilha de Palavras";
+    if (type === "worksheet") return "Folha de atividades";
     if (type === "connections") return "O que há em comum?";
     return "Slides";
 }
@@ -1556,6 +1567,7 @@ function materialGroupDescription(type) {
     if (type === "mindmap") return "Tópicos conectados para organizar, explicar e revisar conteúdos.";
     if (type === "debate") return "Roteiros de mediação para discutir, argumentar e fechar o tema em sala.";
     if (type === "wordtrail") return "Caminhos de letras para explorar palavras e significados com a turma.";
+    if (type === "worksheet") return "Atividades em duas colunas, prontas para imprimir com gabarito separado.";
     if (type === "connections") return "Pistas progressivas para descobrir uma conexão em comum.";
     return "Sequências para conduzir a aula projetada.";
 }
@@ -1989,7 +2001,7 @@ function hydrateClassFocusPanel(classes, turma, lessons) {
                             </div>
                             <div class="lesson-history-actions">
                                 <a href="${editorPath}" class="platform-link-button platform-link-primary" data-edit-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.continueEditing", "Continuar edição")}</a>
-                                <a href="${presentationPath}" class="platform-link-button platform-link-secondary" data-present-lesson="${safeId}">${lessonLibraryTranslate("classes.actions.presentNow", "Apresentar agora")}</a>
+                                <a href="${presentationPath}" class="platform-link-button platform-link-secondary" data-present-lesson="${safeId}">${lesson.materialType === "worksheet" ? "Ver folha" : lessonLibraryTranslate("classes.actions.presentNow", "Apresentar agora")}</a>
                             </div>
                         </article>
                     `;
@@ -2395,7 +2407,7 @@ function hydrateClassPage() {
                                     </div>
                                     ${lessonPedagogyTagsHtml(lesson)}
                                     <div class="lesson-history-actions">
-                                        <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
+                                        <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(lesson.id)}">${lesson.materialType === "worksheet" ? "Ver folha" : lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
                                         <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
                                         <details class="collection-more">
                                             <summary>${lessonLibraryTranslate("library.actions.more", "Mais opções")}</summary>
@@ -2422,7 +2434,7 @@ function hydrateClassPage() {
     if (actionsRoot) {
         const activeLesson = filteredLessons[0];
         actionsRoot.innerHTML = `
-            <a href="${escapeHtml(presentationPathForLesson(activeLesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="present">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
+            <a href="${escapeHtml(presentationPathForLesson(activeLesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="present">${activeLesson.materialType === "worksheet" ? "Ver folha" : lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
             <a href="${escapeHtml(editorPathForLesson(activeLesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="edit">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
             <button type="button" class="platform-link-button platform-link-secondary" data-library-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="library">${lessonLibraryTranslate("classDetail.actions.addToLibrary", "Adicionar a biblioteca")}</button>
             <button type="button" class="platform-link-button platform-link-secondary" data-duplicate-lesson="${escapeHtml(activeLesson.id)}" data-lesson-action="duplicate">${lessonLibraryTranslate("classDetail.actions.duplicateToClass", "Duplicar para outra turma")}</button>
@@ -2827,7 +2839,7 @@ function hydrateLibraryPage() {
                                 </div>
                                 ${lessonPedagogyTagsHtml(lesson)}
                                 <div class="lesson-history-actions">
-                                    <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
+                                    <a href="${escapeHtml(presentationPathForLesson(lesson))}" class="platform-link-button platform-link-primary" data-present-lesson="${escapeHtml(lesson.id)}">${lesson.materialType === "worksheet" ? "Ver folha" : lessonLibraryTranslate("classDetail.actions.present", "Apresentar")}</a>
                                     <a href="${escapeHtml(editorPathForLesson(lesson))}" class="platform-link-button platform-link-secondary" data-edit-lesson="${escapeHtml(lesson.id)}">${lessonLibraryTranslate("classDetail.actions.edit", "Editar")}</a>
                                     <details class="collection-more">
                                         <summary>${lessonLibraryTranslate("library.actions.more", "Mais opções")}</summary>

@@ -9,7 +9,7 @@ function scopedStorageKey(baseKey) {
 }
 
 function draftStorageKeyForType(type) {
-    if (["wordtrail", "connections"].includes(type)) return scopedStorageKey(`educaria:builder:${type}`);
+    if (["wordtrail", "connections", "worksheet"].includes(type)) return scopedStorageKey(`educaria:builder:${type}`);
     if (type === "lesson") return scopedStorageKey("educaria:builder:lesson");
     if (type === "quiz") return scopedStorageKey("educaria:builder:quiz");
     if (type === "flashcards") return scopedStorageKey("educaria:builder:flashcards");
@@ -99,6 +99,7 @@ function normalizeMaterialType(type) {
         .replace(/[_\s]+/g, "-");
 
     if (value === "aula-completa" || value === "lesson-sequence") return "lesson";
+    if (value === "folha-atividades" || value === "folha-atividades-builder") return "worksheet";
     if (value === "aula-com-slides" || value === "slide" || value === "slides-builder") return "slides";
     if (value === "quiz-builder" || value === "quiz-aplicacao") return "quiz";
     if (value === "flashcard" || value === "flashcards-builder") return "flashcards";
@@ -148,6 +149,7 @@ function presentationPathForMaterial(type) {
     if (normalizedType === "mindmap") return "mapa-mental-apresentacao.html";
     if (normalizedType === "debate") return "debate-guiado-apresentacao.html";
     if (normalizedType === "wordtrail") return "trilha-palavras-apresentacao.html";
+    if (normalizedType === "worksheet") return "folha-atividades-builder.html";
     if (normalizedType === "connections") return "em-comum-apresentacao.html";
     return "apresentacao.html";
 }
@@ -165,6 +167,7 @@ function presentationLabelForMaterial(type) {
     if (type === "mindmap") return "Mapa mental";
     if (type === "debate") return "Debate guiado";
     if (type === "wordtrail") return "Trilha de Palavras";
+    if (type === "worksheet") return "Folha de atividades";
     if (type === "connections") return "O que há em comum?";
     return "Aula com slides";
 }
@@ -173,7 +176,7 @@ function materialTypeFromUrl() {
     try {
         const params = new URLSearchParams(window.location.search);
         const value = params.get("material");
-        if (["lesson", "flashcards", "slides", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate", "wordtrail", "connections"].includes(value)) {
+        if (["worksheet", "lesson", "flashcards", "slides", "quiz", "wheel", "hangman", "crossword", "wordsearch", "memory", "match", "mindmap", "debate", "wordtrail", "connections"].includes(value)) {
             return value;
         }
     } catch (error) {

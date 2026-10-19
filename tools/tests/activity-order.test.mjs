@@ -22,7 +22,8 @@ test("dashboard creation selector and cards keep the two new activities last", a
 test("sidebar creation menu keeps all previous activities before the two new ones", async () => {
     const config = await readConfig("app-sidebar.js", "const SIDEBAR_FORMATS", "const SIDEBAR_ICONS", "SIDEBAR_FORMATS");
     assert.deepEqual(config.extra.map(item => item.labelKey.replace("sidebar.formats.", "")), [...existingExtras, ...newer]);
-    assert.equal(config.core.length, 3);
+    assert.equal(config.core.length, 4);
+    assert.equal(config.core.at(-1).href, "folha-atividades-builder.html?new=1");
 });
 
 test("complete lesson tool picker keeps its existing order and appends the new activities", async () => {

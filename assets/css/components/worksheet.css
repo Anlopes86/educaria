@@ -1,0 +1,64 @@
+.worksheet-shell{max-width:1600px;margin:auto;padding:24px;color:#173c43}
+.worksheet-intro{display:flex;justify-content:space-between;gap:24px;align-items:center;padding:30px 32px;margin:20px 0 24px;background:#e5eddd;border:1px solid #becfb8;border-radius:24px;box-shadow:0 5px 0 #d0dbc8}
+.worksheet-intro h1{font-size:clamp(26px,3vw,40px);line-height:1.15;margin:8px 0 12px;letter-spacing:-.035em}
+.worksheet-intro p{max-width:680px;margin:0;line-height:1.5}
+.worksheet-a4-badge{flex:none;text-align:center;background:#fffef8;border:1px solid #a9bba2;border-radius:8px;padding:17px 23px;font-size:30px;font-weight:800;box-shadow:4px 4px 0 #c0d1b5;transform:rotate(5deg)}
+.worksheet-a4-badge small{font-size:12px}
+.worksheet-workspace{display:grid;grid-template-columns:minmax(300px,390px) minmax(0,1fr);gap:24px;align-items:start}
+.worksheet-editor,.worksheet-preview{min-width:0}
+.worksheet-panel{border:1px solid #c4d4cc;border-radius:20px;background:#fffef9;padding:22px;margin-bottom:20px;box-shadow:0 4px 0 #dce5df}
+.worksheet-panel h2{display:flex;gap:10px;align-items:center;font-size:19px;margin:0 0 20px}
+.worksheet-panel h2>span{display:grid;place-items:center;background:#226963;color:white;border-radius:50%;width:29px;height:29px;font-size:15px;flex:none}
+.worksheet-selection{border:0;padding:0;margin:0 0 18px;display:grid;gap:8px}
+.worksheet-selection legend{font-size:14px;font-weight:700;margin-bottom:10px}
+.worksheet-selection label{display:flex;gap:10px;align-items:center;border:1px solid #d4ddd5;border-radius:12px;padding:11px;background:#f8f9f3;cursor:pointer}
+.worksheet-selection label:has(input:checked){background:#e6f0e6;border-color:#739885}
+.worksheet-selection label:nth-of-type(2):has(input:checked){background:#eee6f5;border-color:#a895b6}
+.worksheet-selection label:nth-of-type(3):has(input:checked){background:#f5eedb;border-color:#bca97e}
+.worksheet-selection label:nth-of-type(4):has(input:checked){background:#e5edf7;border-color:#91a9c6}
+.worksheet-selection input{width:19px;height:19px;accent-color:#226963}
+.worksheet-selection b,.worksheet-selection small{display:block}.worksheet-selection b{font-size:14px}.worksheet-selection small{font-size:12px;margin-top:3px;color:#536863}
+.worksheet-field{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:700;margin:12px 0;min-width:0}
+.worksheet-page input:not([type=checkbox]):not([type=hidden]),.worksheet-page textarea,.worksheet-page select{box-sizing:border-box;max-width:100%;min-width:0;width:100%;padding:10px;border:1px solid #bacbc2;border-radius:9px;background:#fff;color:#173c43;font:inherit;font-size:14px;line-height:1.5}
+.worksheet-page textarea{resize:vertical;min-height:48px}.worksheet-page input[type=file]{font-size:12px}
+.worksheet-page :focus-visible{outline:3px solid #a27e30;outline-offset:3px}
+.worksheet-field-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.worksheet-page details{border-top:1px solid #dfe6df;padding:12px 0}.worksheet-page summary{font-size:14px;font-weight:700;cursor:pointer}
+.worksheet-help{font-size:12px;line-height:1.6;color:#52655d;overflow-wrap:anywhere}
+.worksheet-generate{width:100%;margin:5px 0 12px}.worksheet-save-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.worksheet-edit-section{background:#f7f9f5;border:1px solid #c9d6ce;border-radius:12px;padding:13px;margin:15px 0}
+.worksheet-edit-section header{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.worksheet-edit-section h3{font-size:16px;margin:0}.worksheet-edit-section header>div{display:flex;gap:5px}
+.worksheet-edit-section label{display:flex;flex-direction:column;gap:5px;font-size:12px;margin:9px 0}
+.worksheet-edit-section button,.worksheet-preview-toolbar button{border:1px solid #becbc3;background:white;border-radius:8px;padding:6px 9px;color:#173c43;cursor:pointer;font:inherit;font-size:12px;min-height:32px}
+.worksheet-edit-item{border-top:1px dashed #bdc9c0;margin:12px 0;padding-top:8px}.worksheet-edit-item>button{font-size:11px}
+.worksheet-preview{background:#e7ece7;border:1px solid #c5d0c8;padding:16px;border-radius:20px}
+.worksheet-preview-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.worksheet-preview-toolbar strong{display:block;margin:5px 0}.worksheet-preview-toolbar [aria-pressed=true]{background:#173c43;color:#fff}
+.worksheet-print-actions{display:flex;gap:8px;flex-wrap:wrap}.worksheet-validation{font-size:13px;line-height:1.5;color:#52655d}.worksheet-validation[data-valid=false]{color:#8c3b30}
+.worksheet-pages{width:100%;min-width:0;margin-top:18px}.worksheet-page-wrap{position:relative;margin:0 auto 18px;}
+.worksheet-empty{padding:60px 25px;text-align:center;background:#fffef8;border:1px dashed #a7b8ab;border-radius:12px;min-height:400px;display:flex;flex-direction:column;justify-content:center}.worksheet-empty>span{font-size:70px;color:#77927d}.worksheet-empty h2{font-size:24px}.worksheet-empty p{line-height:1.6}.worksheet-empty small{font-size:12px;line-height:1.6}
+/* Real millimetres, not a screenshot. Both preview and print use these exact dimensions. */
+.worksheet-sheet{box-sizing:border-box!important;width:210mm!important;height:297mm!important;padding:12mm!important;margin:0!important;background:#fff!important;color:#111!important;box-shadow:0 3px 14px #21352722;border:0!important;display:flex!important;flex-direction:column!important;gap:5mm!important;transform-origin:top left;font:10pt/1.35 Arial,sans-serif;overflow:visible}
+.worksheet-sheet *{box-sizing:border-box}.worksheet-sheet h1,.worksheet-sheet h2,.worksheet-sheet p{color:#111;font-family:Arial,sans-serif;letter-spacing:normal}
+.worksheet-page-header{flex:none;border-bottom:1.5pt solid #263c36;padding-bottom:4mm}.worksheet-page-kicker{display:flex;justify-content:space-between;font-size:7pt;letter-spacing:.08em;font-weight:700;color:#45554e}
+.worksheet-page-header h1{font-size:20pt;line-height:1.12;margin:3mm 0 2mm;overflow-wrap:anywhere}.worksheet-page-header p{font-size:10pt;margin:1.5mm 0;overflow-wrap:anywhere}
+.worksheet-student-fields{display:grid;grid-template-columns:2fr 1fr 1fr;gap:5mm;margin-top:4mm;font-size:9pt}.worksheet-student-fields span{display:flex;gap:2mm}.worksheet-student-fields i{flex:1;border-bottom:.5pt solid #555;min-height:5mm;font-style:normal;overflow-wrap:anywhere}
+.worksheet-body{min-height:0;flex:1;display:flex;flex-direction:column;gap:6mm}.worksheet-print-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6mm;align-items:start;flex:none}.worksheet-print-row.is-wide{grid-template-columns:minmax(0,1fr)}
+.worksheet-sheet footer{font-size:7pt;display:flex;justify-content:space-between;border-top:.5pt solid #b8c1bc;padding-top:2mm;flex:none}
+.worksheet-exercise{border:.7pt solid #929e98;border-radius:3mm;padding:3mm;min-width:0;break-inside:avoid}.worksheet-exercise header{display:flex;align-items:center;gap:2mm;margin-bottom:2mm}.worksheet-exercise h2{margin:0;font-size:12pt;line-height:1.15}.worksheet-exercise h2 small{display:block;font-size:8pt;margin-top:1mm;font-weight:400}.worksheet-exercise-number{border:1pt solid #344c40;width:6mm;height:6mm;display:grid;place-items:center;border-radius:50%;font-size:9pt;font-weight:bold;flex:none}
+.worksheet-instruction{font-size:10pt;line-height:1.35;margin:0 0 3mm;overflow-wrap:anywhere}.worksheet-grid{display:block;width:100%;height:auto;max-height:91mm;margin:0 auto}.worksheet-trail-row{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);gap:3mm;align-items:start}.worksheet-trail-row .worksheet-grid{max-height:none}
+.worksheet-word-lines strong{font-size:8pt;line-height:1.15;display:block;margin-bottom:2mm}.worksheet-answer-line{display:flex;gap:1mm;font-size:9pt;min-height:8mm;align-items:end;padding-bottom:1mm}.worksheet-answer-line>span:last-child{border-bottom:.5pt solid #444;flex:1;min-width:0;min-height:4mm;overflow-wrap:anywhere}
+.worksheet-print-row.is-wide .worksheet-grid{max-height:150mm}
+.worksheet-clues{padding-left:5mm;margin:3mm 0 0;font-size:9pt;line-height:1.4}.worksheet-clues li{margin:1.5mm 0;overflow-wrap:anywhere}.worksheet-note{font-size:7.5pt;line-height:1.3;color:#3b4942!important;margin:2.5mm 0 0}
+.worksheet-connection-clues{margin:0;padding-left:6mm;font-size:11pt;line-height:1.45}.worksheet-connection-clues li{padding:2mm 0;border-bottom:.5pt solid #c7ccc9;overflow-wrap:anywhere}.worksheet-connection-answer{margin-top:5mm;font-size:10pt;display:flex;flex-direction:column;gap:2mm}.worksheet-connection-answer>span{min-height:9mm;border-bottom:.7pt solid #555;overflow-wrap:anywhere}
+.worksheet-word-bank{font-size:10pt;font-weight:700;line-height:1.5;margin:3mm 0 0;overflow-wrap:anywhere}.worksheet-crossword-clues{padding:0;margin:3mm 0 0;list-style:none;font-size:9pt;line-height:1.4}.worksheet-crossword-clues li{margin:1.5mm 0;overflow-wrap:anywhere}.worksheet-explanation{font-size:9pt;line-height:1.4;margin-top:3mm;overflow-wrap:anywhere}
+@media(max-width:1000px){.worksheet-workspace{grid-template-columns:minmax(0,1fr)}.worksheet-editor{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}.worksheet-panel{margin:0}.worksheet-intro{padding:22px}}
+@media(max-width:650px){.worksheet-shell{padding:12px}.worksheet-editor{display:block}.worksheet-panel{padding:16px;margin-bottom:16px}.worksheet-intro{padding:20px}.worksheet-a4-badge{display:none}.worksheet-preview{padding:10px}.worksheet-field-pair{gap:8px}.worksheet-print-actions>*{flex:1;min-width:150px}.worksheet-page .platform-topbar{gap:12px;flex-wrap:wrap}.worksheet-page .platform-top-actions{flex-wrap:wrap}}
+@media print{
+    @page{size:A4 portrait;margin:0}
+    html,body.worksheet-page{margin:0!important;padding:0!important;background:#fff!important;width:auto!important;min-width:0!important;height:auto!important;overflow:visible!important}
+    body.worksheet-page>*:not(main),.worksheet-shell>:not(.worksheet-workspace),.worksheet-workspace>.worksheet-editor,.worksheet-preview>:not(.worksheet-pages){display:none!important}
+    .worksheet-shell,.worksheet-workspace,.worksheet-preview,.worksheet-pages{display:block!important;margin:0!important;padding:0!important;width:auto!important;max-width:none!important;height:auto!important;border:0!important;background:none!important;box-shadow:none!important;overflow:visible!important}
+    .worksheet-page-wrap{width:210mm!important;height:297mm!important;margin:0!important;break-after:page;page-break-after:always;break-inside:avoid}.worksheet-page-wrap:last-child{break-after:auto;page-break-after:auto}
+    .worksheet-sheet{transform:none!important;box-shadow:none!important;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    .worksheet-sheet a:after{content:none!important}
+}

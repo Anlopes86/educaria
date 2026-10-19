@@ -1,4 +1,5 @@
 const EDUCARIA_BUILDER_JOURNEY_CONFIGS = {
+    worksheet: { draftKey: "educaria:builder:worksheet", sourceId: "worksheet-source", fileId: "worksheet-file", titleId: "worksheet-title", meaningfulSelector: "[data-ws-term], [data-ws-answer], [data-ws-clues]", cardSelector: "[data-worksheet-activity]" },
     quiz: {
         draftKey: "educaria:builder:quiz",
         classId: "quiz-turma",

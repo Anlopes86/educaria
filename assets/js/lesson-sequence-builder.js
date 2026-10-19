@@ -1518,7 +1518,7 @@ async function generatePayloadForBlock(block, index, sourceText) {
 }
 
 function readAllActivityLessons() {
-    return readLessonsLibrary().filter((lesson) => (lesson.materialType || "slides") !== "lesson");
+    return readLessonsLibrary().filter((lesson) => !["lesson", "worksheet"].includes(lesson.materialType));
 }
 
 function isPendingSequenceLesson(lesson) {

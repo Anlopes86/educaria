@@ -7,7 +7,8 @@ const DASHBOARD_TOUR_SESSION_KEY = "educaria:auth:session";
 const DASHBOARD_CORE_FORMATS = [
     { href: "slides-builder.html?new=1", label: "Slides", materialType: "slides" },
     { href: "quiz-builder.html?new=1", label: "Quiz", materialType: "quiz" },
-    { href: "criar-aula.html", label: "Aula completa" }
+    { href: "criar-aula.html", label: "Aula completa" },
+    { href: "folha-atividades-builder.html?new=1", label: "Folha para imprimir" }
 ];
 const DASHBOARD_EXTRA_FORMATS = [
     { href: "flashcards-builder.html?new=1", label: "Flashcards", materialType: "flashcards", category: "Revisar", description: "Retomada rápida de conceitos", icon: "⚡", tone: "teal" },

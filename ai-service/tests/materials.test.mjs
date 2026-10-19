@@ -7,6 +7,7 @@ import { parseGeneratedJson } from "../materials/generated-json.js";
 import { extractTextFromFile, isUploadValidationError, parseWheelTemplateText } from "../materials/upload.js";
 
 const collections = {
+    worksheet: "activities",
     wordtrail: "words", connections: "rounds",
     quiz: "questions", slides: "slides", flashcards: "cards", memory: "pairs",
     hangman: "entries", match: "pairs", wheel: "segments", wordsearch: "words",
@@ -31,7 +32,7 @@ for (const [type, collection] of Object.entries(collections)) {
         assert.equal(config.schema.type, "object");
         assert.equal(config.schema.additionalProperties, false);
         assert.ok(config.schema.required.includes(collection));
-        assert.equal(config.schema.properties[collection].type, "array");
+        assert.equal(config.schema.properties[collection].type, type === "worksheet" ? "object" : "array");
         const prompt = promptFor(type, "Pedido específico do professor", "Conteúdo original — não omitir");
         assert.ok(prompt.includes("Pedido específico do professor"));
         assert.ok(prompt.includes("Conteúdo original — não omitir"));
