@@ -92,12 +92,162 @@ test("word bank and trail clues can be hidden independently", () => {
     assert.doesNotMatch(html[2], /worksheet-word-bank/);
     assert.match(html[2], /Passado de play/);
 });
-test("unconnected crossword terms are distributed without silently omitting answers", () => {
+test("unconnected crossword terms stay in the same exercise as compact answer lines", () => {
     const data = selected(["crossword"]);
     data.activities.crossword.words = ["AAA", "BBB", "CCC", "DDD"].map(term => ({ term, clue: "Pista" }));
     const result = view.units(data, engines, true);
-    for (const word of data.activities.crossword.words) assert.match(result.units.join(""), new RegExp(`\\(${word.term}\\)`));
-    assert.equal(result.units.length, 4); assert.ok(result.notices.length);
+    for (const word of data.activities.crossword.words) assert.match(result.units.join(""), new RegExp(`>${word.term}<`));
+    assert.equal(result.units.length, 1); assert.ok(result.notices.length);
+    assert.doesNotMatch(result.units[0], /<svg/);
+    assert.equal((result.units[0].match(/class="worksheet-short-answer"/g) || []).length, 4);
+    assert.doesNotMatch(view.units(data, engines).units[0], />AAA<|>BBB<|>CCC<|>DDD</);
+});
+
+test("paper trail groups six short words without changing presentation grouping", () => {
+    const words = ["went", "ate", "saw", "took", "came", "gave"].map(term => ({ term, clue: "Uma pista longa. ".repeat(7).trim() }));
+    const boards = discovery.createBoards({ words }, { print: true });
+    assert.equal(boards.length, 1); assert.equal(boards[0].entries.length, 6);
+    assert.equal(discovery.createBoards({ words: words.map(word => ({ ...word, clue: "Pista" })) }).length, 2);
+    const data = selected(["wordtrail"]); data.activities.wordtrail.words = words;
+    const rendered = view.units(data, engines, false, { trailClues: true });
+    assert.equal(rendered.units.length, 1);
+    assert.equal((rendered.units[0].match(/class="worksheet-answer-line"/g) || []).length, 6);
+    assert.doesNotMatch(rendered.units[0], /Parte 1 de/);
+});
+
+test("print optimization joins the six irregular verbs for multiple input orders", () => {
+    for (const order of [
+        ["came", "gave", "took", "went", "ate", "saw"],
+        ["saw", "ate", "went", "took", "gave", "came"],
+        ["gave", "came", "went", "took", "saw", "ate"]
+    ]) {
+        const data = selected(["crossword"]);
+        data.activities.crossword.words = order.map(term => ({ term, clue: "Pista" }));
+        const puzzle = engines.crossword.createPuzzle({ entries: order.map(answer => ({ answer, clue: "Pista" })), size: 11, optimize: true });
+        assert.equal(puzzle.placedEntries.length, 6); assert.equal(puzzle.omittedEntries.length, 0);
+        const result = view.units(data, engines, true);
+        assert.equal(result.units.length, 1); assert.equal(result.notices.length, 0);
+        assert.equal((result.units[0].match(/<svg/g) || []).length, 1);
+        for (const word of order) assert.match(result.units[0], new RegExp(`\\(${word}\\)`));
+    }
+});
+
+test("grids keep 5.5mm cells, 10pt letters and padded outer borders", () => {
+    const result = view.units(worksheetFixture, engines);
+    for (const html of [result.units[0], result.units[2]]) {
+        const svg = html.match(/style="width:([\d.]+)mm" viewBox="-1 -1 (\d+) (\d+)"/);
+        assert.ok(svg);
+        const width = Number(svg[1]), units = Number(svg[2]);
+        const points = width / units * 19.24 * 72 / 25.4;
+        assert.ok(Math.abs(points - 10) < .02);
+        assert.match(html, /font-size="19.24"/);
+    }
+});
+
+test("legacy wordsearch writing instructions have real answer lines", () => {
+    const data = selected(["wordsearch"]);
+    data.activities.wordsearch.instruction = "Circule e escreva cada verbo nas linhas.";
+    assert.equal((view.units(data, engines).units[0].match(/class="worksheet-answer-line"/g) || []).length, 4);
+    delete data.activities.wordsearch.instruction;
+    assert.doesNotMatch(view.units(data, engines).units[0], /worksheet-answer-line/);
+    assert.match(view.units(data, engines, false, { wordBank: false }).units[0], /Resolva as pistas/);
+});
+
+test("student header removes the top brand strip but keeps key identification", () => {
+    const data = core.normalize(worksheetFixture);
+    const student = view.pageHeader(data, {}, false), key = view.pageHeader(data, {}, true);
+    assert.doesNotMatch(student, /EDUCARIA|FOLHA DE ATIVIDADES|A4|worksheet-page-kicker/);
+    assert.match(student, /Nome:/); assert.match(student, /Turma:/);
+    assert.match(key, /GABARITO DO PROFESSOR/); assert.doesNotMatch(key, /Nome:/);
+});
+
+test("generation respects audience and prevents answers in the heading", () => {
+    const raw = selected(["connections"]);
+    raw.title = "Irregular verbs – 7º Ano"; raw.subtitle = "Pratique irregular verbs.";
+    const options = validateWorksheetSource(normalizeActivityGenerationOptions("worksheet", { worksheetTypes: ["connections"] }), "verbos inglês no passado. irregulares");
+    assert.equal(options.audienceProvided, false);
+    const result = normalizeWorksheetMaterial(raw, options);
+    assert.equal(result.title, "Atividades de aprendizagem"); assert.equal(result.subtitle, "");
+    raw.title = "Prática de inglês – 7º Ano";
+    assert.equal(normalizeWorksheetMaterial(raw, options).title, "Prática de inglês");
+    const explicit = validateWorksheetSource({ ...options, audience: "7º ano" }, "verbos em inglês");
+    assert.equal(normalizeWorksheetMaterial(raw, explicit).title, raw.title);
+    assert.equal(validateWorksheetSource(options, "verbos para o 7º ano").audienceProvided, true);
+    assert.equal(normalizeWorksheetMaterial(raw, options).activities.connections.instruction, core.instructions.connections);
+});
+
+test("review warns about exposed answers without changing exact teacher lists", () => {
+    const data = core.normalize(worksheetFixture);
+    data.title = "Irregular verbs";
+    data.activities.crossword.words[0].term = data.activities.wordtrail.words[0].term;
+    const snapshot = JSON.stringify(data);
+    const warnings = core.qualityWarnings(data);
+    assert.equal(warnings.length, 2); assert.match(warnings[1], /took/);
+    assert.equal(JSON.stringify(data), snapshot);
+    assert.equal(core.containsAnswer("The statement", "ate"), false);
+    assert.equal(core.containsAnswer("Verbos IRREGULARES!", "verbos irregulares"), true);
+});
+
+test("worksheet generation distinguishes assessment from deliberate practice", () => {
+    const options = normalizeActivityGenerationOptions("worksheet", {});
+    assert.equal(options.purpose, "assessment");
+    assert.throws(() => normalizeActivityGenerationOptions("worksheet", { purpose: "unknown" }));
+    const prompt = promptFor("worksheet", "", "verbos", undefined, options);
+    assert.match(prompt, /Avaliação|avaliação independente/); assert.match(prompt, /Não invente ano escolar/);
+    assert.match(prompt, /lacuna/); assert.match(prompt, /não o próprio tema geral/);
+    assert.match(promptFor("worksheet", "", "verbos", undefined, { ...options, purpose: "practice" }), /prática e revisão/);
+});
+
+test("each activity has an independent count, instruction and exact list", () => {
+    const options = validateWorksheetSource(normalizeActivityGenerationOptions("worksheet", {
+        worksheetTypes: ["wordsearch", "crossword", "connections"],
+        activityOptions: {
+            wordsearch: { instructions: "took, came, went", count: 6 },
+            crossword: { instructions: "Verbos relacionados à alimentação, com lacunas.", count: 5 },
+            connections: { instructions: "Descobrir instrumentos musicais.", count: 2, clueCount: 5 }
+        }, wordsearchHelp: "none", trailClues: false
+    }), "Verbos irregulares em inglês");
+    const schema = schemaFor("worksheet", options).schema.properties.activities.properties;
+    assert.equal(schema.wordsearch.properties.words.minItems, 3);
+    assert.deepEqual(schema.wordsearch.properties.words.items.properties.term.enum, ["took", "came", "went"]);
+    assert.equal(schema.crossword.properties.words.minItems, 5); assert.equal(schema.crossword.properties.words.maxItems, 5);
+    assert.equal(schema.connections.properties.rounds.minItems, 2);
+    assert.equal(schema.connections.properties.rounds.items.properties.clues.minItems, 5);
+    const prompt = promptFor("worksheet", "", "Verbos irregulares em inglês", undefined, options);
+    assert.match(prompt, /somente para aquela atividade/); assert.match(prompt, /alimentação/);
+    assert.match(prompt, /instrumentos musicais/); assert.match(prompt, /sem banco de palavras nem pistas/);
+    const data = { activities: {
+        wordsearch: { words: ["went", "took", "came"].map(term => ({ term, clue: "Pista" })) },
+        crossword: { words: ["ate", "drank", "made", "bought", "had"].map(term => ({ term, clue: "Pista" })) },
+        connections: { rounds: ["piano", "violino"].map(answer => ({ answer, clues: ["Uma pista", "Outra", "Terceira", "Quarta", "Quinta"], explanation: "" })) }
+    } };
+    assert.deepEqual(normalizeWorksheetMaterial(data, options).activities.wordsearch.words.map(word => word.term), ["took", "came", "went"]);
+    data.activities.crossword.words.pop(); assert.throws(() => normalizeWorksheetMaterial(data, options), /quantidade/);
+});
+
+test("local lists override a global exact list only in their own activity", () => {
+    const options = validateWorksheetSource(normalizeActivityGenerationOptions("worksheet", {
+        worksheetTypes: ["wordsearch", "crossword"], inputMode: "words", activityOptions: { crossword: { instructions: "wrote, drove, ran" } }
+    }), "took, came, went");
+    const schema = schemaFor("worksheet", options).schema.properties.activities.properties;
+    assert.deepEqual(schema.wordsearch.properties.words.items.properties.term.enum, ["took", "came", "went"]);
+    assert.deepEqual(schema.crossword.properties.words.items.properties.term.enum, ["wrote", "drove", "ran"]);
+});
+
+test("invalid per-game options and impossible lists are rejected before generation", () => {
+    for (const activityOptions of [{ slides: {} }, { wordsearch: { count: 1 } }, { crossword: { count: 9 } }, { connections: { clueCount: 6 } }, { wordtrail: { count: true } }, { wordsearch: { instructions: "x".repeat(601) } }]) {
+        assert.throws(() => normalizeActivityGenerationOptions("worksheet", { activityOptions }), /opções/);
+    }
+    assert.throws(() => validateWorksheetSource(normalizeActivityGenerationOptions("worksheet", { activityOptions: { wordsearch: { instructions: "x, y" } } }), "verbos"));
+    assert.throws(() => normalizeActivityGenerationOptions("worksheet", { wordsearchHelp: "answers-in-title" }));
+});
+
+test("hidden wordsearch help stays absent from student markup and available in the key", () => {
+    const data = selected(["wordsearch"]);
+    const student = view.units(data, engines, false, { wordsearchHelp: "none" }).units[0];
+    assert.doesNotMatch(student, /worksheet-word-bank|worksheet-clues|Passado de play|played/);
+    assert.match(view.units(data, engines, true, { wordsearchHelp: "none" }).units[0], /played/);
+    assert.match(view.units(data, engines, false, { wordsearchHelp: "clues" }).units[0], /Passado de play/);
 });
 
 test("long terms request full-width rows instead of shrinking a dense grid into a narrow column", () => {

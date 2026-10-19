@@ -2250,7 +2250,8 @@ async function generateMaterial(materialType, button, options = {}) {
 
 function applyGenerationOptionsToEditor(materialType, options) {
     if (materialType === "worksheet" && options) {
-        for (const [id, value] of [["worksheet-page-mode", options.pageMode], ["worksheet-difficulty", options.difficulty], ["worksheet-input-mode", options.inputMode]]) {
+        window.EducariaWorksheetBuilder?.restoreGenerationOptions?.(options);
+        for (const [id, value] of [["worksheet-page-mode", options.pageMode], ["worksheet-difficulty", options.difficulty], ["worksheet-input-mode", options.inputMode], ["worksheet-purpose", options.purpose]]) {
             const field = document.getElementById(id);
             if (field && value != null) field.value = String(value);
         }

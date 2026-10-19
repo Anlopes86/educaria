@@ -73,14 +73,16 @@
         });
         return { rows, cols, cells, entries };
     }
-    function createBoards(material) {
+    function createBoards(material, { print = false } = {}) {
         const words = normalize("wordtrail", material).words;
         const groups = [];
         for (const word of words) {
             const current = groups.at(-1);
-            // Long teacher-written clues get their own board instead of overlapping on a short screen.
-            if (!current || current.length === 4 || word.clue.length > 80 || current.some(entry => entry.clue.length > 80)
-                || current.reduce((sum, entry) => sum + clean(entry.term).length, 0) + clean(word.term).length > 60) groups.push([word]);
+            // Paper has no projection controls: keep short words together, independently of clue length.
+            // The existing four-word limit remains unchanged for classroom presentations.
+            if (!current || current.length === (print ? 8 : 4)
+                || (!print && (word.clue.length > 80 || current.some(entry => entry.clue.length > 80)))
+                || current.reduce((sum, entry) => sum + clean(entry.term).length, 0) + clean(word.term).length > (print ? 84 : 60)) groups.push([word]);
             else current.push(word);
         }
         return groups.map((group, index) => createBoard(group, String(index)));

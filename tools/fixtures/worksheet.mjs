@@ -17,3 +17,18 @@ export const worksheetFixture = {
         ] }
     }
 };
+
+// Six-word regression: stays together on paper even though projection needs two trail boards.
+export const worksheetSixWordFixture = {
+    title: "Verbos irregulares no passado", subtitle: "Leia as pistas e resolva os quatro desafios.",
+    activities: {
+        wordtrail: { words: ["went", "ate", "saw", "took", "came", "gave"].map((term, i) => ({ term, clue: `Passado de ${["go", "eat", "see", "take", "come", "give"][i]}.` })) },
+        connections: { rounds: [{ answer: "bought", clues: ["É a forma passada de um verbo ligado a compras.", "Completa: Yesterday, I ___ a new book.", "Sua forma no presente é buy."], explanation: "Bought é a forma passada de buy." }] },
+        wordsearch: { words: ["drove", "wrote", "sang", "ran", "felt", "slept"].map(term => ({ term, clue: "Um verbo irregular no passado." })) },
+        crossword: { words: [
+            { term: "came", clue: "My cousin ___ to my house yesterday. (come)" }, { term: "gave", clue: "She ___ me a gift last week. (give)" },
+            { term: "went", clue: "We ___ to the park yesterday. (go)" }, { term: "took", clue: "He ___ the bus this morning. (take)" },
+            { term: "ate", clue: "I ___ an apple yesterday. (eat)" }, { term: "saw", clue: "They ___ a bird in the garden. (see)" }
+        ] }
+    }
+};

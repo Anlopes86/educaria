@@ -193,7 +193,7 @@
         });
     }
 
-    function buildPuzzleForSize(entries, size) {
+    function buildPuzzleForSize(entries, size, orientation = "across", retryOmitted = false) {
         if (!entries.length) {
             return {
                 size,
@@ -210,9 +210,9 @@
         const omittedEntries = [];
         const first = entries[0];
         const initialPlacement = {
-            row: Math.floor(size / 2),
-            col: Math.max(0, Math.floor((size - first.cleanAnswer.length) / 2)),
-            orientation: "across",
+            row: orientation === "across" ? Math.floor(size / 2) : Math.max(0, Math.floor((size - first.cleanAnswer.length) / 2)),
+            col: orientation === "across" ? Math.max(0, Math.floor((size - first.cleanAnswer.length) / 2)) : Math.floor(size / 2),
+            orientation,
             intersections: 0
         };
 
@@ -228,7 +228,44 @@
             placedEntries.push(placeEntry(grid, entry, candidates[0]));
         });
 
+        // A later word can provide a crossing that did not exist on the first pass.
+        if (retryOmitted) {
+            let progress = true;
+            while (progress && omittedEntries.length) {
+                progress = false;
+                for (let i = 0; i < omittedEntries.length;) {
+                    const candidates = candidatePlacements(grid, omittedEntries[i]);
+                    if (!candidates.length) { i++; continue; }
+                    placedEntries.push(placeEntry(grid, omittedEntries[i], candidates[0]));
+                    omittedEntries.splice(i, 1); progress = true;
+                }
+            }
+        }
         return { size, grid, placedEntries, omittedEntries };
+    }
+
+    // Bounded, deterministic alternatives for printed sheets. Never changes the teacher's terms.
+    // Interactive puzzles retain their original placement unless optimization is requested.
+    function printOrders(entries) {
+        const orders = [], seen = new Set();
+        function add(order) {
+            const key = order.map(entry => entry.id).join("|");
+            if (!seen.has(key)) { seen.add(key); orders.push(order); }
+        }
+        for (const start of entries) {
+            const rest = entries.filter(entry => entry !== start);
+            add([start, ...rest]); add([start, ...rest.slice().reverse()]);
+        }
+        let state = 731;
+        for (let attempt = 0; attempt < 24; attempt++) {
+            const order = entries.slice();
+            for (let i = order.length - 1; i > 0; i--) {
+                state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+                const j = state % (i + 1); [order[i], order[j]] = [order[j], order[i]];
+            }
+            add(order);
+        }
+        return orders;
     }
 
     function trimGrid(result) {
@@ -341,21 +378,24 @@
         const maxSize = Math.max(requestedSize, Math.min(17, Math.max(entries[0].cleanAnswer.length, requestedSize + 4)));
         let bestPuzzle = null;
 
+        const optimize = options.optimize === true;
+        const orders = optimize ? printOrders(entries) : [entries];
         for (let size = Math.max(requestedSize, entries[0].cleanAnswer.length); size <= maxSize; size += 1) {
-            const result = buildPuzzleForSize(entries, size);
-            if (!result) continue;
+            for (const order of orders) for (const orientation of optimize ? ["across", "down"] : ["across"]) {
+                const result = buildPuzzleForSize(order, size, orientation, optimize);
+                if (!result) continue;
 
-            const trimmed = assignNumbers(trimGrid(result));
-            const currentArea = trimmed.rows * trimmed.cols;
-            const bestArea = bestPuzzle ? bestPuzzle.rows * bestPuzzle.cols : Infinity;
+                const trimmed = assignNumbers(trimGrid(result));
+                const currentArea = trimmed.rows * trimmed.cols;
+                const bestArea = bestPuzzle ? bestPuzzle.rows * bestPuzzle.cols : Infinity;
 
-            if (!bestPuzzle
-                || trimmed.placedEntries.length > bestPuzzle.placedEntries.length
-                || (trimmed.placedEntries.length === bestPuzzle.placedEntries.length && currentArea < bestArea)) {
-                bestPuzzle = trimmed;
+                if (!bestPuzzle
+                    || trimmed.placedEntries.length > bestPuzzle.placedEntries.length
+                    || (trimmed.placedEntries.length === bestPuzzle.placedEntries.length && currentArea < bestArea)) {
+                    bestPuzzle = trimmed;
+                }
             }
-
-            if (trimmed.omittedEntries.length === 0) break;
+            if (bestPuzzle?.omittedEntries.length === 0) break;
         }
 
         return {

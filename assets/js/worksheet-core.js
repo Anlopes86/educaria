@@ -6,7 +6,7 @@
     "use strict";
     const types = Object.freeze(["wordtrail", "connections", "wordsearch", "crossword"]);
     const labels = Object.freeze({ wordtrail: "Trilha de Palavras", connections: "O que há em comum?", wordsearch: "Caça-palavras", crossword: "Palavras cruzadas" });
-    const instructions = Object.freeze({ wordtrail: "Ligue as letras vizinhas, sem diagonais. Escreva as palavras encontradas ao lado.", connections: "Leia as pistas e escreva a resposta que conecta todas elas.", wordsearch: "Encontre as palavras na grade e circule-as.", crossword: "Leia as pistas e complete as palavras cruzadas." });
+    const instructions = Object.freeze({ wordtrail: "Ligue as letras na horizontal ou vertical. Você pode mudar de direção. Escreva as palavras nas linhas ao lado.", connections: "Leia as pistas e escreva a resposta que conecta todas elas.", wordsearch: "Encontre as palavras na horizontal ou vertical e circule-as.", crossword: "Leia as pistas e complete as palavras cruzadas." });
     const clean = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
     const escape = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
     function fail(message) { throw Object.assign(new Error(message), { code: "invalid_worksheet_material" }); }
@@ -77,5 +77,32 @@
         }
         return { title: state.controls?.["worksheet-title"] || "Folha de atividades", subtitle: state.controls?.["worksheet-subtitle"] || "", order, activities };
     }
-    return Object.freeze({ types, labels, instructions, clean, escape, normalize, selection, blankActivity, stackHtml, readDraft });
+    function containsAnswer(text, answer) {
+        const tokens = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+        const target = tokens(answer);
+        return Boolean(target && ` ${tokens(text)} `.includes(` ${target} `));
+    }
+    // Review warnings never alter a teacher's exact list or prevent saving/printing.
+    function qualityWarnings(raw, settings = {}) {
+        const data = normalize(raw), warnings = [];
+        const searchHelp = settings.wordsearchHelp || (settings.wordBank === false ? "clues" : "words");
+        const visible = [data.title, data.subtitle];
+        for (const [type, activity] of Object.entries(data.activities)) {
+            visible.push(activity.instruction);
+            if (type === "wordtrail") {
+                visible.push(...activity.words.map(word => word.term));
+                if (settings.trailClues !== false) visible.push(...activity.words.map(word => word.clue));
+            }
+            if (type === "wordsearch" && searchHelp !== "none") visible.push(...activity.words.map(word => searchHelp === "words" ? word.term : word.clue));
+            if (type === "crossword") visible.push(...activity.words.map(word => word.clue));
+        }
+        if (data.activities.connections?.rounds.some(round => [...visible, ...data.activities.connections.rounds.flatMap(item => item.clues)].some(value => containsAnswer(value, round.answer)))) {
+            warnings.push("Uma resposta de “O que há em comum?” aparece no cabeçalho ou em outro trecho da folha. Revise as pistas antes de usar como avaliação.");
+        }
+        const exposed = [...(data.activities.wordtrail?.words || []), ...(searchHelp === "words" ? data.activities.wordsearch?.words || [] : [])];
+        const repeated = (data.activities.crossword?.words || []).filter(word => exposed.some(other => clean(other.term) === clean(word.term)));
+        if (repeated.length) warnings.push(`Respostas das cruzadas também aparecem na trilha ou no banco de palavras: ${repeated.map(word => word.term).join(", ")}. Isso pode servir à revisão, mas dá pistas em uma avaliação.`);
+        return warnings;
+    }
+    return Object.freeze({ types, labels, instructions, clean, escape, normalize, selection, blankActivity, stackHtml, readDraft, containsAnswer, qualityWarnings });
 });

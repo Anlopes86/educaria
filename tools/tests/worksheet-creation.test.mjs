@@ -8,7 +8,7 @@ import { worksheetFixture } from "../fixtures/worksheet.mjs";
 
 const source = await fs.readFile(new URL("../../assets/js/ai-material-generator.js", import.meta.url), "utf8");
 const section = (start, end) => source.slice(source.indexOf(start), source.indexOf(end));
-function harness({ types = core.types, failed = false } = {}) {
+function harness({ types = core.types, failed = false, overrides = {} } = {}) {
     let applied, renders = 0;
     const posts = [], alerts = [], events = [];
     const fields = {
@@ -19,7 +19,7 @@ function harness({ types = core.types, failed = false } = {}) {
     const context = vm.createContext({
         Error, FormData, CustomEvent: class { constructor(type, options) { this.type = type; this.detail = options?.detail; } }, console: { warn() {} },
         window: { educariaAiAuthHeaders: async () => ({ Authorization: "Bearer synthetic-test" }), alert: message => alerts.push(message),
-            EducariaWorksheetBuilder: { generationOptions: () => ({ worksheetTypes: core.selection(types), pageMode: "compact", difficulty: "hard" }),
+            EducariaWorksheetBuilder: { generationOptions: () => ({ worksheetTypes: core.selection(types), pageMode: "compact", difficulty: "hard", ...overrides }),
                 apply: material => { applied = material; return true; }, render: () => { renders++; } } },
         document: { getElementById: id => fields[id], dispatchEvent: event => events.push(event) },
         fetch: async (_, request) => {
@@ -59,6 +59,16 @@ test("worksheet may use a file without a topic and sends it once", async () => {
     assert.equal(await h.context.generateMaterial("worksheet", { textContent: "Gerar" }), true);
     assert.equal(h.posts[0].body.get("file").name, "conteudo.txt");
     assert.equal(h.posts[0].body.get("sourceText"), "");
+});
+
+test("individual activity requests and help choices reach the API in the same single request", async () => {
+    const overrides = { activityOptions: { wordsearch: { count: 6, instructions: "Verbos de viagens." }, crossword: { count: 4, instructions: "Verbos de alimentação." } }, wordsearchHelp: "none", trailClues: false };
+    const h = harness({ types: ["wordsearch", "crossword"], overrides });
+    assert.equal(await h.context.generateMaterial("worksheet", { textContent: "Gerar" }), true);
+    assert.equal(h.posts.length, 1);
+    const options = JSON.parse(h.posts[0].body.get("generationOptions"));
+    assert.deepEqual(options.activityOptions, overrides.activityOptions);
+    assert.equal(options.wordsearchHelp, "none"); assert.equal(options.trailClues, false);
 });
 test("empty selections and empty source do not call AI or overwrite the previous sheet", async () => {
     const h = harness({ types: [] });
