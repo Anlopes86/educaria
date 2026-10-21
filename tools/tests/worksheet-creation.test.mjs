@@ -111,3 +111,50 @@ test("worksheet assets are public, print controls are separate and private files
     assert.match(css, /size:A4 portrait/); assert.match(css, /width:210mm/); assert.match(css, /height:297mm/);
     assert.match(css, /transform:none!important/); assert.match(css, /grid-template-columns:minmax\(0,1fr\) minmax\(0,1fr\)/);
 });
+
+test("creation settings live in their selected activity cards before generating, not in the editor", async () => {
+    const html = await fs.readFile(new URL("../../plataforma/folha-atividades-builder.html", import.meta.url), "utf8");
+    const create = html.slice(0, html.indexOf('data-generate-material="worksheet"'));
+    for (const type of core.types) {
+        const card = create.match(new RegExp(`<div class="worksheet-activity-choice" data-ws-choice="${type}">([\\s\\S]*?)<\\/details>\\s*<\\/div>`))?.[1];
+        assert.ok(card, `${type} must have a card before generating`);
+        assert.ok(card.includes(`data-ws-select="${type}"`));
+        assert.ok(card.includes(`<details data-ws-options="${type}">`), "options start collapsed");
+        assert.ok(card.includes(`id="worksheet-${type}-request"`));
+        assert.ok(card.includes(`id="worksheet-${type}-count"`));
+    }
+    assert.ok(create.includes('id="worksheet-connections-clue-count"'));
+    assert.ok(create.includes('id="worksheet-word-bank"'));
+    assert.match(html, /data-worksheet-edit-panel hidden/);
+    const editor = html.slice(html.indexOf('data-worksheet-edit-panel'));
+    assert.ok(editor.includes('data-worksheet-items'));
+    assert.ok(!editor.includes('data-ws-options'));
+    const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
+    assert.equal(new Set(ids).size, ids.length);
+});
+
+test("review stays hidden before creation but remains accessible for an invalid or restored draft", async () => {
+    let teacher = { uid: "worksheet-test" };
+    const fields = Object.fromEntries([
+        "[data-worksheet-items]", "[data-worksheet-edit-panel]", "[data-worksheet-start-blank]",
+        "[data-worksheet-validation]", "[data-worksheet-pages]", "[data-worksheet-review-warnings]",
+        "[data-worksheet-page-count]", "#worksheet-title", "#worksheet-subtitle"
+    ].map(selector => [selector, { children: [], dataset: {}, value: "", innerHTML: "", replaceChildren() {} }]));
+    const context = vm.createContext({
+        window: { EducariaWorksheet: { readDraft: () => ({}), normalize: () => { throw new Error("Revise o conteúdo."); } }, EducariaWorksheetView: {} },
+        document: { querySelector: selector => fields[selector], querySelectorAll: () => [], addEventListener() {} },
+        readCurrentTeacher: () => teacher, clearTimeout() {}, persistMaterializedFields() {}, DOMParser: class {}
+    });
+    vm.runInContext(await fs.readFile(new URL("../../assets/js/worksheet-builder.js", import.meta.url), "utf8"), context);
+    const render = context.window.EducariaWorksheetBuilder.render;
+    render();
+    assert.equal(fields["[data-worksheet-edit-panel]"].hidden, true);
+    assert.equal(fields["[data-worksheet-start-blank]"].hidden, false);
+    fields["[data-worksheet-items]"].children = [{}];
+    render();
+    assert.equal(fields["[data-worksheet-edit-panel]"].hidden, false, "incomplete content must remain editable");
+    assert.equal(fields["[data-worksheet-start-blank]"].hidden, true);
+    teacher = { uid: "another-teacher" };
+    render();
+    assert.equal(fields["[data-worksheet-edit-panel]"].hidden, true, "do not expose another teacher's editor");
+});

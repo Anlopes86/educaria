@@ -32,6 +32,8 @@ services:
         value: "4000"
       - key: GROQ_MAX_COMPLETION_TOKENS
         value: "3500"
+      - key: AI_WORKSHEET_MAX_COMPLETION_TOKENS
+        value: "12000"
       - key: GROQ_REQUEST_TIMEOUT_MS
         value: "90000"
       - key: GEMINI_API_KEY

@@ -6,6 +6,7 @@
     "use strict";
     const types = Object.freeze(["wordtrail", "connections", "wordsearch", "crossword"]);
     const labels = Object.freeze({ wordtrail: "Trilha de Palavras", connections: "O que há em comum?", wordsearch: "Caça-palavras", crossword: "Palavras cruzadas" });
+    const limits = Object.freeze({ words: 30, rounds: 8, clues: 8 });
     const instructions = Object.freeze({ wordtrail: "Ligue as letras na horizontal ou vertical. Você pode mudar de direção. Escreva as palavras nas linhas ao lado.", connections: "Leia as pistas e escreva a resposta que conecta todas elas.", wordsearch: "Encontre as palavras na horizontal ou vertical e circule-as.", crossword: "Leia as pistas e complete as palavras cruzadas." });
     const clean = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
     const escape = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
@@ -28,15 +29,15 @@
             if (!activity || typeof activity !== "object") fail(`Faltou a atividade ${labels[type]}.`);
             const instruction = text(activity.instruction ?? instructions[type], 200, "Instrução");
             if (type === "connections") {
-                if (!Array.isArray(activity.rounds) || !activity.rounds.length || activity.rounds.length > 8) fail("Use de 1 a 8 desafios de conexão.");
+                if (!Array.isArray(activity.rounds) || !activity.rounds.length || activity.rounds.length > limits.rounds) fail(`Use de 1 a ${limits.rounds} desafios de conexão.`);
                 activities[type] = { instruction, rounds: activity.rounds.map(round => {
-                    if (!Array.isArray(round?.clues) || round.clues.length < 2 || round.clues.length > 5) fail("Cada desafio precisa ter de 2 a 5 pistas.");
+                    if (!Array.isArray(round?.clues) || round.clues.length < 2 || round.clues.length > limits.clues) fail(`Cada desafio precisa ter de 2 a ${limits.clues} pistas.`);
                     const clues = round.clues.map(clue => text(clue, 100, "Pista"));
                     if (new Set(clues.map(clue => clue.toLowerCase())).size !== clues.length) fail("Evite pistas repetidas no mesmo desafio.");
                     return { answer: text(round.answer, 100, "Resposta"), clues, explanation: text(round.explanation || "", 300, "Explicação", false) };
                 }) };
             } else {
-                if (!Array.isArray(activity.words) || activity.words.length < 2 || activity.words.length > 8) fail(`${labels[type]}: use de 2 a 8 palavras.`);
+                if (!Array.isArray(activity.words) || activity.words.length < 2 || activity.words.length > limits.words) fail(`${labels[type]}: use de 2 a ${limits.words} palavras.`);
                 const used = new Set();
                 activities[type] = { instruction, words: activity.words.map(word => {
                     const term = text(word?.term, 40, "Palavra"), letters = clean(term);
@@ -104,5 +105,5 @@
         if (repeated.length) warnings.push(`Respostas das cruzadas também aparecem na trilha ou no banco de palavras: ${repeated.map(word => word.term).join(", ")}. Isso pode servir à revisão, mas dá pistas em uma avaliação.`);
         return warnings;
     }
-    return Object.freeze({ types, labels, instructions, clean, escape, normalize, selection, blankActivity, stackHtml, readDraft, containsAnswer, qualityWarnings });
+    return Object.freeze({ types, labels, limits, instructions, clean, escape, normalize, selection, blankActivity, stackHtml, readDraft, containsAnswer, qualityWarnings });
 });

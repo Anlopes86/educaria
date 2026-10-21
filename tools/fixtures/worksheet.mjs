@@ -32,3 +32,13 @@ export const worksheetSixWordFixture = {
         ] }
     }
 };
+
+// Synthetic stress fixture: verify every term survives splitting and pagination.
+const pastVerbs = "went ate saw took came gave drove wrote sang ran felt slept bought brought thought taught caught found lost made did had kept left met paid read said sent spoke".split(" ");
+export const worksheetLargeFixture = {
+    title: "Verbos irregulares · folha extensa", subtitle: "Resolva as atividades e confira todas as partes.",
+    activities: {
+        ...Object.fromEntries(["wordtrail", "wordsearch", "crossword"].map(type => [type, { words: pastVerbs.map(term => ({ term, clue: "Um verbo irregular no passado. Pista de teste de distribuição." })) }])),
+        connections: { rounds: Array.from({ length: 8 }, (_, i) => ({ answer: `Resposta ${i + 1}`, clues: Array.from({ length: 8 }, (_, j) => `Pista ${j + 1} de teste para conferir a distribuição do desafio na folha impressa.`), explanation: "Explicação de teste." })) }
+    }
+};

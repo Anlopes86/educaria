@@ -12,7 +12,7 @@ function countOption(value, min, max) {
 }
 function activityConfig(options, type) {
     const config = options.activityOptions?.[type] || {};
-    const answers = config.answers?.length ? config.answers : options.inputMode === "words" ? options.answers : null;
+    const answers = Object.hasOwn(config, "answers") ? config.answers : options.inputMode === "words" ? options.answers : null;
     const min = answers?.length || config.count || (type === "connections" ? 1 : 4);
     const max = answers?.length || config.count || (options.pageMode === "roomy" ? type === "connections" ? 2 : 6 : min);
     return { ...config, answers, min, max, clueMin: config.clueCount || 3, clueMax: config.clueCount || 4 };
@@ -28,8 +28,8 @@ export function worksheetOptions(source) {
         const config = raw[type] ?? {};
         if (!config || typeof config !== "object" || Array.isArray(config)) throw invalidOptions();
         if (config.instructions != null && (typeof config.instructions !== "string" || config.instructions.length > 600)) throw invalidOptions();
-        activityOptions[type] = { instructions: (config.instructions || "").trim(), count: countOption(config.count, type === "connections" ? 1 : 2, 8),
-            ...(type === "connections" ? { clueCount: countOption(config.clueCount, 2, 5) } : {}) };
+        activityOptions[type] = { instructions: (config.instructions || "").trim(), count: countOption(config.count, type === "connections" ? 1 : 2, type === "connections" ? core.limits.rounds : core.limits.words),
+            ...(type === "connections" ? { clueCount: countOption(config.clueCount, 2, core.limits.clues) } : {}) };
     }
     const trailClues = source.trailClues ?? true, wordsearchHelp = source.wordsearchHelp || "words";
     if (typeof trailClues !== "boolean" || !["words", "clues", "none"].includes(wordsearchHelp)) throw invalidOptions();
@@ -41,8 +41,8 @@ export function validateWorksheetSource(options, source) {
     for (const type of core.selection(options.worksheetTypes)) {
         const config = options.activityOptions?.[type] || {};
         const local = config.instructions ? input.resolve(config.instructions, "auto") : null;
-        const answers = local?.mode === "words" ? local.answers : parsed.mode === "words" ? parsed.answers : null;
-        activityOptions[type] = { ...config, ...(answers ? { answers } : {}) };
+        const answers = local ? local.mode === "words" ? local.answers : null : parsed.mode === "words" ? parsed.answers : null;
+        activityOptions[type] = { ...config, answers };
         // Validate each exact list before reserving credits. A local list overrides the global list only for its game.
         if (answers) core.normalize({ title: "Lista", activities: { [type]: type === "connections"
             ? { rounds: answers.map(answer => ({ answer, clues: ["Pista inicial", "Pista final"] })) }
@@ -63,7 +63,7 @@ export function worksheetSchema(options = {}) {
     return object({ title: string, subtitle: string, activities: object(properties) });
 }
 export function worksheetPrompt(action, source, options = {}) {
-    return ["Crie uma folha pedagógica A4, com atividades independentes, em duas colunas. Entregue somente JSON no schema, sem HTML, SVG, coordenadas ou grades.",
+    return ["Crie atividades pedagógicas para impressão A4. A plataforma ajusta uma ou duas colunas e distribui em quantas páginas forem necessárias. Entregue somente JSON no schema, sem HTML, SVG, coordenadas ou grades.",
         `Formatos selecionados: ${core.selection(options.worksheetTypes).map(type => core.labels[type]).join(", ")}. Não inclua outros formatos.`,
         "Cada formato tem sua própria configuração abaixo. O pedido específico vale somente para aquela atividade e tem prioridade sobre o tema geral; não aplique a orientação de um jogo aos outros. Quantidades escolhidas e listas exatas têm prioridade sobre a tentativa de caber em uma página. Preserve o idioma solicitado.",
         ...core.selection(options.worksheetTypes).map(type => {
@@ -80,6 +80,14 @@ export function worksheetPrompt(action, source, options = {}) {
         "Conexões: use a quantidade de pistas configurada, concretas e progressivas, até 100 caracteres cada, todas apontando para a mesma resposta específica; resposta até 100 caracteres. Escolha uma resposta dentro do tema, não o próprio tema geral já anunciado no título. Não escreva a resposta nas pistas ou em outro jogo. Explanation é o gabarito do professor, até 300 caracteres. Não invente fatos.",
         "Título curto, preferencialmente até 60 caracteres (máximo 100). Subtítulo opcional, de uma frase curta (máximo 200). Não inclua respostas, pontuação automática ou promessas de correção automática no cabeçalho. Não invente ano escolar, série, escola ou turma: só mencione se o professor informou no pedido ou no campo de público. Se não informou, use título neutro sem ano escolar.",
         `Pedido do professor: ${action || "Preparar uma folha de atividades."}`, "Tema, conteúdo ou palavras fornecidas:", source].join("\n\n");
+}
+// Larger sheets need more output, but never bypass the configured response ceiling or daily quota.
+export function worksheetCompletionTokens(options = {}, baseline = 3500, ceiling = 12000) {
+    const estimated = 700 + core.selection(options.worksheetTypes).reduce((total, type) => {
+        const config = activityConfig(options, type);
+        return total + config.max * (type === "connections" ? 100 + config.clueMax * 45 : 75);
+    }, 0);
+    return Math.max(1, Math.min(ceiling, Math.max(baseline, Math.ceil(estimated))));
 }
 export function normalizeWorksheetMaterial(material, options) {
     const result = core.normalize(material, options.worksheetTypes);

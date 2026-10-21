@@ -13,61 +13,90 @@
         // One unit of padding preserves the outer stroke at the SVG viewport edges.
         return `<svg class="worksheet-grid ${className}" style="width:${(cols * 5.5 + 11 / 30).toFixed(3)}mm" viewBox="-1 -1 ${cols * size + 2} ${rows * size + 2}" role="img" aria-label="${e(label)}" xmlns="http://www.w3.org/2000/svg">${cells.map((cell, i) => `<rect x="${i % cols * size}" y="${Math.floor(i / cols) * size}" width="30" height="30" fill="${cell === null ? "#edf0ef" : "#fff"}" stroke="#53625f" stroke-width=".7"/>`).join("")}${pathMarkup}${cells.map((cell, i) => `${numbers[i] ? `<text x="${i % cols * size + 2}" y="${Math.floor(i / cols) * size + 8}" font-size="9" fill="#111">${Number(numbers[i])}</text>` : ""}${cell === null ? "" : `<text x="${(i % cols + .5) * size}" y="${(Math.floor(i / cols) + .74) * size}" font-size="19.24" font-family="Arial,sans-serif" font-weight="500" text-anchor="middle" fill="#111">${e(cell)}</text>`}`).join("")}</svg>`;
     }
-    function unit(type, index, instruction, body, suffix = "") {
+    function unit(type, index, instruction, body, suffix = "", count = 0) {
         const readable = instruction.replace(/caminhos ortogonais/gi, "caminhos na horizontal ou vertical");
-        return `<article class="worksheet-exercise" data-ws-print-type="${type}"><header><span class="worksheet-exercise-number">${index}</span><h2>${core.labels[type]}${suffix ? `<small>${e(suffix)}</small>` : ""}</h2></header><p class="worksheet-instruction">${e(readable)}</p>${body}</article>`;
+        return `<article class="worksheet-exercise" data-ws-print-type="${type}" data-ws-print-count="${count}"><header><span class="worksheet-exercise-number">${index}</span><h2>${core.labels[type]}${suffix ? `<small>${e(suffix)}</small>` : ""}</h2></header><p class="worksheet-instruction">${e(readable)}</p>${body}</article>`;
+    }
+    function groups(words, limit, clueBudget = Infinity) {
+        const result = [];
+        let group = [], length = 0;
+        for (const word of words) {
+            if (group.length && (group.length >= limit || length + word.clue.length > clueBudget)) {
+                result.push(group); group = []; length = 0;
+            }
+            group.push(word); length += word.clue.length;
+        }
+        if (group.length) result.push(group);
+        return result;
     }
     function units(raw, engines, answers = false, settings = {}) {
         const data = core.normalize(raw), result = [], notices = [];
+        const wide = settings.columns !== "two";
         data.order.forEach((type, index) => {
             const item = data.activities[type], number = index + 1;
             if (type === "wordtrail") {
-                const boards = engines.discovery.createBoards({ words: item.words }, { print: true });
+                const boards = engines.discovery.createBoards({ words: item.words }, { print: true, wide });
                 let offset = 0;
                 for (const [part, board] of boards.entries()) {
                     const numbers = Object.fromEntries(board.entries.map((entry, i) => [entry.path[0], offset + i + 1]));
                     const lines = board.entries.map((entry, i) => `<div class="worksheet-answer-line"><span>${offset + i + 1}.</span><span>${answers ? e(entry.term) : ""}</span></div>`).join("");
                     const clues = settings.trailClues ? `<ol class="worksheet-clues" start="${offset + 1}">${board.entries.map(entry => `<li>${e(entry.clue || `${entry.letters.length} letras`)}</li>`).join("")}</ol>` : "";
-                    result.push(unit(type, number, item.instruction, `<div class="worksheet-trail-row">${grid(board.rows, board.cols, board.cells.map(cell => cell?.letter || null), { label: "Grade da trilha", numbers, paths: answers ? board.entries.map(entry => entry.path) : [] })}<div class="worksheet-word-lines"><strong>Palavras encontradas</strong>${lines}</div></div>${clues}<p class="worksheet-note">Comece pelos números. Não use diagonais.</p>`, boards.length > 1 ? `Parte ${part + 1} de ${boards.length}` : ""));
+                    result.push(unit(type, number, item.instruction, `<div class="worksheet-trail-row">${grid(board.rows, board.cols, board.cells.map(cell => cell?.letter || null), { label: "Grade da trilha", numbers, paths: answers ? board.entries.map(entry => entry.path) : [] })}<div class="worksheet-word-lines"><strong>Palavras encontradas</strong>${lines}</div></div>${clues}<p class="worksheet-note">Comece pelos números. Não use diagonais.</p>`, boards.length > 1 ? `Parte ${part + 1} de ${boards.length}` : "", board.entries.length));
                     offset += board.entries.length;
                 }
             } else if (type === "connections") {
-                item.rounds.forEach((round, i) => result.push(unit(type, number, item.instruction, `<ol class="worksheet-connection-clues">${round.clues.map(clue => `<li>${e(clue)}</li>`).join("")}</ol><div class="worksheet-connection-answer"><strong>Resposta:</strong><span>${answers ? e(round.answer) : ""}</span></div>${answers && round.explanation ? `<p class="worksheet-explanation">${e(round.explanation)}</p>` : ""}`, item.rounds.length > 1 ? `Desafio ${i + 1} de ${item.rounds.length}` : "")));
+                item.rounds.forEach((round, i) => result.push(unit(type, number, item.instruction, `<ol class="worksheet-connection-clues">${round.clues.map(clue => `<li>${e(clue)}</li>`).join("")}</ol><div class="worksheet-connection-answer"><strong>Resposta:</strong><span>${answers ? e(round.answer) : ""}</span></div>${answers && round.explanation ? `<p class="worksheet-explanation">${e(round.explanation)}</p>` : ""}`, item.rounds.length > 1 ? `Desafio ${i + 1} de ${item.rounds.length}` : "", 1)));
             } else if (type === "wordsearch") {
-                const puzzle = engines.wordsearch.createPuzzle({ words: item.words, size: 6, mode: "basic", seed: JSON.stringify(item.words.map(word => word.term)) });
-                if (puzzle.omittedEntries.length) throw new Error("Algumas palavras não couberam no caça-palavras. Reduza a quantidade ou o tamanho antes de imprimir.");
-                const vectors = { E: [0, 1], S: [1, 0] };
-                const paths = answers ? puzzle.placedEntries.map(entry => Array.from({ length: entry.cleanTerm.length }, (_, n) => (entry.row + vectors[entry.direction][0] * n) * puzzle.cols + entry.col + vectors[entry.direction][1] * n)) : [];
                 const help = settings.wordsearchHelp || (settings.wordBank === false ? "clues" : "words");
-                const bank = help === "words" || answers ? `<p class="worksheet-word-bank">${item.words.map(word => e(word.term)).join(" · ")}</p>` : help === "none" ? ""
-                    : `<ul class="worksheet-clues">${item.words.map(word => `<li>${e(word.clue || `Uma palavra com ${core.clean(word.term).length} letras`)}</li>`).join("")}</ul>`;
                 const writes = /\b(?:escrev|registr|anot)/i.test(item.instruction);
-                const lines = writes ? `<div class="worksheet-search-lines">${item.words.map((word, i) => `<div class="worksheet-answer-line"><span>${i + 1}.</span><span>${answers ? e(word.term) : ""}</span></div>`).join("")}</div>` : "";
                 const instruction = item.instruction === core.instructions.wordsearch && help === "clues" ? "Resolva as pistas e encontre as palavras na horizontal ou vertical. Circule-as." : item.instruction;
-                result.push(unit(type, number, instruction, `${grid(puzzle.rows, puzzle.cols, puzzle.grid.flat(), { label: "Grade do caça-palavras", paths })}${bank}${lines}`));
-            } else {
-                let pending = item.words.map((word, i) => ({ id: `ws-${i}`, answer: word.term, clue: word.clue })), part = 0, offset = 0;
-                const panels = [], singles = [];
-                while (pending.length) {
-                    const puzzle = engines.crossword.createPuzzle({ entries: pending, size: 11, optimize: true });
-                    if (!puzzle.placedEntries.length) throw new Error("Não foi possível montar as cruzadas. Revise o tamanho das palavras.");
-                    const entries = [...puzzle.placedEntries].sort((a, b) => a.number - b.number || a.orientation.localeCompare(b.orientation));
-                    if (entries.length === 1) {
-                        const entry = entries[0];
-                        singles.push(`<li><span><strong>${offset + 1}.</strong> ${e(entry.clue)} <small>(${entry.cleanAnswer.length} letras)</small></span><span class="worksheet-short-answer">${answers ? e(entry.answer) : ""}</span></li>`);
-                        offset++;
-                    } else {
-                        const numbers = Object.fromEntries(puzzle.grid.flat().map((cell, i) => [i, cell?.number ? cell.number + offset : 0]));
-                        panels.push(`<div class="worksheet-crossword-panel">${grid(puzzle.rows, puzzle.cols, puzzle.grid.flat().map(cell => cell ? answers ? cell.letter : "" : null), { label: answers ? "Cruzadas resolvidas" : "Grade numerada das cruzadas", numbers })}<ul class="worksheet-crossword-clues">${entries.map(entry => `<li><strong>${entry.number + offset}${entry.orientation === "across" ? " →" : " ↓"}</strong> ${e(entry.clue)}${answers ? ` <em>(${e(entry.answer)})</em>` : ""}</li>`).join("")}</ul></div>`);
-                        offset += Math.max(...entries.map(entry => entry.number));
+                const pieces = []; let offset = 0;
+                // The same grouping is used for student and key, regardless of answer visibility.
+                for (const group of groups(item.words, help === "clues" || writes ? 10 : wide ? 30 : 12, help === "clues" ? 600 : Infinity)) {
+                    let pending = group;
+                    while (pending.length) {
+                        const total = pending.reduce((sum, word) => sum + core.clean(word.term).length, 0);
+                        const size = Math.max(6, Math.min(14, Math.ceil(Math.sqrt(total / 1.1))));
+                        const puzzle = engines.wordsearch.createPuzzle({ words: pending, size, mode: "basic", seed: JSON.stringify(pending.map(word => word.term)) });
+                        const words = puzzle.placedEntries;
+                        if (!words.length) throw new Error("Não foi possível montar o caça-palavras. Revise o tamanho das palavras.");
+                        const vectors = { E: [0, 1], S: [1, 0] };
+                        const paths = answers ? words.map(entry => Array.from({ length: entry.cleanTerm.length }, (_, n) => (entry.row + vectors[entry.direction][0] * n) * puzzle.cols + entry.col + vectors[entry.direction][1] * n)) : [];
+                        const bank = help === "words" || answers ? `<p class="worksheet-word-bank">${words.map(word => e(word.term)).join(" · ")}</p>` : help === "none" ? ""
+                            : `<ul class="worksheet-clues">${words.map(word => `<li>${e(word.clue || `Uma palavra com ${core.clean(word.term).length} letras`)}</li>`).join("")}</ul>`;
+                        const lines = writes ? `<div class="worksheet-search-lines">${words.map((word, i) => `<div class="worksheet-answer-line"><span>${offset + i + 1}.</span><span>${answers ? e(word.term) : ""}</span></div>`).join("")}</div>` : "";
+                        const board = grid(puzzle.rows, puzzle.cols, puzzle.grid.flat(), { label: "Grade do caça-palavras", paths });
+                        pieces.push({ body: `<div class="worksheet-puzzle-layout${bank || lines ? "" : " is-grid-only"}">${board}<div>${bank}${lines}</div></div>`, count: words.length });
+                        offset += words.length;
+                        pending = puzzle.omittedEntries;
                     }
-                    pending = puzzle.omittedEntries; part++;
-                    if (part > 8) throw new Error("Não foi possível organizar todas as palavras cruzadas.");
                 }
-                const extras = singles.length ? `<div class="worksheet-crossword-extras"><p>${panels.length ? "Complete também:" : "Complete as respostas nas linhas:"}</p><ol>${singles.join("")}</ol></div>` : "";
-                const instruction = !panels.length && item.instruction === core.instructions.crossword ? "Leia as pistas e escreva as respostas nas linhas." : item.instruction;
-                result.push(unit(type, number, instruction, `<div class="worksheet-crossword-panels">${panels.join("")}</div>${extras}${panels.length ? '<p class="worksheet-note">→ Horizontal · ↓ Vertical</p>' : ""}`));
-                if (part > 1) notices.push("Algumas palavras não cruzam na montagem encontrada. Elas foram mantidas no mesmo exercício, em grades menores ou linhas de resposta.");
+                pieces.forEach((piece, i) => result.push(unit(type, number, instruction, piece.body, pieces.length > 1 ? `Parte ${i + 1} de ${pieces.length}` : "", piece.count)));
+            } else {
+                let offset = 0, disconnected = false;
+                const pieces = [], singles = [];
+                for (const group of groups(item.words, wide ? 12 : 8, wide ? 750 : 450)) {
+                    let pending = group.map((word, i) => ({ id: `ws-${i}`, answer: word.term, clue: word.clue }));
+                    while (pending.length) {
+                        const puzzle = engines.crossword.createPuzzle({ entries: pending, size: 11, optimize: true });
+                        if (!puzzle.placedEntries.length) throw new Error("Não foi possível montar as cruzadas. Revise o tamanho das palavras.");
+                        const entries = [...puzzle.placedEntries].sort((a, b) => a.number - b.number || a.orientation.localeCompare(b.orientation));
+                        if (entries.length === 1) {
+                            const entry = entries[0];
+                            singles.push(`<li><span><strong>${offset + 1}.</strong> ${e(entry.clue)} <small>(${entry.cleanAnswer.length} letras)</small></span><span class="worksheet-short-answer">${answers ? e(entry.answer) : ""}</span></li>`);
+                            offset++;
+                        } else {
+                            const numbers = Object.fromEntries(puzzle.grid.flat().map((cell, i) => [i, cell?.number ? cell.number + offset : 0]));
+                            pieces.push({ body: `<div class="worksheet-crossword-panel worksheet-puzzle-layout">${grid(puzzle.rows, puzzle.cols, puzzle.grid.flat().map(cell => cell ? answers ? cell.letter : "" : null), { label: answers ? "Cruzadas resolvidas" : "Grade numerada das cruzadas", numbers })}<ul class="worksheet-crossword-clues">${entries.map(entry => `<li><strong>${entry.number + offset}${entry.orientation === "across" ? " →" : " ↓"}</strong> ${e(entry.clue)}${answers ? ` <em>(${e(entry.answer)})</em>` : ""}</li>`).join("")}</ul></div><p class="worksheet-note">→ Horizontal · ↓ Vertical</p>`, count: entries.length });
+                            offset += Math.max(...entries.map(entry => entry.number));
+                        }
+                        pending = puzzle.omittedEntries;
+                        if (pending.length) disconnected = true;
+                    }
+                }
+                for (let i = 0; i < singles.length; i += 6) pieces.push({ body: `<div class="worksheet-crossword-extras"><ol>${singles.slice(i, i + 6).join("")}</ol></div>`, count: Math.min(6, singles.length - i), lines: true });
+                pieces.forEach((piece, i) => result.push(unit(type, number, piece.lines && item.instruction === core.instructions.crossword ? "Leia as pistas e escreva as respostas nas linhas." : item.instruction, piece.body, pieces.length > 1 ? `Parte ${i + 1} de ${pieces.length}` : "", piece.count)));
+                if (disconnected) notices.push("Algumas palavras não cruzam na montagem encontrada. Todas foram mantidas em grades menores ou linhas de resposta.");
             }
         });
         return { units: result, notices };

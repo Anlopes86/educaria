@@ -36,6 +36,8 @@
         const text = String(source || "").trim(), answers = parseAnswers(text);
         if (mode === "words") return { mode: "words", answers };
         // Only infer compact lists. Expository text and instructions stay in topic mode.
+        // A topic can contain commas too: "verbos em inglês no passado, irregulares" is not two answers.
+        if (!prefix.test(text) && /^(?:palavras|verbos|termos|vocabulário)\s+(?:em|no|na|nos|nas|de|do|da|dos|das|sobre|relacionad[oa]s)\s+/i.test(text)) return { mode: "topic", answers: [] };
         const looksLikeList = prefix.test(text) || (answers.length > 1 && answers.every(answer =>
             answer.length <= 120 && answer.split(/\s+/).length <= 9 && !/[.!?:]/.test(answer)
             && !/^(?:crie|criar|gere|gerar|faça|fazer|explique|explore|monte|quero|preciso|sobre|suas?|seus?|como|por que|compare|relacione)\b/i.test(answer)));

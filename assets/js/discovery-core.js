@@ -16,11 +16,12 @@
         if ((required && !result) || result.length > max) fail(`${label}: ${required ? "preencha e use" : "use"} até ${max} caracteres.`);
         return result;
     }
-    function normalize(type, raw) {
+    function normalize(type, raw, { print = false } = {}) {
         if (!types.includes(type) || !raw || typeof raw !== "object") fail("Atividade inválida.");
         const base = { title: text(raw.title || labels[type], 180, "Título"), subtitle: text(raw.subtitle || "", 280, "Orientação", false) };
         if (type === "wordtrail") {
-            if (!Array.isArray(raw.words) || raw.words.length < 2 || raw.words.length > 12) fail("Use de 2 a 12 palavras na trilha.");
+            const limit = print ? 30 : 12;
+            if (!Array.isArray(raw.words) || raw.words.length < 2 || raw.words.length > limit) fail(`Use de 2 a ${limit} palavras na trilha.`);
             const seen = new Set();
             return { ...base, showClues: raw.showClues !== false, words: raw.words.map(item => {
                 const term = text(item?.term, 40, "Palavra"), letters = clean(term);
@@ -73,16 +74,17 @@
         });
         return { rows, cols, cells, entries };
     }
-    function createBoards(material, { print = false } = {}) {
-        const words = normalize("wordtrail", material).words;
+    function createBoards(material, { print = false, wide = false } = {}) {
+        const words = normalize("wordtrail", material, { print }).words;
         const groups = [];
         for (const word of words) {
             const current = groups.at(-1);
-            // Paper has no projection controls: keep short words together, independently of clue length.
+            // Paper keeps short words together; a total clue budget prevents oversized print blocks.
             // The existing four-word limit remains unchanged for classroom presentations.
-            if (!current || current.length === (print ? 8 : 4)
+            if (!current || current.length === (print ? wide ? 12 : 8 : 4)
                 || (!print && (word.clue.length > 80 || current.some(entry => entry.clue.length > 80)))
-                || current.reduce((sum, entry) => sum + clean(entry.term).length, 0) + clean(word.term).length > (print ? 84 : 60)) groups.push([word]);
+                || (print && current.reduce((sum, entry) => sum + entry.clue.length, 0) + word.clue.length > (wide ? 1000 : 750))
+                || current.reduce((sum, entry) => sum + clean(entry.term).length, 0) + clean(word.term).length > (print ? wide ? 144 : 84 : 60)) groups.push([word]);
             else current.push(word);
         }
         return groups.map((group, index) => createBoard(group, String(index)));

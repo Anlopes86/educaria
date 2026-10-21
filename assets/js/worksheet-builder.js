@@ -12,7 +12,7 @@
         return core.readDraft({ controls: { "worksheet-title": $("#worksheet-title").value, "worksheet-subtitle": $("#worksheet-subtitle").value }, stackHtml: stack.innerHTML }, DOMParser);
     }
     function settings() {
-        return { school: $("#worksheet-school").value, className: $("#worksheet-class-name").value, trailClues: $("#worksheet-trail-clues").value === "true", wordBank: $("#worksheet-word-bank").value === "true", wordsearchHelp: ({ true: "words", false: "clues", none: "none" })[$("#worksheet-word-bank").value] };
+        return { school: $("#worksheet-school").value, className: $("#worksheet-class-name").value, columns: $("#worksheet-columns").value, trailClues: $("#worksheet-trail-clues").value === "true", wordBank: $("#worksheet-word-bank").value === "true", wordsearchHelp: ({ true: "words", false: "clues", none: "none" })[$("#worksheet-word-bank").value] };
     }
     function changed() { $("[data-worksheet-items]").dispatchEvent(new Event("input", { bubbles: true })); }
     function syncSelection(restore = false) {
@@ -22,18 +22,22 @@
         }
         $("#worksheet-selected-types").value = JSON.stringify([...document.querySelectorAll("[data-ws-select]:checked")].map(node => node.dataset.wsSelect));
         const selected = JSON.parse($("#worksheet-selected-types").value);
-        document.querySelectorAll("[data-ws-options]").forEach(node => { node.hidden = !selected.includes(node.dataset.wsOptions); });
+        document.querySelectorAll("[data-ws-options]").forEach(node => {
+            node.hidden = !selected.includes(node.dataset.wsOptions);
+            if (node.hidden) node.open = false;
+        });
     }
     function sourceHelp() {
         const result = window.EducariaDiscoveryInput.resolve($("#worksheet-source").value, $("#worksheet-input-mode").value);
         $("[data-worksheet-source-help]").textContent = result.mode === "words"
-            ? `${result.answers.length} palavras exatas: ${result.answers.join(" · ")}. A lista será preservada, salvo se você informar outra nos ajustes de um jogo. Isso pode ocupar mais de uma página.`
+            ? `${result.answers.length} palavras exatas: ${result.answers.join(" · ")}. A lista será preservada nos jogos sem pedido próprio. Isso pode ocupar mais de uma página.`
             : "A IA criará os exercícios a partir do tema ou conteúdo informado, no idioma que você pedir.";
         for (const type of core.types) {
-            const local = window.EducariaDiscoveryInput.resolve($(`#worksheet-${type}-request`).value, "auto");
-            const answers = local.mode === "words" ? local.answers : result.mode === "words" ? result.answers : [];
+            const request = $(`#worksheet-${type}-request`).value.trim();
+            const local = window.EducariaDiscoveryInput.resolve(request, "auto");
+            const answers = request ? local.mode === "words" ? local.answers : [] : result.mode === "words" ? result.answers : [];
             $(`#worksheet-${type}-count`).disabled = answers.length > 0;
-            $(`[data-ws-list-help="${type}"]`).textContent = answers.length ? `${answers.length} respostas exatas: ${answers.join(" · ")}. A lista define a quantidade deste jogo.` : "Deixe a quantidade vazia para a IA ajustar ao tamanho da folha.";
+            $(`[data-ws-list-help="${type}"]`).textContent = answers.length ? `${answers.length} respostas exatas: ${answers.join(" · ")}. A lista define a quantidade deste jogo.` : `Deixe em branco para a IA escolher, ou defina até ${type === "connections" ? core.limits.rounds + " desafios" : core.limits.words + " palavras"}. A folha ganha mais páginas se precisar.`;
         }
     }
     function fitPreview() {
@@ -53,7 +57,8 @@
         const queue = blocks.slice();
         while (queue.length) {
             const row = document.createElement("div"); row.className = "worksheet-print-row";
-            const first = queue.shift(), second = queue.shift();
+            const first = queue.shift(), second = config.columns === "two" ? queue.shift() : null;
+            if (config.columns !== "two") row.classList.add("is-wide");
             row.innerHTML = first + (second || ""); body.append(row);
             if (row.querySelector(".worksheet-grid-wide") || row.offsetHeight > body.clientHeight) {
                 if (second) { queue.unshift(second); row.lastElementChild.remove(); }
@@ -64,18 +69,22 @@
             if (body.scrollHeight > body.clientHeight + 1) throw new Error("O cabeçalho e o exercício não cabem nesta página. Reduza o texto antes de imprimir.");
         }
         const count = host.children.length;
+        $("[data-worksheet-layout-label]").textContent = `Prévia A4 · ${config.columns === "two" ? "duas colunas adaptáveis" : "uma coluna"}`;
         host.querySelectorAll("[data-ws-page-number]").forEach((node, i) => { node.textContent = `${i + 1} / ${count}`; });
         $("[data-worksheet-page-count]").textContent = `${count} ${count === 1 ? "página" : "páginas"} · ${mode === "answers" ? "Gabarito" : "Folha do aluno"}`;
         fitPreview(); return count;
     }
     function render() {
         clearTimeout(timer); valid = false;
+        const hasContent = Boolean(isOwner() && $("[data-worksheet-items]").children.length);
+        $("[data-worksheet-edit-panel]").hidden = !hasContent;
+        $("[data-worksheet-start-blank]").hidden = hasContent;
         const feedback = $("[data-worksheet-validation]"), host = $("[data-worksheet-pages]");
         const review = $("[data-worksheet-review-warnings]");
         review.replaceChildren(); review.hidden = true;
         try {
             if (!isOwner()) throw new Error("Entre na sua conta para preparar a folha.");
-            if (!$("[data-worksheet-items]").children.length) throw new Error("Informe o tema e gere a folha, ou adicione exercícios no editor manual.");
+            if (!hasContent) throw new Error("Informe o tema e gere a folha, ou comece uma folha em branco, sem IA.");
             const data = core.normalize(read()), config = settings();
             const result = view.units(data, engines, mode === "answers", config);
             const pages = paginate(data, result.units, config);
@@ -99,7 +108,7 @@
         const worksheetTypes = core.selection(JSON.parse($("#worksheet-selected-types").value));
         const activityOptions = Object.fromEntries(worksheetTypes.map(type => {
             const field = $(`#worksheet-${type}-count`);
-            if (!field.disabled && field.value && !field.checkValidity()) throw new Error(`${core.labels[type]}: escolha de ${type === "connections" ? 1 : 2} a 8 itens.`);
+            if (!field.disabled && field.value && !field.checkValidity()) throw new Error(`${core.labels[type]}: escolha de ${type === "connections" ? "1 a " + core.limits.rounds : "2 a " + core.limits.words} itens.`);
             return [type, { instructions: $(`#worksheet-${type}-request`).value.trim(), count: field.disabled || !field.value ? null : Number(field.value), ...(type === "connections" ? { clueCount: Number($("#worksheet-connections-clue-count").value) || null } : {}) }];
         }));
         return { worksheetTypes, activityOptions, pageMode: $("#worksheet-page-mode").value, difficulty: $("#worksheet-difficulty").value, purpose: $("#worksheet-purpose").value, trailClues: settings().trailClues, wordsearchHelp: settings().wordsearchHelp };
@@ -133,13 +142,18 @@
     document.addEventListener("DOMContentLoaded", () => {
         syncSelection(true); sourceHelp();
         const stack = $("[data-worksheet-items]");
-        $("[data-worksheet-blank]").addEventListener("click", () => {
+        function addBlankActivities() {
+            if (!isOwner()) return;
             const data = read();
             try {
                 for (const type of generationOptions().worksheetTypes) if (!data.order.includes(type)) { data.order.push(type); data.activities[type] = core.blankActivity(type); }
-                stack.innerHTML = core.stackHtml(data); changed();
+                stack.innerHTML = core.stackHtml(data); changed(); render();
+                $("[data-worksheet-manual]").open = true;
+                stack.querySelector("input, textarea")?.focus();
             } catch (error) { $("[data-worksheet-generation-status]").textContent = error.message; }
-        });
+        }
+        $("[data-worksheet-blank]").addEventListener("click", addBlankActivities);
+        $("[data-worksheet-start-blank]").addEventListener("click", addBlankActivities);
         stack.addEventListener("click", event => {
             const button = event.target.closest("button"), section = button?.closest("[data-worksheet-activity]");
             if (!section) return;
@@ -150,7 +164,8 @@
             else if (button.hasAttribute("data-ws-remove-item")) button.closest(".worksheet-edit-item").remove();
             else if (button.hasAttribute("data-ws-add-item")) {
                 const data = read(), type = section.dataset.worksheetActivity, key = type === "connections" ? "rounds" : "words";
-                if (data.activities[type][key].length >= 8) { $("[data-worksheet-validation]").textContent = "O limite é de 8 itens por atividade."; return; }
+                const limit = type === "connections" ? core.limits.rounds : core.limits.words;
+                if (data.activities[type][key].length >= limit) { $("[data-worksheet-validation]").textContent = `O limite é de ${limit} itens nesta atividade.`; return; }
                 data.activities[type][key].push(core.blankActivity(type)[key][0]); stack.innerHTML = core.stackHtml(data);
             }
             changed();

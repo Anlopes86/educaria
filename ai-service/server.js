@@ -15,7 +15,7 @@ import { createMaterialUpload, extractTextFromFile, isUploadValidationError, par
 import { normalizeSlideGenerationOptions } from "./slide-generation-policy.js";
 import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } from "./activity-generation-policy.js";
 import { normalizeDiscoveryMaterial, validateDiscoverySource } from "./materials/discovery.js";
-import { normalizeWorksheetMaterial, validateWorksheetSource } from "./materials/worksheet.js";
+import { normalizeWorksheetMaterial, validateWorksheetSource, worksheetCompletionTokens } from "./materials/worksheet.js";
 import {
     aiCreditsForUsage,
     buildAiCreditUsagePolicy,
@@ -58,6 +58,9 @@ const groqReasoningEffort = new Set(["low", "medium", "high"]).has(requestedGroq
 const groqMaxCompletionTokens = Math.max(1, Math.floor(
     parseNonNegativeNumber(process.env.GROQ_MAX_COMPLETION_TOKENS, 3_500)
 ));
+const worksheetMaxCompletionTokens = Math.max(1, Math.min(16_000, Math.floor(
+    parseNonNegativeNumber(process.env.AI_WORKSHEET_MAX_COMPLETION_TOKENS, 12_000)
+)));
 const groqMaxPromptTokens = Math.max(1, Math.floor(
     parseNonNegativeNumber(process.env.GROQ_MAX_PROMPT_TOKENS, 4_000)
 ));
@@ -1135,9 +1138,12 @@ function fallbackJsonPrompt(schemaConfig) {
 function estimateProviderTokenReservation(materialType, action, sourceText, slideOptions, generationOptions) {
     const prompt = promptFor(materialType, action, sourceText, slideOptions, generationOptions);
     const estimatedInputTokens = Math.ceil(prompt.length / 3);
-    const estimatedOutputTokens = activeAiTextProvider() === "groq"
+    const baseline = activeAiTextProvider() === "groq"
         ? groqMaxCompletionTokens
         : aiCreditUsagePolicy.estimatedOutputTokens;
+    const estimatedOutputTokens = materialType === "worksheet"
+        ? worksheetCompletionTokens(generationOptions, baseline, worksheetMaxCompletionTokens)
+        : baseline;
     return Math.max(1, estimatedInputTokens + estimatedOutputTokens);
 }
 
@@ -1156,6 +1162,9 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
     const provider = activeAiTextProvider();
     const model = activeAiTextModel(provider);
     const basePrompt = promptFor(materialType, action, sourceText, slideOptions, generationOptions);
+    const outputLimit = materialType === "worksheet"
+        ? worksheetCompletionTokens(generationOptions, provider === "groq" ? groqMaxCompletionTokens : aiCreditUsagePolicy.estimatedOutputTokens, worksheetMaxCompletionTokens)
+        : groqMaxCompletionTokens;
 
     if (provider === "groq") {
         // Portuguese educational text often tokenizes more densely than the
@@ -1178,7 +1187,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
                 prompt: basePrompt,
                 schemaConfig,
                 reasoningEffort: groqReasoningEffort,
-                maxCompletionTokens: groqMaxCompletionTokens,
+                maxCompletionTokens: outputLimit,
                 timeoutMs: groqRequestTimeoutMs
             }));
             return {
@@ -1230,7 +1239,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
             result = await observation.call(() => gemini.models.generateContent({
                 model,
                 contents: attempt.contents,
-                config: attempt.config
+                config: { ...attempt.config, ...(materialType === "worksheet" ? { maxOutputTokens: outputLimit } : {}) }
             }));
 
             const material = parseGeneratedJson(result?.text || "");

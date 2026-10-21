@@ -10,8 +10,8 @@ import { normalizeSlidesMaterial } from "../materials/slides.js";
 import { parseGeneratedJson } from "../materials/generated-json.js";
 import { schemaFor } from "../materials/schemas.js";
 import { normalizeDiscoveryMaterial, validateDiscoverySource } from "../materials/discovery.js";
-import { normalizeWorksheetMaterial, validateWorksheetSource } from "../materials/worksheet.js";
-import { worksheetFixture } from "../../tools/fixtures/worksheet.mjs";
+import { normalizeWorksheetMaterial, validateWorksheetSource, worksheetCompletionTokens } from "../materials/worksheet.js";
+import { worksheetFixture, worksheetLargeFixture } from "../../tools/fixtures/worksheet.mjs";
 
 const source = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
 const usageMetadata = { promptTokenCount: 100, candidatesTokenCount: 200, thoughtsTokenCount: 50, totalTokenCount: 350 };
@@ -22,7 +22,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
         Error, console: { error() {}, warn() {} }, process: { env: {} },
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
-        schemaFor, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings,
+        schemaFor, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings, worksheetCompletionTokens, worksheetMaxCompletionTokens: 12000,
         extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial, validateDiscoverySource, normalizeWorksheetMaterial, validateWorksheetSource, isUploadValidationError: () => false,
         activeAiTextProvider: () => provider, activeAiTextModel: () => provider === "groq" ? "openai/gpt-oss-120b" : "gemini-test",
         aiPlanForRequest: () => "free", isAiUnlimitedUser: () => unlimited,
@@ -87,6 +87,29 @@ test("worksheet route rejects unsupported selections before usage and refunds ma
     assert.equal(response.statusCode, 400); assert.equal(h.refunds(), 1);
     assert.equal(h.events[0].creditsCharged, 0);
     assert.equal(response.body.code, "invalid_worksheet_material");
+});
+
+test("large worksheet output budgets reach both providers without changing other activities", async () => {
+    const activityOptions = Object.fromEntries(["wordtrail", "wordsearch", "crossword", "connections"].map(type => [type, type === "connections" ? { count: 8, clueCount: 8 } : { count: 30 }]));
+    for (const provider of ["groq", "gemini"]) {
+        const h = harness({ provider, results: [{ text: JSON.stringify(worksheetLargeFixture), usageMetadata }] });
+        const response = await h.run({ materialType: "worksheet", sourceText: "verbos irregulares", generationOptions: { activityOptions } });
+        assert.equal(response.statusCode, 200);
+        const limit = provider === "groq" ? h.providerInputs[0].maxCompletionTokens : h.providerInputs[0].config.maxOutputTokens;
+        assert.equal(limit, worksheetCompletionTokens({ activityOptions }));
+        assert.equal(h.calls(), 1);
+    }
+    const regular = harness(); await regular.run();
+    assert.equal(regular.providerInputs[0].maxCompletionTokens, 3500);
+});
+
+test("provider quota reserves the same worksheet output budget sent to generation", () => {
+    const context = vm.createContext({ promptFor: () => "abc".repeat(100), activeAiTextProvider: () => "groq", groqMaxCompletionTokens: 3500, worksheetMaxCompletionTokens: 12000, worksheetCompletionTokens });
+    const start = source.indexOf("function estimateProviderTokenReservation(");
+    vm.runInContext(source.slice(start, source.indexOf("\n/**", start)), context);
+    const options = { activityOptions: { wordtrail: { count: 30 }, crossword: { count: 30 }, wordsearch: { count: 30 } } };
+    assert.equal(context.estimateProviderTokenReservation("worksheet", "", "", null, options), 100 + worksheetCompletionTokens(options));
+    assert.equal(context.estimateProviderTokenReservation("quiz", "", "", null, {}), 3600);
 });
 
 test("discovery routes return valid materials with measured usage and reject bad lists before the provider", async () => {

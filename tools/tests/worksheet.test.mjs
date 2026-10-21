@@ -5,9 +5,9 @@ import vm from "node:vm";
 import core from "../../assets/js/worksheet-core.js";
 import view from "../../assets/js/worksheet-view.js";
 import discovery from "../../assets/js/discovery-core.js";
-import { worksheetFixture } from "../fixtures/worksheet.mjs";
+import { worksheetFixture, worksheetLargeFixture } from "../fixtures/worksheet.mjs";
 import { normalizeActivityGenerationOptions } from "../../ai-service/activity-generation-policy.js";
-import { validateWorksheetSource, normalizeWorksheetMaterial } from "../../ai-service/materials/worksheet.js";
+import { validateWorksheetSource, normalizeWorksheetMaterial, worksheetCompletionTokens } from "../../ai-service/materials/worksheet.js";
 import { schemaFor } from "../../ai-service/materials/schemas.js";
 import { promptFor } from "../../ai-service/materials/prompts.js";
 
@@ -62,6 +62,26 @@ test("exact lists are not translated or substituted and topics remain topics", (
 test("connections-only worksheets accept one long category without imposing grid limits", () => {
     const options = normalizeActivityGenerationOptions("worksheet", { worksheetTypes: ["connections"], inputMode: "words" });
     assert.deepEqual(validateWorksheetSource(options, "Planetas do Sistema Solar").answers, ["Planetas do Sistema Solar"]);
+});
+
+test("one activity can use its own topic while the others preserve the general list", () => {
+    const options = validateWorksheetSource(normalizeActivityGenerationOptions("worksheet", {
+        worksheetTypes: ["wordsearch", "crossword"],
+        activityOptions: { wordsearch: { instructions: "Animais em inglês", count: 6 } }
+    }), "went, ate, took, saw");
+    const schema = schemaFor("worksheet", options).schema.properties.activities.properties;
+    assert.equal(schema.wordsearch.properties.words.minItems, 6);
+    assert.equal(schema.wordsearch.properties.words.items.properties.term.enum, undefined);
+    assert.deepEqual(schema.crossword.properties.words.items.properties.term.enum, ["went", "ate", "took", "saw"]);
+    assert.match(promptFor("worksheet", "", "went, ate, took, saw", undefined, options), /Animais em inglês/);
+});
+
+test("a grammar topic with a comma does not become an exact list", () => {
+    const options = validateWorksheetSource(normalizeActivityGenerationOptions("worksheet", {}), "Verbos em inglês no passado, irregulares.");
+    assert.equal(options.inputMode, "topic");
+    assert.equal(schemaFor("worksheet", options).schema.properties.activities.properties.wordtrail.properties.words.items.properties.term.enum, undefined);
+    const exact = validateWorksheetSource(normalizeActivityGenerationOptions("worksheet", { worksheetTypes: ["connections"], inputMode: "words" }), "Verbos em inglês no passado, irregulares");
+    assert.equal(exact.inputMode, "words", "an explicit list mode still wins over inference");
 });
 
 test("provider outputs must also respect compact quantities and clue counts", () => {
@@ -235,7 +255,7 @@ test("local lists override a global exact list only in their own activity", () =
 });
 
 test("invalid per-game options and impossible lists are rejected before generation", () => {
-    for (const activityOptions of [{ slides: {} }, { wordsearch: { count: 1 } }, { crossword: { count: 9 } }, { connections: { clueCount: 6 } }, { wordtrail: { count: true } }, { wordsearch: { instructions: "x".repeat(601) } }]) {
+    for (const activityOptions of [{ slides: {} }, { wordsearch: { count: 1 } }, { crossword: { count: 31 } }, { connections: { clueCount: 9 } }, { wordtrail: { count: true } }, { wordsearch: { instructions: "x".repeat(601) } }]) {
         assert.throws(() => normalizeActivityGenerationOptions("worksheet", { activityOptions }), /opções/);
     }
     assert.throws(() => validateWorksheetSource(normalizeActivityGenerationOptions("worksheet", { activityOptions: { wordsearch: { instructions: "x, y" } } }), "verbos"));
@@ -264,4 +284,61 @@ test("all content is escaped in editor, print and headers", () => {
     const html = core.stackHtml(data) + view.units(data, engines).units.join("") + view.pageHeader(data, { school: "<script>" }, false);
     assert.doesNotMatch(html, /<script>|<img src=x|value="" onmouseover/);
     assert.match(html, /&lt;script&gt;/);
+});
+
+test("thirty words and eight clues are explicit validated quantities, never silently reduced", () => {
+    const activityOptions = Object.fromEntries(core.types.map(type => [type, type === "connections" ? { count: 8, clueCount: 8 } : { count: 30 }]));
+    const options = normalizeActivityGenerationOptions("worksheet", { activityOptions });
+    const material = normalizeWorksheetMaterial(worksheetLargeFixture, options);
+    const schema = schemaFor("worksheet", options).schema.properties.activities.properties;
+    for (const type of ["wordtrail", "wordsearch", "crossword"]) {
+        assert.equal(schema[type].properties.words.minItems, 30);
+        assert.equal(schema[type].properties.words.maxItems, 30);
+        assert.equal(material.activities[type].words.length, 30);
+    }
+    assert.equal(schema.connections.properties.rounds.items.properties.clues.minItems, 8);
+    const truncated = structuredClone(worksheetLargeFixture); truncated.activities.wordsearch.words.pop();
+    assert.throws(() => normalizeWorksheetMaterial(truncated, options), /quantidade/);
+});
+
+test("large worksheets preserve every item in both layouts and share student/key geometry", () => {
+    for (const columns of ["one", "two"]) for (const wordsearchHelp of ["words", "clues", "none"]) {
+        const settings = { columns, wordsearchHelp, trailClues: true };
+        const student = view.units(worksheetLargeFixture, engines, false, settings).units;
+        const key = view.units(worksheetLargeFixture, engines, true, settings).units;
+        assert.equal(student.length, key.length);
+        const totals = {};
+        for (let i = 0; i < student.length; i++) {
+            const [, type, count] = student[i].match(/data-ws-print-type="(\w+)" data-ws-print-count="(\d+)"/);
+            totals[type] = (totals[type] || 0) + Number(count);
+            const geometry = html => [...html.matchAll(/<rect [^>]+>/g)].map(match => match[0]);
+            assert.deepEqual(geometry(student[i]), geometry(key[i]));
+        }
+        assert.deepEqual(totals, { wordtrail: 30, wordsearch: 30, crossword: 30, connections: 8 });
+        for (const word of worksheetLargeFixture.activities.wordtrail.words) assert.ok(key.join("").includes(`>${word.term}<`));
+    }
+});
+
+test("print-only larger trail limits do not change presentation limits", () => {
+    assert.throws(() => discovery.normalize("wordtrail", worksheetLargeFixture.activities.wordtrail), /12/);
+    assert.equal(discovery.normalize("wordtrail", worksheetLargeFixture.activities.wordtrail, { print: true }).words.length, 30);
+});
+
+test("maximum clue lengths split large print trails without losing words", () => {
+    const words = worksheetLargeFixture.activities.wordtrail.words.map(word => ({ ...word, clue: "Pista longa para conferir a distribuição e preservar a legibilidade. ".repeat(3).slice(0, 150) }));
+    for (const wide of [true, false]) {
+        const boards = discovery.createBoards({ words }, { print: true, wide });
+        assert.equal(boards.reduce((total, board) => total + board.entries.length, 0), 30);
+        assert.ok(boards.every(board => board.entries.reduce((sum, entry) => sum + entry.clue.length, 0) <= (wide ? 1000 : 750)));
+    }
+});
+
+test("worksheet output budget scales with chosen quantities but obeys its ceiling", () => {
+    assert.equal(worksheetCompletionTokens({ worksheetTypes: ["wordsearch"] }), 3500);
+    const options = { activityOptions: Object.fromEntries(core.types.map(type => [type, { count: type === "connections" ? 8 : 30, clueCount: 8 }])) };
+    assert.ok(worksheetCompletionTokens(options) > 9000);
+    assert.equal(worksheetCompletionTokens(options, 3500, 5000), 5000);
+    assert.equal(worksheetCompletionTokens(options, 3500, 1000), 1000);
+    const exact = { worksheetTypes: ["wordsearch", "wordtrail"], inputMode: "words", answers: worksheetLargeFixture.activities.wordsearch.words.map(w => w.term) };
+    assert.equal(worksheetCompletionTokens(exact), 5200);
 });
