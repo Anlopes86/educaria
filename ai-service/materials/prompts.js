@@ -305,61 +305,25 @@ function basePromptFor(materialType, action, sourceText, slideOptions, generatio
         ].join("\n\n");
     }
 
-    const wantsPersonalizedVisual = /visual\s+(personalizado|tematico|temático)|personalizar\s+o\s+visual|modo\s+visual:\s*personalizado/i.test(action);
+    const wantsPersonalizedVisual = normalizeSlideGenerationOptions(slideOptions, action).visualMode === "ai";
     const slideVisualInstructions = wantsPersonalizedVisual
         ? [
-            "Modo visual escolhido: personalizado pela IA de acordo com o tema.",
-            "Crie visual_theme com uma paleta coerente com o assunto, a disciplina e o público da aula.",
-            "Use somente cores hexadecimais completas no formato #RRGGBB.",
-            "Para leitura na TV, background e alternate_background devem ser quase brancos, com um toque suave da paleta; evite cinza médio, fundos turvos e aparência desbotada. Use texto escuro com contraste de pelo menos 7:1. Reserve contrast_background escuro e contrast_text claro para capa e encerramento.",
-            "Escolha no máximo duas cores de destaque expressivas, coerentes e visíveis nos fundos claros e escuros; concentre nelas a identidade do tema, não em tingir o slide inteiro. Evite arco-íris e estereótipos visuais.",
-            "Explique a escolha em rationale com uma frase curta e útil para o professor.",
-            "Varie visual_variant com intenção: hero na abertura, light e alternate no desenvolvimento, question nas perguntas e contrast no fechamento.",
-            "A variação deve parecer parte do mesmo tema; não crie uma identidade diferente em cada slide."
+            "Visual personalizado: Crie visual_theme coerente com assunto e público, cores #RRGGBB e rationale breve. background e alternate_background quase brancos; evite cinza médio e fundos turvos. Texto escuro, contraste mínimo 7:1. contrast_background escuro e contrast_text claro só para capa/encerramento. Até duas cores de destaque, sem tingir todo o slide nem usar estereótipos. Mantenha a mesma identidade. composition: editorial para explicações ou imagem ao lado; focus para pergunta/abertura curta; panels para 2–4 ideias comparáveis separadas por parágrafos. Varie conforme o conteúdo, sem cortar texto para caber."
         ]
         : [
-            "Modo visual escolhido: padrão EducarIA.",
-            "Preencha visual_theme com uma paleta moderna, sóbria e de alto contraste, pois o editor aplicará o padrão visual da plataforma.",
-            "No padrão, capa e fechamento têm fundo verde-escuro #153c41 e texto creme #f8f9ec; conteúdo usa fundos claros #f8f9ec ou #e8f3ed e texto #173c43. Planeje as cores e os rótulos das ilustrações para esses fundos, com destaques suaves em menta, dourado, lilás ou coral.",
-            "Use visual_variant de acordo com a função de cada slide, sem depender dele para transmitir o conteúdo."
+            "Visual padrão EducarIA: preencha visual_theme em #RRGGBB. Capa/fechamento: fundo #153c41, texto #f8f9ec. Conteúdo: fundo #f8f9ec ou #e8f3ed, texto #173c43. Destaques suaves menta, dourado, lilás ou coral; ilustrações legíveis nesses fundos."
         ];
 
     return [
-        "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
-        "Responda apenas em JSON compatível com o schema fornecido.",
-        "Monte slides prontos para uma aula real e para edição rápida. Use português do Brasil para conteúdo novo sem idioma solicitado; preserve o idioma original de material pronto.",
-        "Quebre o conteúdo em uma sequência lógica e didática, com a profundidade escolhida pelo professor.",
-        "O texto visível no slide deve ser curto, projetável e fácil de ler pela turma.",
-        "Evite parágrafos longos, frases de efeito, clichês e tom genérico de apresentação corporativa.",
-        "Use títulos claros e uma composição adequada à ideia: explicação, exemplo resolvido, comparação, etapas ou lista. Bullets não são obrigatórios.",
-        "Regra forte de formatação do body:",
-        "- A quantidade de linhas e a extensão de cada uma seguem a configuração pedagógica abaixo.",
-        "- Quebre linhas com \\n.",
-        "- Quando listar ideias, comece cada linha com '- '.",
-        "- Cada linha deve expressar uma ideia completa; nunca corte uma frase para encurtá-la.",
-        "- Parágrafos explicativos curtos são permitidos e desejáveis quando ajudam a aprofundar; separe blocos por quebras de linha.",
-        "- Não repita o título no body.",
-        "Regra forte de composição:",
-        "- Slide de capa: 1 a 2 linhas no body.",
-        "- Slides de conteúdo: desenvolva a ideia de acordo com a intenção e o detalhamento; não substitua explicações por títulos ou palavras-chave.",
-        "- Slide final: fechamento, síntese ou pergunta de revisão.",
-        "Use teacher_notes para orientar a mediação do professor sem repetir o que já está visível no slide.",
-        "Use teacher_notes para orientações de mediação. Não esconda ali as explicações solicitadas para os alunos.",
+        "Você é um assistente pedagógico brasileiro. Responda apenas em JSON compatível com o schema. Monte uma sequência didática de slides projetáveis e editáveis. Português do Brasil para conteúdo novo sem idioma solicitado; preserve o idioma do material pronto.",
+        "BODY: títulos claros, frases completas, sem repetir o título nem cortar frases. Parágrafos explicativos curtos são permitidos; use explicação, exemplo resolvido, comparação, etapas ou lista conforme a ideia. Separe blocos com \\n e inicie itens de lista com '- '. Bullets não são obrigatórios. Evite clichês, tom corporativo e blocos extensos. teacher_notes orienta a mediação, não substitui explicações visíveis.",
+        ...(generationOptions ? ["Neste pedido body é um OBJETO: preencha os blocos definidos no schema conforme suas descrições, sem duplicação. Eles formarão o texto visível na ordem dos campos. As faixas de palavras valem para a SOMA dos blocos, não para cada campo."] : []),
+        "COMPOSIÇÃO: type content explica, question convida à participação; cover (body de 1–2 linhas) e closing (síntese/pergunta de revisão) só se fizerem sentido. Varie visual_variant: hero na abertura, light/alternate no desenvolvimento, question nas perguntas e contrast no fechamento. Não dependa da cor para transmitir conteúdo.",
         ...slidePedagogyInstructions(normalizeSlideGenerationOptions(slideOptions, action)),
         ...slideIllustrationInstructions(normalizeSlideGenerationOptions(slideOptions, action)),
-        "Escolha o tipo pela função: content para explicação, question para participação, cover e closing somente se o pedido comportar abertura e encerramento próprios.",
-        "Varie a composição entre título forte, síntese em tópicos e pergunta de discussão; não transforme todos os slides na mesma lista.",
         ...slideVisualInstructions,
-        "Organize a sequência com começo, desenvolvimento e fechamento.",
         `Objetivo do professor: ${action || "Estruturar slides a partir do material enviado."}`,
-        "Regras adicionais:",
-        "- Não invente dados específicos que não estejam sustentados pelo texto-base.",
-        "- RIGOR FACTUAL: não complete lacunas com datas, números, citações ou nomes específicos sem segurança. Para conteúdo novo, omita detalhes acessórios incertos ou indique explicitamente aproximação/controvérsia quando pertinente. Não transforme uma hipótese em certeza nem invente fontes ou afirme que houve pesquisa/verificação externa. Ao reorganizar texto fornecido, preserve os dados e o idioma; não substitua silenciosamente informações por suposições.",
-        "- Antes de entregar, revise a consistência entre título, subtítulo, body e ilustração: datas, unidades, nomes, sequência e relações devem concordar. Essa revisão interna não é uma checagem independente de fontes.",
-        "- Se o conteúdo estiver extenso, priorize as ideias centrais.",
-        "- Se a origem for apenas um tópico, desenvolva-o com conhecimento pedagógico confiável, respeitando o público e o detalhamento. Se for um texto-base, preserve suas informações e não invente dados específicos.",
-        "- Evite excesso de slides; prefira concisão com progressão clara.",
-        "- Respeite explicitamente quantidade de slides, nível de detalhamento e preferência de imagens quando o professor informar.",
+        "RIGOR FACTUAL: não complete lacunas com datas, números, citações ou nomes específicos sem segurança. Omita detalhes incertos ou indique aproximação/controvérsia; não invente fontes nem afirme pesquisa externa. Ao reorganizar, preserve dados e idioma; não substitua silenciosamente informações por suposições. Revise consistência entre título, subtítulo, body e ilustração (datas, unidades, nomes e relações); isso não é uma checagem independente de fontes.",
         "Material de origem:",
         sourceText
     ].join("\n\n");

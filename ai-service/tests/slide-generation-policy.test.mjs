@@ -59,7 +59,7 @@ test("explicit audience wins over grade in selected class", () => {
 
 test("old editor and quick creation labels are supported", () => {
     const result = options(undefined, "Gerar 8 slides. Público ou ano: 5º ano. Objetivo da aula: explicar fotossíntese. Disciplina: Ciências. Turma: 5º ano A. Tom desejado: Mais explicativo. Nível de detalhamento: Mais detalhado. Modo visual: padrão.");
-    assert.deepEqual(result, { detail: "detailed", tone: "explanatory", audience: "5º ano", objective: "explicar fotossíntese", subject: "Ciências", className: "5º ano A", includeIllustration: false });
+    assert.deepEqual(result, { detail: "detailed", tone: "explanatory", audience: "5º ano", objective: "explicar fotossíntese", subject: "Ciências", className: "5º ano A", includeIllustration: false, visualMode: "standard" });
     assert.equal(options(undefined, "Ano ou público: EJA.").audience, "EJA");
 });
 
@@ -86,7 +86,7 @@ test("body formatting never discards explanations or cuts sentences", () => {
 const server = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
 
 test("actual server prompt includes structured pedagogical fields", () => {
-    const prompt = promptFor("slides", "Gerar 8 slides. Modo visual: personalizado.", "Fotossíntese", options({ detail: "detailed", tone: "inspiring", audience: "EJA", subject: "Ciências", objective: "Entender energia" }));
+    const prompt = promptFor("slides", "Gerar 8 slides. Modo visual: personalizado.", "Fotossíntese", options({ visualMode: "ai", detail: "detailed", tone: "inspiring", audience: "EJA", subject: "Ciências", objective: "Entender energia" }));
     assert.match(prompt, /desenvolva o raciocínio no body/);
     assert.match(prompt, /pequenos desafios/);
     assert.match(prompt, /sem infantilização/);
@@ -99,6 +99,32 @@ test("actual server prompt includes structured pedagogical fields", () => {
 test("default slides and other activity prompts still work", () => {
     assert.match(promptFor("slides", "Gerar 5 slides.", "Tema"), /EQUILIBRADO/);
     assert.doesNotMatch(promptFor("quiz", "Gerar 5 perguntas.", "Tema"), /CONFIGURAÇÃO PEDAGÓGICA/);
+});
+
+test("complete slide prompts leave room for teacher text across illustration, visual and pedagogy options", () => {
+    // The route always appends generationOptions. Testing only the base prompt
+    // missed the 413 caused by illustrated + detailed/personalized slides.
+    const sourceText = "Explique os verbos irregulares no passado em inglês, com exemplos contextualizados. ".repeat(25);
+    assert.ok(sourceText.length >= 2000);
+    for (const includeIllustration of [false, true])
+    for (const detail of ["concise", "balanced", "detailed"])
+    for (const tone of ["balanced", "visual", "explanatory", "inspiring"])
+    for (const visual of ["padrão", "personalizado"])
+    for (const contentMode of ["auto", "preserve", "summarize", "develop"]) {
+        const action = `Gerar 6 slides. Modo visual: ${visual}.`;
+        const slideOptions = options({ includeIllustration, detail, tone, audience: "7º ano", subject: "Inglês", objective: "Compreender e empregar o passado em situações do cotidiano." }, action);
+        const generationOptions = normalizeActivityGenerationOptions("slides", {
+            ...slideOptions, count: 6, contentMode,
+            teacherInstructions: "Mantenha os exemplos em inglês e as explicações em português."
+        }, action);
+        const prompt = promptFor("slides", action, sourceText, slideOptions, generationOptions);
+        const tokens = Math.ceil(prompt.length / 3);
+        assert.ok(tokens <= 4000, `${JSON.stringify({ includeIllustration, detail, tone, visual, contentMode })}: ${tokens} tokens`);
+        assert.ok(prompt.includes(sourceText), "teacher text must not be shortened to fit");
+        assert.ok(prompt.includes(generationOptions.teacherInstructions));
+        assert.match(prompt, /Gere exatamente 6 itens no array slides/);
+        assert.match(prompt, includeIllustration ? /INCLUIR ILUSTRAÇÃO: SIM/ : /Não inclua o campo illustration/);
+    }
 });
 
 test("production route passes options to generation and rejects bad fields before spending credits", async () => {

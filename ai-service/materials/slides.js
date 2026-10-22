@@ -1,4 +1,5 @@
 import { normalizeGeneratedSlideBody } from "../slide-generation-policy.js";
+import { normalizeSlideContent } from "./slide-content.js";
 import { normalizeSlideIllustration, normalizeGeneratedSlideIllustration } from "../slide-illustration-policy.js";
 
 function trimWords(text, maxWords = 12) {
@@ -123,6 +124,7 @@ export function normalizeSlidesMaterial(material, options = {}) {
 
     return {
         ...material,
+        visual_mode: options.visualMode === "ai" ? "ai" : "standard",
         visual_theme: normalizeSlideVisualTheme(material.visual_theme),
         slides: material.slides.map((slide, index, slides) => {
             const slideType = slide?.type || (index === 0 ? "cover" : index === slides.length - 1 ? "closing" : "content");
@@ -137,9 +139,12 @@ export function normalizeSlidesMaterial(material, options = {}) {
                 illustration,
                 image_prompt: "",
                 type: slideType,
-                body: normalizeGeneratedSlideBody(slide?.body, slideType),
+                body: normalizeGeneratedSlideBody(normalizeSlideContent(slide?.body), slideType),
                 teacher_notes: String(slide?.teacher_notes || "").trim(),
                 visual_variant: normalizeSlideVisualVariant(slide?.visual_variant, slideType, index),
+                composition: options.visualMode === "ai"
+                    ? (["editorial", "focus", "panels"].includes(slide?.composition) ? slide.composition : ["cover", "closing", "question"].includes(slideType) ? "focus" : "editorial")
+                    : "classic",
                 layout
             };
         })

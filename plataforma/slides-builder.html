@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slides | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261016-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261022-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -13,8 +13,8 @@
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/storage-scope.js" defer></script>
     <script src="../assets/js/generation-recovery.js?v=20261014-1" defer></script>
-    <script src="../assets/js/activity-visuals.js?v=20261011-1" defer></script>
-    <script src="../assets/js/live-preview.js?v=20261011-1" defer></script>
+    <script src="../assets/js/activity-visuals.js?v=20261022-1" defer></script>
+    <script src="../assets/js/live-preview.js?v=20261022-1" defer></script>
     <script src="../assets/js/builder-actions.js" defer></script>
     <script src="../assets/js/builder-templates.js" defer></script>
     <script src="../assets/js/local-persistence.js?v=20261011-2" defer></script>
@@ -27,14 +27,14 @@
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
     <script src="../assets/js/slide-diagram-model.js?v=20261013-3" defer></script>
-    <script src="../assets/js/slide-diagram-renderer.js?v=20261016-1" defer></script>
-    <script src="../assets/js/slide-diagram-editing.js?v=20261016-2" defer></script>
-    <script src="../assets/js/slide-illustrations.js?v=20261016-2" defer></script>
+    <script src="../assets/js/slide-diagram-renderer.js?v=20261022-1" defer></script>
+    <script src="../assets/js/slide-diagram-editing.js?v=20261022-1" defer></script>
+    <script src="../assets/js/slide-illustrations.js?v=20261022-1" defer></script>
     <script src="../assets/js/slide-diagram-editor.js?v=20261016-2" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20261016-2" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261022-1" defer></script>
     <link rel="stylesheet" href="../assets/css/components/slide-diagram-editor.css?v=20261016-2">
     <script src="../assets/js/builder-journey.js?v=20261014-1" defer></script>
-    <script src="../assets/js/slide-theme-controls.js?v=20261011-1" defer></script>
+    <script src="../assets/js/slide-theme-controls.js?v=20261022-1" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="slides" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -170,7 +170,7 @@
                                 <input id="slides-objetivo" type="text" value="" maxlength="280" placeholder="Ex.: introduzir o tema, revisar conteúdo, preparar debate">
                             </div>
                         </div>
-                        <p class="platform-field-help">Estas escolhas orientam a próxima geração. Para alterar slides já criados, gere novamente ou edite o texto manualmente.</p>
+                        <p class="platform-field-help">Detalhamento muda a profundidade; tom muda a forma de explicar e envolver a turma. As cores são definidas em Visual dos slides. As escolhas valem para a próxima geração, não alteram o material já criado.</p>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-primary" data-generate-material="slides">Estruturar slides com IA</button>
                         </div>
@@ -223,6 +223,7 @@
                         </div>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-apply-slides-theme>Aplicar visual em todos os slides</button>
+                            <small class="platform-field-help">Escolha o tema e clique em aplicar para atualizar os slides e as ilustrações editáveis. Isso não altera o texto nem as imagens enviadas.</small>
                         </div>
                     </div>
                 </details>

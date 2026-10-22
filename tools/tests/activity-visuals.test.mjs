@@ -69,6 +69,27 @@ test("flashcard defaults use lilac and cream; text, notes and source remain inta
     assert.equal(next.example, old.example);
     assert.equal(old.frontColor, "#FFFFFF");
 });
+
+test("explicit slide palettes are not silently migrated even on an exact legacy colour match", () => {
+    for (const visualMode of ["ai", "manual", "standard"]) {
+        const selected = { slideColor: "#102a43", textColor: "#f8fafc", accentColor: "#2dd4bf", visualMode };
+        assert.deepEqual(plain(visual.slide(selected)), selected);
+    }
+});
+
+test("compositions adapt to content without altering old decks, image placement or text", () => {
+    assert.equal(visual.slideComposition({ body: "Texto antigo" }), "classic");
+    assert.equal(visual.slideComposition({ composition: "<script>" }), "classic");
+    assert.equal(visual.slideComposition({ composition: "focus", body: "Uma pergunta?" }), "focus");
+    assert.equal(visual.slideComposition({ composition: "panels", body: "Antes\nDepois" }), "panels");
+    const image = Object.freeze({ composition: "focus", body: "Texto", imageUrl: "foto.png" });
+    assert.equal(visual.slideComposition(image), "editorial");
+    assert.equal(image.composition, "focus");
+    for (const composition of ["focus", "panels"]) {
+        assert.equal(visual.slideComposition({ composition, body: "explicação completa ".repeat(80) }), "editorial");
+        assert.equal(visual.slideComposition({ composition, body: "item\n".repeat(5) }), "editorial");
+    }
+});
 test("wheel uses soft colours without changing numbering, ordering or custom monochrome", () => {
     const segments = Object.freeze([Object.freeze({ color: "#22c55e", text: "Um", index: 2 }), Object.freeze({ color: "#0ea5e9", text: "Dois", index: 8 })]);
     const result = visual.wheel(segments);

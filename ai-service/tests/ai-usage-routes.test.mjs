@@ -12,11 +12,14 @@ import { schemaFor } from "../materials/schemas.js";
 import { normalizeDiscoveryMaterial, validateDiscoverySource } from "../materials/discovery.js";
 import { normalizeWorksheetMaterial, validateWorksheetSource, worksheetCompletionTokens } from "../materials/worksheet.js";
 import { worksheetFixture, worksheetLargeFixture } from "../../tools/fixtures/worksheet.mjs";
+import { promptFor } from "../materials/prompts.js";
+import { diagramExamples } from "../../tools/fixtures/slide-diagrams.mjs";
 
 const source = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
 const usageMetadata = { promptTokenCount: 100, candidatesTokenCount: 200, thoughtsTokenCount: 50, totalTokenCount: 350 };
-function harness({ provider = "groq", unlimited = false, results = [{ text: '{"cards":[{"front":"PRIVATE","back":"PRIVATE"}]}', usageMetadata }], image = false, blocked = false, refundFails = false } = {}) {
+function harness({ provider = "groq", unlimited = false, results = [{ text: '{"cards":[{"front":"PRIVATE","back":"PRIVATE"}]}', usageMetadata }], image = false, blocked = false, refundFails = false, promptBuilder = () => "synthetic test" } = {}) {
     const events = [], providerAmounts = [], providerInputs = []; let handler, calls = 0, refunds = 0;
+    const quotaRefunds = { requests: 0, tokens: 0 };
     const providerCall = async input => { providerInputs.push(input); const result = results[calls++]; if (result instanceof Error) throw result; return result; };
     const context = vm.createContext({
         Error, console: { error() {}, warn() {} }, process: { env: {} },
@@ -34,9 +37,9 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
         reserveAiDailyRequests: async () => ({ reserved: true, reservation: {} }),
         settleAiProviderTokens: async (_, amount) => { providerAmounts.push(amount); return {}; }, settleAiDailyRequests: async () => ({}),
         settleAiDailyCredit: async (_, amount) => ({ credits: {}, charged: unlimited ? 0 : amount, measuredCost: amount }),
-        refundAiDailyCredit: async () => { if (refundFails) throw new Error("PRIVATE"); refunds++; }, refundAiDailyRequests: async () => {}, refundAiProviderTokens: async () => {},
+        refundAiDailyCredit: async () => { if (refundFails) throw new Error("PRIVATE"); refunds++; }, refundAiDailyRequests: async () => { quotaRefunds.requests++; }, refundAiProviderTokens: async () => { quotaRefunds.tokens++; },
         aiDailyCreditsFor: async () => ({}), aiDailyRequestLimitError: () => ({}), aiTextProviderConfigurationError: () => "not-configured",
-        promptFor: () => "synthetic test", parseGeneratedJson, fallbackJsonPrompt: () => "", aiErrorMessage: e => e.message,
+        promptFor: promptBuilder, parseGeneratedJson, fallbackJsonPrompt: () => "", aiErrorMessage: e => e.message,
         aiGenerationMaxAttempts: 2, groqMaxPromptTokens: 4000, groqApiKey: "fake", groqReasoningEffort: "low", groqMaxCompletionTokens: 3500, groqRequestTimeoutMs: 90000,
         generateGroqStructuredMaterial: providerCall, gemini: { models: { generateContent: providerCall } },
         aiImageGenerationEnabled: true, imagePromptForSlide: () => "synthetic"
@@ -47,7 +50,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
     const routeEnd = image ? source.indexOf("\napp.use((error", routeStart) : source.indexOf("\napp.post(", routeStart + 1);
     vm.runInContext(source.slice(routeStart, routeEnd), context);
     return {
-        events, providerAmounts, providerInputs, calls: () => calls, refunds: () => refunds,
+        events, providerAmounts, providerInputs, quotaRefunds, calls: () => calls, refunds: () => refunds,
         async run(body = image ? { title: "PRIVATE" } : { materialType: "flashcards", sourceText: "PRIVATE", generationOptions: { count: 3 } }) {
             const response = { statusCode: 200, setHeader() {}, status(value) { this.statusCode = value; return this; }, json(value) { this.body = value; return this; } };
             await handler({ educariaUser: { uid: "test-owner" }, body }, response);
@@ -60,6 +63,71 @@ test("text route logs actual provider usage and returned quantity without storin
     assert.equal(response.statusCode, 200); assert.equal(h.calls(), 1); assert.equal(h.events.length, 1);
     assert.equal(h.events[0].usage.totalTokens, 350); assert.equal(h.events[0].generatedCount, 1); assert.equal(h.events[0].context.requestedCount, 3);
     assert.equal(h.events[0].creditsCharged, response.body.charge.cost); assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE/);
+});
+
+for (const includeIllustration of [true, false]) test(`real slide prompt reaches the provider with illustration=${includeIllustration} and all generation settings`, async () => {
+    const bodyBlocks = { essential: "A energia passa entre os seres vivos pela alimentação.", explanation: "As plantas transformam energia luminosa em energia química. Essa energia chega aos consumidores quando se alimentam.", example: "Uma planta é comida por um gafanhoto: parte da energia armazenada na planta passa a ele." };
+    const slide = { title: "Energia", body: bodyBlocks, type: "content", visual_variant: "light",
+        ...(includeIllustration ? { illustration: diagramExamples[0] } : {}) };
+    const body = { materialType: "slides", sourceText: "Explique a energia na cadeia alimentar. ".repeat(50),
+        action: "Gerar 6 slides. Modo visual: personalizado.",
+        slideOptions: { includeIllustration, detail: "detailed", tone: "explanatory", audience: "Ensino médio", subject: "Ciências" },
+        generationOptions: { count: 6, contentMode: "develop" } };
+    const material = { title: "Cadeia alimentar", slides: Array.from({ length: 6 }, () => ({ ...slide })) };
+    const h = harness({ promptBuilder: promptFor, results: [{ text: JSON.stringify(material), usageMetadata }] });
+    const response = await h.run(body);
+    assert.equal(response.statusCode, 200);
+    assert.equal(h.calls(), 1);
+    assert.equal(h.refunds(), 0);
+    assert.equal(h.providerInputs[0].maxCompletionTokens, 3500);
+    assert.ok(h.providerInputs[0].prompt.includes(body.sourceText.trim()));
+    assert.ok(Math.ceil(h.providerInputs[0].prompt.length / 3) <= 4000);
+    assert.equal(Object.hasOwn(h.providerInputs[0].schemaConfig.schema.properties.slides.items.properties, "illustration"), includeIllustration);
+    assert.deepEqual(h.providerInputs[0].schemaConfig.schema.properties.slides.items.properties.body.required, Object.keys(bodyBlocks));
+    assert.equal(response.body.material.slides.length, 6);
+    assert.equal(response.body.material.slides[0].body, Object.values(bodyBlocks).join("\n\n"));
+    assert.equal(response.body.material.slides[0].layout, includeIllustration ? "split" : "stack");
+    if (includeIllustration) assert.equal(response.body.material.slides[0].illustration.status, "ready");
+    assert.ok(response.body.charge.cost > 0);
+});
+
+test("invalid structured slide content refunds credits and returns an actionable error", async () => {
+    const h = harness({ results: [{ text: JSON.stringify({ slides: [{ title: "Tema", body: { essential: ["Texto inválido"] } }] }), usageMetadata }] });
+    const response = await h.run({ materialType: "slides", sourceText: "Tema", slideOptions: { detail: "detailed" } });
+    assert.equal(response.statusCode, 502);
+    assert.equal(response.body.code, "ai_response_incomplete");
+    assert.equal(h.refunds(), 1);
+    assert.equal(h.calls(), 1);
+});
+
+test("both providers receive option-specific slide schemas and return the same editable contract", async () => {
+    const cases = [
+        { detail: "concise", tone: "balanced", body: { essential: "Um conceito central." } },
+        { detail: "detailed", tone: "inspiring", body: { essential: "Por que isso acontece?", explanation: "Uma explicação do mecanismo.", example: "Um exemplo aplicado.", challenge: "Compare os casos." } },
+        { detail: "detailed", tone: "inspiring", contentMode: "preserve", body: { text: "Original English text. Do not translate." } }
+    ];
+    for (const provider of ["groq", "gemini"]) for (const sample of cases) {
+        const h = harness({ provider, promptBuilder: promptFor, results: [{ text: JSON.stringify({ title: "Tema", slides: [{ title: "Ideia", type: "content", body: sample.body }] }), usageMetadata }] });
+        const response = await h.run({ materialType: "slides", sourceText: "Pedido do professor", slideOptions: { detail: sample.detail, tone: sample.tone }, generationOptions: { contentMode: sample.contentMode || "auto", count: 1 } });
+        assert.equal(response.statusCode, 200);
+        const schema = provider === "groq" ? h.providerInputs[0].schemaConfig.schema : h.providerInputs[0].config.responseJsonSchema;
+        assert.deepEqual(schema.properties.slides.items.properties.body.required, Object.keys(sample.body));
+        assert.equal(response.body.material.slides[0].body, Object.values(sample.body).join("\n\n"));
+        assert.equal(response.body.material.generation_options.detail, sample.detail);
+        assert.equal(response.body.material.generation_options.tone, sample.tone);
+        assert.equal(h.calls(), 1);
+    }
+});
+
+test("genuinely oversized slide prompts are rejected without provider calls and all reservations are refunded", async () => {
+    const h = harness({ promptBuilder: promptFor });
+    const response = await h.run({ materialType: "slides", sourceText: "Texto completo do professor. ".repeat(600),
+        slideOptions: { includeIllustration: true, detail: "detailed" }, generationOptions: { count: 6 } });
+    assert.equal(response.statusCode, 413);
+    assert.equal(response.body.code, "content_too_long");
+    assert.equal(h.calls(), 0);
+    assert.equal(h.refunds(), 1);
+    assert.deepEqual(h.quotaRefunds, { requests: 1, tokens: 1 });
 });
 
 test("worksheet route generates all and only the selected activities in one metered request", async () => {

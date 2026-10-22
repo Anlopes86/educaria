@@ -27,7 +27,9 @@ export function recoverRejectedSlideResponse(text, schemaConfig) {
     if (!material || !Array.isArray(material.slides) || !material.slides.length || material.slides.length > 30) return null;
     if (typeof material.title !== "string" || !material.title.trim()) return null;
     if (material.slides.some(slide => !slide || typeof slide.title !== "string" || !slide.title.trim()
-        || typeof slide.body !== "string" || !slide.body.trim())) return null;
+        || !(typeof slide.body === "string" ? slide.body.trim()
+            : slide.body && typeof slide.body === "object" && !Array.isArray(slide.body)
+                && Object.values(slide.body).some(value => typeof value === "string" && value.trim())))) return null;
 
     // Validate the actual contract, with exactly one exception: illustrations are
     // validated separately by the shared diagram model. This is not a JSON-mode fallback.

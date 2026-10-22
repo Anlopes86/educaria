@@ -94,8 +94,8 @@
         return `<defs>${defs.join("")}</defs>${parts.join("")}`;
     }
 
-    function render(raw) {
-        if (raw?.version === 2) return root.EducariaSlideDiagramRenderer?.render(raw) || null;
+    function render(raw, theme) {
+        if (raw?.version === 2) return root.EducariaSlideDiagramRenderer?.render(raw, theme) || null;
         if (!raw || typeof raw.description !== "string" || !raw.description.trim() || !Array.isArray(raw.elements)) return null;
         const guided = guidedDrawing(raw);
         if (["solar-system", "orbit", "process", "cycle", "comparison"].includes(raw.layout) && !guided) return null;
@@ -159,8 +159,9 @@
         const uploaded = index === 0 && typeof material?.cover_image === "string" && /^data:image\/(webp|png|jpeg);base64,/.test(material.cover_image) && material.cover_image.length <= 160 * 1024;
         if (uploaded) return { url: material.cover_image, description: "Imagem enviada pelo professor", mode: "Enviar imagem" };
         const enabled = material?.generation_options?.includeIllustration;
-        const illustration = enabled === true || enabled === "true" ? render(slide?.illustration) : null;
-        return illustration ? { ...illustration, mode: "Ilustração da IA", diagramData: root.EducariaSlideDiagramEditing?.encode(slide.illustration, illustration.url) || "" } : { url: "", description: "", mode: "Sem imagem" };
+        const theme = material?.visual_mode === "ai" ? material.visual_theme : null;
+        const illustration = enabled === true || enabled === "true" ? render(slide?.illustration, theme) : null;
+        return illustration ? { ...illustration, mode: "Ilustração da IA", diagramData: root.EducariaSlideDiagramEditing?.encode(slide.illustration, illustration.url, theme) || "" } : { url: "", description: "", mode: "Sem imagem" };
     }
 
     function feedback(material) {

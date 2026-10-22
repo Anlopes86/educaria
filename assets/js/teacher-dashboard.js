@@ -695,7 +695,7 @@ async function requestDashboardQuickMaterial(materialType, topic, label, generat
     if (materialType === "slides") {
         const values = generationOptions?.values || {};
         formData.append("slideOptions", JSON.stringify(Object.fromEntries(
-            ["detail", "tone", "audience", "className", "subject", "objective", "includeIllustration"].map((key) => [key, values[key]])
+            ["detail", "tone", "audience", "className", "subject", "objective", "includeIllustration", "visualMode"].map((key) => [key, values[key]])
         )));
     }
     const optionInstructions = generationOptions?.instructions?.join(" ") || "";

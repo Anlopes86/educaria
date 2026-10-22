@@ -69,6 +69,8 @@ function parseSlideCards(stackHtml) {
             index,
             sourceIndex: index,
             slideType,
+            visualMode: card.dataset.slideVisualMode || "",
+            composition: card.dataset.slideComposition || "classic",
             title: title || `Slide ${index + 1}`,
             subtitle,
             body,
@@ -106,7 +108,7 @@ function serializeSlideCards(slides, originalStackHtml = "") {
         }
     }
     return slides.map((slide, index) => `
-        <section class="platform-question-card activity-content-card" data-slide-card data-slide-type="${escapeHtml(slide.slideType || "content")}">
+        <section class="platform-question-card activity-content-card" data-slide-card data-slide-type="${escapeHtml(slide.slideType || "content")}" data-slide-visual-mode="${escapeHtml(slide.visualMode || "")}" data-slide-composition="${escapeHtml(slide.composition || "classic")}">
             <div class="platform-form-grid">
                 <div class="platform-field platform-field-wide">
                     <label>Título</label>
@@ -236,8 +238,10 @@ function isSlideOverflowing(slideRoot, copyRoot) {
         Math.max(bottom, element.getBoundingClientRect().bottom)
     ), copyRect.top);
 
-    return slideRoot.scrollHeight > slideRoot.clientHeight + 4
-        || copyRoot.scrollHeight > copyRoot.clientHeight + 4
+    // The decorative ::after circle intentionally extends outside the stage.
+    // Its scrollHeight is not text overflow and must not force every slide dense.
+    return copyRoot.scrollHeight > copyRoot.clientHeight + 4
+        || copyRoot.scrollWidth > copyRoot.clientWidth + 4
         || contentBottom > Math.min(copyRect.bottom, slideRect.bottom) + 3;
 }
 
@@ -279,6 +283,11 @@ function applySlideDensity(slideRoot, copyRoot, slide, viewport = {}) {
     }
 
     setSlideDensityClass(slideRoot, densityOrder[densityOrder.length - 1]);
+    // Layout is decorative: let a dense explanation return to flowing text.
+    if (["panels", "focus"].includes(slideRoot.dataset.slideComposition)) {
+        slideRoot.dataset.slideComposition = "editorial";
+        applySlideDensity(slideRoot, copyRoot, slide, viewport);
+    }
 }
 
 function applySlideLayout(slideRoot, slide) {
@@ -469,6 +478,8 @@ function renderPresentation(slides, draft = {}) {
         slideSubtitle.style.color = slide.textColor;
         slideBody.style.color = slide.textColor;
         slideRoot.dataset.slideKind = slideType;
+        slideRoot.dataset.slideComposition = inlineEdit?.enabled ? "classic"
+            : window.EducariaVisuals?.slideComposition(slide) || "classic";
         slideRoot.dataset.slideFont = String(slide.fontChoice || "Destaque moderno")
             .toLowerCase()
             .normalize("NFD")

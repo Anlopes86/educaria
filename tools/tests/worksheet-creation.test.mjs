@@ -103,7 +103,7 @@ test("worksheet assets are public, print controls are separate and private files
     assert.match(html, /data-worksheet-print="student"/); assert.match(html, /data-worksheet-print="answers"/);
     assert.match(html, /data-save-material="worksheet"/); assert.match(html, /builder-journey.js/);
     assert.ok(html.indexOf("material-context.js") < html.indexOf("local-persistence.js"));
-    for (const name of ["core", "view", "builder"]) assert.equal(isPublicFile(`assets/js/worksheet-${name}.js`), true);
+    for (const name of ["core", "view", "layout", "builder"]) assert.equal(isPublicFile(`assets/js/worksheet-${name}.js`), true);
     assert.equal(isPublicFile("assets/css/components/worksheet.css"), true);
     assert.equal(isPublicFile("tools/fixtures/worksheet.mjs"), false);
     assert.equal(isPublicFile("ai-service/.env"), false);

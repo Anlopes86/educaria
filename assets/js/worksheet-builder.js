@@ -1,6 +1,6 @@
 (() => {
     "use strict";
-    const core = window.EducariaWorksheet, view = window.EducariaWorksheetView;
+    const core = window.EducariaWorksheet, view = window.EducariaWorksheetView, layout = window.EducariaWorksheetLayout;
     const $ = selector => document.querySelector(selector);
     const owner = typeof readCurrentTeacher === "function" ? readCurrentTeacher()?.uid || "" : "";
     const isOwner = () => owner && readCurrentTeacher()?.uid === owner;
@@ -54,13 +54,19 @@
             host.append(wrap); body = wrap.querySelector(".worksheet-body"); return body;
         };
         page();
+        const automatic = !["one", "two"].includes(config.columns);
+        const measured = automatic ? measureBlocks(body, blocks) : null;
+        const gap = parseFloat(getComputedStyle(body).rowGap) || 0;
         const queue = blocks.slice();
         while (queue.length) {
             const row = document.createElement("div"); row.className = "worksheet-print-row";
-            const first = queue.shift(), second = config.columns === "two" ? queue.shift() : null;
-            if (config.columns !== "two") row.classList.add("is-wide");
+            const first = queue.shift();
+            const used = [...body.children].reduce((sum, child) => sum + child.offsetHeight + gap, 0);
+            const pair = config.columns === "two" || (automatic && layout.useTwoColumns(measured.get(first), measured.get(queue[0]), { pageHeight: body.clientHeight, remaining: body.clientHeight - used, gap }));
+            const second = pair ? queue.shift() : null;
+            if (automatic ? !second : config.columns === "one") row.classList.add("is-wide");
             row.innerHTML = first + (second || ""); body.append(row);
-            if (row.querySelector(".worksheet-grid-wide") || row.offsetHeight > body.clientHeight) {
+            if ((!automatic && row.querySelector(".worksheet-grid-wide")) || row.offsetHeight > body.clientHeight) {
                 if (second) { queue.unshift(second); row.lastElementChild.remove(); }
                 if (row.querySelector(".worksheet-grid-wide") || row.offsetHeight > body.clientHeight) row.classList.add("is-wide");
             }
@@ -69,10 +75,34 @@
             if (body.scrollHeight > body.clientHeight + 1) throw new Error("O cabeçalho e o exercício não cabem nesta página. Reduza o texto antes de imprimir.");
         }
         const count = host.children.length;
-        $("[data-worksheet-layout-label]").textContent = `Prévia A4 · ${config.columns === "two" ? "duas colunas adaptáveis" : "uma coluna"}`;
+        $("[data-worksheet-layout-label]").textContent = `Prévia A4 · ${automatic ? "organização automática" : config.columns === "two" ? "duas colunas adaptáveis" : "uma coluna"}`;
         host.querySelectorAll("[data-ws-page-number]").forEach((node, i) => { node.textContent = `${i + 1} / ${count}`; });
         $("[data-worksheet-page-count]").textContent = `${count} ${count === 1 ? "página" : "páginas"} · ${mode === "answers" ? "Gabarito" : "Folha do aluno"}`;
         fitPreview(); return count;
+    }
+    function measureBlocks(body, blocks) {
+        const probe = document.createElement("div");
+        probe.className = "worksheet-layout-probe";
+        probe.setAttribute("aria-hidden", "true");
+        const rows = blocks.map(html => {
+            const pair = [false, true].map(wide => {
+                const row = document.createElement("div");
+                row.className = `worksheet-print-row${wide ? " is-wide" : ""}`;
+                row.innerHTML = html; probe.append(row); return row;
+            });
+            return { html, half: pair[0], full: pair[1] };
+        });
+        body.append(probe);
+        try {
+            const metrics = row => {
+                const exercise = row.firstElementChild;
+                const gridsFit = [...row.querySelectorAll(".worksheet-grid")].every(grid =>
+                    grid.getBoundingClientRect().width + 1 >= parseFloat(grid.style.width) * 96 / 25.4);
+                const linesFit = [...row.querySelectorAll(".worksheet-word-lines")].every(lines => lines.clientWidth >= 28 * 96 / 25.4 - 1);
+                return { height: row.offsetHeight, readable: gridsFit && linesFit && exercise.scrollWidth <= exercise.clientWidth + 1 };
+            };
+            return new Map(rows.map(row => [row.html, { half: metrics(row.half), full: metrics(row.full) }]));
+        } finally { probe.remove(); }
     }
     function render() {
         clearTimeout(timer); valid = false;

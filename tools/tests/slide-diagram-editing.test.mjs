@@ -16,6 +16,35 @@ function fixture(index = 0) {
     return { original, url: image.url, data: api.encode(original, image.url) };
 }
 
+test("personalized diagrams follow safe accent colours and retain them through text editing", () => {
+    const { original } = fixture();
+    const renderer = context.EducariaSlideDiagramRenderer;
+    const colors = ["#c05621", "#1d4ed8", "#7e22ce"];
+    const results = colors.map(accent => {
+        const theme = { accent, secondary_accent: "#d97706" };
+        const image = context.EducariaSlideIllustrations.resolveImage({ visual_mode: "ai", visual_theme: theme, generation_options: { includeIllustration: true } }, { illustration: original }, 0);
+        assert.equal(image.url, renderer.render(original, theme).url);
+        const revised = api.revise(image.diagramData, image.url, { ...original, title: "Título revisado" });
+        assert.equal(revised.url, renderer.render({ ...original, title: "Título revisado" }, theme).url);
+        assert.deepEqual(plain(api.decode(image.diagramData, image.url)), original);
+        return image.url;
+    });
+    assert.equal(new Set(results).size, 3);
+    const unsafe = renderer.render(original, { accent: 'url(x)" onload="bad' });
+    assert.equal(unsafe.url, renderer.render(original).url);
+    const standard = context.EducariaSlideIllustrations.resolveImage({ visual_mode: "standard", visual_theme: { accent: colors[0] }, generation_options: { includeIllustration: true } }, { illustration: original }, 0);
+    assert.equal(standard.url, renderer.render(original).url);
+});
+
+test("manual theme recolouring preserves diagram meaning and leaves uploaded/replaced images alone", () => {
+    const { original, url, data } = fixture();
+    const result = api.recolor(data, url, { accent: "#db2777" });
+    assert.notEqual(result.url, url);
+    assert.deepEqual(plain(api.decode(result.data, result.url)), original);
+    assert.equal(api.recolor(data, "data:image/png;base64,AAAA", { accent: "#db2777" }), null);
+    assert.equal(api.recolor("", url, { accent: "#db2777" }), null);
+});
+
 for (let i = 0; i < diagramExamples.length; i++) test(`editable illustration survives JSON and changes only text: ${diagramExamples[i].layout} ${i}`, () => {
     const { original, url, data } = fixture(i);
     assert.deepEqual(plain(api.decode(JSON.parse(JSON.stringify(data)), url)), original);

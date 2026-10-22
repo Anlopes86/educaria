@@ -11,8 +11,20 @@
     ];
     const equal = (a, b) => a.every((value, i) => String(value || "").toLowerCase() === b[i]);
     function slide(colors) {
+        // Only migrate unmarked historical defaults, never an explicit AI/manual palette.
+        if (["ai", "manual", "standard"].includes(colors.visualMode)) return { ...colors };
         const match = slidePalettes.find(([old]) => equal([colors.slideColor, colors.textColor, colors.accentColor], old));
         return match ? { ...colors, slideColor: match[1][0], textColor: match[1][1], accentColor: match[1][2] } : { ...colors };
+    }
+    function slideComposition(slide) {
+        const choice = slide.composition;
+        if (!["editorial", "focus", "panels"].includes(choice)) return "classic";
+        if (slide.imageUrl) return "editorial"; // Images remain beside the text, never a cropped hero.
+        const body = String(slide.body || "");
+        const blocks = body.split(/\r?\n/).filter(line => line.trim());
+        if (choice === "focus" && body.length <= 420 && blocks.length <= 3) return "focus";
+        if (choice === "panels" && blocks.length >= 2 && blocks.length <= 4 && body.length <= 900) return "panels";
+        return "editorial";
     }
     function flashcard(colors) {
         return equal([colors.frontColor, colors.backColor, colors.textColor], ["#ffffff", "#dbeafe", "#0f172a"])
@@ -26,5 +38,5 @@
         const isLegacy = new Set(colors).size > 1 && colors.every(color => wheelLegacy.includes(color));
         return segments.map(segment => ({ ...segment, color: isLegacy ? wheelPalette[wheelLegacy.indexOf(segment.color.toLowerCase())] : segment.color }));
     }
-    root.EducariaVisuals = Object.freeze({ slide, flashcard, wheel });
+    root.EducariaVisuals = Object.freeze({ slide, slideComposition, flashcard, wheel });
 })(typeof window === "undefined" ? globalThis : window);

@@ -3,6 +3,7 @@ import { test } from "node:test";
 import fs from "node:fs/promises";
 import vm from "node:vm";
 import { detailedSlide, expectedInterviewCards } from "../fixtures/ai-content-cases.mjs";
+import { normalizeSlidesMaterial } from "../../ai-service/materials/slides.js";
 const read = path => fs.readFile(new URL(`../../assets/js/${path}.js`, import.meta.url), "utf8");
 const [presentation, preview, generator, flashcards] = await Promise.all(["presentation-runtime", "live-preview", "ai-material-generator", "flashcards-runtime"].map(read));
 const context = vm.createContext({ escapeHtml: value => String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;") });
@@ -22,6 +23,17 @@ test("preview and projector agree on paragraphs, bullets and numbered content", 
     const expected = "<p>Uma explicação.</p><ul><li>Primeira causa</li><li>Segunda causa</li></ul><p>Um exemplo.</p><p>1. Primeiro caso</p><p>2. Segundo caso</p>";
     assert.equal(context.renderStructuredSlideBody(body), expected);
     assert.equal(context.renderSlidePreviewBody(body), expected);
+});
+
+test("detailed inspiring blocks survive server normalization, editor import, preview and presentation", () => {
+    const blocks = { essential: "Como contar o que aconteceu ontem?", explanation: "Verbos irregulares têm formas próprias no passado; não basta acrescentar -ed.",
+        example: "Yesterday I went to school. Went é o passado de go e situa a ação no passado.", challenge: "Conte uma experiência usando went." };
+    const material = normalizeSlidesMaterial({ slides: [{ type: "content", title: "Verbos irregulares", body: blocks }] });
+    const imported = context.compactSlideBodyText(material.slides[0].body);
+    const expected = Object.values(blocks).map(block => `<p>${block}</p>`).join("");
+    assert.equal(context.renderStructuredSlideBody(imported), expected);
+    assert.equal(context.renderSlidePreviewBody(imported), expected);
+    assert.doesNotMatch(imported, /essential|explanation|challenge|\[object Object\]/);
 });
 test("rendering never injects HTML from a generated explanation", () => {
     const body = "<img src=x onerror=alert(1)>\n- <script>test</script>";

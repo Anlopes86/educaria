@@ -4,6 +4,8 @@ import fs from "node:fs/promises";
 import vm from "node:vm";
 import { normalizeSlidesMaterial } from "../materials/slides.js";
 import { promptFor } from "../materials/prompts.js";
+import { normalizeSlideGenerationOptions } from "../slide-generation-policy.js";
+import { schemaFor } from "../materials/schemas.js";
 
 const luminance = hex => {
     const rgb = [1, 3, 5].map(offset => {
@@ -14,6 +16,27 @@ const luminance = hex => {
 };
 const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + .05) / (Math.min(luminance(a), luminance(b)) + .05);
 const normalize = visual_theme => normalizeSlidesMaterial({ visual_theme, slides: [] }).visual_theme;
+
+test("visual selection has an explicit contract independent of the action wording", () => {
+    assert.equal(normalizeSlideGenerationOptions({}, "Modo visual: personalizado.").visualMode, "ai");
+    assert.equal(normalizeSlideGenerationOptions({ visualMode: "standard" }, "Modo visual: personalizado.").visualMode, "standard");
+    for (const invalid of ["random", true, {}, 1]) assert.throws(() => normalizeSlideGenerationOptions({ visualMode: invalid }), { code: "invalid_slide_options" });
+    for (const includeIllustration of [false, true]) for (const visualMode of ["standard", "ai"]) {
+        const options = normalizeSlideGenerationOptions({ visualMode, includeIllustration });
+        const schema = schemaFor("slides", options, { contentMode: "auto" }).schema.properties.slides.items;
+        assert.equal(Object.hasOwn(schema.properties, "composition"), visualMode === "ai");
+        if (visualMode === "ai") assert.deepEqual(schema.properties.composition.enum, ["editorial", "focus", "panels"]);
+        const prompt = promptFor("slides", "Gerar slides.", "Tema", options, { contentMode: "auto" });
+        assert.equal(prompt.includes("composition:"), visualMode === "ai");
+        const source = { slides: [{ title: "Conceito", body: "Primeira ideia\nSegunda ideia", type: "content", composition: "panels" }] };
+        const output = normalizeSlidesMaterial(source, options);
+        assert.equal(output.visual_mode, visualMode);
+        assert.equal(output.slides[0].composition, visualMode === "ai" ? "panels" : "classic");
+        assert.equal(output.slides[0].body, source.slides[0].body);
+    }
+    const safe = normalizeSlidesMaterial({ slides: [{ type: "content", composition: "<script>" }] }, { visualMode: "ai" });
+    assert.equal(safe.slides[0].composition, "editorial");
+});
 
 test("the medium-grey AI palette becomes a clear reading canvas, not a washed-out slide", () => {
     const source = Object.freeze({ background: "#bdc3c7", alternate_background: "#95a5a6", text: "#2c3e50", accent: "#16a085", secondary_accent: "#c0392b", contrast_background: "#7f8c8d", contrast_text: "#ffffff" });

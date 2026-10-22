@@ -302,7 +302,7 @@ test("thirty words and eight clues are explicit validated quantities, never sile
 });
 
 test("large worksheets preserve every item in both layouts and share student/key geometry", () => {
-    for (const columns of ["one", "two"]) for (const wordsearchHelp of ["words", "clues", "none"]) {
+    for (const columns of ["auto", "one", "two"]) for (const wordsearchHelp of ["words", "clues", "none"]) {
         const settings = { columns, wordsearchHelp, trailClues: true };
         const student = view.units(worksheetLargeFixture, engines, false, settings).units;
         const key = view.units(worksheetLargeFixture, engines, true, settings).units;

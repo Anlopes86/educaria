@@ -45,7 +45,7 @@ test("editor selections reach the request as distinct fields, including selected
     const button = { textContent: "Gerar", disabled: false };
     assert.equal(await h.context.generateMaterial("slides", button), true);
     assert.deepEqual(JSON.parse(h.posted.body.get("slideOptions")), {
-        detail: "Mais detalhado", tone: "Mais explicativo", audience: "EJA", objective: "Explicar. Relacionar ao cotidiano.", subject: "Ciências", className: "7º ano A", includeIllustration: false
+        detail: "Mais detalhado", tone: "Mais explicativo", audience: "EJA", objective: "Explicar. Relacionar ao cotidiano.", subject: "Ciências", className: "7º ano A", includeIllustration: false, visualMode: "ai"
     });
     assert.match(h.posted.body.get("action"), /Gerar 8 slides/);
     assert.match(h.posted.body.get("action"), /personalizado/);
@@ -63,6 +63,19 @@ test("long slide settings do not overflow the action field", async () => {
     await h.context.generateMaterial("slides", { textContent: "Gerar" });
     assert.ok(h.posted.body.get("action").length < 500);
     assert.equal(JSON.parse(h.posted.body.get("slideOptions")).objective.length, 280);
+});
+
+test("editor sends all detail/tone combinations using the chosen labels", async () => {
+    for (const detail of ["Mais enxuto", "Equilibrado", "Mais detalhado"])
+    for (const tone of ["Claro e equilibrado", "Mais visual e direto", "Mais explicativo", "Mais inspirador"]) {
+        const h = generationHarness();
+        h.fields.detail.options[0].text = detail;
+        h.fields.tone.options[0].text = tone;
+        await h.context.generateMaterial("slides", { textContent: "Gerar" });
+        const sent = JSON.parse(h.posted.body.get("slideOptions"));
+        assert.equal(sent.detail, detail);
+        assert.equal(sent.tone, tone);
+    }
 });
 
 test("illustration option accompanies the original request and own image stays local", async () => {

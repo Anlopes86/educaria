@@ -103,6 +103,58 @@ body.presentation-runtime-page { background: #f4f6f1; color: var(--activity-ink)
     box-shadow: none; border-radius: 18px;
 }
 
+/* Opt-in AI compositions. Historical decks keep their original layout. */
+.presentation-page .presentation-slide[data-slide-composition="editorial"] h1,
+.presentation-page .presentation-slide[data-slide-composition="panels"] h1 {
+    border-bottom: 4px solid var(--slide-accent);
+    padding-bottom: .22em;
+}
+.presentation-page .presentation-slide[data-slide-composition="focus"] .presentation-slide-copy {
+    width: 100%; max-width: 1000px; margin-inline: auto; text-align: center;
+    justify-items: center;
+}
+.presentation-page .presentation-slide[data-slide-composition="focus"] .presentation-slide-body {
+    width: 100%; max-width: 820px;
+}
+.presentation-page .presentation-slide[data-slide-composition="focus"] .presentation-slide-kicker {
+    width: 100%;
+}
+.presentation-page .presentation-slide[data-slide-composition="panels"] .presentation-slide-body {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
+    width: 100%; max-width: none;
+}
+.presentation-page .presentation-slide[data-slide-composition="panels"] .presentation-slide-body ul {
+    display: contents;
+}
+.presentation-page .presentation-slide[data-slide-composition="panels"] .presentation-slide-body :is(p, li) {
+    min-width: 0; margin: 0; padding: .65em .8em;
+    border: 1px solid color-mix(in srgb, var(--slide-text) 16%, transparent);
+    border-top: 4px solid var(--slide-accent); border-radius: 14px;
+    background: color-mix(in srgb, var(--slide-accent) 10%, var(--slide-bg));
+}
+/* Font choices must affect the heading as well as the body. */
+.presentation-page .presentation-slide[data-slide-font="serifada-classica"] :is(.presentation-slide-copy, h1, h2) { font-family: Georgia, "Times New Roman", serif; }
+.presentation-page .presentation-slide[data-slide-font="leitura-limpa"] :is(.presentation-slide-copy, h1, h2) { font-family: Arial, sans-serif; }
+.presentation-page .presentation-slide[data-slide-font="destaque-moderno"] :is(.presentation-slide-copy, h1, h2) { font-family: "Poppins", sans-serif; }
+.slide-preview-card[data-slide-composition="editorial"] h3,
+.slide-preview-card[data-slide-composition="panels"] h3 { border-bottom: 3px solid var(--slide-preview-accent); padding-bottom: .25em; }
+.slide-preview-card[data-slide-composition="focus"] .slide-preview-text { text-align: center; }
+.slide-preview-card[data-slide-composition="panels"] .slide-preview-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.slide-preview-card[data-slide-composition="panels"] .slide-preview-body ul { display: contents; }
+.slide-preview-card[data-slide-composition="panels"] .slide-preview-body :is(p, li) {
+    min-width: 0; margin: 0; padding: .65em;
+    border: 1px solid color-mix(in srgb, var(--slide-preview-text) 16%, transparent);
+    border-top: 3px solid var(--slide-preview-accent); border-radius: 12px;
+    background: color-mix(in srgb, var(--slide-preview-accent) 10%, var(--slide-preview-bg));
+}
+.slide-preview-card .slide-preview-text--serifada-classica :is(h3, h4) { font-family: Georgia, "Times New Roman", serif; }
+.slide-preview-card .slide-preview-text--leitura-limpa :is(h3, h4) { font-family: Arial, sans-serif; }
+.slide-preview-card .slide-preview-text--destaque-moderno :is(h3, h4) { font-family: "Poppins", sans-serif; }
+@media (max-width: 700px) {
+    .presentation-page .presentation-slide[data-slide-composition="panels"] .presentation-slide-body { grid-template-columns: minmax(0, 1fr); }
+    .slide-preview-card[data-slide-composition="panels"] .slide-preview-body { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* Quiz: warm paper and four calm, readable answer cards. */
 .quiz-application-card .quiz-application-title, .quiz-application-card .quiz-application-prompt { color: #473e24; }
 .quiz-application-card .option-btn {

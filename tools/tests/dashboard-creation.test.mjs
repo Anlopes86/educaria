@@ -98,6 +98,27 @@ test("dashboard sends the illustration choice beside the unmodified teacher requ
     assert.equal(h.request.body.get("sourceText"), request);
 });
 
+test("dashboard sends both visual modes explicitly instead of relying only on action text", async () => {
+    for (const visualMode of ["standard", "ai"]) {
+        const h = harness(); h.populate("slides");
+        h.fields.set('[data-dashboard-quick-option="visualMode"]', { value: visualMode });
+        await h.context.requestDashboardQuickMaterial("slides", "Tema", "Slides", h.context.collectDashboardQuickOptions(h.form, "slides"), "teacher");
+        assert.equal(JSON.parse(h.request.body.get("slideOptions")).visualMode, visualMode);
+    }
+});
+
+test("dashboard sends every detail/tone combination without replacing selections with defaults", async () => {
+    for (const detail of ["concise", "balanced", "detailed"]) for (const tone of ["balanced", "visual", "explanatory", "inspiring"]) {
+        const h = harness(); h.populate("slides");
+        for (const [key, value] of Object.entries({ detail, tone })) h.fields.set(`[data-dashboard-quick-option="${key}"]`, { value });
+        const options = h.context.collectDashboardQuickOptions(h.form, "slides");
+        await h.context.requestDashboardQuickMaterial("slides", "Verbos no passado", "Slides", options, "teacher");
+        const sent = JSON.parse(h.request.body.get("slideOptions"));
+        assert.equal(sent.detail, detail);
+        assert.equal(sent.tone, tone);
+    }
+});
+
 test("automatic quantity follows the request in the single main field", async () => {
     const h = harness(); h.populate("flashcards");
     h.fields.set('[data-dashboard-quick-option="contentMode"]', { value: "preserve" });

@@ -1471,12 +1471,12 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
 
         const slideOptions = materialType === "slides"
             ? normalizeSlideGenerationOptions(request.body.slideOptions, action) : undefined;
-        if (slideOptions) schemaConfig = schemaFor(materialType, slideOptions);
         const generationOptions = normalizeActivityGenerationOptions(materialType, request.body.generationOptions, action);
         if (slideOptions) Object.assign(generationOptions, {
             audience: slideOptions.audience, className: slideOptions.className,
             subject: slideOptions.subject, objective: slideOptions.objective
         });
+        if (slideOptions) schemaConfig = schemaFor(materialType, slideOptions, generationOptions);
 
         const fileText = await extractTextFromFile(request.file);
         const sourceText = [request.body.sourceText, fileText]
@@ -1650,7 +1650,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             });
         }
 
-        if (["json_validate_failed", "groq_empty_response", "groq_response_incomplete"].includes(error?.code)
+        if (["json_validate_failed", "groq_empty_response", "groq_response_incomplete", "invalid_slide_content"].includes(error?.code)
             || /^(empty_model_response|invalid_json_response)/.test(error?.message || "")) {
             return response.status(502).json({
                 error: error?.code === "groq_response_incomplete"

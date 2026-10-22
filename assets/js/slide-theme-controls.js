@@ -47,22 +47,22 @@ function syncSlideVisualModeHelp() {
     const fields = slideThemeFields();
     if (!fields.visualModeHelp) return;
     fields.visualModeHelp.textContent = fields.visualMode?.value === "ai"
-        ? "A IA escolherá uma paleta ligada ao assunto e variará os slides com a mesma identidade visual. Você poderá editar tudo depois."
+        ? "Na próxima geração, a IA escolherá cores, fontes e composições ligadas ao assunto. As ilustrações seguirão a mesma paleta. Você poderá editar depois."
         : "Usa uma identidade visual segura e previsível, pronta para projeção.";
 }
 
 function syncSlidePedagogyHelp() {
     const choices = [
         ["slides-detalhamento", [
-            "Conceitos com explicação breve e exemplo, em blocos de leitura.",
-            "Só as ideias essenciais, com definições breves.",
-            "Desenvolve como e por que acontece, com relações e exemplos explicados — não apenas mais tópicos."
+            "Ideia principal e exemplo breve: em geral, 35–60 palavras por slide de conteúdo.",
+            "Só o essencial: em geral, 15–35 palavras por slide de conteúdo.",
+            "Ideia principal, explicação e exemplo desenvolvido: em geral, 60–110 palavras por slide de conteúdo."
         ]],
         ["slides-tom", [
             "Explicação objetiva, didática e com exemplos do cotidiano.",
             "Comparações, sequências e palavras-chave para uma leitura rápida.",
             "Mostra como e por que acontece, com etapas e relações de causa e consequência.",
-            "Usa perguntas, situações reais e pequenos desafios para despertar a curiosidade."
+            "Abre com perguntas ou situações reais e propõe desafios para a turma. Não altera a paleta de cores."
         ]]
     ];
     choices.forEach(([id, descriptions]) => {
@@ -106,6 +106,11 @@ function applyThemeToAllSlides() {
         if (accent && fields.accent) accent.value = fields.accent.value;
         if (bg && fields.bg) bg.value = fields.bg.value;
         if (text && fields.text) text.value = fields.text.value;
+        card.dataset.slideVisualMode = "manual";
+        const editing = window.EducariaSlideDiagramEditing;
+        const saved = editing?.readCard(card);
+        const recolored = saved && editing.recolor(saved.data, saved.url, { accent: fields.accent?.value });
+        if (recolored) editing.writeCard(card, recolored);
     });
 
     dispatchBuilderContentChange("input");
@@ -130,6 +135,13 @@ function bindSlideThemeControls() {
     });
 
     fields.visualMode?.addEventListener("change", syncSlideVisualModeHelp);
+
+    // Capture before the live preview's palette migration runs.
+    for (const name of ["input", "change"]) document.addEventListener(name, (event) => {
+        if (!event.target?.matches?.('[data-field="slide-font"], [data-field="slide-accent-color"], [data-field="slide-color"], [data-field="slide-text-color"]')) return;
+        const card = event.target.closest("[data-slide-card]");
+        if (card) card.dataset.slideVisualMode = "manual";
+    }, true);
 
     document.addEventListener("click", (event) => {
         const button = event.target.closest("[data-apply-slides-theme]");

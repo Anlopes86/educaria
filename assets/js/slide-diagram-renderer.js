@@ -2,6 +2,25 @@
     "use strict";
     const escape = value => String(value).toWellFormed().replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[char]);
     const palette = ["#a9d6c7", "#b4cce5", "#e9bc77", "#c2b5df", "#e9a78e", "#b9d9bd"];
+    function normalizeTheme(raw) {
+        if (!/^#[0-9a-f]{6}$/i.test(raw?.accent || "")) return null;
+        return { accent: raw.accent.toLowerCase(), secondary_accent: /^#[0-9a-f]{6}$/i.test(raw.secondary_accent || "") ? raw.secondary_accent.toLowerCase() : raw.accent.toLowerCase() };
+    }
+    function mix(color, target, amount) {
+        return "#" + [1, 3, 5].map(i => Math.round(parseInt(color.slice(i, i + 2), 16) * (1 - amount) + parseInt(target.slice(i, i + 2), 16) * amount).toString(16).padStart(2, "0")).join("");
+    }
+    function themeTokens(raw) {
+        const theme = normalizeTheme(raw);
+        if (!theme) return { palette, ink: "#173c43", detail: "#34545b", caption: "#4f7076", line: "#527f83", central: "#245961", icon: "#244b52", border: "#d6e5e3", canvas: "#eef5f3" };
+        // White canvases and dark ink stay readable even for white/neon accents.
+        return {
+            palette: [mix(theme.accent, "#ffffff", .66), mix(theme.secondary_accent, "#ffffff", .66)],
+            ink: mix(theme.accent, "#000000", .82), detail: mix(theme.accent, "#000000", .74),
+            caption: mix(theme.accent, "#000000", .68), line: mix(theme.accent, "#000000", .48),
+            central: mix(theme.accent, "#000000", .66), icon: mix(theme.accent, "#000000", .78),
+            border: mix(theme.accent, "#ffffff", .82), canvas: mix(theme.accent, "#ffffff", .96)
+        };
+    }
     // Original, symbolic pictograms. Never accepted from generated markup.
     const symbols = {
         idea: '<path d="M17 32C5 21 12 6 24 6s19 15 7 26l-2 5H19Z"/><path d="M19 42h10M24 1v2M4 16l4 2M40 18l4-2"/>',
@@ -99,17 +118,17 @@
         const ratio = Math.min(Math.abs(dx) ? (from.width / 2 + padding) / Math.abs(dx) : Infinity, Math.abs(dy) ? (from.height / 2 + padding) / Math.abs(dy) : Infinity);
         return [x + dx * ratio, y + dy * ratio];
     }
-    function connection(link, nodes) {
+    function connection(link, nodes, colors) {
         const from = nodes.find(node => node.id === link.from), to = nodes.find(node => node.id === link.to);
         const [x1, y1] = port(from, to), [x2, y2] = port(to, from);
         const head = link.kind === "arrow" ? ' marker-end="url(#diagram-arrow)"' : "";
-        return `<path d="M${x1} ${y1} L${x2} ${y2}" fill="none" stroke="#527f83" stroke-width="3" stroke-linecap="round"${head}/>`;
+        return `<path d="M${x1} ${y1} L${x2} ${y2}" fill="none" stroke="${colors.line}" stroke-width="3" stroke-linecap="round"${head}/>`;
     }
-    function card(node, index, diagram) {
+    function card(node, index, diagram, colors) {
         const { x, y, width, height } = node;
-        const color = palette[diagram.layout === "comparison" ? index % 2 : index % palette.length];
+        const color = colors.palette[diagram.layout === "comparison" ? index % 2 : index % colors.palette.length];
         const central = diagram.layout === "concept-map" && index === 0;
-        const ink = central ? "#f6fbfa" : "#173c43";
+        const ink = central ? "#f6fbfa" : colors.ink;
         const step = diagram.layout === "process";
         // Repeated pictograms add noise, not information. Keep all labels/links;
         // ordered processes use their actual position, never an invented symbol.
@@ -128,25 +147,26 @@
         const labelBox = { x: textX, y: textY, width: textWidth, height: node.detail ? textHeight * .48 : textHeight };
         const detailBox = { x: textX, y: textY + textHeight * .48 + 5, width: textWidth, height: textHeight * .52 - 5 };
         const label = fitText(node.label, labelBox, width < 170 ? 19 : 24, width < 170 ? 14 : 16, 700, ink);
-        const detail = fitText(node.detail, detailBox, 19, 16, 500, central ? ink : "#34545b");
-        if (!label || !detail) return hasIcon ? card({ ...node, icon: "none" }, index, diagram) : null;
-        const background = `<rect x="${x}" y="${y+4}" width="${width}" height="${height}" rx="18" fill="#173c43" opacity=".1"/><rect x="${x}" y="${y}" width="${width}" height="${height}" rx="18" fill="${central ? "#245961" : "#ffffff"}" stroke="${central ? "#245961" : "#d6e5e3"}"/>`;
-        const accent = `<rect data-diagram-accent="${index}" x="${x}" y="${y+18}" width="4" height="${height-36}" rx="2" fill="${central ? "#a9d6c7" : color}"/>`;
+        const detail = fitText(node.detail, detailBox, 19, 16, 500, central ? ink : colors.detail);
+        if (!label || !detail) return hasIcon ? card({ ...node, icon: "none" }, index, diagram, colors) : null;
+        const background = `<rect x="${x}" y="${y+4}" width="${width}" height="${height}" rx="18" fill="${colors.ink}" opacity=".1"/><rect x="${x}" y="${y}" width="${width}" height="${height}" rx="18" fill="${central ? colors.central : "#ffffff"}" stroke="${central ? colors.central : colors.border}"/>`;
+        const accent = `<rect data-diagram-accent="${index}" x="${x}" y="${y+18}" width="4" height="${height-36}" rx="2" fill="${central ? colors.palette[0] : color}"/>`;
         const badge = hasBadge ? `<rect x="${symbolX-6}" y="${symbolY-6}" width="${iconSize+12}" height="${iconSize+12}" rx="12" fill="${color}"/>` : "";
-        const icon = hasIcon ? `<g data-diagram-icon="${node.icon}" transform="translate(${symbolX} ${symbolY}) scale(${iconSize/48})" fill="none" stroke="#244b52" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">${symbols[node.icon]}</g>` : "";
-        const number = step ? `<text data-diagram-step="${index+1}" x="${symbolX+iconSize/2}" y="${symbolY+iconSize/2+8}" text-anchor="middle" fill="#173c43" font-family="Arial, sans-serif" font-size="24" font-weight="700">${index+1}</text>` : "";
+        const icon = hasIcon ? `<g data-diagram-icon="${node.icon}" transform="translate(${symbolX} ${symbolY}) scale(${iconSize/48})" fill="none" stroke="${colors.icon}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round">${symbols[node.icon]}</g>` : "";
+        const number = step ? `<text data-diagram-step="${index+1}" x="${symbolX+iconSize/2}" y="${symbolY+iconSize/2+8}" text-anchor="middle" fill="${colors.ink}" font-family="Arial, sans-serif" font-size="24" font-weight="700">${index+1}</text>` : "";
         return background + accent + badge + icon + number + label.markup + detail.markup;
     }
-    function render(raw) {
+    function render(raw, theme) {
         const diagram = root.EducariaSlideDiagramModel?.normalize(raw);
         if (!diagram || diagram.status !== "ready") return null;
         const nodes = positions(diagram);
-        const title = fitText(diagram.title, { x: 28, y: 14, width: 544, height: 62 }, 27, 22, 700);
-        const caption = fitText(diagram.caption, { x: 30, y: 556, width: 540, height: 38 }, 16, 13, 500, "#4f7076");
-        const cards = nodes.map((node, index) => card(node, index, diagram));
+        const colors = themeTokens(theme);
+        const title = fitText(diagram.title, { x: 28, y: 14, width: 544, height: 62 }, 27, 22, 700, colors.ink);
+        const caption = fitText(diagram.caption, { x: 30, y: 556, width: 540, height: 38 }, 16, 13, 500, colors.caption);
+        const cards = nodes.map((node, index) => card(node, index, diagram, colors));
         if (!title || !caption || cards.some(value => value === null)) return null;
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600" role="img"><title>${escape(diagram.description)}</title><defs><marker id="diagram-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 1 9 5 0 9Z" fill="#527f83"/></marker></defs><rect width="600" height="600" rx="28" fill="#eef5f3"/>${title.markup}${diagram.links.map(link => connection(link, nodes)).join("")}${cards.join("")}${caption.markup}</svg>`;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="600" height="600" role="img"><title>${escape(diagram.description)}</title><defs><marker id="diagram-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 1 9 5 0 9Z" fill="${colors.line}"/></marker></defs><rect width="600" height="600" rx="28" fill="${colors.canvas}"/>${title.markup}${diagram.links.map(link => connection(link, nodes, colors)).join("")}${cards.join("")}${caption.markup}</svg>`;
         return { url: `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`, description: diagram.description };
     }
-    root.EducariaSlideDiagramRenderer = Object.freeze({ render, positions, fitText });
+    root.EducariaSlideDiagramRenderer = Object.freeze({ render, positions, fitText, normalizeTheme });
 })(typeof window === "undefined" ? globalThis : window);

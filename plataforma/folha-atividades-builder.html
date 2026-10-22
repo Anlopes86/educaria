@@ -26,6 +26,7 @@
     <script src="../assets/js/crossword-core.js" defer></script>
     <script src="../assets/js/worksheet-core.js" defer></script>
     <script src="../assets/js/worksheet-view.js" defer></script>
+    <script src="../assets/js/worksheet-layout.js" defer></script>
     <script src="../assets/js/worksheet-builder.js" defer></script>
     <script src="../assets/js/ai-material-generator.js" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
@@ -47,8 +48,8 @@
                     <p class="worksheet-help" data-worksheet-source-help role="status"></p>
                     <div class="worksheet-field-pair"><label class="worksheet-field">Ano ou público<input id="worksheet-audience" maxlength="160" placeholder="Ex.: 7º ano"></label><label class="worksheet-field">Dificuldade<select id="worksheet-difficulty"><option value="easy">Fácil</option><option value="medium" selected>Média</option><option value="hard">Difícil</option></select></label></div>
                     <label class="worksheet-field">Tamanho da atividade<select id="worksheet-page-mode"><option value="compact">Compacta — tentar uma página</option><option value="roomy">Mais exercícios — permitir várias páginas</option></select></label>
-                    <label class="worksheet-field">Organização da página<select id="worksheet-columns"><option value="one">Uma coluna — mais espaço para cada atividade</option><option value="two">Duas colunas — mais compacto</option></select></label>
-                    <p class="worksheet-help">Você pode alternar as colunas depois de gerar, sem usar IA. A quantidade escolhida é preservada, mesmo quando precisa de mais páginas.</p>
+                    <label class="worksheet-field">Organização da página<select id="worksheet-columns"><option value="auto">Automático — adaptar a cada atividade</option><option value="one">Uma coluna — mais espaço para cada atividade</option><option value="two">Duas colunas — mais compacto</option></select></label>
+                    <p class="worksheet-help">No automático, atividades menores ficam lado a lado; grades maiores e pistas longas ganham a largura inteira. Você pode trocar o formato sem usar IA. Nenhuma palavra é descartada.</p>
                     <fieldset class="worksheet-selection worksheet-activity-options"><legend>Quais atividades você quer?</legend>
                         <p class="worksheet-help worksheet-selection-help">Cada jogo segue a orientação geral. Abra suas opções para definir quantidades, pistas ou um tema diferente só para ele.</p>
                         <div class="worksheet-activity-choice" data-ws-choice="wordtrail">
@@ -101,7 +102,7 @@
                 </section>
             </div>
             <aside class="worksheet-preview" aria-label="Prévia da impressão" tabindex="-1">
-                <div class="worksheet-preview-toolbar"><div><span class="focus-eyebrow" data-worksheet-layout-label>Prévia A4 · uma coluna</span><strong data-worksheet-page-count>Prepare sua folha</strong></div><div role="group" aria-label="Versão da prévia"><button type="button" data-worksheet-preview-mode="student" aria-pressed="true">Folha do aluno</button><button type="button" data-worksheet-preview-mode="answers" aria-pressed="false">Gabarito</button></div></div>
+                <div class="worksheet-preview-toolbar"><div><span class="focus-eyebrow" data-worksheet-layout-label>Prévia A4 · organização automática</span><strong data-worksheet-page-count>Prepare sua folha</strong></div><div role="group" aria-label="Versão da prévia"><button type="button" data-worksheet-preview-mode="student" aria-pressed="true">Folha do aluno</button><button type="button" data-worksheet-preview-mode="answers" aria-pressed="false">Gabarito</button></div></div>
                 <p class="worksheet-validation" data-worksheet-validation role="status"></p>
                 <ul class="worksheet-review-warnings" data-worksheet-review-warnings aria-label="Pontos para revisar antes de imprimir" hidden></ul>
                 <div class="worksheet-print-actions"><button type="button" class="platform-link-button platform-link-primary" data-worksheet-print="student" disabled>Imprimir folha / Salvar PDF</button><button type="button" class="platform-link-button platform-link-secondary" data-worksheet-print="answers" disabled>Imprimir gabarito</button></div>

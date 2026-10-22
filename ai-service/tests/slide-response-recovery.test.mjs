@@ -26,6 +26,17 @@ const request = (payload, config = schema, status = 400) => generateGroqStructur
     fetchImpl: async () => new Response(JSON.stringify(payload), { status })
 });
 
+test("illustration recovery preserves all structured teaching blocks but never invents missing lesson fields", () => {
+    const config = schemaFor("slides", { includeIllustration: true, detail: "detailed", tone: "inspiring" }, { contentMode: "auto" });
+    const material = completeMaterial(withoutMetadata());
+    material.slides[0].body = { essential: "Como a energia chega até nós?", explanation: "A energia é transferida pela alimentação.", example: "Uma planta alimenta um consumidor.", challenge: "Trace um outro caminho possível." };
+    const recovered = recoverRejectedSlideResponse(JSON.stringify(material), config);
+    assert.deepEqual(recovered.slides[0].body, material.slides[0].body);
+    assert.equal(normalizeSlidesMaterial(recovered, { includeIllustration: true }).slides[0].body, Object.values(material.slides[0].body).join("\n\n"));
+    delete material.slides[0].body.explanation;
+    assert.equal(recoverRejectedSlideResponse(JSON.stringify(material), config), null);
+});
+
 test("the exact missing version/description/title failure recovers a valid diagram without inventing nodes or links", async () => {
     const material = completeMaterial(withoutMetadata());
     const original = structuredClone(material);

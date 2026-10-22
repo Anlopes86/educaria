@@ -143,7 +143,9 @@ O limite diário interno é renovado à meia-noite no fuso definido por `AI_PROV
 
 Nunca coloque a chave no frontend, no GitHub ou nesta documentação. No modo `auto`, a presença de `GROQ_API_KEY` ativa o Groq para textos. O Gemini continua disponível como retorno rápido e também permanece responsável por imagens enquanto `AI_IMAGE_GENERATION_ENABLED=true`. Para forçar um provedor específico, use `AI_TEXT_PROVIDER=groq` ou `AI_TEXT_PROVIDER=gemini`.
 
-O limite de entrada do Groq gratuito é protegido por `GROQ_MAX_PROMPT_TOKENS`. Quando um arquivo ultrapassa esse valor, o professor recebe uma mensagem para reduzir o conteúdo e nenhuma chamada é enviada ao provedor.
+O limite de entrada é protegido por `GROQ_MAX_PROMPT_TOKENS` (4000 por padrão), uma proteção interna, não uma leitura automática da cota do Groq. A estimativa considera o prompt completo (`ceil(caracteres / 3)`): instruções da plataforma, opções e texto digitado/extraído do arquivo. Quando ultrapassa esse valor, a API retorna `413`/`content_too_long`, sem chamar o provedor e com devolução das reservas. O conteúdo do professor nunca é cortado silenciosamente para caber.
+
+Nos slides, mantenha as instruções internas concisas. O teste de orçamento deve usar `promptFor` com **slideOptions e generationOptions**, como a rota real: omitir o segundo bloco esconde regressões, especialmente com ilustrações, visual personalizado e detalhamento alto. A suíte cobre essas combinações com texto-base de aproximadamente 2000 caracteres, sem aumentar o limite nem remover os critérios pedagógicos, de fidelidade e de estrutura das ilustrações.
 
 Em produção, use `AI_CREDIT_STORE=firestore`. O serviço grava um documento diário por usuário e faz reservas e acertos em operações atômicas. Isso impede que duas gerações simultâneas do mesmo professor gastem o mesmo saldo. Também permite executar mais de uma instância do backend sem perder a separação dos usuários.
 

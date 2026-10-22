@@ -1,6 +1,7 @@
 import { slideIllustrationSchema } from "../slide-illustration-policy.js";
 import { discoverySchemas } from "./discovery.js";
 import { worksheetSchema } from "./worksheet.js";
+import { slideContentSchema } from "./slide-content.js";
 
 const quizSchema = {
     type: "object",
@@ -345,7 +346,7 @@ const materialSchemas = new Map([
 export const MATERIAL_TYPES = Object.freeze([...materialSchemas.keys()]);
 
 /** Return a fresh provider config while preserving the existing schema contract. */
-export function schemaFor(materialType, slideOptions) {
+export function schemaFor(materialType, slideOptions, generationOptions) {
     const config = materialSchemas.get(materialType);
     if (!config) return null;
     if (materialType === "worksheet") return { ...config, schema: worksheetSchema(slideOptions) };
@@ -367,11 +368,18 @@ export function schemaFor(materialType, slideOptions) {
         }
         return { ...config, schema };
     }
-    if (materialType === "slides" && slideOptions?.includeIllustration === false) {
+    if (materialType === "slides" && (slideOptions?.includeIllustration === false || slideOptions?.visualMode === "ai" || generationOptions)) {
         const schema = structuredClone(config.schema);
         const slide = schema.properties.slides.items;
-        delete slide.properties.illustration;
-        slide.required = slide.required.filter(key => key !== "illustration");
+        if (slideOptions?.includeIllustration === false) {
+            delete slide.properties.illustration;
+            slide.required = slide.required.filter(key => key !== "illustration");
+        }
+        if (generationOptions) slide.properties.body = slideContentSchema(slideOptions, generationOptions);
+        if (slideOptions?.visualMode === "ai") {
+            slide.properties.composition = { type: "string", enum: ["editorial", "focus", "panels"] };
+            slide.required.push("composition");
+        }
         return { ...config, schema };
     }
     return { ...config };

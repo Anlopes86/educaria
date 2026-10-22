@@ -26,9 +26,12 @@ export function normalizeSlideGenerationOptions(raw, action = "") {
     if (!options || typeof options !== "object" || Array.isArray(options)) throw invalidOptions();
     const detail = normalize(optionText(options.detail ?? legacyValue(action, "Nível de detalhamento"), 60));
     const tone = normalize(optionText(options.tone ?? legacyValue(action, "Tom desejado"), 60));
+    const visualMode = options.visualMode ?? (/visual\s+(personalizado|tematico|temático)|personalizar\s+o\s+visual|modo\s+visual:\s*personalizado/i.test(action) ? "ai" : "standard");
+    if (!["ai", "standard"].includes(visualMode)) throw invalidOptions();
     if (options.includeIllustration != null && ![true, false, "true", "false"].includes(options.includeIllustration)) throw invalidOptions();
     return {
         includeIllustration: options.includeIllustration === true || options.includeIllustration === "true",
+        visualMode,
         detail: ["concise", "mais enxuto"].includes(detail) ? "concise" : ["detailed", "mais detalhado"].includes(detail) ? "detailed" : "balanced",
         tone: ["visual", "mais visual e direto"].includes(tone) ? "visual" : ["explanatory", "mais explicativo"].includes(tone) ? "explanatory" : ["inspiring", "mais inspirador"].includes(tone) ? "inspiring" : "balanced",
         audience: optionText(options.audience ?? legacyValue(action, "Público ou ano|Ano ou público"), 160),
@@ -58,15 +61,15 @@ export function slideAudienceProfile(options) {
 
 export function slidePedagogyInstructions(options) {
     const details = {
-        concise: "MAIS ENXUTO: selecione ideias essenciais com definições breves. Use 1 a 2 blocos curtos, sem explicações secundárias, desde que isso não contrarie um pedido específico de aprofundamento ou preservação do texto.",
-        balanced: "EQUILIBRADO: apresente um conceito com explicação breve e um exemplo pertinente. Use frases completas, normalmente 2 a 3 blocos. A estrutura pode ser narrativa, comparação ou lista; não entregue só palavras-chave.",
+        concise: "MAIS ENXUTO: selecione ideias essenciais com definições breves. Use 1 a 2 blocos curtos, cerca de 15 a 35 palavras por slide de desenvolvimento, sem explicações secundárias; pedidos de aprofundamento ou preservação do texto prevalecem.",
+        balanced: "EQUILIBRADO: apresente um conceito com explicação breve e um exemplo pertinente. Use frases completas, 2 a 3 blocos e cerca de 35 a 60 palavras por slide de desenvolvimento. Não entregue só palavras-chave; pedidos específicos prevalecem.",
         detailed: "MAIS DETALHADO: desenvolva o raciocínio no body. Para cada ideia central, explique o que significa, como ou por que acontece e uma consequência ou aplicação. Inclua exemplos concretos explicados, não apenas mencionados. Como referência, use 60 a 110 palavras nos slides de desenvolvimento quando houver conteúdo suficiente, em 2 a 4 blocos legíveis. Essa faixa não é meta de preenchimento nem motivo para cortar um texto fornecido. Não basta aumentar o número de bullets. O detalhe precisa aparecer no body, não apenas em teacher_notes."
     };
     const tones = {
         balanced: "CLARO E EQUILIBRADO: linguagem objetiva, acolhedora e didática. Títulos descritivos, termos definidos e exemplos cotidianos.",
         visual: "MAIS VISUAL E DIRETO: títulos curtos e concretos; use comparações, sequências com setas (→), pares antes/depois ou perguntas curtas quando fizerem sentido. Prefira estruturas esquemáticas a frases discursivas. Não dependa de imagens geradas.",
         explanatory: "MAIS EXPLICATIVO: explicite o que é, como funciona e por que acontece. Conecte causa e consequência com linguagem clara e exemplos resolvidos ou etapas. Não entregue apenas palavras-chave soltas.",
-        inspiring: "MAIS INSPIRADOR: abra espaço para curiosidade com uma pergunta ligada ao tema, situações reais próximas do público e pequenos desafios para a turma. Convide a observar, imaginar ou propor uma solução. Mantenha rigor; evite slogans, promessas e frases motivacionais genéricas."
+        inspiring: "MAIS INSPIRADOR: abra os slides de desenvolvimento com uma pergunta instigante ou situação real próxima do público. Feche com pequenos desafios concretos para observar, comparar ou propor uma solução, sem dar a resposta. Varie os desafios, não só os títulos. Mantenha rigor; evite slogans e frases motivacionais genéricas."
     };
     const audiences = {
         early: "Educação infantil: linguagem oral simples, situações concretas, brincadeiras e observação; não presuma leitura autônoma ou conhecimentos abstratos.",

@@ -9,11 +9,12 @@
         // A stale-image guard, not a security/authentication mechanism.
         return `${url.length}:${hash >>> 0}`;
     }
-    function encode(raw, url) {
+    function encode(raw, url, rawTheme) {
         const diagram = root.EducariaSlideDiagramModel?.normalize(raw);
         const image = imageSignature(url);
         if (diagram?.status !== "ready" || !image) return "";
-        const data = JSON.stringify({ version: 1, image, diagram });
+        const theme = root.EducariaSlideDiagramRenderer?.normalizeTheme(rawTheme);
+        const data = JSON.stringify({ version: 1, image, diagram, ...(theme ? { theme } : {}) });
         return data.length <= maxDataLength ? data : "";
     }
     function decode(data, url) {
@@ -37,9 +38,17 @@
             nodes: original.nodes.map((node, i) => ({ ...node, label: changes.nodes[i].label, detail: changes.nodes[i].detail }))
         });
         if (diagram.status !== "ready") return { error: "Preencha os títulos e a descrição, respeitando os limites de caracteres." };
-        const image = root.EducariaSlideDiagramRenderer?.render(diagram);
+        // decode has already validated the saved envelope and the current image.
+        const theme = root.EducariaSlideDiagramRenderer?.normalizeTheme(JSON.parse(data).theme);
+        const image = root.EducariaSlideDiagramRenderer?.render(diagram, theme);
         if (!image) return { error: "Um dos textos não cabe neste desenho. Encurte os rótulos ou as explicações para manter a leitura." };
-        return { ...image, data: encode(diagram, image.url) };
+        return { ...image, data: encode(diagram, image.url, theme) };
+    }
+    function recolor(data, url, theme) {
+        const diagram = decode(data, url);
+        if (!diagram) return null; // Never recolor an uploaded or replaced image.
+        const image = root.EducariaSlideDiagramRenderer?.render(diagram, theme);
+        return image ? { ...image, data: encode(diagram, image.url, theme) } : null;
     }
     function field(card, name) { return card?.querySelector(`[data-field="${name}"]`); }
     function readCard(card) {
@@ -72,5 +81,5 @@
         writeField(card, "slide-image-mode", "Ilustração da IA");
         return true;
     }
-    root.EducariaSlideDiagramEditing = Object.freeze({ encode, decode, revise, readCard, writeCard, writeField });
+    root.EducariaSlideDiagramEditing = Object.freeze({ encode, decode, revise, recolor, readCard, writeCard, writeField });
 })(typeof window === "undefined" ? globalThis : window);

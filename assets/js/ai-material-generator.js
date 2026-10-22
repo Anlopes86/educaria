@@ -939,7 +939,7 @@ function applySlidesFromStructuredData(payload) {
         if (body) body.value = compactSlideBodyText(slide.body || "", slideType);
         const uploadedImage = index === 0 && /^data:image\/(webp|png|jpeg);base64,/.test(payload?.cover_image || "")
             && payload.cover_image.length <= 160 * 1024 ? payload.cover_image : "";
-        const resolvedImage = window.EducariaSlideIllustrations?.resolveImage(payload, slide, index)
+        const resolvedImage = window.EducariaSlideIllustrations?.resolveImage({ ...payload, visual_mode: usePersonalizedVisual ? "ai" : "standard", visual_theme: aiTheme }, slide, index)
             || { url: uploadedImage, description: "", mode: uploadedImage ? "Enviar imagem" : "Sem imagem" };
         if (imagePrompt) imagePrompt.value = resolvedImage.description;
         if (imageUrl) imageUrl.value = resolvedImage.url;
@@ -947,8 +947,12 @@ function applySlidesFromStructuredData(payload) {
         if (accentColor) accentColor.value = visual.accent;
         if (slideColor) slideColor.value = visual.background;
         if (textColor) textColor.value = visual.text;
-        if (font && usePersonalizedVisual) setSelectByText(font, aiTheme.font);
+        if (font) setSelectByText(font, usePersonalizedVisual ? aiTheme.font : "Destaque moderno");
         card.dataset.slideType = slideType;
+        card.dataset.slideVisualMode = usePersonalizedVisual ? "ai" : "standard";
+        card.dataset.slideComposition = usePersonalizedVisual
+            ? (["editorial", "focus", "panels"].includes(slide.composition) ? slide.composition : ["cover", "closing", "question"].includes(slideType) ? "focus" : "editorial")
+            : "classic";
 
         if (imageMode) {
             if (resolvedImage.mode === "Ilustração da IA" && !Array.from(imageMode.options).some((option) => option.text === resolvedImage.mode)) {
@@ -2130,7 +2134,7 @@ async function generateMaterial(materialType, button, options = {}) {
     const classText = config.classId ? String(document.getElementById(config.classId)?.value || "").trim() : "";
     const requestedCount = Number(countText) || undefined;
     const slideOptions = materialType === "slides" ? {
-        detail: detailText, tone: toneText, audience: audienceText,
+        detail: detailText, tone: toneText, audience: audienceText, visualMode,
         includeIllustration: document.getElementById("slides-incluir-ilustracao")?.value === "true",
         className: classText, subject: subjectText, objective: objectiveText
     } : undefined;

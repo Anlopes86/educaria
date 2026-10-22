@@ -149,6 +149,7 @@ function buildFlashcardsPreview() {
             const back = textValue(card, "back") || "Sem verso";
             const example = textValue(card, "example") || "Sem anotações";
             const rawColors = {
+                visualMode: slide.dataset.slideVisualMode,
                 frontColor: colorValue(card, "front-color", "#ffffff"),
                 backColor: colorValue(card, "back-color", "#dbeafe"),
                 textColor: colorValue(card, "text-color", "#0f172a")
@@ -230,6 +231,7 @@ function buildSlidesPreview() {
             syncPreviewPaletteFields(slide, { "slide-color": slideColor, "slide-text-color": textColor, "slide-accent-color": accentColor });
             const slideFont = selectValue(slide, "slide-font") || "Destaque moderno";
             const bodyMarkup = renderSlidePreviewBody(body);
+            const composition = window.EducariaVisuals?.slideComposition({ composition: slide.dataset.slideComposition, imageUrl, body }) || "classic";
 
             const textBlock = `
                 <div class="slide-preview-text slide-preview-text--${escapeHtml(slideFont.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, "-"))}" style="color: ${escapeHtml(textColor)};">
@@ -252,7 +254,7 @@ function buildSlidesPreview() {
             }
 
             return `
-                <section class="live-preview-card slide-preview-card" style="--slide-preview-accent: ${escapeHtml(accentColor)}; --slide-preview-bg: ${escapeHtml(slideColor)}; --slide-preview-text: ${escapeHtml(textColor)};">
+                <section class="live-preview-card slide-preview-card" data-slide-composition="${escapeHtml(composition)}" style="--slide-preview-accent: ${escapeHtml(accentColor)}; --slide-preview-bg: ${escapeHtml(slideColor)}; --slide-preview-text: ${escapeHtml(textColor)};">
                     <div class="slide-preview-kicker"><span>Slide ${index + 1}</span><span>${escapeHtml(index === 0 ? "Abertura" : index === slides.length - 1 ? "Fechamento" : "Conteúdo")}</span></div>
                     <div class="preview-chip-row">
                         <span class="preview-chip">${escapeHtml(slideFont)}</span>
