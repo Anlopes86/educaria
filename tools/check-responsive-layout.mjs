@@ -1124,6 +1124,24 @@ async function auditPage(pageConfig) {
         });
         if (sidebarEvaluation.result.value) {
         await waitForPageCondition(cdp, "Boolean(document.querySelector('[data-sidebar-mobile-toggle]'))");
+        if (localPagePath === "plataforma/index.html" && !auditDisableDashboardTour) {
+            // The first guide step opens the sidebar and makes its toggle inert.
+            // Open/dismiss the guide through its controls so a pending auto-start
+            // cannot race this independent menu interaction.
+            await cdp.send("Runtime.evaluate", {
+                expression: `(() => {
+                    document.querySelector('[data-dashboard-tour-start]')?.click();
+                    document.querySelector('.dashboard-tour:not([hidden]) [data-dashboard-tour-close]')?.click();
+                })()`
+            });
+        }
+        await cdp.send("Runtime.evaluate", {
+            expression: `(() => {
+                if (document.querySelector('[data-sidebar-mobile-toggle]')?.getAttribute('aria-expanded') === 'true') {
+                    document.querySelector('[data-sidebar-mobile-close]')?.click();
+                }
+            })()`
+        });
         await cdp.send("Runtime.evaluate", {
             expression: `document.querySelector('[data-sidebar-mobile-toggle]')?.click()`
         });
