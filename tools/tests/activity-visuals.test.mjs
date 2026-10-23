@@ -9,6 +9,38 @@ vm.runInContext(await read("assets/js/activity-visuals.js"), context);
 const visual = context.EducariaVisuals;
 const plain = value => JSON.parse(JSON.stringify(value));
 
+test("flashcard previews render without a slide object and keep text and custom colours", async () => {
+    const root = { innerHTML: "" };
+    const fields = Object.fromEntries(Object.entries({ front: "Go <went>", back: "Ir", example: "Anotação do professor", "front-color": "#e0f7f1", "back-color": "#fffaf1", "text-color": "#463563" }).map(([name, value]) => [`[data-field="${name}"]`, { value }]));
+    const card = { querySelector: selector => fields[selector] || null };
+    const scope = vm.createContext({ window: { EducariaVisuals: visual }, document: {
+        addEventListener() {}, getElementById: () => null,
+        querySelector: selector => selector === "[data-flashcards-preview]" ? root : null,
+        querySelectorAll: selector => selector === "[data-flashcard]" ? [card] : []
+    } });
+    vm.runInContext(await read("assets/js/live-preview.js"), scope);
+    scope.renderLivePreviews();
+    assert.match(root.innerHTML, /Go &lt;went&gt;/);
+    assert.match(root.innerHTML, /Anotação do professor/);
+    assert.match(root.innerHTML, /background: #e0f7f1/);
+    assert.equal(fields['[data-field="front-color"]'].value, "#e0f7f1");
+});
+
+test("slide previews keep an explicit AI palette even when it matches an old default", async () => {
+    const root = { innerHTML: "" };
+    const fields = Object.fromEntries(Object.entries({ "slide-title": "Tema", "slide-color": "#102a43", "slide-text-color": "#f8fafc", "slide-accent-color": "#2dd4bf" }).map(([name, value]) => [`[data-field="${name}"]`, { value }]));
+    const slide = { dataset: { slideVisualMode: "ai" }, querySelector: selector => fields[selector] || null };
+    const scope = vm.createContext({ window: { EducariaVisuals: visual }, document: {
+        addEventListener() {}, getElementById: () => null,
+        querySelector: selector => selector === "[data-slides-preview]" ? root : null,
+        querySelectorAll: selector => selector === "[data-slide-card]" ? [slide] : []
+    } });
+    vm.runInContext(await read("assets/js/live-preview.js"), scope);
+    scope.renderLivePreviews();
+    assert.match(root.innerHTML, /--slide-preview-bg: #102a43/);
+    assert.equal(fields['[data-field="slide-color"]'].value, "#102a43");
+});
+
 test("fresh editor imports enforce wheel and matching defaults even with an older AI response", async () => {
     const source = await read("assets/js/ai-material-generator.js");
     for (const [type, functionName, arrayKey] of [["wheel", "applyWheelFromStructuredData", "segments"], ["match", "applyMatchFromStructuredData", "pairs"]]) {

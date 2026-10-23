@@ -149,7 +149,6 @@ function buildFlashcardsPreview() {
             const back = textValue(card, "back") || "Sem verso";
             const example = textValue(card, "example") || "Sem anotações";
             const rawColors = {
-                visualMode: slide.dataset.slideVisualMode,
                 frontColor: colorValue(card, "front-color", "#ffffff"),
                 backColor: colorValue(card, "back-color", "#dbeafe"),
                 textColor: colorValue(card, "text-color", "#0f172a")
@@ -223,6 +222,7 @@ function buildSlidesPreview() {
             const imagePrompt = textValue(slide, "slide-image-prompt") || "Sem imagem definida";
             const imageUrl = textValue(slide, "slide-image-url");
             const rawColors = {
+                visualMode: slide.dataset.slideVisualMode,
                 slideColor: colorValue(slide, "slide-color"),
                 textColor: colorValue(slide, "slide-text-color", "#0f172a"),
                 accentColor: colorValue(slide, "slide-accent-color", "#0ea5e9")

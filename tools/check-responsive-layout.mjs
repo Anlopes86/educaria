@@ -1029,7 +1029,14 @@ async function auditPage(pageConfig) {
                 return true;
             })()`
         });
-        await delay(1800);
+        // Wait for this editor's record, not a fixed CI timing budget or another activity's active id.
+        await waitForPageCondition(cdp, `(() => {
+            const lesson = typeof readActiveLesson === 'function' ? readActiveLesson() : null;
+            const state = document.querySelector('[data-builder-save-status], [data-quiz-save-status]')?.dataset.state;
+            return lesson?.materialType === ${JSON.stringify(builderJourneyType)}
+                && lesson?.subject === 'Ciências' && lesson?.grade === '7º ano'
+                && ['local', 'saved'].includes(state);
+        })()`, 80);
         const quizEvaluation = await cdp.send("Runtime.evaluate", {
             expression: `(() => {
                 const lesson = typeof readActiveLesson === 'function' ? readActiveLesson() : null;
@@ -1207,6 +1214,10 @@ async function auditPage(pageConfig) {
         imageUploadJourney = await checkImageUpload(cdp, localPagePath.endsWith("criar-aula.html"));
     }
     cdp.close();
+    // Disconnecting CDP alone leaves earlier editors alive. Their autosave/storage
+    // listeners can overwrite the shared active lesson while the next case runs.
+    const closed = await fetch(`http://127.0.0.1:${port}/json/close/${target.id}`);
+    if (!closed.ok) throw new Error(`Could not close the completed audit page (${closed.status}).`);
     return { ...evaluation.result.value, mobileMenu, topbarRestore, builderNavigatorJourney, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, storageFailureJourney, recoveryJourney, imageUploadJourney, screenshotPath, diagnostics: cdp.diagnostics };
 }
 
