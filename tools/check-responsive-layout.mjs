@@ -79,9 +79,26 @@ async function waitForDebugger() {
 }
 
 async function createPage(url) {
-    const response = await fetch(`http://127.0.0.1:${port}/json/new?${encodeURIComponent(url)}`, { method: "PUT" });
-    if (!response.ok) throw new Error(`Could not create browser page (${response.status}).`);
-    return response.json();
+    const version = await (await fetch(`http://127.0.0.1:${port}/json/version`)).json();
+    const browser = connect(version.webSocketDebuggerUrl);
+    await browser.opened;
+    // Each case needs its own storage, including delayed pagehide saves from the
+    // previous editor. Reloads within a case still share the same draft/account.
+    const { browserContextId } = await browser.send("Target.createBrowserContext");
+    try {
+        const { targetId } = await browser.send("Target.createTarget", { url, browserContextId });
+        const targets = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
+        const target = targets.find(item => item.id === targetId);
+        if (!target?.webSocketDebuggerUrl) throw new Error("Could not locate the isolated audit page.");
+        return { ...target, async dispose() {
+            try { await browser.send("Target.disposeBrowserContext", { browserContextId }); }
+            finally { browser.close(); }
+        } };
+    } catch (error) {
+        try { await browser.send("Target.disposeBrowserContext", { browserContextId }); }
+        finally { browser.close(); }
+        throw error;
+    }
 }
 
 function connect(wsUrl) {
@@ -1214,10 +1231,7 @@ async function auditPage(pageConfig) {
         imageUploadJourney = await checkImageUpload(cdp, localPagePath.endsWith("criar-aula.html"));
     }
     cdp.close();
-    // Disconnecting CDP alone leaves earlier editors alive. Their autosave/storage
-    // listeners can overwrite the shared active lesson while the next case runs.
-    const closed = await fetch(`http://127.0.0.1:${port}/json/close/${target.id}`);
-    if (!closed.ok) throw new Error(`Could not close the completed audit page (${closed.status}).`);
+    await target.dispose();
     return { ...evaluation.result.value, mobileMenu, topbarRestore, builderNavigatorJourney, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, storageFailureJourney, recoveryJourney, imageUploadJourney, screenshotPath, diagnostics: cdp.diagnostics };
 }
 
