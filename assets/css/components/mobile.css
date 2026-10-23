@@ -282,7 +282,7 @@
 
     /* Controles de apresentação ficam em uma única faixa rolável. */
     .presentation-shell {
-        --presentation-stage-height: calc(100dvh - 82px);
+        --presentation-stage-height: calc(var(--presentation-viewport-height, 100vh) - 82px);
         width: calc(100vw - 8px);
         gap: 8px;
         padding: 4px 0 6px;

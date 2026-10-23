@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="dashboard.title">Painel do Professor | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261022-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261023-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -29,7 +29,7 @@
     <script src="../assets/js/slide-diagram-editing.js?v=20261022-1" defer></script>
     <script src="../assets/js/slide-illustrations.js?v=20261022-1" defer></script>
     <script src="../assets/js/discovery-input.js" defer></script>
-    <script src="../assets/js/teacher-dashboard.js?v=20261022-1" defer></script>
+    <script src="../assets/js/teacher-dashboard.js?v=20261022-2" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
@@ -122,6 +122,25 @@
                         <a href="biblioteca.html" class="platform-link-button platform-link-secondary" data-i18n="dashboard.nav.library">Biblioteca</a>
                         <span class="ai-credits-pill" data-ai-credits>Créditos de IA: carregando...</span>
                     </div>
+                    <a href="folha-atividades-builder.html?new=1" class="dashboard-worksheet-entry" aria-labelledby="worksheet-entry-title" aria-describedby="worksheet-entry-copy">
+                        <svg class="dashboard-worksheet-art" viewBox="0 0 100 128" fill="none" aria-hidden="true" focusable="false">
+                            <rect x="16" y="12" width="76" height="108" rx="10" fill="#d8dfca" transform="rotate(6 54 66)"/>
+                            <rect x="8" y="4" width="76" height="108" rx="10" fill="#fff" stroke="#b6c7bc" stroke-width="2"/>
+                            <path d="M20 19h41M20 26h26" stroke="#21766d" stroke-width="4" stroke-linecap="round"/>
+                            <rect x="20" y="37" width="34" height="34" rx="4" fill="#dff2e9"/>
+                            <path d="M31 37v34M43 37v34M20 48h34M20 60h34" stroke="#a9c7b8"/>
+                            <path d="m26 42 22 23" stroke="#e5ad4f" stroke-width="5" stroke-linecap="round"/>
+                            <path d="M62 42h10M62 52h10M62 62h10M20 84h41M20 95h30" stroke="#c2d0c9" stroke-width="3" stroke-linecap="round"/>
+                            <circle cx="78" cy="101" r="17" fill="#21766d"/>
+                            <path d="m70 101 5 5 10-11" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <div class="dashboard-worksheet-copy">
+                            <span class="dashboard-worksheet-label" data-i18n="dashboard.worksheet.label">Da tela para o papel</span>
+                            <h2 id="worksheet-entry-title" data-i18n="dashboard.worksheet.title">Atividades para imprimir</h2>
+                            <p id="worksheet-entry-copy" data-i18n="dashboard.worksheet.copy">Um tema, vários exercícios em A4. Com gabarito separado.</p>
+                            <span class="dashboard-worksheet-cta"><span data-i18n="dashboard.worksheet.cta">Criar folha com IA</span><span aria-hidden="true">→</span></span>
+                        </div>
+                    </a>
                     <button type="button" class="dashboard-guide-trigger" data-dashboard-tour-start data-i18n="dashboard.actions.quickGuide">Ver guia rápido</button>
                 </div>
 
@@ -242,10 +261,6 @@
                     </a>
                 </div>
 
-                <section class="dashboard-toolkit-secondary" aria-labelledby="worksheet-entry-title">
-                    <div class="dashboard-section-heading"><div><span class="focus-eyebrow">Também no papel</span><h3 id="worksheet-entry-title">Várias atividades em uma folha A4</h3><p>Escolha os formatos e informe o tema. A IA prepara os exercícios em duas colunas, com gabarito separado.</p></div></div>
-                    <a href="folha-atividades-builder.html?new=1" class="platform-link-button platform-link-primary">▤ Criar folha para imprimir</a>
-                </section>
                 <div class="dashboard-toolkit-secondary" id="extra-formats">
                     <div class="dashboard-toolkit-secondary-head">
                         <div>

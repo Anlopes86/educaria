@@ -1710,6 +1710,82 @@ body.product-body.theme-overview .dashboard-hero-panel::after {
     font-weight: 750;
 }
 
+/* A distinct entry in the welcome panel, not another hidden activity menu. */
+.dashboard-hero-copy .dashboard-worksheet-entry {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    margin-top: 4px;
+    padding: 18px;
+    border: 1px solid #e6d7ad;
+    border-radius: 20px;
+    background: linear-gradient(120deg, #fff8e8, #f2f8ed);
+    color: #173e3a;
+    text-decoration: none;
+    box-shadow: 0 10px 25px -18px #020f1b;
+}
+
+.dashboard-worksheet-entry:hover {
+    border-color: #b7d4b8;
+    background: #fffaf0;
+}
+
+.dashboard-worksheet-entry:focus-visible {
+    outline: 3px solid #5eead4;
+    outline-offset: 4px;
+}
+
+.dashboard-worksheet-art { width: 100%; height: auto; }
+.dashboard-worksheet-copy { display: grid; gap: 7px; min-width: 0; }
+.dashboard-worksheet-label {
+    color: #596938;
+    font-size: .67rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.dashboard-hero-copy .dashboard-worksheet-entry h2 {
+    margin: 0;
+    color: #173e3a;
+    font-size: clamp(1.1rem, 1.5vw, 1.35rem);
+    line-height: 1.2;
+    letter-spacing: -.025em;
+}
+
+.dashboard-hero-copy .dashboard-worksheet-entry p {
+    margin: 0;
+    color: #52635b;
+    font-size: .82rem;
+    line-height: 1.45;
+}
+
+.dashboard-worksheet-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 36px;
+    width: fit-content;
+    margin-top: 3px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: #216e62;
+    color: #fff;
+    font-size: .8rem;
+    font-weight: 750;
+}
+
+@media (max-width: 480px) {
+    .dashboard-hero-copy .dashboard-worksheet-entry {
+        grid-template-columns: 52px minmax(0, 1fr);
+        gap: 12px;
+        padding: 14px;
+    }
+}
+
 body.product-body.theme-overview .dashboard-quick-create {
     position: relative;
     color: var(--navy-dark);

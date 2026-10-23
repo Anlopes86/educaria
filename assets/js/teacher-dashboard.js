@@ -369,7 +369,8 @@ function syncDashboardFormatHierarchy() {
         lessonCard.textContent = dashboardTranslate("dashboard.toolkit.lesson.copy", "Organize objetivo, explicação, prática e fechamento em um roteiro completo para a aula.");
     }
 
-    let secondary = toolkitSection.querySelector(".dashboard-toolkit-secondary");
+    // Identify this region explicitly; separate features can share its visual class.
+    let secondary = toolkitSection.querySelector("#extra-formats");
     if (!secondary) {
         secondary = document.createElement("div");
         secondary.className = "dashboard-toolkit-secondary";

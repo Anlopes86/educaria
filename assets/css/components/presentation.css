@@ -1,10 +1,21 @@
+/* Older school browsers may not support dynamic viewport units. A custom
+   property with an unsupported unit does not fall back at its point of use,
+   so opt in only when the browser can actually resolve that unit. */
+:root {
+    --presentation-viewport-height: 100vh;
+}
+
+@supports (height: 100dvh) {
+    :root { --presentation-viewport-height: 100dvh; }
+}
+
 .presentation-shell {
-    --presentation-stage-height: calc(100dvh - 172px);
+    --presentation-stage-height: calc(var(--presentation-viewport-height) - 172px);
     --presentation-stage-width: calc(100vw - 24px);
     width: min(1920px, calc(100vw - 16px));
-    height: 100dvh;
-    min-height: 100dvh;
-    max-height: 100dvh;
+    height: var(--presentation-viewport-height);
+    min-height: var(--presentation-viewport-height);
+    max-height: var(--presentation-viewport-height);
     margin: 0 auto;
     display: grid;
     gap: 14px;
@@ -14,7 +25,7 @@
 }
 
 body.presentation-runtime-page {
-    min-height: 100dvh;
+    min-height: var(--presentation-viewport-height);
     overflow: hidden;
 }
 
@@ -76,17 +87,17 @@ body.presentation-topbar-collapsed .presentation-topbar {
 }
 
 body.presentation-topbar-collapsed .presentation-shell {
-    --presentation-stage-height: calc(100dvh - 52px);
+    --presentation-stage-height: calc(var(--presentation-viewport-height) - 52px);
     grid-template-rows: 0 minmax(0, 1fr);
 }
 
 @media (min-width: 1025px) {
     .presentation-page .presentation-shell {
-        --presentation-stage-height: calc(100dvh - 224px);
+        --presentation-stage-height: calc(var(--presentation-viewport-height) - 224px);
     }
 
     body.presentation-page.presentation-topbar-collapsed .presentation-shell {
-        --presentation-stage-height: calc(100dvh - 104px);
+        --presentation-stage-height: calc(var(--presentation-viewport-height) - 104px);
     }
 }
 
@@ -329,9 +340,9 @@ body.presentation-runtime-page .quiz-application-stage {
     grid-template-rows: auto minmax(0, 1fr);
     gap: 10px;
     width: 100vw;
-    height: 100dvh;
-    min-height: 100dvh;
-    max-height: 100dvh;
+    height: var(--presentation-viewport-height);
+    min-height: var(--presentation-viewport-height);
+    max-height: var(--presentation-viewport-height);
     padding: 10px 12px 12px;
     overflow: hidden;
 }

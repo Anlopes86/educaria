@@ -1,10 +1,10 @@
 const EDUCARIA_CACHE_PREFIX = "educaria-static-";
-const EDUCARIA_CACHE_NAME = `${EDUCARIA_CACHE_PREFIX}v29`;
+const EDUCARIA_CACHE_NAME = `${EDUCARIA_CACHE_PREFIX}v30`;
 const EDUCARIA_SHELL_PATHS = [
     "./",
     "./index.html",
     "./login.html",
-    "./assets/css/estilo-premium.css?v=20261011-3",
+    "./assets/css/estilo-premium.css?v=20261023-1",
     "./assets/js/offline-runtime.js"
 ];
 

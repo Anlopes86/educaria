@@ -746,9 +746,9 @@ body.lesson-sequence-stage-page {
     grid-template-rows: auto auto minmax(0, 1fr);
     gap: 10px;
     width: 100vw;
-    height: 100dvh;
-    min-height: 100dvh;
-    max-height: 100dvh;
+    height: var(--presentation-viewport-height, 100vh);
+    min-height: var(--presentation-viewport-height, 100vh);
+    max-height: var(--presentation-viewport-height, 100vh);
     padding: 10px 12px 12px;
     overflow: hidden;
 }
@@ -1139,9 +1139,9 @@ body.lesson-sequence-embedded .presentation-shell {
     grid-template-rows: minmax(0, 1fr);
     gap: 0;
     width: 100vw;
-    height: 100dvh;
-    min-height: 100dvh;
-    max-height: 100dvh;
+    height: var(--presentation-viewport-height, 100vh);
+    min-height: var(--presentation-viewport-height, 100vh);
+    max-height: var(--presentation-viewport-height, 100vh);
     padding: 10px !important;
     overflow: hidden;
 }

@@ -9,6 +9,59 @@ const generator = await fs.readFile(new URL("../../assets/js/ai-material-generat
 const html = await fs.readFile(new URL("../../plataforma/index.html", import.meta.url), "utf8");
 const configSource = source.slice(0, source.indexOf('const DASHBOARD_TOUR_FOCUSABLE_SELECTOR'));
 function slice(start, end) { return source.slice(source.indexOf(start), source.indexOf(end)); }
+
+test("print creation is a single illustrated shortcut in the welcome panel, before the toolkit", async () => {
+    const hero = html.slice(html.indexOf('<section class="dashboard-hero-panel">'), html.indexOf('<section class="dashboard-section" id="activity-toolkit">'));
+    const entry = hero.match(/<a href="folha-atividades-builder.html\?new=1" class="dashboard-worksheet-entry"[^>]*>([\s\S]*?)<\/a>/)?.[1];
+    assert.ok(entry, "The print shortcut must be in the welcome panel, not below the activities");
+    assert.match(entry, /<svg[^>]+aria-hidden="true"/);
+    assert.match(entry, /id="worksheet-entry-title"/);
+    assert.match(entry, /id="worksheet-entry-copy"/);
+    assert.match(entry, /Criar folha com IA/);
+    assert.equal((html.match(/class="dashboard-worksheet-entry"/g) || []).length, 1);
+    assert.doesNotMatch(html.slice(html.indexOf('id="activity-toolkit"')), /folha-atividades-builder/);
+    for (const locale of ["pt-BR", "en-US", "es-ES"]) {
+        const translations = JSON.parse(await fs.readFile(new URL(`../../assets/i18n/${locale}.json`, import.meta.url), "utf8"));
+        for (const [, key] of entry.matchAll(/data-i18n="([^"]+)"/g)) assert.ok(translations[key], `${locale}: ${key}`);
+    }
+    const context = vm.createContext({});
+    vm.runInContext(configSource, context);
+    assert.equal(vm.runInContext('DASHBOARD_QUICK_CREATE_FORMATS.some(item => item.href.startsWith("folha-atividades"))', context), false,
+        "Worksheet links must open their dedicated builder, not trigger the projection creator");
+});
+
+for (const hasExtraFormats of [true, false]) {
+    test(`dashboard refresh preserves other sections and renders extra formats once (existing=${hasExtraFormats})`, () => {
+        // Guard the former duplicate bug: another feature may use the same visual class.
+        const featureMarkup = "Separate feature";
+        const feature = { className: "dashboard-toolkit-secondary", innerHTML: featureMarkup };
+        const extra = { id: "extra-formats", className: "dashboard-toolkit-secondary", innerHTML: "Original formats" };
+        const blocks = hasExtraFormats ? [feature, extra] : [feature];
+        const grid = { querySelectorAll: () => [], querySelector: () => null,
+            insertAdjacentElement: (_, element) => blocks.push(element) };
+        const toolkit = { querySelector(selector) {
+            if (selector === ".dashboard-toolkit-grid") return grid;
+            if (selector === ".dashboard-toolkit-secondary") return blocks[0];
+            if (selector === "#extra-formats") return blocks.find(block => block.id === "extra-formats") || null;
+            return null;
+        } };
+        const context = vm.createContext({
+            document: { querySelector: () => null, getElementById: () => toolkit, createElement: () => ({}) },
+            dashboardTranslate: (_, fallback) => fallback
+        });
+        vm.runInContext(configSource, context);
+        vm.runInContext(slice("function syncDashboardFormatHierarchy(", "function hydrateQuickCreateForm("), context);
+        for (let refresh = 0; refresh < 3; refresh++) context.syncDashboardFormatHierarchy();
+        assert.equal(feature.innerHTML, featureMarkup, "Refreshing formats must never replace another feature");
+        assert.equal(blocks.length, 2);
+        const rendered = blocks.find(block => block.id === "extra-formats");
+        assert.equal((rendered.innerHTML.match(/Mais possibilidades/g) || []).length, 1);
+        assert.equal((rendered.innerHTML.match(/class="dashboard-toolkit-link /g) || []).length, 11);
+        assert.ok(rendered.innerHTML.includes('trilha-palavras-builder.html?new=1'));
+        assert.ok(rendered.innerHTML.includes('em-comum-builder.html?new=1'));
+    });
+}
+
 function harness() {
     let request;
     const fields = new Map();

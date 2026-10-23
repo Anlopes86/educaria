@@ -168,3 +168,21 @@ test("all twelve presentation pages load the shared library action", async () =>
         assert.match(html, /(?:platform-top-actions|presentation-topbar-group|lesson-sequence-stage-actions)/, page);
     }
 });
+
+test("presentation viewport units have a guarded fallback for older school browsers", async () => {
+    const css = await read("assets/css/components/presentation.css");
+    assert.match(css, /:root\s*\{\s*--presentation-viewport-height:\s*100vh;/);
+    const dynamicRule = /@supports\s*\(height:\s*100dvh\)\s*\{\s*:root\s*\{\s*--presentation-viewport-height:\s*100dvh;\s*\}\s*\}/;
+    assert.match(css, dynamicRule);
+    assert.doesNotMatch(css.replace(dynamicRule, ""), /\b\d+dvh\b/, "An unsupported unit must not invalidate the entire stage height");
+    assert.match(section(css, ".presentation-shell {", "body.presentation-runtime-page"), /height: var\(--presentation-viewport-height\);/);
+    const lessons = await read("assets/css/components/lesson-sequence.css");
+    for (const selector of [".lesson-sequence-stage-page .lesson-sequence-stage-shell", "body.lesson-sequence-embedded .presentation-shell"]) {
+        const rule = section(lessons, `${selector} {`, "}");
+        for (const property of ["height", "min-height", "max-height"]) {
+            assert.ok(rule.includes(`${property}: var(--presentation-viewport-height, 100vh);`), `${selector}: ${property}`);
+        }
+    }
+    const mobile = await read("assets/css/components/mobile.css");
+    assert.match(mobile, /--presentation-stage-height: calc\(var\(--presentation-viewport-height, 100vh\) - 82px\)/);
+});
