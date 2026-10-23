@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { checkQuickRecovery, checkImageUpload } from "./browser-recovery-checks.mjs";
+import { checkActivityExamples } from "./browser-example-checks.mjs";
 
 const chromePath = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const root = path.resolve(import.meta.dirname, "..");
@@ -146,7 +147,7 @@ function connect(wsUrl) {
     return {
         opened,
         diagnostics,
-        send(method, params = {}) {
+        send(method, params = {}, sessionId) {
             const id = ++requestId;
             return new Promise((resolve, reject) => {
                 const timeoutId = setTimeout(() => {
@@ -154,7 +155,7 @@ function connect(wsUrl) {
                     reject(new Error(`Chrome DevTools command timed out: ${method}`));
                 }, 10000);
                 pending.set(id, { resolve, reject, timeoutId, method });
-                socket.send(JSON.stringify({ id, method, params }));
+                socket.send(JSON.stringify({ id, method, params, ...(sessionId ? { sessionId } : {}) }));
             });
         },
         close() {
@@ -1227,6 +1228,7 @@ async function auditPage(pageConfig) {
     let recoveryJourney = null;
     let imageUploadJourney = null;
     if (auditRecovery && localPagePath === "plataforma/index.html") recoveryJourney = await checkQuickRecovery(cdp, url, auditScreenshotDir);
+    if (process.env.EDUCARIA_AUDIT_EXAMPLES === "1" && localPagePath === "plataforma/index.html") await checkActivityExamples(cdp, auditScreenshotDir);
     if (auditRecovery && ["plataforma/slides-builder.html", "plataforma/criar-aula.html"].includes(localPagePath)) {
         imageUploadJourney = await checkImageUpload(cdp, localPagePath.endsWith("criar-aula.html"));
     }

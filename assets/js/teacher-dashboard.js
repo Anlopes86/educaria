@@ -401,6 +401,7 @@ function syncDashboardFormatHierarchy() {
             `).join("")}
         </div>
     `;
+    window.EducariaExamples?.enhance();
 }
 
 function hydrateQuickCreateForm() {

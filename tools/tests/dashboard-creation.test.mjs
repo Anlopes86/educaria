@@ -45,13 +45,16 @@ for (const hasExtraFormats of [true, false]) {
             if (selector === "#extra-formats") return blocks.find(block => block.id === "extra-formats") || null;
             return null;
         } };
+        let exampleRefreshes = 0;
         const context = vm.createContext({
+            window: { EducariaExamples: { enhance() { exampleRefreshes++; } } },
             document: { querySelector: () => null, getElementById: () => toolkit, createElement: () => ({}) },
             dashboardTranslate: (_, fallback) => fallback
         });
         vm.runInContext(configSource, context);
         vm.runInContext(slice("function syncDashboardFormatHierarchy(", "function hydrateQuickCreateForm("), context);
         for (let refresh = 0; refresh < 3; refresh++) context.syncDashboardFormatHierarchy();
+        assert.equal(exampleRefreshes, 3, "Rebuilt cards must get their example buttons back");
         assert.equal(feature.innerHTML, featureMarkup, "Refreshing formats must never replace another feature");
         assert.equal(blocks.length, 2);
         const rendered = blocks.find(block => block.id === "extra-formats");

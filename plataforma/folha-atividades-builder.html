@@ -30,6 +30,9 @@
     <script src="../assets/js/worksheet-builder.js" defer></script>
     <script src="../assets/js/ai-material-generator.js" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
+    <link rel="stylesheet" href="../assets/css/components/activity-examples.css?v=20261023-1">
+    <script src="../assets/js/activity-examples-catalog.js?v=20261023-1" defer></script>
+    <script src="../assets/js/activity-examples.js?v=20261023-1" defer></script>
 </head>
 <body class="product-body theme-editor worksheet-page" data-material-type="worksheet" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -43,6 +46,7 @@
             <div class="worksheet-editor">
                 <section class="worksheet-panel worksheet-create-panel">
                     <h2><span>1</span> Monte sua folha com IA</h2>
+                    <button type="button" class="activity-example-trigger" data-activity-example="worksheet">▷ Ver exemplo de folha e gabarito</button>
                     <input type="hidden" id="worksheet-selected-types" value='["wordtrail","connections","wordsearch","crossword"]'>
                     <label class="worksheet-field">Tema ou orientação geral<textarea id="worksheet-source" rows="4" maxlength="12000" placeholder="Ex.: verbos em inglês no passado para o 7º ano. Também pode colar um texto ou uma lista de palavras."></textarea></label>
                     <p class="worksheet-help" data-worksheet-source-help role="status"></p>

@@ -49,6 +49,16 @@ Quando mudar uma tela, revise também teclado/foco, celular e apresentação em 
 
 ## Segurança e publicação
 
+### Exemplos antes da criação
+
+`assets/js/activity-examples-catalog.js` registra os formatos, os dados fictícios e as etapas de cada demonstração. Ao adicionar uma ferramenta, inclua seu exemplo nesse catálogo e autorize apenas o runtime necessário em `scripts`. Os exemplos reutilizam o HTML/CSS das apresentações; a folha usa o mesmo renderizador de impressão.
+
+`activity-examples.js` carrega somente arquivos públicos conhecidos em um iframe com origem isolada (`sandbox="allow-scripts"`). `activity-example-frame.js` oferece armazenamento descartável em memória para os runtimes. Não adicionar autenticação, persistência, serviço de IA ou permissão `allow-same-origin` ao iframe. Abrir uma prévia nunca deve substituir um rascunho do professor.
+
+Valide com `node tools/check-activity-examples.mjs` (Chrome local; use `CHROME_PATH` quando necessário). O teste usa dados fictícios, servidor local e perfil isolado. `EDUCARIA_AUDIT_WIDTH`, `EDUCARIA_AUDIT_HEIGHT` e `EDUCARIA_AUDIT_SCREENSHOT_DIR` permitem conferir telas menores e guardar capturas. Não requer login nem créditos. Os contratos também estão em `tools/tests/activity-examples.test.mjs`.
+
+### Cuidados de publicação
+
 Nunca versione `.env`, chaves de serviço Firebase, tokens, dumps de usuários ou arquivos de teste com dados reais. A configuração Web pública do Firebase não substitui autenticação/regras de acesso. O navegador nunca decide permissões administrativas ou saldo.
 
 Revise o diff, inclua apenas os arquivos da tarefa e execute as verificações antes de publicar. Um push em `master` aciona o fluxo de publicação do Pages; o Render usa sua configuração própria de deploy. Uma reorganização local não deve publicar mudanças sem autorização.
