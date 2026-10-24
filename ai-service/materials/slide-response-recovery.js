@@ -38,9 +38,17 @@ export function recoverRejectedSlideResponse(text, schemaConfig) {
     if (!itemSchema?.properties) return null;
     delete itemSchema.properties.illustration;
     itemSchema.required = (itemSchema.required || []).filter(key => key !== "illustration");
+    const hasDrawingPlan = Object.hasOwn(schema.properties, "illustrations");
+    if (hasDrawingPlan) {
+        delete schema.properties.illustrations;
+        schema.required = schema.required.filter(key => key !== "illustrations");
+    }
     const content = { ...material, slides: material.slides.map(({ illustration, ...slide }) => slide) };
+    if (hasDrawingPlan) delete content.illustrations;
     if (!matchesSchema(content, schema)) return null;
 
+    // Preserve incomplete drawing plans for the normalizer/visible feedback, not
+    // as a successful illustration. Recovering never incurs a second AI request.
     return { ...material, slides: material.slides.map(slide => ({ ...slide,
         illustration: normalizeGeneratedSlideIllustration(slide.illustration, slide.title)
     })) };

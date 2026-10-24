@@ -896,6 +896,12 @@ function applySlidesFromStructuredData(payload) {
     const cards = ensureCardCount("[data-slides-stack]", "[data-slide-card]", slides.length);
     if (!cards.length) return false;
 
+    const illustrationFeedback = document.getElementById("slides-illustration-feedback");
+    if (illustrationFeedback) {
+        illustrationFeedback.textContent = window.EducariaSlideIllustrations?.feedback(payload) || "";
+        illustrationFeedback.hidden = !illustrationFeedback.textContent;
+    }
+
     const visualModeField = document.getElementById("slides-visual-mode");
     const requestedVisualMode = String(payload?.visual_mode || visualModeField?.value || "standard").toLowerCase();
     const usePersonalizedVisual = requestedVisualMode === "ai";

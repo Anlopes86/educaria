@@ -168,18 +168,23 @@
         const enabled = material?.generation_options?.includeIllustration;
         if (enabled !== true && enabled !== "true") return "";
         const slides = Array.isArray(material?.slides) ? material.slides : [];
-        const needsImage = [], invalid = [];
+        const needsImage = [], invalid = [], included = [];
         slides.forEach((slide, index) => {
-            if (resolveImage(material, slide, index).url) return;
+            const resolved = resolveImage(material, slide, index);
+            if (resolved.url) {
+                if (resolved.mode === "Ilustração da IA") included.push(index + 1);
+                return;
+            }
             if (slide?.illustration?.status === "needs-image") needsImage.push(index + 1);
             else if (slide?.illustration?.status === "invalid" || slide?.illustration?.status === "ready") invalid.push(index + 1);
         });
         const messages = [];
+        if (included.length) messages.push(`${included.length === 1 ? "Ilustração incluída no slide" : "Ilustrações incluídas nos slides"} ${included.join(", ")}.`);
+        else if (!slides.some((slide, index) => resolveImage(material, slide, index).url)) messages.push("Os slides foram criados, mas a IA não retornou uma ilustração válida. Você pode enviar uma imagem própria no editor.");
+        if (Number(material?.illustration_unassigned) > 0) messages.push("Uma ilustração não pôde ser vinculada ao slide indicado pela IA.");
         if (needsImage.length) messages.push(`O pedido visual dos slides ${needsImage.join(", ")} exige uma imagem mais detalhada do que os diagramas disponíveis. O conteúdo foi mantido; você pode enviar uma imagem própria no editor.`);
         if (invalid.length) messages.push(`Não foi possível montar uma ilustração legível nos slides ${invalid.join(", ")}. O conteúdo foi mantido, sem inserir um desenho incompleto.`);
-        if (messages.length) return messages.join(" ");
-        if (slides.some((slide, index) => resolveImage(material, slide, index).url)) return "";
-        return "O conteúdo foi criado, mas a IA não retornou uma ilustração válida desta vez. Você pode enviar uma imagem no editor.";
+        return messages.join(" ");
     }
 
     root.EducariaSlideIllustrations = Object.freeze({ render, resolveImage, feedback });

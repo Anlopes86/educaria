@@ -922,6 +922,7 @@ async function auditPage(pageConfig) {
                     const applied = applySlidesFromStructuredData({
                         title: 'Revolucao Industrial',
                         visual_mode: 'ai',
+                        generation_options: { includeIllustration: true },
                         visual_theme: {
                             name: 'Industria e vapor',
                             rationale: 'Paleta inspirada em metal, carvao e energia a vapor.',
@@ -936,7 +937,13 @@ async function auditPage(pageConfig) {
                         },
                         slides: [
                             { type: 'cover', title: 'Revolucao Industrial', subtitle: 'Mudancas no trabalho', body: 'Uma nova forma de produzir', teacher_notes: '', image_prompt: '', visual_variant: 'hero', layout: 'stack' },
-                            { type: 'content', title: 'A maquina a vapor', subtitle: '', body: 'Energia e mecanizacao', teacher_notes: '', image_prompt: '', visual_variant: 'alternate', layout: 'stack' },
+                            { type: 'content', title: 'A maquina a vapor', subtitle: '', body: 'Energia e mecanizacao', teacher_notes: '', image_prompt: '', visual_variant: 'alternate', layout: 'split',
+                                illustration: { version: 2, status: 'ready', title: 'Transformação de energia', description: 'Do combustível ao movimento', layout: 'process', caption: 'Esquema simplificado',
+                                    nodes: [
+                                        { id: 'fuel', label: 'Combustível', detail: '', icon: 'none' },
+                                        { id: 'heat', label: 'Calor', detail: '', icon: 'none' },
+                                        { id: 'motion', label: 'Movimento', detail: '', icon: 'none' }
+                                    ], links: [{ from: 'fuel', to: 'heat', kind: 'arrow' }, { from: 'heat', to: 'motion', kind: 'arrow' }] } },
                             { type: 'closing', title: 'O que mudou?', subtitle: '', body: 'Compare permanencias e rupturas', teacher_notes: '', image_prompt: '', visual_variant: 'contrast', layout: 'stack' }
                         ]
                     });
@@ -949,10 +956,15 @@ async function auditPage(pageConfig) {
                             && document.getElementById('slides-tema-visual')?.value === 'ia-personalizado'
                             && cards[0].querySelector('[data-field="slide-color"]')?.value.toLowerCase() === '#292524'
                             && cards[1].querySelector('[data-field="slide-color"]')?.value.toLowerCase() === '#e0f2fe'
+                            && cards[1].querySelector('[data-field="slide-image-url"]')?.value.startsWith('data:image/svg+xml')
+                            && cards[1].querySelector('[data-field="slide-illustration"]')?.value
+                            && document.getElementById('slides-illustration-feedback')?.textContent.includes('incluída no slide 2')
+                            && document.getElementById('slides-illustration-feedback')?.hidden === false
                             && !document.querySelector('[data-ai-slide-theme-summary]')?.hidden
                         ),
                         applied: Boolean(applied),
                         count: cards.length,
+                        illustrated: cards[1]?.querySelector('[data-field="slide-image-url"]')?.value.startsWith('data:image/svg+xml'),
                         visualMode: document.getElementById('slides-visual-mode')?.value || '',
                         preset: document.getElementById('slides-tema-visual')?.value || ''
                     };
@@ -1119,6 +1131,26 @@ async function auditPage(pageConfig) {
             returnByValue: true
         });
         quizJourney.explicitReady = readyEvaluation.result.value === true;
+        if (builderJourneyType === "slides") {
+            await cdp.send("Runtime.evaluate", { expression: "document.querySelector('[data-lesson-destinations][open] [data-destination-close]')?.click()" });
+            await cdp.send("Runtime.evaluate", { expression: "openProjectorPreview('slides')" });
+            const presentationReady = await waitForPageCondition(cdp, "document.querySelector('[data-projector-preview-frame]')?.contentDocument?.querySelector('[data-presentation-counter]')?.textContent === '1 de 3'");
+            if (!presentationReady) throw new Error("The saved slides did not load in the projector preview.");
+            await cdp.send("Runtime.evaluate", { expression: "document.querySelector('[data-projector-preview-frame]').contentDocument.querySelector('[data-presentation-next]').click()" });
+            const projectedIllustration = await waitForPageCondition(cdp, `(() => {
+                const img = document.querySelector('[data-projector-preview-frame]')?.contentDocument?.querySelector('[data-presentation-image]');
+                return img?.complete && img.naturalWidth > 0 && img.getAttribute('src')?.startsWith('data:image/svg+xml')
+                    && img.getBoundingClientRect().width > 0 && img.getBoundingClientRect().height > 0;
+            })()`);
+            await delay(350); // Let the slide transition paint before capturing it.
+            if (!projectedIllustration) throw new Error("The generated illustration is not visible after saving and reopening the presentation.");
+            quizJourney.structuredGeneration.projectedIllustration = projectedIllustration;
+            if (auditScreenshotDir) {
+                const screenshot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false });
+                await fs.writeFile(path.join(auditScreenshotDir, `slides-generated-${auditWidth}x${auditHeight}.png`), Buffer.from(screenshot.data, "base64"));
+            }
+            await cdp.send("Runtime.evaluate", { expression: "closeProjectorPreview(false)" });
+        }
     }
     if (pagePath.includes("biblioteca.html")) {
         await cdp.send("Runtime.evaluate", {
@@ -1422,6 +1454,7 @@ try {
                 && result.quizJourney.explicitReady
                 && (!["slides", "hangman", "wheel", "match"].includes(result.quizJourney.journeyType) || result.quizJourney.structuredGeneration?.ok);
             console.log(`  ${result.quizJourney.journeyType}-autosave=${journeyWorks ? "ok" : "failed"}`);
+            if (result.quizJourney.journeyType === "slides") console.log(`  slides-projected-illustration=${result.quizJourney.structuredGeneration?.projectedIllustration ? "ok" : "failed"}`);
             if (!journeyWorks) {
                 failed = true;
                 console.log(`  quiz-autosave-state=${JSON.stringify(result.quizJourney)}`);

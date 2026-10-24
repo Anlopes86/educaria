@@ -368,12 +368,30 @@ export function schemaFor(materialType, slideOptions, generationOptions) {
         }
         return { ...config, schema };
     }
-    if (materialType === "slides" && (slideOptions?.includeIllustration === false || slideOptions?.visualMode === "ai" || generationOptions)) {
+    if (materialType === "slides" && (typeof slideOptions?.includeIllustration === "boolean" || slideOptions?.visualMode === "ai" || generationOptions)) {
         const schema = structuredClone(config.schema);
         const slide = schema.properties.slides.items;
-        if (slideOptions?.includeIllustration === false) {
+        if (typeof slideOptions?.includeIllustration === "boolean") {
             delete slide.properties.illustration;
             slide.required = slide.required.filter(key => key !== "illustration");
+        }
+        if (slideOptions?.includeIllustration === true) {
+            // A required drawing plan cannot silently opt out on every slide.
+            // Keep the provider contract separate from the saved per-slide format.
+            const diagram = structuredClone(slideIllustrationSchema);
+            diagram.properties.status.enum = ["ready", "needs-image"];
+            schema.properties.illustrations = {
+                type: "array", minItems: 1, maxItems: 30,
+                items: {
+                    type: "object", additionalProperties: false,
+                    required: ["slide_number", "diagram"],
+                    properties: {
+                        slide_number: { type: "integer", enum: Array.from({ length: 30 }, (_, index) => index + 1) },
+                        diagram
+                    }
+                }
+            };
+            schema.required.push("illustrations");
         }
         if (generationOptions) slide.properties.body = slideContentSchema(slideOptions, generationOptions);
         if (slideOptions?.visualMode === "ai") {

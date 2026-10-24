@@ -102,7 +102,7 @@ test("uploaded image wins on the opening only; other illustrated slides stay int
 test("missing illustration has honest feedback instead of a pretend image", () => {
     assert.equal(feedback({ slides: [{}] }), "");
     assert.match(feedback({ generation_options: { includeIllustration: true }, slides: [{}] }), /não retornou uma ilustração válida/);
-    assert.equal(feedback({ generation_options: { includeIllustration: true }, slides: [{ illustration: drawing }] }), "");
+    assert.match(feedback({ generation_options: { includeIllustration: true }, slides: [{ illustration: drawing }] }), /Ilustração incluída no slide 1/);
 });
 
 test("labels and descriptions cannot inject markup; raw SVG is never accepted", () => {

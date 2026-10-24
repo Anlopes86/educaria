@@ -49,7 +49,8 @@ test("new provider contract is option-specific and leaves legacy material schema
         const config = schemaFor("slides", options, { contentMode: "develop" });
         const item = config.schema.properties.slides.items;
         assert.deepEqual(item.properties.body.required, ["essential", "explanation", "example", "challenge"]);
-        assert.equal(Object.hasOwn(item.properties, "illustration"), includeIllustration);
+        assert.equal(Object.hasOwn(item.properties, "illustration"), false);
+        assert.equal(Object.hasOwn(config.schema.properties, "illustrations"), includeIllustration);
     }
     assert.equal(legacy.schema.properties.slides.items.properties.body.type, "string");
     assert.equal(schemaFor("slides").schema.properties.slides.items.properties.body.type, "string");

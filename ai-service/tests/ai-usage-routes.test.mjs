@@ -67,13 +67,13 @@ test("text route logs actual provider usage and returned quantity without storin
 
 for (const includeIllustration of [true, false]) test(`real slide prompt reaches the provider with illustration=${includeIllustration} and all generation settings`, async () => {
     const bodyBlocks = { essential: "A energia passa entre os seres vivos pela alimentação.", explanation: "As plantas transformam energia luminosa em energia química. Essa energia chega aos consumidores quando se alimentam.", example: "Uma planta é comida por um gafanhoto: parte da energia armazenada na planta passa a ele." };
-    const slide = { title: "Energia", body: bodyBlocks, type: "content", visual_variant: "light",
-        ...(includeIllustration ? { illustration: diagramExamples[0] } : {}) };
+    const slide = { title: "Energia", body: bodyBlocks, type: "content", visual_variant: "light" };
     const body = { materialType: "slides", sourceText: "Explique a energia na cadeia alimentar. ".repeat(50),
         action: "Gerar 6 slides. Modo visual: personalizado.",
         slideOptions: { includeIllustration, detail: "detailed", tone: "explanatory", audience: "Ensino médio", subject: "Ciências" },
         generationOptions: { count: 6, contentMode: "develop" } };
-    const material = { title: "Cadeia alimentar", slides: Array.from({ length: 6 }, () => ({ ...slide })) };
+    const material = { title: "Cadeia alimentar", slides: Array.from({ length: 6 }, () => ({ ...slide })),
+        ...(includeIllustration ? { illustrations: [{ slide_number: 1, diagram: diagramExamples[0] }] } : {}) };
     const h = harness({ promptBuilder: promptFor, results: [{ text: JSON.stringify(material), usageMetadata }] });
     const response = await h.run(body);
     assert.equal(response.statusCode, 200);
@@ -82,12 +82,15 @@ for (const includeIllustration of [true, false]) test(`real slide prompt reaches
     assert.equal(h.providerInputs[0].maxCompletionTokens, 3500);
     assert.ok(h.providerInputs[0].prompt.includes(body.sourceText.trim()));
     assert.ok(Math.ceil(h.providerInputs[0].prompt.length / 3) <= 4000);
-    assert.equal(Object.hasOwn(h.providerInputs[0].schemaConfig.schema.properties.slides.items.properties, "illustration"), includeIllustration);
+    assert.equal(Object.hasOwn(h.providerInputs[0].schemaConfig.schema.properties, "illustrations"), includeIllustration);
+    assert.equal(Object.hasOwn(h.providerInputs[0].schemaConfig.schema.properties.slides.items.properties, "illustration"), false);
     assert.deepEqual(h.providerInputs[0].schemaConfig.schema.properties.slides.items.properties.body.required, Object.keys(bodyBlocks));
     assert.equal(response.body.material.slides.length, 6);
     assert.equal(response.body.material.slides[0].body, Object.values(bodyBlocks).join("\n\n"));
     assert.equal(response.body.material.slides[0].layout, includeIllustration ? "split" : "stack");
     if (includeIllustration) assert.equal(response.body.material.slides[0].illustration.status, "ready");
+    assert.equal(response.body.material.illustrations, undefined);
+    assert.equal(response.body.material.generation_options.includeIllustration, includeIllustration);
     assert.ok(response.body.charge.cost > 0);
 });
 

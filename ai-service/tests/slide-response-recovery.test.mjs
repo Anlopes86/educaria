@@ -61,13 +61,21 @@ for (const enabled of [false, true]) test(`actual wire schema, prompt and normal
     const prompt = promptFor("slides", "Gerar 3 slides.", "Explique o ciclo da água para o 6º ano.", options, normalizeActivityGenerationOptions("slides", { count: 3 }));
     let calls = 0, body;
     const material = completeMaterial(withoutMetadata());
-    if (!enabled) delete material.slides[0].illustration;
+    if (enabled) material.illustrations = [{ slide_number: 1, diagram: material.slides[0].illustration }];
+    delete material.slides[0].illustration;
     const result = await generateGroqStructuredMaterial({ apiKey: "test-only", schemaConfig: config, prompt,
         fetchImpl: async (_, init) => { calls++; body = JSON.parse(init.body); return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(material) } }], usage: { total_tokens: 123 } })); } });
     const wireSlide = body.response_format.json_schema.schema.properties.slides.items;
     assert.equal(body.response_format.json_schema.strict, true);
-    assert.equal(Object.hasOwn(wireSlide.properties, "illustration"), enabled);
-    assert.equal(wireSlide.required.includes("illustration"), enabled);
+    assert.equal(Object.hasOwn(wireSlide.properties, "illustration"), false);
+    assert.equal(wireSlide.required.includes("illustration"), false);
+    const wireSchema = body.response_format.json_schema.schema;
+    assert.equal(Object.hasOwn(wireSchema.properties, "illustrations"), enabled);
+    assert.equal(wireSchema.required.includes("illustrations"), enabled);
+    if (enabled) {
+        assert.equal(wireSchema.properties.illustrations.minItems, 1);
+        assert.deepEqual(wireSchema.properties.illustrations.items.properties.diagram.properties.status.enum, ["ready", "needs-image"]);
+    }
     assert.ok(Math.ceil(prompt.length / 3) < 4000, `prompt exceeds default free-tier input cap: ${prompt.length}`);
     assert.match(prompt, enabled ? /TODOS os campos version, status, description, title/ : /Não inclua o campo illustration/);
     const final = normalizeSlidesMaterial(JSON.parse(result.text), options);
@@ -79,7 +87,7 @@ for (const enabled of [false, true]) test(`actual wire schema, prompt and normal
 test("disabled illustration schema never mutates the shared schema or other formats", () => {
     schemaFor("slides", { includeIllustration: false });
     assert.ok(schemaFor("slides").schema.properties.slides.items.properties.illustration);
-    assert.ok(schemaFor("slides", { includeIllustration: true }).schema.properties.slides.items.properties.illustration);
+    assert.ok(schemaFor("slides", { includeIllustration: true }).schema.properties.illustrations);
     assert.deepEqual(schemaFor("quiz", { includeIllustration: false }), schemaFor("quiz"));
     const wire = groqStrictJsonSchema(schema.schema);
     assert.equal(wire.properties.slides.items.properties.illustration.properties.title.maxLength, undefined);

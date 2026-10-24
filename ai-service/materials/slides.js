@@ -122,13 +122,31 @@ export function normalizeSlidesMaterial(material, options = {}) {
         return material;
     }
 
+    const { illustrations, ...content } = material;
+    const hasDrawingPlan = Object.hasOwn(material, "illustrations");
+    const assigned = new Map();
+    let unassigned = 0;
+    if (options.includeIllustration === true && hasDrawingPlan) {
+        for (const entry of Array.isArray(illustrations) ? illustrations.slice(0, 30) : []) {
+            const index = entry?.slide_number - 1;
+            if (!Number.isInteger(entry?.slide_number) || index < 0 || index >= material.slides.length || assigned.has(index)) {
+                unassigned++;
+                continue;
+            }
+            assigned.set(index, entry.diagram);
+        }
+        if (!Array.isArray(illustrations) || illustrations.length > 30) unassigned++;
+    }
     return {
-        ...material,
+        ...content,
+        ...(unassigned ? { illustration_unassigned: unassigned } : {}),
         visual_mode: options.visualMode === "ai" ? "ai" : "standard",
         visual_theme: normalizeSlideVisualTheme(material.visual_theme),
         slides: material.slides.map((slide, index, slides) => {
             const slideType = slide?.type || (index === 0 ? "cover" : index === slides.length - 1 ? "closing" : "content");
-            const rawIllustration = slide?.illustration;
+            const rawIllustration = hasDrawingPlan
+                ? (assigned.has(index) ? assigned.get(index) : { version: 2, status: "not-needed" })
+                : slide?.illustration;
             const illustration = options.includeIllustration === true && (rawIllustration?.version === 2 || !Array.isArray(rawIllustration?.elements))
                 ? normalizeGeneratedSlideIllustration(rawIllustration, slide?.title)
                 : normalizeSlideIllustration(rawIllustration, options.includeIllustration);
