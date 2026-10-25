@@ -1820,14 +1820,16 @@ async function checkAiHealth() {
     return response.json();
 }
 
-async function requestStructuredMaterial(materialType, sourceText, file, action, slideOptions, generationOptions, refinement) {
-    const refinementOwner = refinement ? window.educariaGenerationRecovery?.currentUid() : null;
+async function requestStructuredMaterial(materialType, sourceText, file, action, slideOptions, generationOptions, refinement, slideIllustration) {
+    const targeted = Boolean(refinement || slideIllustration);
+    const refinementOwner = targeted ? window.educariaGenerationRecovery?.currentUid() : null;
     const endpoint = resolveAiEndpoint();
     const formData = new FormData();
     formData.append("materialType", materialType);
     formData.append("sourceText", sourceText || "");
     formData.append("action", action || "");
     if (refinement) formData.append("refinement", JSON.stringify(refinement));
+    if (slideIllustration) formData.append("slideIllustration", JSON.stringify(slideIllustration));
     if (generationOptions) formData.append("generationOptions", JSON.stringify(generationOptions));
     if (materialType === "slides" && slideOptions) {
         formData.append("slideOptions", JSON.stringify(slideOptions));
@@ -1838,7 +1840,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action,
     }
 
     const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {};
-    if (refinement && (!refinementOwner || refinementOwner !== window.educariaGenerationRecovery?.currentUid())) {
+    if (targeted && (!refinementOwner || refinementOwner !== window.educariaGenerationRecovery?.currentUid())) {
         throw new Error("A conta mudou. Abra o ajuste novamente.");
     }
     const response = await fetch(endpoint, {
@@ -1849,7 +1851,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action,
 
     if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
-        if (refinement && refinementOwner !== window.educariaGenerationRecovery?.currentUid()) throw new Error("A conta mudou.");
+        if (targeted && refinementOwner !== window.educariaGenerationRecovery?.currentUid()) throw new Error("A conta mudou.");
         if (errorPayload?.credits) {
             document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
                 detail: { credits: errorPayload.credits }
@@ -1863,7 +1865,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action,
     }
 
     const payload = await response.json();
-    if (refinement && refinementOwner !== window.educariaGenerationRecovery?.currentUid()) throw new Error("A conta mudou.");
+    if (targeted && refinementOwner !== window.educariaGenerationRecovery?.currentUid()) throw new Error("A conta mudou.");
     document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
         detail: { credits: payload?.credits || null }
     }));

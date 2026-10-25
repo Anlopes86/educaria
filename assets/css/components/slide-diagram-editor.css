@@ -21,6 +21,8 @@ body:has(.slide-diagram-dialog[open]) { overflow: hidden; }
 .slide-diagram-editor footer { display: flex; flex-shrink: 0; flex-wrap: wrap; gap: 10px; justify-content: flex-end; padding: 14px 24px; border-top: 1px solid #d5e6df; background: white; }
 .slide-diagram-toolbar:not([hidden]) { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 0; }
 .slide-diagram-toolbar small { color: #526a70; line-height: 1.5; max-width: 50ch; }
+.slide-illustration-generator .slide-diagram-editor-fields { align-content: start; }
+.slide-illustration-generator .slide-illustration-credit-note { color: #526a70; font-size: .88rem; }
 @media (max-width: 680px) {
     .slide-diagram-editor-body { grid-template-columns: 1fr; padding: 16px; }
     .slide-diagram-editor-preview { position: static; }

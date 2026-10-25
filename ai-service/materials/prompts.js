@@ -4,6 +4,7 @@ import { activityGenerationInstructions } from "../activity-generation-policy.js
 import { discoveryPrompt } from "./discovery.js";
 import { worksheetPrompt } from "./worksheet.js";
 import { refinementPrompt } from "./item-refinement.js";
+import { singleSlideIllustrationPrompt } from "./slide-illustration-request.js";
 
 /**
  * Builds the Portuguese-language provider prompt for a given activity type.
@@ -15,6 +16,7 @@ import { refinementPrompt } from "./item-refinement.js";
  * @returns {string} Full prompt string ready to send to the text provider
  */
 export function promptFor(materialType, action, sourceText, slideOptions, generationOptions) {
+    if (generationOptions?.operation === "illustrate-slide") return singleSlideIllustrationPrompt(sourceText);
     if (generationOptions?.operation === "refine-item") return refinementPrompt(materialType, sourceText);
     const base = basePromptFor(materialType, action, sourceText, slideOptions, generationOptions);
     return generationOptions ? `${base}\n\n${activityGenerationInstructions(materialType, generationOptions)}` : base;

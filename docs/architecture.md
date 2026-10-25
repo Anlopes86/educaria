@@ -46,6 +46,12 @@ O transporte é o mesmo `/api/ai/generate`, com `refinement` opcional. `ai-servi
 
 Para incluir outra ferramenta, registre campos e limites no contrato compartilhado, contexto e seletores nos adaptadores, instruções específicas no backend e cubra isolamento, seleção múltipla, cotas e recarregamento. Não reutilize as funções que aplicam uma atividade inteira. `tools/browser-refinement-checks.mjs` testa os editores reais com respostas fictícias, aprovação parcial, desfazer, falhas e troca de conta.
 
+### Ilustração por slide
+
+`slide-illustration-generator.js` acrescenta “Gerar ilustração com IA” ao lado do envio de imagem em cada slide, inclusive nos cartões criados, duplicados ou recuperados. O diálogo usa título, subtítulo e conteúdo do slide como contexto e aceita uma orientação visual opcional. A prévia não altera o rascunho; “Usar ilustração” grava somente imagem, descrição, dados editáveis e disposição lado a lado pelo contrato de `slide-diagram-editing.js`. Textos, cores e outros slides são preservados. Fechar descarta a sugestão. Edição concorrente, remoção/reordenação do cartão e troca de conta invalidam a aplicação.
+
+O transporte é `/api/ai/generate` com `materialType: "slides"` e `slideIllustration`, sem anexos nem `refinement`. `materials/slide-illustration-request.js` valida limites e usa as mesmas regras semânticas dos desenhos da criação completa; o schema retorna somente `{illustration: diagrama}`. A resposta deve identificar `operation: "illustrate-slide"`, impedindo que servidores antigos apliquem uma apresentação inteira. O provedor de texto, autenticação, limites e créditos medidos são os existentes. Desenhos inválidos ou que exigem uma imagem externa devolvem a reserva individual, preservando tokens efetivamente consumidos na cota global. O relatório registra a operação e uma ilustração, sem guardar conteúdo. Não é geração de fotografias nem SVG livre pela IA.
+
 ### Rascunhos e organização de materiais
 
 `Rascunhos` é um filtro da biblioteca pessoal (`scope: library`, `status: draft`), não outra coleção. `builder-journey.js` cobre os onze editores; a Aula completa salva pelo seu próprio builder. Sem destino explícito, novas criações vão para a biblioteca. Salvamentos são locais primeiro e sincronizam pelo protocolo existente; falhas de armazenamento não devem ser apresentadas como sucesso.

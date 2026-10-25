@@ -44,6 +44,8 @@ Para conferir as ajudas contextuais, defina `EDUCARIA_AUDIT_HELP=1` e execute as
 
 ## O que cada check cobre
 
+Para validar a geração de ilustração de um slide existente, defina `EDUCARIA_AUDIT_SLIDE_ILLUSTRATION=1` e execute `node tools/check-responsive-layout.mjs 'auth:plataforma/slides-builder.html?new=1'`. A jornada simula apenas o retorno do provedor: confere contexto enviado, prévia, aplicação isolada, edição posterior, cancelamento, falhas, respostas atrasadas e recarga do rascunho. Rode em 1366 × 768 e 390 × 844; `EDUCARIA_AUDIT_SCREENSHOT_DIR` salva o diálogo para revisão visual. Nenhum crédito real é consumido.
+
 - `tools/check-i18n.mjs`: verifica se as chaves usadas em HTML/JS existem em `pt-BR`, `en-US` e `es-ES`.
 - `tools/check-assets.mjs`: percorre HTML e CSS e falha quando encontra referencia local para arquivo inexistente.
 - `tools/check-firebase-config.mjs`: confirma que um dispositivo novo recebe a configuração de produção sem depender de arquivo local ou dados salvos no navegador.

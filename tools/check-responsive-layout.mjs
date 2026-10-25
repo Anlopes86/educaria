@@ -6,6 +6,7 @@ import { checkQuickRecovery, checkImageUpload } from "./browser-recovery-checks.
 import { checkActivityExamples } from "./browser-example-checks.mjs";
 import { checkItemRefinement } from "./browser-refinement-checks.mjs";
 import { checkContextHelp } from "./browser-context-help-checks.mjs";
+import { checkSlideIllustration } from "./browser-slide-illustration-checks.mjs";
 
 const chromePath = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const root = path.resolve(import.meta.dirname, "..");
@@ -1269,6 +1270,8 @@ async function auditPage(pageConfig) {
     let imageUploadJourney = null;
     let refinementJourney = null;
     const contextHelpJourney = process.env.EDUCARIA_AUDIT_HELP === "1" ? await checkContextHelp(cdp, auditScreenshotDir) : null;
+    const slideIllustrationJourney = process.env.EDUCARIA_AUDIT_SLIDE_ILLUSTRATION === "1" && localPagePath === "plataforma/slides-builder.html"
+        ? await checkSlideIllustration(cdp, auditScreenshotDir) : null;
     if (pageConfig.authenticated && ((process.env.EDUCARIA_AUDIT_REFINEMENTS === "1" && (localPagePath.endsWith("-builder.html") || localPagePath.endsWith("criar-aula.html")))
         || ["plataforma/mapa-mental-builder.html", "plataforma/debate-guiado-builder.html"].includes(localPagePath))) {
         refinementJourney = await checkItemRefinement(cdp, auditScreenshotDir);
@@ -1280,7 +1283,7 @@ async function auditPage(pageConfig) {
     }
     cdp.close();
     await target.dispose();
-    return { ...evaluation.result.value, mobileMenu, topbarRestore, builderNavigatorJourney, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, storageFailureJourney, recoveryJourney, imageUploadJourney, refinementJourney, contextHelpJourney, screenshotPath, diagnostics: cdp.diagnostics };
+    return { ...evaluation.result.value, mobileMenu, topbarRestore, builderNavigatorJourney, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, storageFailureJourney, recoveryJourney, imageUploadJourney, refinementJourney, contextHelpJourney, slideIllustrationJourney, screenshotPath, diagnostics: cdp.diagnostics };
 }
 
 let failed = false;
@@ -1293,6 +1296,7 @@ try {
         if (result.imageUploadJourney) console.log(`  image-upload=ok ${JSON.stringify(result.imageUploadJourney)}`);
         if (result.refinementJourney) console.log(`  item-refinement=ok ${JSON.stringify(result.refinementJourney)}`);
         if (result.contextHelpJourney) console.log(`  context-help=ok ${JSON.stringify(result.contextHelpJourney)}`);
+        if (result.slideIllustrationJourney) console.log(`  slide-illustration=ok ${JSON.stringify(result.slideIllustrationJourney)}`);
         if (result.storageFailureJourney) {
             const storageWorks = result.storageFailureJourney.failed && result.storageFailureJourney.visible
                 && result.storageFailureJourney.recoveryAvailable && result.storageFailureJourney.recovered;

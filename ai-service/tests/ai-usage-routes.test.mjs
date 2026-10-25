@@ -10,6 +10,7 @@ import { normalizeSlidesMaterial } from "../materials/slides.js";
 import { parseGeneratedJson } from "../materials/generated-json.js";
 import { schemaFor } from "../materials/schemas.js";
 import { normalizeItemRefinement, refinementSchema, validateRefinedItem } from "../materials/item-refinement.js";
+import { normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration } from "../materials/slide-illustration-request.js";
 import { normalizeDiscoveryMaterial, validateDiscoverySource } from "../materials/discovery.js";
 import { normalizeWorksheetMaterial, validateWorksheetSource, worksheetCompletionTokens } from "../materials/worksheet.js";
 import { worksheetFixture, worksheetLargeFixture } from "../../tools/fixtures/worksheet.mjs";
@@ -28,7 +29,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
         Error, console: { error() {}, warn() {} }, process: { env: {} },
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
-        schemaFor, normalizeItemRefinement, refinementSchema, validateRefinedItem, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings, worksheetCompletionTokens, worksheetMaxCompletionTokens: 12000,
+        schemaFor, normalizeItemRefinement, refinementSchema, validateRefinedItem, normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings, worksheetCompletionTokens, worksheetMaxCompletionTokens: 12000,
         extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial, validateDiscoverySource, normalizeWorksheetMaterial, validateWorksheetSource, isUploadValidationError: () => false,
         activeAiTextProvider: () => provider, activeAiTextModel: () => provider === "groq" ? "openai/gpt-oss-120b" : "gemini-test",
         aiPlanForRequest: () => "free", isAiUnlimitedUser: () => unlimited,
@@ -66,6 +67,44 @@ test("text route logs actual provider usage and returned quantity without storin
     assert.equal(response.statusCode, 200); assert.equal(h.calls(), 1); assert.equal(h.events.length, 1);
     assert.equal(h.events[0].usage.totalTokens, 350); assert.equal(h.events[0].generatedCount, 1); assert.equal(h.events[0].context.requestedCount, 3);
     assert.equal(h.events[0].creditsCharged, response.body.charge.cost); assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE/);
+});
+
+test("one-slide illustration uses the text provider, normal quotas and measured billing", async () => {
+    for (const provider of ["groq", "gemini"]) {
+        const h = harness({ provider, promptBuilder: promptFor, results: [{ text: JSON.stringify({ illustration: diagramExamples[0] }), usageMetadata }] });
+        const response = await h.run({ materialType: "slides", slideIllustration: JSON.stringify({ title: "PRIVATE", body: "PRIVATE", instruction: "PRIVATE" }),
+            generationOptions: { count: 20 }, slideOptions: { includeIllustration: false } });
+        assert.equal(response.statusCode, 200); assert.equal(response.body.operation, "illustrate-slide");
+        assert.deepEqual(Object.keys(response.body.material), ["illustration"]);
+        assert.equal(response.body.material.illustration.status, "ready");
+        assert.equal(h.calls(), 1); assert.equal(h.refunds(), 0); assert.ok(response.body.charge.cost > 0);
+        assert.equal(response.body.charge.usage.totalTokens, 350);
+        assert.equal(h.events[0].context.operation, "illustrate-slide"); assert.equal(h.events[0].context.illustration, true);
+        assert.equal(h.events[0].generatedCount, 1); assert.equal(h.events[0].context.requestedCount, 1);
+        assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE/);
+    }
+});
+
+test("invalid illustration requests and exhausted user credits never reach the provider", async () => {
+    for (const body of [{ materialType: "slides", slideIllustration: {} }, { materialType: "quiz", slideIllustration: { title: "Tema" } },
+        { materialType: "slides", slideIllustration: { body: "x".repeat(6001) } }]) {
+        const h = harness(); const response = await h.run(body);
+        assert.equal(response.statusCode, 400); assert.equal(h.calls(), 0); assert.equal(h.events.length, 0);
+    }
+    const h = harness({ blocked: true });
+    assert.equal((await h.run({ materialType: "slides", slideIllustration: { title: "Tema" } })).statusCode, 429);
+    assert.equal(h.calls(), 0);
+});
+
+test("invalid or unsupported diagrams refund user credits but retain consumed platform tokens", async () => {
+    for (const [material, code, status] of [[{ slides: [] }, "invalid_slide_illustration", 502],
+        [{ illustration: { version: 2, status: "needs-image" } }, "illustration_requires_image", 422]]) {
+        const h = harness({ results: [{ text: JSON.stringify(material), usageMetadata }] });
+        const response = await h.run({ materialType: "slides", slideIllustration: { title: "Tema" } });
+        assert.equal(response.statusCode, status); assert.equal(response.body.code, code);
+        assert.equal(h.calls(), 1); assert.equal(h.refunds(), 1); assert.deepEqual(h.providerAmounts, [350]);
+        assert.equal(h.events[0].status, "failed"); assert.equal(h.events[0].creditsCharged, 0);
+    }
 });
 
 test("targeted editing uses both providers and charges only actual usage without returning a full activity", async () => {

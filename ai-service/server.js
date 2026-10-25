@@ -9,6 +9,7 @@ import { GoogleGenAI } from "@google/genai";
 import { generateGroqStructuredMaterial } from "./ai-text-provider.js";
 import { schemaFor } from "./materials/schemas.js";
 import { normalizeItemRefinement, refinementSchema, validateRefinedItem } from "./materials/item-refinement.js";
+import { normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration } from "./materials/slide-illustration-request.js";
 import { promptFor, imagePromptForSlide } from "./materials/prompts.js";
 import { normalizeSlidesMaterial } from "./materials/slides.js";
 import { parseGeneratedJson } from "./materials/generated-json.js";
@@ -1471,12 +1472,15 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         }
 
         const refinement = normalizeItemRefinement(materialType, request.body.refinement);
+        const illustrationRequest = normalizeSlideIllustrationRequest(materialType, request.body.slideIllustration);
+        if (illustrationRequest && (refinement || request.file)) return response.status(400).json({ error: "Gere a ilustração de um slide por vez, sem anexos nem ajuste de textos." });
         if (refinement && request.file) return response.status(400).json({ error: "O ajuste usa o conteúdo do item selecionado, sem anexos." });
-        const slideOptions = materialType === "slides" && !refinement
+        const slideOptions = materialType === "slides" && !refinement && !illustrationRequest
             ? normalizeSlideGenerationOptions(request.body.slideOptions, action) : undefined;
-        const generationOptions = refinement ? { operation: "refine-item", count: refinement.items.length }
+        const generationOptions = illustrationRequest ? { operation: "illustrate-slide", count: 1 } : refinement ? { operation: "refine-item", count: refinement.items.length }
             : normalizeActivityGenerationOptions(materialType, request.body.generationOptions, action);
         if (refinement) schemaConfig = refinementSchema(materialType, refinement);
+        if (illustrationRequest) schemaConfig = singleSlideIllustrationSchema;
         if (slideOptions) Object.assign(generationOptions, {
             audience: slideOptions.audience, className: slideOptions.className,
             subject: slideOptions.subject, objective: slideOptions.objective
@@ -1484,7 +1488,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         if (slideOptions) schemaConfig = schemaFor(materialType, slideOptions, generationOptions);
 
         const fileText = await extractTextFromFile(request.file);
-        const sourceText = refinement ? JSON.stringify(refinement) : [request.body.sourceText, fileText]
+        const sourceText = illustrationRequest ? JSON.stringify(illustrationRequest) : refinement ? JSON.stringify(refinement) : [request.body.sourceText, fileText]
             .filter(Boolean)
             .join("\n\n")
             .replace(/\u0000/g, "")
@@ -1569,13 +1573,13 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             throw error;
         }
         const measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
-        const normalizedMaterial = refinement ? generated.material : materialType === "slides"
+        const normalizedMaterial = refinement || illustrationRequest ? generated.material : materialType === "slides"
             ? { ...normalizeSlidesMaterial(generated.material, slideOptions), generation_options: slideOptions }
             : materialType === "worksheet" ? normalizeWorksheetMaterial(generated.material, generationOptions)
                 : normalizeDiscoveryMaterial(materialType, generated.material, generationOptions, sourceText);
         let material;
         try {
-            material = refinement ? validateRefinedItem(materialType, generated.material, refinement)
+            material = illustrationRequest ? validateSingleSlideIllustration(generated.material, illustrationRequest) : refinement ? validateRefinedItem(materialType, generated.material, refinement)
                 : applyActivityGenerationSettings(materialType, normalizedMaterial, generationOptions);
         } catch (error) {
             // Validation happens after a provider call: keep its measured usage
@@ -1612,7 +1616,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             ok: true,
             materialType,
             material,
-            ...(refinement ? { operation: "refine-item" } : {}),
+            ...(illustrationRequest ? { operation: "illustrate-slide" } : refinement ? { operation: "refine-item" } : {}),
             credits: settlement.credits,
             charge: {
                 materialType,
@@ -1654,8 +1658,12 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(400).json({ error: "Arquivo não suportado. Envie TXT, RTF, DOCX ou PDF válidos." });
         }
 
-        if (["invalid_slide_options", "invalid_generation_options", "invalid_discovery_material", "invalid_worksheet_material", "invalid_item_refinement"].includes(error?.code)) {
+        if (["invalid_slide_options", "invalid_generation_options", "invalid_discovery_material", "invalid_worksheet_material", "invalid_item_refinement", "invalid_slide_illustration_request"].includes(error?.code)) {
             return response.status(400).json({ error: error.message, code: error.code });
+        }
+
+        if (["illustration_requires_image", "invalid_slide_illustration"].includes(error?.code)) {
+            return response.status(error.code === "illustration_requires_image" ? 422 : 502).json({ error: error.message, code: error.code });
         }
 
         if (error?.code === "groq_prompt_too_long") {
