@@ -9,11 +9,14 @@ import { normalizeSlideGenerationOptions } from "../slide-generation-policy.js";
 import { normalizeSlidesMaterial } from "../materials/slides.js";
 import { parseGeneratedJson } from "../materials/generated-json.js";
 import { schemaFor } from "../materials/schemas.js";
+import { normalizeItemRefinement, refinementSchema, validateRefinedItem } from "../materials/item-refinement.js";
 import { normalizeDiscoveryMaterial, validateDiscoverySource } from "../materials/discovery.js";
 import { normalizeWorksheetMaterial, validateWorksheetSource, worksheetCompletionTokens } from "../materials/worksheet.js";
 import { worksheetFixture, worksheetLargeFixture } from "../../tools/fixtures/worksheet.mjs";
 import { promptFor } from "../materials/prompts.js";
 import { diagramExamples } from "../../tools/fixtures/slide-diagrams.mjs";
+import coreRefinement from "../../assets/js/item-refinement-core.js";
+import { refinementFixtures } from "../../tools/fixtures/item-refinement.mjs";
 
 const source = await fs.readFile(new URL("../server.js", import.meta.url), "utf8");
 const usageMetadata = { promptTokenCount: 100, candidatesTokenCount: 200, thoughtsTokenCount: 50, totalTokenCount: 350 };
@@ -25,7 +28,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
         Error, console: { error() {}, warn() {} }, process: { env: {} },
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
-        schemaFor, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings, worksheetCompletionTokens, worksheetMaxCompletionTokens: 12000,
+        schemaFor, normalizeItemRefinement, refinementSchema, validateRefinedItem, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings, worksheetCompletionTokens, worksheetMaxCompletionTokens: 12000,
         extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial, validateDiscoverySource, normalizeWorksheetMaterial, validateWorksheetSource, isUploadValidationError: () => false,
         activeAiTextProvider: () => provider, activeAiTextModel: () => provider === "groq" ? "openai/gpt-oss-120b" : "gemini-test",
         aiPlanForRequest: () => "free", isAiUnlimitedUser: () => unlimited,
@@ -63,6 +66,67 @@ test("text route logs actual provider usage and returned quantity without storin
     assert.equal(response.statusCode, 200); assert.equal(h.calls(), 1); assert.equal(h.events.length, 1);
     assert.equal(h.events[0].usage.totalTokens, 350); assert.equal(h.events[0].generatedCount, 1); assert.equal(h.events[0].context.requestedCount, 3);
     assert.equal(h.events[0].creditsCharged, response.body.charge.cost); assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE/);
+});
+
+test("targeted editing uses both providers and charges only actual usage without returning a full activity", async () => {
+    for (const provider of ["groq", "gemini"]) for (const materialType of ["mindmap", "debate"]) {
+        const key = materialType === "mindmap" ? "detail" : "guidance";
+        const item = { [key]: "Explicação nova com exemplo PRIVATE" };
+        const h = harness({ provider, promptBuilder: promptFor, results: [{ text: JSON.stringify({ item }), usageMetadata }] });
+        const response = await h.run({ materialType, refinement: JSON.stringify({ field: key,
+            instruction: "Simplifique para o 6º ano PRIVATE", item: { title: "PRIVATE", [key]: "Original PRIVATE" },
+            context: { title: "PRIVATE", neighbors: ["Outro tópico PRIVATE"] } }), generationOptions: { count: 8 } });
+        assert.equal(response.statusCode, 200);
+        assert.equal(response.body.operation, "refine-item");
+        assert.deepEqual(response.body.material, { item });
+        assert.equal(h.calls(), 1); assert.equal(h.refunds(), 0);
+        assert.ok(response.body.charge.cost > 0);
+        assert.equal(response.body.charge.usage.totalTokens, 350);
+        assert.equal(h.events[0].context.operation, "refine-item");
+        assert.equal(h.events[0].context.requestedCount, 1);
+        assert.equal(h.events[0].generatedCount, 1);
+        assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE/);
+        const input = h.providerInputs[0];
+        const schema = provider === "groq" ? input.schemaConfig.schema : input.config.responseJsonSchema;
+        assert.deepEqual(Object.keys(schema.properties.item.properties), [key]);
+        assert.match(provider === "groq" ? input.prompt : input.contents, /Simplifique para o 6º ano/);
+    }
+});
+
+test("invalid refinement is rejected before quota usage and malformed results refund individual credits", async () => {
+    const refinement = { field: "detail", instruction: "Explique PRIVATE", item: { detail: "Antes" }, context: { neighbors: [] } };
+    for (const body of [ { materialType: "slides", refinement }, { materialType: "mindmap", refinement: { ...refinement, field: "color" } },
+        { materialType: "debate", refinement: "invalid JSON" } ]) {
+        const h = harness(); const response = await h.run(body);
+        assert.equal(response.statusCode, 400); assert.equal(h.calls(), 0); assert.equal(h.refunds(), 0);
+    }
+    for (const material of [ { branches: [{ detail: "Full replacement" }] }, { item: { detail: "ok", title: "Not allowed" } }, { item: { detail: "" } } ]) {
+        const h = harness({ results: [{ text: JSON.stringify(material), usageMetadata }] });
+        const response = await h.run({ materialType: "mindmap", refinement });
+        assert.equal(response.statusCode, 502); assert.equal(response.body.code, "ai_response_incomplete");
+        assert.equal(h.calls(), 1); assert.equal(h.refunds(), 1);
+        assert.equal(h.events[0].creditsCharged, 0); assert.equal(h.events[0].status, "failed");
+        assert.deepEqual(h.providerAmounts, [350]);
+    }
+    const blocked = harness({ blocked: true });
+    assert.equal((await blocked.run({ materialType: "mindmap", refinement })).statusCode, 429);
+    assert.equal(blocked.calls(), 0);
+});
+
+test("all activity refinements use their narrow schema, one provider call and measured batch usage", async () => {
+    for (const [materialType, item] of Object.entries(refinementFixtures)) {
+        const patch = Object.fromEntries(coreRefinement.selectedKeys(materialType, item, "all").map(key => [key, item[key]]));
+        const h = harness({ promptBuilder: promptFor, results: [{ text: JSON.stringify({ items: { "item-3": patch } }), usageMetadata }] });
+        const response = await h.run({ materialType, refinement: { field: "all", instruction: "Refaça somente o item 3.",
+            items: [{ id: "item-3", item }], context: { neighbors: ["Outro item PRIVATE"] } }, slideOptions: { includeIllustration: true } });
+        assert.equal(response.statusCode, 200, materialType); assert.equal(h.calls(), 1);
+        assert.equal(response.body.operation, "refine-item");
+        assert.deepEqual(response.body.material.items["item-3"], patch);
+        assert.deepEqual(h.providerInputs[0].schemaConfig.schema.properties.items.required, ["item-3"]);
+        assert.equal(h.events[0].generatedCount, 1); assert.equal(h.events[0].context.requestedCount, 1);
+        assert.equal(response.body.charge.usage.totalTokens, 350);
+        assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE/);
+    }
 });
 
 for (const includeIllustration of [true, false]) test(`real slide prompt reaches the provider with illustration=${includeIllustration} and all generation settings`, async () => {

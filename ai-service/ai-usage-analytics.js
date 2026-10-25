@@ -41,6 +41,7 @@ export function usageErrorCategory(error) {
 export function usageContext(materialType, generationOptions = {}, slideOptions, hasFile = false) {
     // Explicit allowlist: no audience, school, title, prompt, filename or source text.
     return {
+        ...(generationOptions.operation === "refine-item" ? { operation: "refine-item" } : {}),
         requestedCount: generationOptions.count == null ? null : integer(generationOptions.count), hasFile: hasFile === true,
         contentMode: ["auto", "preserve", "summarize", "develop"].includes(generationOptions.contentMode) ? generationOptions.contentMode : "auto",
         detail: materialType === "slides" && ["concise", "balanced", "detailed"].includes(slideOptions?.detail) ? slideOptions.detail : null,
@@ -83,9 +84,9 @@ export function createUsageObservation({ uid, plan, unlimited, materialType, pro
                 provider: ["groq", "gemini"].includes(provider) ? provider : "unknown", model: String(model || "").slice(0, 120),
                 createdAt: new Date(now()).toISOString(), expiresAt: new Date(now() + 90 * dayMs),
                 status: success === true ? "success" : "failed", durationMs: integer(now() - startedAt),
-                context: usageContext(materialType, { count: context?.requestedCount, contentMode: context?.contentMode },
+                context: usageContext(materialType, { count: context?.requestedCount, contentMode: context?.contentMode, operation: context?.operation },
                     { detail: context?.detail, includeIllustration: context?.illustration }, context?.hasFile),
-                generatedCount: success && materialType === "image" ? 1 : success && materialType === "worksheet" && material?.activities ? Object.keys(material.activities).length : Array.isArray(material?.[arrays[materialType]]) ? material[arrays[materialType]].length : null,
+                generatedCount: success && context?.operation === "refine-item" ? integer(material?.refinementCount) : success && materialType === "image" ? 1 : success && materialType === "worksheet" && material?.activities ? Object.keys(material.activities).length : Array.isArray(material?.[arrays[materialType]]) ? material[arrays[materialType]].length : null,
                 creditsCharged: creditsCharged === null ? null : integer(creditsCharged),
                 measuredCredits: known === attempts.length ? charge?.credits ?? null : null,
                 usage: charge?.usage ?? null,

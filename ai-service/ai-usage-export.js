@@ -40,7 +40,7 @@ export function buildUsageExport(snapshot, filters, now = Date.now()) {
         provider: category(row.provider, ["groq", "gemini"]),
         model: typeof row.model === "string" && /^[a-zA-Z0-9_./:-]{1,120}$/.test(row.model) ? row.model : "unknown",
         status: category(row.status, ["success", "failed"]), durationMs: amount(row.durationMs),
-        context: usageContext(row.materialType, { count: row.context?.requestedCount, contentMode: row.context?.contentMode },
+        context: usageContext(row.materialType, { count: row.context?.requestedCount, contentMode: row.context?.contentMode, operation: row.context?.operation },
             { detail: row.context?.detail, includeIllustration: row.context?.illustration }, row.context?.hasFile),
         generatedCount: amount(row.generatedCount), usage: usage(row.usage), usageCoverage: coverage(row.usageCoverage),
         creditsCharged: amount(row.creditsCharged), measuredCredits: amount(row.measuredCredits),

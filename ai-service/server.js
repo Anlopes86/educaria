@@ -8,6 +8,7 @@ import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
 import { generateGroqStructuredMaterial } from "./ai-text-provider.js";
 import { schemaFor } from "./materials/schemas.js";
+import { normalizeItemRefinement, refinementSchema, validateRefinedItem } from "./materials/item-refinement.js";
 import { promptFor, imagePromptForSlide } from "./materials/prompts.js";
 import { normalizeSlidesMaterial } from "./materials/slides.js";
 import { parseGeneratedJson } from "./materials/generated-json.js";
@@ -1469,9 +1470,13 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(400).json({ error: "Objetivo do professor muito longo (max 500 caracteres)." });
         }
 
-        const slideOptions = materialType === "slides"
+        const refinement = normalizeItemRefinement(materialType, request.body.refinement);
+        if (refinement && request.file) return response.status(400).json({ error: "O ajuste usa o conteúdo do item selecionado, sem anexos." });
+        const slideOptions = materialType === "slides" && !refinement
             ? normalizeSlideGenerationOptions(request.body.slideOptions, action) : undefined;
-        const generationOptions = normalizeActivityGenerationOptions(materialType, request.body.generationOptions, action);
+        const generationOptions = refinement ? { operation: "refine-item", count: refinement.items.length }
+            : normalizeActivityGenerationOptions(materialType, request.body.generationOptions, action);
+        if (refinement) schemaConfig = refinementSchema(materialType, refinement);
         if (slideOptions) Object.assign(generationOptions, {
             audience: slideOptions.audience, className: slideOptions.className,
             subject: slideOptions.subject, objective: slideOptions.objective
@@ -1479,7 +1484,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         if (slideOptions) schemaConfig = schemaFor(materialType, slideOptions, generationOptions);
 
         const fileText = await extractTextFromFile(request.file);
-        const sourceText = [request.body.sourceText, fileText]
+        const sourceText = refinement ? JSON.stringify(refinement) : [request.body.sourceText, fileText]
             .filter(Boolean)
             .join("\n\n")
             .replace(/\u0000/g, "")
@@ -1494,12 +1499,12 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
         }
 
         // Validate supplied word lists before reserving credits or calling the provider.
-        Object.assign(generationOptions, validateDiscoverySource(materialType, generationOptions, sourceText));
-        if (materialType === "worksheet") {
+        if (!refinement) Object.assign(generationOptions, validateDiscoverySource(materialType, generationOptions, sourceText));
+        if (!refinement && materialType === "worksheet") {
             Object.assign(generationOptions, validateWorksheetSource(generationOptions, sourceText));
             schemaConfig = schemaFor(materialType, generationOptions);
         }
-        if (["wordtrail", "connections"].includes(materialType)) schemaConfig = schemaFor(materialType, generationOptions);
+        if (!refinement && ["wordtrail", "connections"].includes(materialType)) schemaConfig = schemaFor(materialType, generationOptions);
 
         if (!activeAiTextProvider()) {
             return response.status(503).json({ error: aiTextProviderConfigurationError() });
@@ -1564,12 +1569,21 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             throw error;
         }
         const measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
-        const normalizedMaterial = materialType === "slides"
+        const normalizedMaterial = refinement ? generated.material : materialType === "slides"
             ? { ...normalizeSlidesMaterial(generated.material, slideOptions), generation_options: slideOptions }
             : materialType === "worksheet" ? normalizeWorksheetMaterial(generated.material, generationOptions)
                 : normalizeDiscoveryMaterial(materialType, generated.material, generationOptions, sourceText);
-        const material = applyActivityGenerationSettings(materialType, normalizedMaterial, generationOptions);
-        usageMaterial = material;
+        let material;
+        try {
+            material = refinement ? validateRefinedItem(materialType, generated.material, refinement)
+                : applyActivityGenerationSettings(materialType, normalizedMaterial, generationOptions);
+        } catch (error) {
+            // Validation happens after a provider call: keep its measured usage
+            // for global quotas even when the individual credit is refunded.
+            error.usageMetadata = generated.usageMetadata;
+            throw error;
+        }
+        usageMaterial = refinement ? { refinementCount: refinement.items.length } : material;
 
         const providerTokenQuota = await settleAiProviderTokens(
             providerTokenReservation,
@@ -1598,6 +1612,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             ok: true,
             materialType,
             material,
+            ...(refinement ? { operation: "refine-item" } : {}),
             credits: settlement.credits,
             charge: {
                 materialType,
@@ -1639,7 +1654,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             return response.status(400).json({ error: "Arquivo não suportado. Envie TXT, RTF, DOCX ou PDF válidos." });
         }
 
-        if (["invalid_slide_options", "invalid_generation_options", "invalid_discovery_material", "invalid_worksheet_material"].includes(error?.code)) {
+        if (["invalid_slide_options", "invalid_generation_options", "invalid_discovery_material", "invalid_worksheet_material", "invalid_item_refinement"].includes(error?.code)) {
             return response.status(400).json({ error: error.message, code: error.code });
         }
 
@@ -1650,7 +1665,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             });
         }
 
-        if (["json_validate_failed", "groq_empty_response", "groq_response_incomplete", "invalid_slide_content"].includes(error?.code)
+        if (["json_validate_failed", "groq_empty_response", "groq_response_incomplete", "invalid_slide_content", "invalid_refined_item"].includes(error?.code)
             || /^(empty_model_response|invalid_json_response)/.test(error?.message || "")) {
             return response.status(502).json({
                 error: error?.code === "groq_response_incomplete"

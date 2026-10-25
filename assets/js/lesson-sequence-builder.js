@@ -420,7 +420,7 @@ function renderInlineEditor(block) {
         : "";
 
     const itemsMarkup = sections.map((section, index) => `
-        <article class="lesson-sequence-inline-editor-item">
+        <article class="lesson-sequence-inline-editor-item" data-refine-lesson-item="${index}">
             <div class="lesson-sequence-inline-editor-item-head">
                 <strong>${escapeHtml(`${config.itemLabel} ${index + 1}`)}</strong>
             </div>
@@ -459,7 +459,7 @@ function renderInlineEditor(block) {
     `).join("");
 
     return `
-        <section class="lesson-sequence-inline-editor">
+        <section class="lesson-sequence-inline-editor" data-refine-lesson-block="${escapeAttr(block.id)}">
             <div class="lesson-sequence-inline-editor-copy">
                 <div>
                     <span class="platform-section-label">Edição rápida</span>
@@ -918,8 +918,9 @@ function resolveLessonAiEndpoint() {
         : "/api/ai/generate";
 }
 
-async function requestLessonAiMaterial(materialType, sourceText, action) {
-    if (typeof window.ensureEducariaAiCreditsAvailable === "function") {
+async function requestLessonAiMaterial(materialType, sourceText, action, refinement) {
+    const owner = refinement ? window.educariaGenerationRecovery?.currentUid() : null;
+    if (!refinement && typeof window.ensureEducariaAiCreditsAvailable === "function") {
         const hasCredits = await window.ensureEducariaAiCreditsAvailable({
             alert: false,
             materialType
@@ -934,18 +935,22 @@ async function requestLessonAiMaterial(materialType, sourceText, action) {
     formData.append("materialType", materialType);
     formData.append("sourceText", sourceText || "");
     formData.append("text", sourceText || "");
+    if (refinement) formData.append("refinement", JSON.stringify(refinement));
     if (action) {
         formData.append("action", action);
     }
 
+    const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {};
+    if (refinement && (!owner || owner !== window.educariaGenerationRecovery?.currentUid())) throw new Error("A conta mudou.");
     const response = await fetch(endpoint, {
         method: "POST",
-        headers: typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {},
+        headers,
         body: formData
     });
 
     if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
+        if (refinement && owner !== window.educariaGenerationRecovery?.currentUid()) throw new Error("A conta mudou.");
         if (errorPayload?.credits) {
             document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
                 detail: { credits: errorPayload.credits }
@@ -956,12 +961,13 @@ async function requestLessonAiMaterial(materialType, sourceText, action) {
     }
 
     const payload = await response.json().catch(() => ({}));
+    if (refinement && owner !== window.educariaGenerationRecovery?.currentUid()) throw new Error("A conta mudou.");
     if (payload?.credits) {
         document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
             detail: { credits: payload.credits }
         }));
     }
-    return payload?.material || payload || null;
+    return refinement ? payload : payload?.material || payload || null;
 }
 
 function lessonGenerationHint(block, index, sourceText) {

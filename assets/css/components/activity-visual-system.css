@@ -317,7 +317,6 @@ body.product-body.theme-overview .platform-modal-card { background: #fffefa; bor
 .theme-editor .mind-preview-map { background: #e8f3ed; border-color: #b9d5c5; }
 .theme-editor .mind-preview-center { background: #226963; color: #fff; box-shadow: 0 6px 16px -10px #173c4380; }
 .theme-editor .mind-preview-branch { background: #fff; color: #173c43; box-shadow: 0 3px 0 #d6e5dc; }
-.theme-editor .editor-journey { box-shadow: var(--activity-shadow); border-color: var(--activity-border); border-radius: 18px; }
 
 @media (prefers-reduced-motion: no-preference) {
     .dashboard-quick-create { transition: background-color .18s ease, border-color .18s ease; }

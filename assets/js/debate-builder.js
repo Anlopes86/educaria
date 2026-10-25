@@ -91,12 +91,10 @@ function setDebateStepSelect(count) {
         return;
     }
 
-    const highest = options[options.length - 1];
-    if (highest) {
-        highest.textContent = `${count} etapas`;
-        highest.value = highest.textContent;
-        quantity.value = highest.value;
-    }
+    const option = document.createElement("option");
+    option.textContent = `${count} etapas`;
+    quantity.appendChild(option);
+    quantity.value = option.value;
 }
 
 function syncDebateStepCount() {

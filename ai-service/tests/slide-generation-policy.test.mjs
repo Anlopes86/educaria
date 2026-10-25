@@ -5,6 +5,7 @@ import vm from "node:vm";
 import { normalizeSlideGenerationOptions as options, slideAudienceProfile, slidePedagogyInstructions, normalizeGeneratedSlideBody } from "../slide-generation-policy.js";
 import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } from "../activity-generation-policy.js";
 import { promptFor } from "../materials/prompts.js";
+import { normalizeItemRefinement } from "../materials/item-refinement.js";
 
 for (const [label, detail, expected] of [
     ["Mais enxuto", "concise", /1 a 2 blocos curtos/],
@@ -133,7 +134,7 @@ test("production route passes options to generation and rejects bad fields befor
     const context = vm.createContext({
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
-        schemaFor: () => ({}), normalizeSlideGenerationOptions: options, extractTextFromFile: async () => "",
+        schemaFor: () => ({}), normalizeItemRefinement, normalizeSlideGenerationOptions: options, extractTextFromFile: async () => "",
         normalizeActivityGenerationOptions, applyActivityGenerationSettings, validateDiscoverySource,
         activeAiTextProvider: () => "groq", aiCreditUsagePolicy: {}, aiGenerationMaxAttempts: 1,
         activeAiTextModel: () => "openai/gpt-oss-120b", aiPlanForRequest: () => "free", isAiUnlimitedUser: () => false,

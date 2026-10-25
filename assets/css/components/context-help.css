@@ -1,0 +1,22 @@
+/* Optional explanations only. The text stays inline if enhancement is unavailable. */
+.context-help-label { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.context-help-label > label { margin: 0; }
+.context-help-inline { display: inline-flex; align-items: center; gap: 6px; font-size: .875rem; line-height: 1.5; color: #4b6267; }
+button.context-help-trigger {
+    display: inline-grid; place-items: center; flex: none; width: 32px; height: 32px; min-height: 32px;
+    margin: 0; padding: 5px; border: 0; border-radius: 50%; background: transparent; color: #466369;
+    cursor: help; box-shadow: none; vertical-align: middle;
+}
+button.context-help-trigger svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+button.context-help-trigger:hover { background: #e4efe9; color: #195e58; }
+button.context-help-trigger:focus-visible { outline: 2px solid #21766d; outline-offset: 2px; background: #e4efe9; }
+.context-help-popover:not(:popover-open) { display: none !important; }
+.context-help-popover:popover-open {
+    display: block; position: fixed; inset: auto; box-sizing: border-box; margin: 0; padding: 14px 16px;
+    width: max-content; max-width: min(340px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto;
+    border: 1px solid #bdcec7; border-radius: 12px; background: #fffefa; color: #203f45;
+    box-shadow: 0 8px 28px #173c4326; font-family: var(--font-body, sans-serif); font-size: .875rem;
+    font-weight: 400; line-height: 1.55; text-align: left; white-space: normal; overflow-wrap: anywhere;
+}
+@media (pointer: coarse) { button.context-help-trigger { width: 44px; height: 44px; min-height: 44px; } }
+@media print { .context-help-trigger, .context-help-inline, .context-help-popover { display: none !important; } }

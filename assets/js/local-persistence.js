@@ -414,6 +414,14 @@ function restoreBuilderState(config) {
             normalizeSlideBuilder(stack);
             normalizeFlashcardsBuilder(stack);
             renumberRestoredCards(config.cardSelector, config.labelPrefix, config.labelSelector);
+            // Quantities added manually may not exist in the initial select.
+            // Restore them before the preview's sync can remove saved cards.
+            if (config.stackSelector === "[data-mind-branches]" && typeof setMindCountSelect === "function") {
+                setMindCountSelect(stack.querySelectorAll(config.cardSelector).length);
+            }
+            if (config.stackSelector === "[data-debate-steps]" && typeof setDebateStepSelect === "function") {
+                setDebateStepSelect(stack.querySelectorAll(config.cardSelector).length);
+            }
         }
 
         dispatchBuilderContentChange("input", stack);

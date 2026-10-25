@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="dashboard.title">Painel do Professor | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261023-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -29,10 +29,11 @@
     <script src="../assets/js/slide-diagram-editing.js?v=20261022-1" defer></script>
     <script src="../assets/js/slide-illustrations.js?v=20261024-1" defer></script>
     <script src="../assets/js/discovery-input.js" defer></script>
-    <script src="../assets/js/teacher-dashboard.js?v=20261023-2" defer></script>
+    <script src="../assets/js/teacher-dashboard.js?v=20261024-4" defer></script>
     <link rel="stylesheet" href="../assets/css/components/activity-examples.css?v=20261023-1">
     <script src="../assets/js/activity-examples-catalog.js?v=20261023-1" defer></script>
     <script src="../assets/js/activity-examples.js?v=20261023-1" defer></script>
+    <script src="../assets/js/context-help.js?v=20261024-1" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true" data-dashboard-ready="false">
     <a class="skip-link" href="#main-content" data-i18n="dashboard.skip">Pular para o conteúdo principal</a>
@@ -112,7 +113,7 @@
                 <div class="dashboard-hero-copy">
                     <span class="dashboard-eyebrow" data-i18n="dashboard.hero.eyebrow">Seu estúdio de aula</span>
                     <h1><span data-dashboard-greeting>Bom dia</span>, <span data-sidebar-teacher>Professor</span>!</h1>
-                    <p data-i18n="dashboard.hero.copy">Transforme um tema ou arquivo em uma atividade pronta para revisar, personalizar e apresentar à turma.</p>
+                    <p data-i18n="dashboard.hero.copy">Crie com um tema ou arquivo. Revise e leve para a sala de aula.</p>
 
                     <ol class="dashboard-hero-flow" aria-label="Como criar uma atividade" data-i18n-aria-label="dashboard.hero.flow.label">
                         <li><span>1</span><strong data-i18n="dashboard.hero.flow.source">Informe o tema</strong></li>
@@ -150,7 +151,6 @@
                 <aside class="dashboard-quick-create" id="quick-ai-create" data-dashboard-tour-anchor="quick-create">
                     <span class="dashboard-next-class-tag" data-i18n="dashboard.quick.tag">Criador de atividades</span>
                     <strong data-i18n="dashboard.quick.title">O que vamos ensinar hoje?</strong>
-                    <p data-dashboard-quick-copy data-i18n="dashboard.quick.copy">Tema ou arquivo. Você escolhe, a IA prepara.</p>
 
                     <form class="dashboard-quick-create-form" data-dashboard-quick-form>
                         <div class="dashboard-tour-field-group" data-dashboard-tour-anchor="source">
@@ -164,7 +164,7 @@
                             <div class="dashboard-creation-disclosure-body">
                                 <label class="dashboard-quick-option-field"><span>Arquivo de conteúdo</span><input type="file" data-dashboard-source-file accept=".txt,.rtf,.docx,.pdf" aria-describedby="dashboard-source-help"></label>
                                 <button type="button" class="platform-link-button platform-link-secondary" data-dashboard-remove-source hidden>Remover arquivo</button>
-                                <small id="dashboard-source-help">TXT, RTF, DOCX ou PDF com texto selecionável · até 5 MB. Você pode gerar só com o arquivo ou acrescentar orientações acima.</small>
+                                <small id="dashboard-source-help">TXT, RTF, DOCX ou PDF com texto selecionável · até 5 MB.</small>
                             </div>
                         </details>
                         </div>
@@ -189,11 +189,11 @@
                                     <label class="dashboard-quick-option-field"><span>Objetivo da aula</span><input type="text" maxlength="280" data-dashboard-context="objective" placeholder="Ex.: revisar conceitos"></label>
                                 </div>
                                 <div class="dashboard-quick-options-grid" data-dashboard-advanced-options></div>
-                                <small>A IA adapta a linguagem e os exemplos ao público. Você poderá revisar tudo no editor.</small>
+                                <small data-context-help="Como a IA usa essas opções">A IA adapta a linguagem e os exemplos ao público. Revise o resultado no editor.</small>
                                 <div class="dashboard-creation-disclosure-body dashboard-slide-attachment" data-dashboard-slide-image-panel hidden>
-                                <small>Incluir ilustração: diagramas e símbolos organizados conforme o conteúdo. Para imagens detalhadas ou realistas, envie uma imagem própria. A geração utiliza créditos.</small>
+                                <small data-context-help="Ilustrações dos slides">Incluir ilustração: diagramas e símbolos organizados conforme o conteúdo. Para imagens detalhadas ou realistas, envie uma imagem própria. A geração utiliza créditos.</small>
                                 <label class="dashboard-quick-option-field"><span>Enviar imagem própria</span><input type="file" data-dashboard-slide-image accept="image/png,image/jpeg,image/webp" aria-describedby="dashboard-image-help"></label>
-                                <small id="dashboard-image-help">JPG, PNG ou WebP · até 8 MB. Aparece ao lado do texto no primeiro slide; não é enviada à IA. Ajuste as demais imagens no editor.</small>
+                                <small id="dashboard-image-help">JPG, PNG ou WebP · até 8 MB. Usada no primeiro slide; não é enviada à IA.</small>
                                 <div class="dashboard-image-preview" data-dashboard-image-preview hidden><img alt="Prévia da imagem de abertura"><button type="button" class="platform-link-button platform-link-secondary" data-dashboard-remove-image>Remover imagem</button></div>
                                 </div>
                             </div>

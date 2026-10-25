@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aula Completa | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
+    <link rel="stylesheet" href="../assets/css/components/item-refinement-editor.css?v=20261024-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -25,8 +26,13 @@
     <script src="../assets/js/slide-illustrations.js?v=20261024-1" defer></script>
     <script src="../assets/js/slide-diagram-editor.js?v=20261016-2" defer></script>
     <script src="../assets/js/discovery-core.js?v=20261018-1" defer></script>
-    <script src="../assets/js/lesson-sequence-builder.js?v=20261017-2" defer></script>
+    <script src="../assets/js/lesson-sequence-builder.js?v=20261024-1" defer></script>
+    <script src="../assets/js/item-refinement-core.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-adapters.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-lesson.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-editor.js?v=20261024-2" defer></script>
     <link rel="stylesheet" href="../assets/css/components/slide-diagram-editor.css?v=20261016-2">
+    <script src="../assets/js/context-help.js?v=20261024-1" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="lesson">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -47,43 +53,7 @@
         </header>
 
         <section class="activity-editor-context">
-            <div>
-                <span class="focus-eyebrow">Editor de aula completa</span>
-                <h1>Organize uma aula fluida, do início ao fechamento.</h1>
-                <p>Escolha as atividades, defina a ordem e revise cada bloco antes de apresentar tudo em uma única sequência.</p>
-            </div>
-            <aside class="editor-journey" data-editor-journey aria-label="Etapas para preparar a aula">
-                <div class="editor-journey__head">
-                    <strong>Seu caminho até a sala</strong>
-                    <span>Etapa de edição</span>
-                </div>
-                <ol>
-                    <li class="is-current" aria-current="step">
-                        <span class="editor-journey__number" aria-hidden="true">1</span>
-                        <span class="editor-journey__copy">
-                            <strong>Escolha as atividades</strong>
-                            <small>Monte os blocos que farão parte da aula.</small>
-                        </span>
-                        <span class="editor-journey__state">Agora</span>
-                    </li>
-                    <li>
-                        <span class="editor-journey__number" aria-hidden="true">2</span>
-                        <span class="editor-journey__copy">
-                            <strong>Organize e personalize</strong>
-                            <small>Ajuste o conteúdo e a ordem da sequência.</small>
-                        </span>
-                        <span class="editor-journey__state">Depois</span>
-                    </li>
-                    <li>
-                        <span class="editor-journey__number" aria-hidden="true">3</span>
-                        <span class="editor-journey__copy">
-                            <strong>Salve ou apresente</strong>
-                            <small>Use a aula completa em sala.</small>
-                        </span>
-                        <span class="editor-journey__state">Depois</span>
-                    </li>
-                </ol>
-            </aside>
+            <div><h1>Aula completa</h1><p>Escolha as atividades, organize a ordem e apresente.</p></div>
         </section>
 
         <section class="lesson-sequence-layout">
@@ -93,7 +63,6 @@
                         <span>Essencial da aula</span>
                     </summary>
                     <div class="editor-disclosure-body lesson-sequence-step-body">
-                        <p class="activity-manual-guide">Defina nome, tempo e objetivo. Depois monte os blocos na ordem da aula.</p>
                         <div class="platform-form-grid lesson-sequence-meta-grid">
                             <div class="platform-field">
                                 <label for="lesson-title">Nome da aula</label>

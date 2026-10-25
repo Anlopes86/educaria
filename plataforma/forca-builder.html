@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Força | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
+    <title>Forca | EducarIA</title>
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
+    <link rel="stylesheet" href="../assets/css/components/item-refinement-editor.css?v=20261024-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -17,13 +18,17 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js?v=20261014-1" defer></script>
-    <script src="../assets/js/editor-disclosure.js?v=20260930-1" defer></script>
+    <script src="../assets/js/editor-disclosure.js?v=20261024-4" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20261014-1" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261024-3" defer></script>
+    <script src="../assets/js/item-refinement-core.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-adapters.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-editor.js?v=20261024-2" defer></script>
     <script src="../assets/js/builder-journey.js?v=20261014-1" defer></script>
     <script src="../assets/js/hangman-core.js" defer></script>
     <script src="../assets/js/hangman-builder.js" defer></script>
+    <script src="../assets/js/context-help.js?v=20261024-1" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="hangman" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -33,7 +38,7 @@
                 <img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo" width="48" height="48">
                 <div>
                     <span>EducarIA</span>
-                    <strong>Força</strong>
+                    <strong>Forca</strong>
                 </div>
             </a>
             <div class="platform-top-actions">
@@ -42,7 +47,7 @@
                 <a href="./index.html#activity-toolkit" class="platform-link-button platform-link-secondary">Escolher outra atividade</a>
             </div>
         </header>
-        <div class="builder-floating-actions" role="toolbar" aria-label="Ações da força">
+        <div class="builder-floating-actions" role="toolbar" aria-label="Ações da forca">
             <p class="builder-save-status" data-builder-save-status role="status" aria-live="polite" aria-atomic="true">
                 <span class="builder-save-status-dot" aria-hidden="true"></span>
                 <span data-builder-save-status-label>Rascunho local</span>
@@ -53,12 +58,7 @@
         </div>
 
         <section class="activity-editor-context">
-            <div>
-                <span class="focus-eyebrow">Editor de for&ccedil;a</span>
-                <h1>Monte palavras, dicas e acompanhe a rodada na prévia.</h1>
-                <p>Ideal para revisar vocabul&aacute;rio, ortografia e conceitos-chave de forma r&aacute;pida.</p>
-                <p>Para criar sem utilizar a IA, baixe o modelo com os campos prontos, preencha os espa&ccedil;os, salve o arquivo e selecione em 'arquivo de apoio' logo acima.</p>
-            </div>
+            <div><h1>Forca</h1><p>Revise o conteúdo e confira a prévia antes de apresentar.</p></div>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
@@ -99,7 +99,7 @@
                             </div>
                         </div>
                         <div class="utility-actions">
-                            <button type="button" class="platform-link-button platform-link-primary" data-generate-material="hangman">Gerar força com IA</button>
+                            <button type="button" class="platform-link-button platform-link-primary" data-generate-material="hangman">Gerar forca com IA</button>
                         </div>
                     </div>
                 </details>
@@ -160,7 +160,6 @@
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-clear-draft>Limpar conteúdo</button>
                         </div>
-                        <p class="activity-manual-guide">Preencha palavra e dica. Use Mais opções da atividade para tentativas e contexto.</p>
                         <div class="platform-question-stack activity-card-stack" data-hangman-entries>
                             <section class="platform-question-card activity-content-card hangman-entry-card" data-hangman-entry>
                                 <div class="activity-card-header">
@@ -275,13 +274,11 @@
             </article>
 
             <aside class="platform-builder-card activity-preview-pane hangman-preview-pane">
-                <span class="platform-section-label">Prévia</span>
-                <h2>Veja a força pronta</h2>
-                <p>Confira a primeira rodada antes de apresentar para a turma.</p>
+                <h2>Prévia</h2>
                 <div class="live-preview-stack">
                     <section class="live-preview-card live-preview-card--teal">
                         <span class="platform-section-label">Resumo</span>
-                        <h3 data-hangman-preview-title>Jogo da Força</h3>
+                        <h3 data-hangman-preview-title>Jogo da Forca</h3>
                         <p data-hangman-preview-subtitle>Descubra as palavras usando as dicas.</p>
                         <div class="preview-chip-row">
                             <span class="preview-chip" data-hangman-preview-count>0 palavras</span>

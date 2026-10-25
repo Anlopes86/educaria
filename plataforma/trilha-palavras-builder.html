@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trilha de Palavras | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
+    <link rel="stylesheet" href="../assets/css/components/item-refinement-editor.css?v=20261024-2">
     <link rel="stylesheet" href="../assets/css/components/discovery.css?v=20261018-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
@@ -24,8 +25,12 @@
     <script src="../assets/js/discovery-core.js?v=20261018-1" defer></script>
     <script src="../assets/js/discovery-input.js" defer></script>
     <script src="../assets/js/discovery-builder.js?v=20261018-answers" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20261017-2" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261024-3" defer></script>
+    <script src="../assets/js/item-refinement-core.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-adapters.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-editor.js?v=20261024-2" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
+    <script src="../assets/js/context-help.js?v=20261024-1" defer></script>
 </head>
 <body class="product-body theme-editor discovery-builder" data-material-type="wordtrail" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -40,11 +45,11 @@
             <a href="trilha-palavras-apresentacao.html" class="platform-link-button platform-link-secondary" data-discovery-present>Apresentar</a>
         </div>
         <section class="activity-editor-context">
-            <div><span class="focus-eyebrow">Explore · conecte · descubra</span><h1>Um caminho de letras, várias descobertas.</h1><p>Crie com um tema ou escolha suas palavras. A grade é montada automaticamente, com caminhos que podem fazer curvas.</p></div>
+            <div><h1>Trilha de Palavras</h1><p>Defina as palavras e pistas. A grade é montada automaticamente.</p></div>
         </section>
         <section class="platform-quiz-layout activity-workspace">
             <article class="platform-builder-card highlight-surface activity-builder-pane">
-                <div class="platform-field discovery-play-options"><label for="discovery-show-clues">Pistas na atividade</label><select id="discovery-show-clues"><option value="true">Com pistas</option><option value="false">Sem pistas</option></select><small>Vale para a criação e a apresentação. Você pode mudar depois, sem apagar as pistas já escritas.</small></div>
+                <div class="platform-field discovery-play-options"><label for="discovery-show-clues">Pistas na atividade</label><select id="discovery-show-clues"><option value="true">Com pistas</option><option value="false">Sem pistas</option></select><small data-context-help="Pistas na atividade">Mostre ou esconda as pistas sem apagar o texto nem gerar novamente.</small></div>
                 <details class="editor-disclosure">
                     <summary><span>Montar com IA</span><small class="ai-credits-pill" data-ai-credits>Créditos de IA</small><small>Expandir</small></summary>
                     <div class="editor-disclosure-body">
@@ -66,14 +71,13 @@
                             <div class="platform-field platform-field-wide"><label for="discovery-title">Título da atividade</label><input id="discovery-title" type="text" maxlength="180" placeholder="Trilha de Palavras"></div>
                             <div class="platform-field platform-field-wide"><label for="discovery-subtitle">Orientação para a turma (opcional)</label><input id="discovery-subtitle" type="text" maxlength="280" placeholder="Não revele a resposta aqui."></div>
                         </div>
-                        <p class="activity-manual-guide">Use de 2 a 12 palavras com 2 a 18 letras. Espaços, hífens e acentos são simplificados na grade; o termo original aparece ao acertar.</p>
                         <div class="platform-question-stack activity-card-stack" data-discovery-items></div>
                         <div class="utility-actions"><button type="button" class="platform-link-button platform-link-secondary" data-discovery-add>+ Adicionar palavra</button></div>
                     </div>
                 </details>
             </article>
             <aside class="platform-preview-card activity-preview-pane">
-                <span class="platform-section-label">Prévia da atividade</span>
+                <h2>Prévia</h2>
                 <div data-discovery-preview></div>
                 <p class="discovery-validation" data-discovery-validation role="status"></p>
                 <p class="discovery-preview-note">Na apresentação, as respostas começam ocultas. Revise o conteúdo da IA antes de usar em sala.</p>

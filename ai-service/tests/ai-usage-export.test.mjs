@@ -44,6 +44,17 @@ test("privacy projection strips direct identifiers and future private fields at 
     assert.equal(result.events[0].account, "Professor 001");
     const unmodified = usageTestSnapshot(3); run(unmodified); assert.deepEqual(unmodified, before);
 });
+test("exports distinguish targeted edits without exposing their instructions", () => {
+    const snapshot = usageTestSnapshot(2);
+    snapshot.events[0].context.operation = "refine-item";
+    snapshot.events[0].context.instruction = "PRIVATE_REQUEST";
+    snapshot.events[1].context.operation = "PRIVATE_OPERATION";
+    const result = run(snapshot);
+    assert.equal(result.events[0].context.operation, "refine-item");
+    assert.equal(result.events[1].context.operation, undefined);
+    assert.doesNotMatch(JSON.stringify(result), /PRIVATE_REQUEST|PRIVATE_OPERATION/);
+});
+
 test("unlinked events remain unlinked and account labels are consistent only within the export", () => {
     const snapshot = usageTestSnapshot(6); snapshot.events[0].uid = null;
     const result = run(snapshot);

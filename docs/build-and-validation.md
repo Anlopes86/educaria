@@ -30,6 +30,18 @@ node tools/check-responsive-layout.mjs 'auth:plataforma/quiz-builder.html?new=1'
 
 O comando também pode ser chamado com `node tools/verify.mjs`, a mesma entrada usada na integração contínua. Para executar só as verificações estáticas, use `npm run check`; para testes sem emuladores, `npm test`. Os testes de isolamento Firebase continuam separados (`npm run test:security`, com Java 21). Veja [CONTRIBUTING.md](../CONTRIBUTING.md).
 
+Para conferir ajustes por item com IA (seleção múltipla, aprovação parcial, prévia, desfazer, falhas, edição concorrente, troca de conta e restauração):
+
+```bash
+node tools/check-responsive-layout.mjs 'auth:plataforma/mapa-mental-builder.html?new=1' 'auth:plataforma/debate-guiado-builder.html?new=1'
+```
+
+Para os demais editores, defina `EDUCARIA_AUDIT_REFINEMENTS=1` e passe suas páginas com prefixo `auth:`. Isso inclui `slides-builder.html`, `quiz-builder.html`, `folha-atividades-builder.html` e `criar-aula.html`. O teste do quiz seleciona questões 3, 5 e 8 em formatos diferentes; o de slides seleciona o terceiro slide e confere preservação dos campos de imagem/cor. A folha percorre os quatro tipos e a aula testa isolamento entre blocos.
+
+Essa jornada intercepta a resposta da IA com dados fictícios, sem gastar créditos. Execute em 1366 × 768 e 390 × 844 usando `EDUCARIA_AUDIT_WIDTH` e `EDUCARIA_AUDIT_HEIGHT`. `EDUCARIA_AUDIT_SCREENSHOT_DIR` guarda também a prévia do ajuste. As respostas simuladas verificam o fluxo e o isolamento dos campos; qualidade pedagógica deve ser conferida separadamente com pedidos reais.
+
+Para conferir as ajudas contextuais, defina `EDUCARIA_AUDIT_HELP=1` e execute as páginas `auth:plataforma/slides-builder.html?new=1`, `auth:plataforma/index.html` e `auth:plataforma/folha-atividades-builder.html?new=1`. Use `EDUCARIA_AUDIT_DISABLE_DASHBOARD_TOUR=1` para a ajuda não competir com o guia de primeiro acesso. A jornada verifica mouse, teclado, clique, Escape, posicionamento, atualização das explicações e preservação dos valores/avisos. Repita em 1366 × 768 e 390 × 844; a geração usa dados locais, sem consumir IA.
+
 ## O que cada check cobre
 
 - `tools/check-i18n.mjs`: verifica se as chaves usadas em HTML/JS existem em `pt-BR`, `en-US` e `es-ES`.

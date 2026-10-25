@@ -329,10 +329,6 @@ function hydrateDashboardGreeting() {
 }
 
 function syncDashboardFormatHierarchy() {
-    const quickCopy = document.querySelector("[data-dashboard-quick-copy]");
-    if (quickCopy) {
-        quickCopy.textContent = dashboardTranslate("dashboard.quick.copy", "Tema ou arquivo. Você escolhe, a IA prepara.");
-    }
 
     const toolkitSection = document.getElementById("activity-toolkit");
     if (!toolkitSection) return;
@@ -486,7 +482,7 @@ function renderDashboardQuickOptions(materialType) {
             <label class="dashboard-quick-option-field">
                 <span>${escapeHtml(label)}</span>
                 <input type="number" aria-label="${escapeHtml(label)}" min="${field.min}" max="${field.max}" step="1" value="${value}" ${field.allowAuto ? 'placeholder="Automática"' : ""} inputmode="numeric" data-dashboard-quick-option="${escapeHtml(field.key)}">
-                ${field.allowAuto ? "<small>Em branco: adapta ao conteúdo. Preencha para fixar a quantidade.</small>" : ""}
+                ${field.allowAuto ? "<small>Em branco: quantidade automática.</small>" : ""}
             </label>
         `;
     };
@@ -505,7 +501,6 @@ function renderDashboardQuickOptions(materialType) {
             <b aria-hidden="true">3</b>
             <span>
                 <strong>${escapeHtml(dashboardTranslate("dashboard.quick.options", "Opções básicas"))}</strong>
-                <small>${escapeHtml(dashboardTranslate("dashboard.quick.optionsNote", "Só o essencial para estruturar o rascunho"))}</small>
             </span>
         </div>
         <div class="dashboard-quick-options-grid dashboard-quick-options-grid--${basics.length}">

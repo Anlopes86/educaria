@@ -36,6 +36,16 @@ Fluxo principal: painel/editor → `ai-material-generator.js` → API `/api/ai/g
 
 Os scripts clássicos compartilham funções globais. Renomear uma função ou mudar a ordem de carregamento pode afetar outras páginas. A camada de persistência também atende materiais antigos: não renomeie chaves de armazenamento para “padronizar” sem migração.
 
+### Ajustes pontuais com IA
+
+`item-refinement-editor.js` oferece “Ajustar com IA” por item e seleção múltipla nas 13 atividades. O professor pode escolher, por exemplo, as questões 3, 5 e 8, escrever um pedido e aprovar todas ou apenas algumas sugestões. O original permanece intacto até a confirmação; cancelar/Escape descarta a sugestão. “Desfazer último ajuste” restaura o último lote aplicado enquanto os itens não forem alterados novamente, na mesma sessão/conta. Respostas atrasadas não podem sobrescrever itens alterados/removidos/reordenados ou atravessar uma troca de conta. Textos retornados são apresentados com `textContent`, sem executar HTML.
+
+O contrato compartilhado em `assets/js/item-refinement-core.js` define campos e limites por tipo. `item-refinement-adapters.js` mapeia esses campos aos editores, incluindo os quatro tipos impressos. `item-refinement-lesson.js` altera somente o rascunho do bloco na Aula completa, sem reescrever a atividade original. A aplicação usa os eventos de persistência e prévia existentes. Slides permitem ajustar textos, preservando imagens, cores e composição. O quiz mantém o formato de cada questão e refaz pergunta, alternativas e gabarito juntos; alterações de um único campo ficam restritas à explicação ou aos critérios. Palavras repetidas são bloqueadas, e jogos são recalculados pelos motores locais. Pistas de conexões mantêm a quantidade atual. A folha impressa conserva seus limites de texto específicos.
+
+O transporte é o mesmo `/api/ai/generate`, com `refinement` opcional. `ai-service/materials/item-refinement.js` valida tipo, campos, pedido e contexto antes de reservar créditos. Aceita até 12 itens por ajuste, com IDs estáveis e resposta `{items: {"item-3": {campos selecionados}}}`; o formato antigo `{item: {...}}` continua compatível. O schema exige exatamente os IDs e campos selecionados. O frontend exige também `operation: "refine-item"`, rejeitando servidores antigos que devolvam a atividade inteira. Não há rota que contorne autenticação, cotas ou cobrança por consumo real. Sugestão válida consome créditos mesmo se descartada; resposta inválida devolve a reserva individual e conserva o consumo medido na cota global. O relatório distingue o ajuste em `context.operation` e registra a quantidade de itens, sem armazenar textos do professor.
+
+Para incluir outra ferramenta, registre campos e limites no contrato compartilhado, contexto e seletores nos adaptadores, instruções específicas no backend e cubra isolamento, seleção múltipla, cotas e recarregamento. Não reutilize as funções que aplicam uma atividade inteira. `tools/browser-refinement-checks.mjs` testa os editores reais com respostas fictícias, aprovação parcial, desfazer, falhas e troca de conta.
+
 ### Rascunhos e organização de materiais
 
 `Rascunhos` é um filtro da biblioteca pessoal (`scope: library`, `status: draft`), não outra coleção. `builder-journey.js` cobre os onze editores; a Aula completa salva pelo seu próprio builder. Sem destino explícito, novas criações vão para a biblioteca. Salvamentos são locais primeiro e sincronizam pelo protocolo existente; falhas de armazenamento não devem ser apresentadas como sucesso.
@@ -168,6 +178,12 @@ A versão do aluno e o gabarito são renderizados separadamente. A versão do al
 Persistência e destinos usam o mesmo rascunho `controls + stackHtml`, chave `educaria:builder:worksheet` isolada por conta, salvamento automático, biblioteca, turmas e operações em lote. Ao restaurar, o editor é reconstruído a partir dos campos escapados. As ações da biblioteca exibem “Ver folha”. A ferramenta tem entrada própria no painel/menu; não está no seletor de criação de uma única atividade nem na Aula completa, que serve para projeção.
 
 Testes: `tools/tests/worksheet.test.mjs`, testes de coleções/destinos e `ai-service/tests/ai-usage-routes.test.mjs`. A validação visual deve conferir uma folha compacta com quatro formatos, uma folha extensa, o gabarito, recarga/salvamento, teclado, celular e impressão real/PDF. Testes unitários não substituem essa conferência.
+
+## Ajudas e organização dos editores
+
+`context-help.js` transforma apenas explicações marcadas com `data-context-help="Nome da opção"` em ajuda contextual. O texto e seu ID são preservados, inclusive quando outro script atualiza a explicação. O botão fica ao lado do rótulo e funciona com mouse, foco, clique/toque e Escape; o Popover API mantém a ajuda acima dos painéis, dentro da tela. Sem essa API, a explicação continua visível no fluxo da página.
+
+Não marque instruções essenciais, limites de arquivo, cobrança, validação ou status para recolher. O componente ignora regiões `aria-live`, `role="status"` e `role="alert"`. Novos campos dinâmicos são observados sem alterar valores nem disparar a geração. Nos slides, `editor-disclosure.js` reúne os campos opcionais existentes em “Mais opções de criação”, inicialmente recolhido; IDs, controles e persistência continuam os mesmos. Os editores usam um cabeçalho curto e uma única identificação de prévia, sem repetir um roteiro de etapas em cada painel.
 
 ## Compatibilidade e próximos cortes
 

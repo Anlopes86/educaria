@@ -36,73 +36,6 @@ document.addEventListener("DOMContentLoaded", () => {
         hangman: ["palavra", "palavras"]
     };
 
-    function injectEditorJourney() {
-        const context = document.querySelector(".activity-editor-context");
-        if (!context || context.querySelector("[data-editor-journey]")) return;
-
-        const materialType = document.body?.dataset.materialType || "";
-        const activeLesson = typeof readActiveLesson === "function" ? readActiveLesson() : null;
-        const isReviewing = shouldFocusEdit || activeLesson?.materialType === materialType;
-
-        const journey = document.createElement("aside");
-        journey.className = "editor-journey";
-        journey.dataset.editorJourney = "";
-        journey.setAttribute("aria-label", "Etapas para preparar a atividade");
-        journey.innerHTML = `
-            <div class="editor-journey__head">
-                <strong>Seu caminho até a sala</strong>
-                <span>Etapa de edição</span>
-            </div>
-            <ol>
-                <li class="${isReviewing ? "is-done" : "is-current"}"${isReviewing ? "" : ' aria-current="step"'}>
-                    <span class="editor-journey__number" aria-hidden="true">${isReviewing ? "✓" : "1"}</span>
-                    <span class="editor-journey__copy">
-                        <strong>Prepare o conteúdo</strong>
-                        <small>Use um tema, texto ou arquivo.</small>
-                    </span>
-                    <span class="editor-journey__state">${isReviewing ? "Base" : "Agora"}</span>
-                </li>
-                <li${isReviewing ? ' class="is-current" aria-current="step"' : ""}>
-                    <span class="editor-journey__number" aria-hidden="true">2</span>
-                    <span class="editor-journey__copy">
-                        <strong>Revise e personalize</strong>
-                        <small>Confira a prévia enquanto ajusta.</small>
-                    </span>
-                    <span class="editor-journey__state">${isReviewing ? "Agora" : "Depois"}</span>
-                </li>
-                <li>
-                    <span class="editor-journey__number" aria-hidden="true">3</span>
-                    <span class="editor-journey__copy">
-                        <strong>Salve ou apresente</strong>
-                        <small>Leve a atividade pronta para a sala.</small>
-                    </span>
-                    <span class="editor-journey__state">Depois</span>
-                </li>
-            </ol>
-        `;
-        context.appendChild(journey);
-    }
-
-    function markEditorJourneyAsReviewing() {
-        const items = document.querySelectorAll("[data-editor-journey] li");
-        if (items.length < 2) return;
-
-        items[0].classList.remove("is-current");
-        items[0].classList.add("is-done");
-        items[0].removeAttribute("aria-current");
-        const firstNumber = items[0].querySelector(".editor-journey__number");
-        const firstState = items[0].querySelector(".editor-journey__state");
-        if (firstNumber) firstNumber.textContent = "✓";
-        if (firstState) firstState.textContent = "Base";
-
-        items[1].classList.add("is-current");
-        items[1].setAttribute("aria-current", "step");
-        const secondState = items[1].querySelector(".editor-journey__state");
-        if (secondState) secondState.textContent = "Agora";
-    }
-
-    injectEditorJourney();
-
     function normalizeLabel(value) {
         return String(value || "")
             .normalize("NFD")
@@ -168,7 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         if (options.mode) setStartMode(pane, options.mode);
-        if (target.dataset.disclosureRole === "manual") markEditorJourneyAsReviewing();
 
         requestAnimationFrame(() => {
             if (options.scroll) {
@@ -188,9 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return `
             <section class="builder-start-panel" aria-labelledby="builder-start-title">
                 <div class="builder-start-copy">
-                    <span class="platform-section-label">Ponto de partida</span>
                     <h2 id="builder-start-title">Como você quer começar?</h2>
-                    <p>A IA cria um rascunho. Depois, você pode revisar tudo antes de apresentar.</p>
                 </div>
                 <div class="builder-start-options" role="group" aria-label="Escolha como iniciar a atividade">
                     <button type="button" class="builder-start-option" data-builder-start-mode="topic" aria-pressed="false">
@@ -217,7 +147,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!aiDisclosure || !manualDisclosure || pane.querySelector(".builder-start-panel")) return;
         const saved = typeof readActiveLesson === "function" ? readActiveLesson() : null;
         if (shouldFocusEdit || EDUCARIA_EDITOR_INITIAL_PARAMS.get("quickApply") === "1" || saved?.materialType === document.body?.dataset.materialType) {
-            pane.insertAdjacentHTML("afterbegin", '<div class="builder-review-intro"><strong>Revise e deixe com a sua cara</strong><p>Ajuste o conteúdo, confira a prévia e apresente à turma.</p><a href="index.html#quick-ai-create">Criar outra atividade no painel →</a></div>');
             return;
         }
         pane.insertAdjacentHTML("afterbegin", startPanelTemplate());
@@ -427,12 +356,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return { navigator, render: scheduleRender };
     }
 
+    function groupCreationOptions(aiDisclosure) {
+        if (!aiDisclosure || document.body.dataset.materialType !== "slides") return;
+        const fields = ["slides-disciplina", "slides-acao-ia", "slides-detalhamento", "slides-tom", "slides-visual-mode"]
+            .map(id => document.getElementById(id)?.closest(".platform-field"))
+            .filter(field => field && aiDisclosure.contains(field));
+        if (!fields.length) return;
+        const details = document.createElement("details"); details.className = "editor-advanced-options";
+        details.innerHTML = '<summary>Mais opções de criação <span>Detalhamento, tom e visual</span></summary><div class="platform-form-grid"></div>';
+        const mainGrid = aiDisclosure.querySelector(".ai-structure-grid");
+        mainGrid.after(details); details.querySelector("div").append(...fields);
+    }
+
     panes.forEach((pane) => {
         const disclosures = [...pane.querySelectorAll(".editor-disclosure")];
         disclosures.forEach(decorateDisclosure);
 
         const aiDisclosure = disclosures.find((item) => item.dataset.disclosureRole === "ai");
         const manualDisclosure = disclosures.find((item) => item.dataset.disclosureRole === "manual");
+        groupCreationOptions(aiDisclosure);
         injectStartPanel(pane, aiDisclosure, manualDisclosure);
         const itemNavigator = createItemNavigator(pane, manualDisclosure);
 
@@ -500,7 +442,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 if (current.dataset.disclosureRole === "manual") setStartMode(pane, "manual");
-                if (current.dataset.disclosureRole === "manual") markEditorJourneyAsReviewing();
                 if (current.dataset.disclosureRole === "ai" && !pane.querySelector("[data-builder-start-mode].is-active")) {
                     setStartMode(pane, "topic");
                 }

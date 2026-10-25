@@ -88,12 +88,10 @@ function setMindCountSelect(count) {
         return;
     }
 
-    const highest = options[options.length - 1];
-    if (highest) {
-        highest.textContent = `${count} tópicos`;
-        highest.value = highest.textContent;
-        quantity.value = highest.value;
-    }
+    const option = document.createElement("option");
+    option.textContent = `${count} tópicos`;
+    quantity.appendChild(option);
+    quantity.value = option.value;
 }
 
 function syncMindBranchCount() {

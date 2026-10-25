@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Folha de atividades | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
+    <link rel="stylesheet" href="../assets/css/components/item-refinement-editor.css?v=20261024-2">
     <link rel="stylesheet" href="../assets/css/components/worksheet.css">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
@@ -28,11 +29,15 @@
     <script src="../assets/js/worksheet-view.js" defer></script>
     <script src="../assets/js/worksheet-layout.js" defer></script>
     <script src="../assets/js/worksheet-builder.js" defer></script>
-    <script src="../assets/js/ai-material-generator.js" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261024-3" defer></script>
+    <script src="../assets/js/item-refinement-core.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-adapters.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-editor.js?v=20261024-2" defer></script>
     <script src="../assets/js/builder-journey.js" defer></script>
     <link rel="stylesheet" href="../assets/css/components/activity-examples.css?v=20261023-1">
     <script src="../assets/js/activity-examples-catalog.js?v=20261023-1" defer></script>
     <script src="../assets/js/activity-examples.js?v=20261023-1" defer></script>
+    <script src="../assets/js/context-help.js?v=20261024-1" defer></script>
 </head>
 <body class="product-body theme-editor worksheet-page" data-material-type="worksheet" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -41,7 +46,7 @@
             <a href="index.html" class="platform-brand"><img src="../assets/images/educar-logo.png" alt="EducarIA" class="platform-brand-logo" width="48" height="48"><div><span>EducarIA</span><strong>Folha de atividades</strong></div></a>
             <div class="platform-top-actions"><a href="index.html" class="platform-link-button platform-link-secondary">Painel</a><a href="biblioteca.html" class="platform-link-button platform-link-secondary">Biblioteca</a></div>
         </header>
-        <section class="worksheet-intro"><div><span class="focus-eyebrow">Da sua ideia para o papel</span><h1>Uma folha. Várias formas de aprender.</h1><p>Escolha as atividades, conte o tema e deixe a IA montar. Revise, imprima e leve para a turma.</p></div><span class="worksheet-a4-badge" aria-hidden="true">A4<br><small>para imprimir</small></span></section>
+        <section class="worksheet-intro"><div><h1>Folha de atividades</h1><p>Escolha os exercícios, gere com IA e revise antes de imprimir.</p></div><span class="worksheet-a4-badge" aria-hidden="true">A4<br><small>para imprimir</small></span></section>
         <section class="worksheet-workspace">
             <div class="worksheet-editor">
                 <section class="worksheet-panel worksheet-create-panel">
@@ -53,9 +58,9 @@
                     <div class="worksheet-field-pair"><label class="worksheet-field">Ano ou público<input id="worksheet-audience" maxlength="160" placeholder="Ex.: 7º ano"></label><label class="worksheet-field">Dificuldade<select id="worksheet-difficulty"><option value="easy">Fácil</option><option value="medium" selected>Média</option><option value="hard">Difícil</option></select></label></div>
                     <label class="worksheet-field">Tamanho da atividade<select id="worksheet-page-mode"><option value="compact">Compacta — tentar uma página</option><option value="roomy">Mais exercícios — permitir várias páginas</option></select></label>
                     <label class="worksheet-field">Organização da página<select id="worksheet-columns"><option value="auto">Automático — adaptar a cada atividade</option><option value="one">Uma coluna — mais espaço para cada atividade</option><option value="two">Duas colunas — mais compacto</option></select></label>
-                    <p class="worksheet-help">No automático, atividades menores ficam lado a lado; grades maiores e pistas longas ganham a largura inteira. Você pode trocar o formato sem usar IA. Nenhuma palavra é descartada.</p>
+                    <p class="worksheet-help" data-context-help="Organização automática">No automático, atividades menores ficam lado a lado; grades maiores e pistas longas ganham a largura inteira. Você pode trocar o formato sem usar IA. Nenhuma palavra é descartada.</p>
                     <fieldset class="worksheet-selection worksheet-activity-options"><legend>Quais atividades você quer?</legend>
-                        <p class="worksheet-help worksheet-selection-help">Cada jogo segue a orientação geral. Abra suas opções para definir quantidades, pistas ou um tema diferente só para ele.</p>
+                        <p class="worksheet-help worksheet-selection-help">Abra as opções de cada jogo para definir quantidades ou um pedido próprio.</p>
                         <div class="worksheet-activity-choice" data-ws-choice="wordtrail">
                             <label class="worksheet-choice-label"><input type="checkbox" id="worksheet-select-wordtrail" data-ws-select="wordtrail" checked><span><b>Trilha de Palavras</b><small>Grade + espaço para escrever</small></span></label>
                             <details data-ws-options="wordtrail"><summary>Opções da Trilha de Palavras</summary>
@@ -85,9 +90,9 @@
                             </details>
                         </div>
                     </fieldset>
-                    <p class="worksheet-help">Pedidos e quantidades valem na próxima geração. Mostrar ou esconder pistas atualiza a prévia sem gastar IA. Mais itens podem precisar de mais páginas.</p>
-                    <details><summary>Conteúdo e opções extras</summary><label class="worksheet-field">Finalidade da folha<select id="worksheet-purpose"><option value="assessment">Avaliação — evitar respostas entre os jogos</option><option value="practice">Prática e revisão</option></select></label><p class="worksheet-help">Uma lista exata vale para os jogos sem pedido próprio. A prévia avisa quando um exercício dá pistas de outro.</p><label class="worksheet-field">Interpretar o campo como<select id="worksheet-input-mode"><option value="auto">Reconhecer meu pedido</option><option value="topic">Tema ou texto-base</option><option value="words">Minha lista exata de palavras</option></select></label><label class="worksheet-field">Arquivo de apoio (opcional)<input id="worksheet-file" type="file" accept=".txt,.rtf,.docx,.pdf"></label></details>
-                    <p class="worksheet-help">A folha inteira é gerada em um único pedido à IA. O consumo segue os créditos utilizados.</p>
+                    <p class="worksheet-help">Pedidos e quantidades valem na próxima geração. Mais itens podem ocupar mais páginas.</p>
+                    <details><summary>Conteúdo e opções extras</summary><label class="worksheet-field">Finalidade da folha<select id="worksheet-purpose"><option value="assessment">Avaliação — evitar respostas entre os jogos</option><option value="practice">Prática e revisão</option></select></label><p class="worksheet-help" data-context-help="Listas e gabarito">Uma lista exata vale para os jogos sem pedido próprio. A prévia avisa quando um exercício dá pistas de outro.</p><label class="worksheet-field">Interpretar o campo como<select id="worksheet-input-mode"><option value="auto">Reconhecer meu pedido</option><option value="topic">Tema ou texto-base</option><option value="words">Minha lista exata de palavras</option></select></label><label class="worksheet-field">Arquivo de apoio (opcional)<input id="worksheet-file" type="file" accept=".txt,.rtf,.docx,.pdf"></label></details>
+                    <p class="worksheet-help">O consumo de créditos considera a folha inteira.</p>
                     <button type="button" class="platform-link-button platform-link-primary worksheet-generate" data-generate-material="worksheet">Gerar folha com IA</button>
                     <span class="ai-credits-pill" data-ai-credits>Créditos de IA</span>
                     <p data-worksheet-generation-status role="status"></p>

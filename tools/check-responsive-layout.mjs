@@ -4,6 +4,8 @@ import os from "node:os";
 import path from "node:path";
 import { checkQuickRecovery, checkImageUpload } from "./browser-recovery-checks.mjs";
 import { checkActivityExamples } from "./browser-example-checks.mjs";
+import { checkItemRefinement } from "./browser-refinement-checks.mjs";
+import { checkContextHelp } from "./browser-context-help-checks.mjs";
 
 const chromePath = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const root = path.resolve(import.meta.dirname, "..");
@@ -357,7 +359,7 @@ async function auditPage(pageConfig) {
             ]
         });
         await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
-            source: `localStorage.setItem('educaria:builder:debate:guest', ${JSON.stringify(debateDraft)}); localStorage.setItem('educaria:builder:debate:layout-audit', ${JSON.stringify(debateDraft)});`
+            source: `['guest', 'layout-audit'].forEach(scope => { const key = 'educaria:builder:debate:' + scope; if (!localStorage.getItem(key)) localStorage.setItem(key, ${JSON.stringify(debateDraft)}); });`
         });
     }
     await cdp.send("Emulation.setDeviceMetricsOverride", {
@@ -1222,6 +1224,12 @@ async function auditPage(pageConfig) {
             returnByValue: true
         });
         mobileMenu = menuEvaluation.result.value;
+        // Return to the page before testing controls below the menu overlay.
+        await cdp.send("Runtime.evaluate", {
+            expression: "document.querySelector('[data-sidebar-mobile-close]')?.click()"
+        });
+        await waitForPageCondition(cdp, "!document.body.classList.contains('app-sidebar-open')");
+        await waitForPageCondition(cdp, "document.querySelector('.app-sidebar').getBoundingClientRect().right <= 1");
         }
     }
     let topbarRestore = null;
@@ -1259,6 +1267,12 @@ async function auditPage(pageConfig) {
     }
     let recoveryJourney = null;
     let imageUploadJourney = null;
+    let refinementJourney = null;
+    const contextHelpJourney = process.env.EDUCARIA_AUDIT_HELP === "1" ? await checkContextHelp(cdp, auditScreenshotDir) : null;
+    if (pageConfig.authenticated && ((process.env.EDUCARIA_AUDIT_REFINEMENTS === "1" && (localPagePath.endsWith("-builder.html") || localPagePath.endsWith("criar-aula.html")))
+        || ["plataforma/mapa-mental-builder.html", "plataforma/debate-guiado-builder.html"].includes(localPagePath))) {
+        refinementJourney = await checkItemRefinement(cdp, auditScreenshotDir);
+    }
     if (auditRecovery && localPagePath === "plataforma/index.html") recoveryJourney = await checkQuickRecovery(cdp, url, auditScreenshotDir);
     if (process.env.EDUCARIA_AUDIT_EXAMPLES === "1" && localPagePath === "plataforma/index.html") await checkActivityExamples(cdp, auditScreenshotDir);
     if (auditRecovery && ["plataforma/slides-builder.html", "plataforma/criar-aula.html"].includes(localPagePath)) {
@@ -1266,7 +1280,7 @@ async function auditPage(pageConfig) {
     }
     cdp.close();
     await target.dispose();
-    return { ...evaluation.result.value, mobileMenu, topbarRestore, builderNavigatorJourney, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, storageFailureJourney, recoveryJourney, imageUploadJourney, screenshotPath, diagnostics: cdp.diagnostics };
+    return { ...evaluation.result.value, mobileMenu, topbarRestore, builderNavigatorJourney, quizJourney, libraryRename, lessonFilterJourney, lessonMatchColorJourney, storageFailureJourney, recoveryJourney, imageUploadJourney, refinementJourney, contextHelpJourney, screenshotPath, diagnostics: cdp.diagnostics };
 }
 
 let failed = false;
@@ -1277,6 +1291,8 @@ try {
         console.log(`${page.path}: viewport=${result.viewportWidth} scroll=${result.scrollWidth} overflow=${result.overflow}`);
         if (result.recoveryJourney) console.log(`  quick-ai-recovery=ok ${JSON.stringify(result.recoveryJourney)}`);
         if (result.imageUploadJourney) console.log(`  image-upload=ok ${JSON.stringify(result.imageUploadJourney)}`);
+        if (result.refinementJourney) console.log(`  item-refinement=ok ${JSON.stringify(result.refinementJourney)}`);
+        if (result.contextHelpJourney) console.log(`  context-help=ok ${JSON.stringify(result.contextHelpJourney)}`);
         if (result.storageFailureJourney) {
             const storageWorks = result.storageFailureJourney.failed && result.storageFailureJourney.visible
                 && result.storageFailureJourney.recoveryAvailable && result.storageFailureJourney.recovered;
@@ -1425,8 +1441,8 @@ try {
             const builderNavigatorWorks = result.builderNavigatorState.hidden === navigatorStartsHidden
                 && result.builderNavigatorState.position === "sticky"
                 && result.builderNavigatorState.itemCount === result.builderNavigatorState.cardCount
-                && result.builderNavigatorState.itemCount > 0
-                && result.builderNavigatorState.activeCount === 1
+                && (result.builderNavigatorState.itemCount > 0 ? result.builderNavigatorState.activeCount === 1
+                    : navigatorStartsHidden && result.builderNavigatorState.activeCount === 0)
                 && result.builderNavigatorState.targetsUnique
                 && result.builderNavigatorState.allTargetsExist;
             console.log(`  builder-item-navigator=${builderNavigatorWorks ? "ok" : "failed"} state=${JSON.stringify(result.builderNavigatorState)}`);

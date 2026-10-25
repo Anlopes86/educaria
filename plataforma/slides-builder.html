@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slides | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261022-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
+    <link rel="stylesheet" href="../assets/css/components/item-refinement-editor.css?v=20261024-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -23,7 +24,7 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js?v=20261014-1" defer></script>
-    <script src="../assets/js/editor-disclosure.js?v=20260930-1" defer></script>
+    <script src="../assets/js/editor-disclosure.js?v=20261024-4" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
     <script src="../assets/js/slide-diagram-model.js?v=20261013-3" defer></script>
@@ -31,10 +32,14 @@
     <script src="../assets/js/slide-diagram-editing.js?v=20261022-1" defer></script>
     <script src="../assets/js/slide-illustrations.js?v=20261024-1" defer></script>
     <script src="../assets/js/slide-diagram-editor.js?v=20261016-2" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20261024-1" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261024-3" defer></script>
+    <script src="../assets/js/item-refinement-core.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-adapters.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-editor.js?v=20261024-2" defer></script>
     <link rel="stylesheet" href="../assets/css/components/slide-diagram-editor.css?v=20261016-2">
     <script src="../assets/js/builder-journey.js?v=20261014-1" defer></script>
     <script src="../assets/js/slide-theme-controls.js?v=20261022-1" defer></script>
+    <script src="../assets/js/context-help.js?v=20261024-1" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="slides" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -64,11 +69,7 @@
         </div>
 
         <section class="activity-editor-context">
-            <div>
-                <span class="focus-eyebrow">Editor de slides</span>
-                <h1>Organize a sequência e acompanhe o resultado na prévia.</h1>
-                <p>A IA organiza seu pedido em slides. Inclua desenhos didáticos ou envie uma imagem própria e revise tudo antes de apresentar.</p>
-            </div>
+            <div><h1>Slides</h1><p>Revise o conteúdo e confira a prévia antes de apresentar.</p></div>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
@@ -117,7 +118,7 @@
                             <div class="platform-field">
                                 <label for="slides-quantidade">Quantidade de slides</label>
                                 <input id="slides-quantidade" type="number" min="1" max="30" step="1" value="" placeholder="Automática" aria-describedby="slides-quantidade-help">
-                                <small id="slides-quantidade-help" class="platform-field-help">Em branco: adapta ao conteúdo. Preencha para fixar a quantidade.</small>
+                                <small id="slides-quantidade-help" class="platform-field-help">Em branco: quantidade automática.</small>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-detalhamento">Nível de detalhamento</label>
@@ -126,12 +127,12 @@
                                     <option>Mais enxuto</option>
                                     <option>Mais detalhado</option>
                                 </select>
-                                <small id="slides-detalhamento-help" class="platform-field-help">Conceitos com explicação breve e exemplo, em blocos de leitura.</small>
+                                <small id="slides-detalhamento-help" data-context-help="Nível de detalhamento" class="platform-field-help">Conceitos com explicação breve e exemplo, em blocos de leitura.</small>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-publico">Ano ou público</label>
                                 <input id="slides-publico" type="text" value="" maxlength="160" aria-describedby="slides-publico-help" placeholder="Ex.: 5º ano, ensino médio, EJA">
-                                <small id="slides-publico-help" class="platform-field-help">Orienta a linguagem, os exemplos e a profundidade. Tem prioridade sobre o ano no nome da turma.</small>
+                                <small id="slides-publico-help" data-context-help="Ano ou público" class="platform-field-help">Orienta a linguagem, os exemplos e a profundidade. Tem prioridade sobre o ano no nome da turma.</small>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-tom">Tom da apresentação</label>
@@ -141,7 +142,7 @@
                                     <option>Mais explicativo</option>
                                     <option>Mais inspirador</option>
                                 </select>
-                                <small id="slides-tom-help" class="platform-field-help">Explicação objetiva, didática e com exemplos do cotidiano.</small>
+                                <small id="slides-tom-help" data-context-help="Tom da apresentação" class="platform-field-help">Explicação objetiva, didática e com exemplos do cotidiano.</small>
                             </div>
                             <div class="platform-field platform-field-wide slide-ai-visual-mode">
                                 <label for="slides-visual-mode">Visual dos slides</label>
@@ -149,7 +150,7 @@
                                     <option value="standard">Padrão EducarIA — visual consistente</option>
                                     <option value="ai">Personalizado pela IA — combina com o tema</option>
                                 </select>
-                                <small id="slides-visual-mode-help" class="platform-field-help" data-slides-visual-mode-help>Usa uma identidade visual segura e previsível, pronta para projeção.</small>
+                                <small id="slides-visual-mode-help" data-context-help="Visual dos slides" class="platform-field-help" data-slides-visual-mode-help>Usa uma identidade visual segura e previsível, pronta para projeção.</small>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-incluir-ilustracao">Incluir ilustração</label>
@@ -157,7 +158,7 @@
                                     <option value="false">Não</option>
                                     <option value="true">Sim</option>
                                 </select>
-                                <small id="slides-ilustracao-help" class="platform-field-help">Diagramas e símbolos organizados conforme o conteúdo. Para imagens detalhadas ou realistas, envie uma imagem própria. A geração utiliza créditos.</small>
+                                <small id="slides-ilustracao-help" data-context-help="Incluir ilustração" class="platform-field-help">Diagramas e símbolos organizados conforme o conteúdo. Para imagens detalhadas ou realistas, envie uma imagem própria. A geração utiliza créditos.</small>
                             </div>
                             <div class="platform-field">
                                 <label for="slides-imagem-propria">Enviar imagem própria</label>
@@ -170,7 +171,7 @@
                                 <input id="slides-objetivo" type="text" value="" maxlength="280" placeholder="Ex.: introduzir o tema, revisar conteúdo, preparar debate">
                             </div>
                         </div>
-                        <p class="platform-field-help">Detalhamento muda a profundidade; tom muda a forma de explicar e envolver a turma. As cores são definidas em Visual dos slides. As escolhas valem para a próxima geração, não alteram o material já criado.</p>
+                        <p class="platform-field-help">As opções de criação valem para a próxima geração.</p>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-primary" data-generate-material="slides">Estruturar slides com IA</button>
                         </div>
@@ -223,7 +224,7 @@
                         </div>
                         <div class="utility-actions">
                             <button type="button" class="platform-link-button platform-link-secondary" data-apply-slides-theme>Aplicar visual em todos os slides</button>
-                            <small class="platform-field-help">Escolha o tema e clique em aplicar para atualizar os slides e as ilustrações editáveis. Isso não altera o texto nem as imagens enviadas.</small>
+                            <small class="platform-field-help">Aplica o tema aos slides e às ilustrações editáveis. Preserva textos e imagens enviadas.</small>
                         </div>
                     </div>
                 </details>
@@ -239,7 +240,6 @@
                         <small class="editor-disclosure-toggle" aria-hidden="true"></small>
                     </summary>
                     <div class="editor-disclosure-body">
-                        <p class="activity-manual-guide">Defina título e conteúdo. Use Mais opções para imagem e aparência.</p>
                         <div class="activity-template-panel" role="group" aria-label="Modelos rápidos de slides">
                             <button type="button" class="activity-template-card" data-builder-template="opener" aria-label="Aplicar modelo Abertura 10 min">
                                 <strong>Abertura 10 min</strong>
@@ -463,9 +463,7 @@
             </article>
 
             <aside class="platform-builder-card slides-preview-card activity-preview-pane">
-                <span class="platform-section-label">Prévia</span>
-                <h2>Veja a sequência como o aluno vai ver</h2>
-                <p>Confira como a apresentação vai ficar.</p>
+                <h2>Prévia</h2>
                 <div class="live-preview-stack" data-slides-preview></div>
             </aside>
         </section>

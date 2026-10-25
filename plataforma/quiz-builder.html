@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
+    <link rel="stylesheet" href="../assets/css/components/item-refinement-editor.css?v=20261024-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
@@ -21,12 +22,16 @@
     <script src="../assets/js/turma-context.js" defer></script>
     <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js?v=20261014-1" defer></script>
-    <script src="../assets/js/editor-disclosure.js?v=20260930-1" defer></script>
+    <script src="../assets/js/editor-disclosure.js?v=20261024-4" defer></script>
     <script src="../assets/js/quiz-generator.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20261014-1" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261024-3" defer></script>
+    <script src="../assets/js/item-refinement-core.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-adapters.js?v=20261024-2" defer></script>
+    <script src="../assets/js/item-refinement-editor.js?v=20261024-2" defer></script>
     <script src="../assets/js/builder-journey.js?v=20261014-1" defer></script>
+    <script src="../assets/js/context-help.js?v=20261024-1" defer></script>
 </head>
 <body class="product-body theme-editor" data-material-type="quiz" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -56,11 +61,7 @@
         </div>
 
         <section class="activity-editor-context">
-            <div>
-                <span class="focus-eyebrow">Editor de quiz</span>
-                <h1>Monte as perguntas e valide tudo na prévia.</h1>
-                <p>Comece pelo essencial. Abra Mais opções só se precisar.</p>
-            </div>
+            <div><h1>Quiz</h1><p>Revise o conteúdo e confira a prévia antes de apresentar.</p></div>
         </section>
 
         <section class="platform-quiz-layout activity-workspace">
@@ -167,7 +168,6 @@
                         <small class="editor-disclosure-toggle" aria-hidden="true"></small>
                     </summary>
                     <div class="editor-disclosure-body">
-                        <p class="activity-manual-guide">Preencha enunciado e tipo. Use Mais opções para ajustes finos.</p>
                         <div class="activity-template-panel" role="group" aria-label="Modelos rápidos de quiz">
                             <button type="button" class="activity-template-card" data-builder-template="review" aria-label="Aplicar modelo Revisão em 5 min">
                                 <strong>Revisão em 5 min</strong>
@@ -306,9 +306,7 @@
             </article>
 
             <aside class="platform-builder-card quiz-preview-card activity-preview-pane">
-                <span class="platform-section-label">Prévia</span>
-                <h2>Veja o quiz antes de aplicar</h2>
-                <p>Confira como a atividade vai ficar.</p>
+                <h2>Prévia</h2>
                 <div class="live-preview-stack" data-quiz-preview></div>
             </aside>
         </section>
