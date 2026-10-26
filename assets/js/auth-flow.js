@@ -88,6 +88,7 @@ function firebaseServices() {
             firebase.initializeApp(firebaseConfig());
         }
 
+        window.educariaInitializeAppCheck?.();
         const auth = firebase.auth();
         auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch((error) => {
             console.warn("EducarIA auth persistence unavailable:", error);
@@ -525,7 +526,9 @@ function enforceAuth() {
     window.location.href = `${authLoginPath()}?next=${next}`;
 }
 
+let registrationInProgress = false;
 function redirectAuthenticatedFromAuthPages() {
+    if (registrationInProgress) return;
     const isAuthPage = document.body?.dataset.authPage === "true";
     if (!isAuthPage) return;
 
@@ -555,6 +558,7 @@ function readTeacherProfileFromFirebase(user) {
             uid: user.uid,
             name: profile.name || user.displayName || "Professor",
             email: user.email || profile.email || "",
+            emailVerified: user.emailVerified === true,
             institution: institutionName || "Conta educacional",
             institutionId: String(profile.institutionId || slugifyInstitutionId(institutionName) || "").trim(),
             role: normalizeTeacherRole(profile.role),
@@ -702,8 +706,10 @@ function bindRegisterForm() {
 
         try {
             updateAuthFeedback(authTranslate("auth.feedback.creatingAccount", "Criando sua conta..."), "success");
+            registrationInProgress = true;
             const credential = await services.auth.createUserWithEmailAndPassword(email, password);
             await credential.user.updateProfile({ displayName: name });
+            await window.educariaSendVerificationEmail?.(credential.user);
             const normalizedInstitution = normalizeInstitutionName(institution);
             await services.db.collection("teachers").doc(credential.user.uid).set({
                 name,
@@ -724,6 +730,8 @@ function bindRegisterForm() {
             window.location.href = authNextPath();
         } catch (error) {
             updateAuthFeedback(mapFirebaseError(error), "error");
+        } finally {
+            registrationInProgress = false;
         }
     });
 }

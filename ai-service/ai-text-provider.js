@@ -9,7 +9,7 @@ function positiveInteger(value, fallback) {
 }
 
 function reportedGroqUsage(usage) {
-    const reported = usage && ["prompt_tokens", "completion_tokens", "total_tokens"].some(key =>
+    const reported = usage && ["prompt_tokens", "completion_tokens"].every(key =>
         typeof usage[key] === "number" && Number.isFinite(usage[key]) && usage[key] >= 0);
     return reported ? groqUsageMetadata(usage) : {};
 }
@@ -138,6 +138,7 @@ export async function generateGroqStructuredMaterial({
             text: JSON.stringify(recovered),
             usageMetadata: reportedGroqUsage(payload?.usage),
             unmeteredRecovery: !Object.keys(reportedGroqUsage(payload?.usage)).length,
+            usageUnavailableReason: !Object.keys(reportedGroqUsage(payload?.usage)).length ? "provider_schema_recovery" : null,
             providerRequestId: payload?.x_groq?.id || payload?.id || ""
         };
         const error = new Error(
@@ -171,6 +172,8 @@ export async function generateGroqStructuredMaterial({
     return {
         text,
         usageMetadata: reportedGroqUsage(payload?.usage),
+        usageUnavailableReason: Object.keys(reportedGroqUsage(payload?.usage)).length ? null
+            : payload?.usage ? "provider_incomplete_usage" : "provider_not_reported",
         providerRequestId: payload?.x_groq?.id || payload?.id || ""
     };
 }

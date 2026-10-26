@@ -22,6 +22,12 @@ O download é local. Para solicitar uma análise, anexe o arquivo à conversa; a
 
 Datas, planos e padrões de uso permanecem úteis à análise. A remoção de identificadores diretos não garante anonimato absoluto: compartilhe apenas com quem precisa analisar os dados.
 
+Não versione relatórios reais no GitHub. O `.gitignore` bloqueia os nomes de exportação `educaria-uso-ia-*.json`, os backups `educaria-backup-*.json`, os relatórios do piloto `educaria-piloto-*.json` e a pasta `.codex-remote-attachments/`. Para análises locais com outro nome, use a pasta ignorada `.data/`. Não use `git add -f` para esses arquivos; o bloqueio não remove arquivos que já tenham sido versionados. Os testes devem continuar usando apenas fixtures sintéticas.
+
 O navegador baixa o JSON sem guardá-lo no armazenamento do site. Mudança de sessão, navegação, atualização do relatório ou alteração dos filtros cancela uma exportação pendente. A URL temporária do arquivo é liberada depois do download. Uma falha não gera um arquivo parcial. Se apenas o frontend for publicado e a API ainda estiver antiga, a interface explica que falta atualizar o servidor.
 
 Testes: `ai-service/tests/ai-usage-export.test.mjs`, `ai-service/tests/admin-dashboard.test.mjs`, `tools/tests/admin-usage-export.test.mjs`. As fixtures de `tools/fixtures/ai-usage.mjs` são sintéticas e não correspondem a professores reais.
+
+## Diagnóstico de medições ausentes
+
+Cada tentativa nova pode incluir `usageUnavailableReason`: `provider_schema_recovery` (conteúdo recuperado de uma resposta de erro sem medição), `provider_not_reported` (o provedor não informou consumo) ou `provider_incomplete_usage` (contadores incompletos). Valores antigos permanecem sem motivo; não é possível reconstruir tokens reais a partir do texto final ou do custo estimado. A exportação não inclui mensagens brutas do provedor.

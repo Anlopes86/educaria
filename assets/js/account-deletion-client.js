@@ -47,7 +47,7 @@
         try {
             const response = await fetch(window.educariaAiEndpoint("/api/account"), {
                 method: "DELETE",
-                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                headers: { ...await window.educariaAppCheckHeaders?.(), Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
                 body: JSON.stringify({ version: 1, confirmation: "EXCLUIR", receipt: pending.receipt }),
                 signal: AbortSignal.timeout(45_000)
             });

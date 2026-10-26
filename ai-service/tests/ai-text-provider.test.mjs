@@ -6,6 +6,16 @@ import {
     groqUsageMetadata
 } from "../ai-text-provider.js";
 
+test("successful Groq output with absent or incomplete usage stays unmeasured", async () => {
+    for (const usage of [undefined, { prompt_tokens: 20 }, { total_tokens: 50 }]) {
+        const result = await generateGroqStructuredMaterial({ apiKey: "test", prompt: "test",
+            schemaConfig: { name: "test", schema: { type: "object", properties: { title: { type: "string" } } } },
+            fetchImpl: async () => new Response(JSON.stringify({ choices: [{ message: { content: '{"title":"Example"}' } }], usage })) });
+        assert.deepEqual(result.usageMetadata, {});
+        assert.equal(result.usageUnavailableReason, usage ? "provider_incomplete_usage" : "provider_not_reported");
+    }
+});
+
 test("makes every object field required for Groq strict structured outputs", () => {
     const schema = groqStrictJsonSchema({
         type: "object",

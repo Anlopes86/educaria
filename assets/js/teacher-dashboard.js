@@ -698,7 +698,7 @@ async function requestDashboardQuickMaterial(materialType, topic, label, generat
     const optionInstructions = generationOptions?.instructions?.join(" ") || "";
     formData.append("action", `Crie um rascunho pedagógico de ${label || "atividade"}, claro e pronto para o professor revisar e apresentar. ${optionInstructions}`.trim());
 
-    const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {};
+    const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders({ generation: true }) : {};
     if (ownerUid !== window.educariaGenerationRecovery?.currentUid()) {
         const error = new Error("A conta foi alterada. Entre novamente antes de gerar a atividade.");
         error.status = 401;

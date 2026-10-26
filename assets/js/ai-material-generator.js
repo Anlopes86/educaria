@@ -1839,7 +1839,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action,
         formData.append("file", file);
     }
 
-    const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {};
+    const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders({ generation: true }) : {};
     if (targeted && (!refinementOwner || refinementOwner !== window.educariaGenerationRecovery?.currentUid())) {
         throw new Error("A conta mudou. Abra o ajuste novamente.");
     }

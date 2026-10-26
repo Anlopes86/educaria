@@ -13,3 +13,9 @@ assets/js/*firebase*local*.js
 *.env
 *.env.*
 *-firebase-adminsdk-*.json
+
+# Anexos de conversas e exportações reais: nunca publicar no repositório.
+.codex-remote-attachments/
+educaria-uso-ia-*.json
+educaria-backup-*.json
+educaria-piloto-*.json

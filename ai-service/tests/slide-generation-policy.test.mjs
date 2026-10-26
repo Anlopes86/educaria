@@ -134,7 +134,7 @@ test("production route passes options to generation and rejects bad fields befor
     let handler, received, reserved = 0;
     const context = vm.createContext({
         app: { post: (...args) => { handler = args.at(-1); } },
-        aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
+        aiRateLimit: null, requireAiAuth: null, requireAiVerifiedEmail: null, aiGenerationRateLimit: null, upload: { single: () => null },
         schemaFor: () => ({}), normalizeItemRefinement, normalizeSlideIllustrationRequest, normalizeSlideGenerationOptions: options, extractTextFromFile: async () => "",
         normalizeActivityGenerationOptions, applyActivityGenerationSettings, validateDiscoverySource,
         activeAiTextProvider: () => "groq", aiCreditUsagePolicy: {}, aiGenerationMaxAttempts: 1,

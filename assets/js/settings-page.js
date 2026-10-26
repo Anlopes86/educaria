@@ -28,6 +28,7 @@ function settingsServices() {
         firebase.initializeApp(window.EDUCARIA_FIREBASE_CONFIG);
     }
 
+    window.educariaInitializeAppCheck?.();
     return {
         auth: firebase.auth(),
         db: firebase.firestore(),
@@ -618,7 +619,10 @@ function settingsLocalAccountData() {
         const isActorMilestone = actorId && key.startsWith(`educaria:milestone:${actorId}:`);
         if (!belongsToScope && !isActorMilestone && !allowedSharedKeys.has(key)) continue;
 
-        values[key] = settingsParseStoredValue(localStorage.getItem(key));
+        const value = settingsParseStoredValue(localStorage.getItem(key));
+        values[key] = key === "educaria:analytics:events"
+            ? (Array.isArray(value) ? value.filter(event => actorId && String(event?.teacherUid || "").toLowerCase() === actorId) : [])
+            : value;
     }
 
     return { scope, values };
@@ -654,6 +658,9 @@ async function settingsRemoteAccountData(teacher) {
 
 async function buildSettingsAccountExport() {
     const teacher = settingsCurrentTeacher();
+    const uid = settingsServices()?.auth?.currentUser?.uid;
+    if (!uid || teacher?.uid !== uid) throw new Error("Entre novamente antes de exportar seus dados.");
+    const local = settingsLocalAccountData();
     let remote = null;
     let remoteWarning = "";
 
@@ -664,6 +671,9 @@ async function buildSettingsAccountExport() {
         console.warn("EducarIA remote account export unavailable:", error);
     }
 
+    if (settingsServices()?.auth?.currentUser?.uid !== uid || settingsCurrentTeacher()?.uid !== uid) {
+        throw new Error("A conta mudou durante a exportação. Tente novamente.");
+    }
     return {
         schema: "educaria-account-export/v1",
         exportedAt: new Date().toISOString(),
@@ -676,7 +686,7 @@ async function buildSettingsAccountExport() {
             role: teacher.role || "teacher",
             plan: teacher.plan || "free"
         } : null,
-        local: settingsLocalAccountData(),
+        local,
         remote,
         warnings: remoteWarning ? [remoteWarning] : []
     };

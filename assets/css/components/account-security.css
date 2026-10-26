@@ -1,0 +1,11 @@
+.account-verification-banner{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:.75rem 1rem;margin:0 0 1rem;border:1px solid #d5b663;border-radius:16px;background:#fff5d9;color:#423718;font-size:.95rem}
+.account-verification-banner button,.verification-actions button{border:1px solid #1d6768;border-radius:999px;padding:.65rem 1rem;background:#fff;color:#185c5d;font:inherit;font-weight:700;cursor:pointer}
+.account-verification-dialog{position:fixed;inset:0;margin:auto;width:min(440px,calc(100% - 2rem));max-height:calc(100dvh - 2rem);overflow:auto;box-sizing:border-box;border:1px solid #b8d4cf;border-radius:24px;padding:2rem;background:#fffdf8;color:#213c43;box-shadow:0 20px 80px #173b4933;font:1rem/1.5 system-ui,sans-serif}
+.account-verification-dialog::backdrop{background:#15333a80}
+.account-verification-dialog h2{font-size:1.4rem;margin:0 2rem 1rem 0}
+.account-verification-dialog strong{overflow-wrap:anywhere}
+.verification-close{position:absolute;right:1rem;top:.75rem;border:0;background:transparent;font-size:1.8rem;color:inherit;cursor:pointer}
+.verification-actions{display:flex;flex-wrap:wrap;gap:.6rem}
+.verification-actions button:first-child{background:#1d6768;color:#fff}
+.account-verification-dialog [role=status]{font-size:.9rem;margin-bottom:0}
+@media(max-width:600px){.account-verification-banner{flex-wrap:wrap}}

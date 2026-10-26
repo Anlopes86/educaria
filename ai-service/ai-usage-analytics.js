@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { aiCreditsForUsage, mergeAiUsageMetadata, normalizeAiUsageMetadata } from "./ai-credit-policy.js";
+import { hasMeasuredTokenUsage, usageUnavailableReason } from "./usage-measurement.js";
 
 export const USAGE_COLLECTION = "aiGenerationUsage";
 export const USAGE_REPORT_MAX_RECORDS = 5000;
@@ -11,8 +12,7 @@ const arrays = { wordtrail: "words", connections: "rounds", slides: "slides", qu
     mindmap: "branches", debate: "steps", wordsearch: "words", crossword: "entries", hangman: "words" };
 const dayMs = 86_400_000;
 const integer = value => Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.floor(Number(value) || 0)));
-const hasUsage = value => value && ["promptTokenCount", "candidatesTokenCount", "totalTokenCount"].some(key =>
-    Object.hasOwn(value, key) && typeof value[key] === "number" && Number.isFinite(value[key]) && value[key] >= 0);
+const hasUsage = hasMeasuredTokenUsage;
 const validUid = uid => typeof uid === "string" && uid.length > 0 && uid.length <= 128 && !/[\/\u0000-\u001f\u007f]/.test(uid);
 const round = value => Math.round(value * 1e9) / 1e9;
 
@@ -66,6 +66,8 @@ export function createUsageObservation({ uid, plan, unlimited, materialType, pro
                 if (usage) merged = mergeAiUsageMetadata(merged, metadata);
                 attempts.push({ number: attempts.length + 1, durationMs: integer(now() - start),
                     status: failure ? "failed" : "returned", usage,
+                    usageUnavailableReason: usage ? null : usageUnavailableReason(failure?.usageUnavailableReason || result?.usageUnavailableReason)
+                        || (metadata && Object.keys(metadata).length ? "provider_incomplete_usage" : "provider_not_reported"),
                     estimatedCostUsd: estimateUsageCost(provider, model, usage),
                     errorCategory: failure ? usageErrorCategory(failure) : null });
             }

@@ -32,15 +32,20 @@
         });
     }
 
-    window.educariaAiAuthHeaders = async function educariaAiAuthHeaders() {
+    window.educariaAiAuthHeaders = async function educariaAiAuthHeaders({ generation = false } = {}) {
         if (typeof firebaseServices !== "function") return {};
 
         const services = firebaseServices();
         const user = services?.auth ? await waitForFirebaseUser(services.auth) : null;
         if (!user) return {};
 
+        if (generation) await window.educariaRequireVerifiedEmail?.(user);
+        const appHeaders = await window.educariaAppCheckHeaders?.() || {};
+        if (services.auth.currentUser?.uid !== user.uid) throw new Error("A conta mudou. Entre novamente.");
+
         return {
-            Authorization: `Bearer ${await user.getIdToken()}`
+            Authorization: `Bearer ${await user.getIdToken()}`,
+            ...appHeaders
         };
     };
 

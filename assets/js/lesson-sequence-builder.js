@@ -940,7 +940,7 @@ async function requestLessonAiMaterial(materialType, sourceText, action, refinem
         formData.append("action", action);
     }
 
-    const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders() : {};
+    const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders({ generation: true }) : {};
     if (refinement && (!owner || owner !== window.educariaGenerationRecovery?.currentUid())) throw new Error("A conta mudou.");
     const response = await fetch(endpoint, {
         method: "POST",

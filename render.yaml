@@ -44,6 +44,11 @@ services:
         value: gemini-3.1-flash-image-preview
       - key: AI_AUTH_REQUIRED
         value: "true"
+      # Rollout switch stays managed in Render; do not reset enforcement on sync.
+      - key: APP_CHECK_MODE
+        sync: false
+      - key: FIREBASE_WEB_APP_ID
+        value: 1:856146928482:web:2d5a5aa8b868ef19b1c23b
       - key: FIREBASE_PROJECT_ID
         value: educaria-f46b2
       # Manage this release switch in the dashboard after validating rules/IAM.

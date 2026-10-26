@@ -3,6 +3,7 @@ import { test } from "node:test";
 import fs from "node:fs/promises";
 import vm from "node:vm";
 import { createUsageObservation, usageContext } from "../ai-usage-analytics.js";
+import { hasMeasuredTokenUsage } from "../usage-measurement.js";
 import { buildAiCreditUsagePolicy, aiCreditsForUsage, mergeAiUsageMetadata, normalizeAiUsageMetadata } from "../ai-credit-policy.js";
 import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } from "../activity-generation-policy.js";
 import { normalizeSlideGenerationOptions } from "../slide-generation-policy.js";
@@ -28,7 +29,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
     const context = vm.createContext({
         Error, console: { error() {}, warn() {} }, process: { env: {} },
         app: { post: (...args) => { handler = args.at(-1); } },
-        aiRateLimit: null, requireAiAuth: null, aiGenerationRateLimit: null, upload: { single: () => null },
+        aiRateLimit: null, requireAiAuth: null, requireAiVerifiedEmail: null, aiGenerationRateLimit: null, upload: { single: () => null }, hasMeasuredTokenUsage,
         schemaFor, normalizeItemRefinement, refinementSchema, validateRefinedItem, normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings, worksheetCompletionTokens, worksheetMaxCompletionTokens: 12000,
         extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial, validateDiscoverySource, normalizeWorksheetMaterial, validateWorksheetSource, isUploadValidationError: () => false,
         activeAiTextProvider: () => provider, activeAiTextModel: () => provider === "groq" ? "openai/gpt-oss-120b" : "gemini-test",
@@ -408,8 +409,20 @@ for (const code of ["json_validate_failed", "groq_empty_response", "groq_respons
 });
 test("Gemini retry after missing usage keeps the result explicitly partial", async () => {
     const h = harness({ provider: "gemini", results: [new Error("PRIVATE"), { text: '{"cards":[]}', usageMetadata }] });
-    assert.equal((await h.run()).statusCode, 200); assert.equal(h.events[0].usageCoverage, "partial");
+    const response = await h.run();
+    assert.equal(response.statusCode, 200); assert.equal(h.events[0].usageCoverage, "partial");
+    assert.equal(response.body.charge.basis, "unavailable"); assert.equal(response.body.charge.cost, 0);
+    assert.deepEqual(h.providerAmounts, [350]);
     assert.equal(h.events[0].usage.totalTokens, 350); assert.equal(h.events[0].measuredCredits, null);
+});
+test("ordinary successful responses without usage also retain the platform reserve and refund credits", async () => {
+    for (const provider of ["groq", "gemini"]) {
+        const h = harness({ provider, results: [{ text: '{"cards":[]}', usageMetadata: {} }] });
+        const response = await h.run();
+        assert.equal(response.statusCode, 200); assert.equal(response.body.charge.basis, "unavailable");
+        assert.equal(response.body.charge.measuredCost, null); assert.equal(h.refunds(), 1);
+        assert.deepEqual(h.providerAmounts, [100]);
+    }
 });
 test("requests rejected before the provider never create usage history", async () => {
     const h = harness({ blocked: true }); assert.equal((await h.run()).statusCode, 429);

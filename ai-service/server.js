@@ -27,6 +27,8 @@ import {
 } from "./ai-credit-policy.js";
 import { createAiCreditStore } from "./ai-credit-store.js";
 import { createFirebaseServices, verifyActiveSession, sessionErrorResponse } from "./firebase-admin-services.js";
+import { createAppProtection, requireVerifiedEmail } from "./app-protection.js";
+import { hasMeasuredTokenUsage } from "./usage-measurement.js";
 import { createDeletionManager, createFirestoreDeletionStore, createDeletionActions } from "./account-deletion.js";
 import { createAdminRouter, parseAdminUids } from "./admin-dashboard.js";
 import { createUsageAnalytics, createUsageObservation, usageContext } from "./ai-usage-analytics.js";
@@ -255,6 +257,16 @@ app.use((_request, response, next) => {
     next();
 });
 app.use(express.json({ limit: process.env.AI_JSON_LIMIT || "2mb" }));
+
+const appProtection = createAppProtection({
+    getServices: getFirebaseServices,
+    mode: String(process.env.APP_CHECK_MODE || "monitor").trim(),
+    appId: String(process.env.FIREBASE_WEB_APP_ID || "").trim()
+});
+app.use(["/api/ai", "/api/admin", "/api/billing/checkout", "/api/billing/status", "/api/model-template"], appProtection);
+app.delete("/api/account", appProtection);
+const requireAiVerifiedEmail = (request, response, next) => aiAuthRequired
+    ? requireVerifiedEmail(request, response, next) : next();
 
 function tokenFromAuthorizationHeader(request) {
     const header = request.get("authorization") || "";
@@ -1195,7 +1207,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
             return {
                 material: parseGeneratedJson(result.text),
                 usageMetadata: result.usageMetadata,
-                unmeteredRecovery: result.unmeteredRecovery === true,
+                usageUnavailable: !hasMeasuredTokenUsage(result.usageMetadata),
                 providerRequests: 1,
                 provider,
                 model
@@ -1232,6 +1244,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
     const configuredAttempts = attempts.slice(0, aiGenerationMaxAttempts);
     let lastError = null;
     let accumulatedUsage = {};
+    let hasUnknownUsage = false;
     let providerRequests = 0;
 
     for (const attempt of configuredAttempts) {
@@ -1243,17 +1256,19 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
                 contents: attempt.contents,
                 config: { ...attempt.config, ...(materialType === "worksheet" ? { maxOutputTokens: outputLimit } : {}) }
             }));
-
+            hasUnknownUsage ||= !hasMeasuredTokenUsage(result?.usageMetadata);
             const material = parseGeneratedJson(result?.text || "");
             accumulatedUsage = mergeAiUsageMetadata(accumulatedUsage, result?.usageMetadata || {});
             return {
                 material,
                 usageMetadata: accumulatedUsage,
+                usageUnavailable: hasUnknownUsage,
                 providerRequests,
                 provider: "gemini",
                 model
             };
         } catch (error) {
+            hasUnknownUsage ||= !hasMeasuredTokenUsage(result?.usageMetadata || error?.usageMetadata);
             if (result?.usageMetadata) {
                 accumulatedUsage = mergeAiUsageMetadata(accumulatedUsage, result.usageMetadata);
             }
@@ -1450,7 +1465,7 @@ app.post("/api/account/deletion-status", aiRateLimit, async (request, response) 
     }
 });
 
-app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, upload.single("file"), async (request, response) => {
+app.post("/api/ai/generate", aiRateLimit, requireAiAuth, requireAiVerifiedEmail, aiGenerationRateLimit, upload.single("file"), async (request, response) => {
     let creditReservation = null;
     let requestReservation = null;
     let providerTokenReservation = null;
@@ -1593,13 +1608,13 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
             providerTokenReservation,
             // A recovered error may omit usage: retain the conservative platform
             // reservation, but never present estimated tokens as measured usage.
-            generated.unmeteredRecovery ? providerTokenEstimate : measuredCharge.usage.totalTokens
+            generated.usageUnavailable ? Math.max(providerTokenEstimate, measuredCharge.usage.totalTokens) : measuredCharge.usage.totalTokens
         );
         providerTokenReservation = null;
         const requestQuota = await settleAiDailyRequests(requestReservation, providerRequests, request);
         requestReservation = null;
         let settlement;
-        if (generated.unmeteredRecovery) {
+        if (generated.usageUnavailable) {
             await refundAiDailyCredit(creditReservation.reservation);
             creditReservation = null;
             usageCharged = 0;
@@ -1622,11 +1637,11 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, aiGenerationRateLimit, 
                 materialType,
                 provider: generated.provider,
                 model: generated.model,
-                basis: generated.unmeteredRecovery ? "unavailable" : "usage",
+                basis: generated.usageUnavailable ? "unavailable" : "usage",
                 cost: settlement.charged,
                 measuredCost: settlement.measuredCost,
-                weightedTokens: generated.unmeteredRecovery ? null : measuredCharge.weightedTokens,
-                usage: generated.unmeteredRecovery ? null : measuredCharge.usage
+                weightedTokens: generated.usageUnavailable ? null : measuredCharge.weightedTokens,
+                usage: generated.usageUnavailable ? null : measuredCharge.usage
             }
         });
     } catch (error) {
@@ -1741,7 +1756,7 @@ app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.sing
     }
 });
 
-app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, aiGenerationRateLimit, async (request, response) => {
+app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, requireAiVerifiedEmail, aiGenerationRateLimit, async (request, response) => {
     let creditReservation = null;
     let requestReservation = null;
     let providerRequests = 0;

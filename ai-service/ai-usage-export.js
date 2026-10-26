@@ -1,5 +1,6 @@
 import { GROQ_REFERENCE_PRICE, MATERIAL_LABELS, USAGE_REPORT_MAX_RECORDS, USAGE_REPORT_WINDOW_DAYS,
     selectUsageEvents, summarizeUsageEvents, usageContext } from "./ai-usage-analytics.js";
+import { usageUnavailableReason } from "./usage-measurement.js";
 
 const amount = value => typeof value === "number" && Number.isFinite(value) && value >= 0 ? value : null;
 const category = (value, options, fallback = "unknown") => options.includes(value) ? value : fallback;
@@ -50,6 +51,7 @@ export function buildUsageExport(snapshot, filters, now = Date.now()) {
         attempts: (Array.isArray(row.attempts) ? row.attempts : []).map((attempt, attemptIndex) => ({
             number: attemptIndex + 1, durationMs: amount(attempt.durationMs),
             status: category(attempt.status, ["returned", "failed"]), usage: usage(attempt.usage),
+            usageUnavailableReason: usageUnavailableReason(attempt.usageUnavailableReason),
             estimatedCostUsd: amount(attempt.estimatedCostUsd), errorCategory: errorCategory(attempt.errorCategory)
         }))
     }));

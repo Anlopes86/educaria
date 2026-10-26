@@ -1,5 +1,5 @@
 const EDUCARIA_CACHE_PREFIX = "educaria-static-";
-const EDUCARIA_CACHE_NAME = `${EDUCARIA_CACHE_PREFIX}v30`;
+const EDUCARIA_CACHE_NAME = `${EDUCARIA_CACHE_PREFIX}v31`;
 const EDUCARIA_SHELL_PATHS = [
     "./",
     "./index.html",
@@ -77,7 +77,8 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
     if (!isCacheableRequest(event.request)) return;
 
-    const acceptsHtml = event.request.mode === "navigate"
+    const acceptsHtml = /\/(app-security|auth-flow|ai-endpoint-config)\.js$/.test(new URL(event.request.url).pathname)
+        || event.request.mode === "navigate"
         || event.request.headers.get("accept")?.includes("text/html");
     event.respondWith(acceptsHtml ? networkFirst(event.request) : staleWhileRevalidate(event.request));
 });

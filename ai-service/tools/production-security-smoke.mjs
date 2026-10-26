@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { initializeApp, cert, deleteApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getAppCheck } from "firebase-admin/app-check";
 import { getFirestore } from "firebase-admin/firestore";
 
 const root = path.resolve(import.meta.dirname, "../..");
@@ -13,8 +14,10 @@ const projectId = "educaria-f46b2";
 const baseUrl = "https://educaria-api-anlopes86.onrender.com";
 const credentialPath = process.argv[2];
 if (!credentialPath || process.argv[3] !== "--create-disposable-probe") throw new Error("Explicit disposable-probe flag required.");
-const expectDeletionEnabled = process.argv[4] === "--expect-deletion-enabled";
-if (process.argv[4] && !expectDeletionEnabled) throw new Error("Unexpected smoke-test option.");
+const options = new Set(process.argv.slice(4));
+const expectDeletionEnabled = options.has("--expect-deletion-enabled");
+const expectVerifiedEmail = options.has("--expect-verified-email");
+if ([...options].some(option => !["--expect-deletion-enabled", "--expect-verified-email", "--with-app-check"].includes(option))) throw new Error("Unexpected smoke-test option.");
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST || process.env.FIRESTORE_EMULATOR_HOST) throw new Error("Unexpected emulator override.");
 let credentials;
 try {
@@ -27,6 +30,9 @@ if (!apiKey) throw new Error("Missing public Firebase web configuration.");
 const app = initializeApp({ projectId, credential: cert(credentials) }, "educaria-release-smoke");
 const auth = getAuth(app);
 const db = getFirestore(app);
+const appCheckToken = options.has("--with-app-check")
+    ? (await getAppCheck(app).createToken("1:856146928482:web:2d5a5aa8b868ef19b1c23b")).token : null;
+const appHeaders = appCheckToken ? { "X-Firebase-AppCheck": appCheckToken } : {};
 const uid = `release-probe-${randomUUID()}`;
 const otherUid = `release-probe-${randomUUID()}`;
 let createdUser = false;
@@ -41,7 +47,7 @@ async function expectResponse(name, response, expected) {
 async function signIn() {
     const token = await auth.createCustomToken(uid);
     const response = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...appHeaders },
         body: JSON.stringify({ token, returnSecureToken: true }), signal: AbortSignal.timeout(30_000)
     });
     if (!response.ok) throw new Error(`Probe sign-in failed (${response.status}).`);
@@ -53,11 +59,11 @@ async function signIn() {
     return body.idToken;
 }
 const api = (route, token, options = {}) => fetch(baseUrl + route, {
-    ...options, headers: { Authorization: `Bearer ${token}`, ...options.headers }, signal: AbortSignal.timeout(90_000)
+    ...options, headers: { ...appHeaders, Authorization: `Bearer ${token}`, ...options.headers }, signal: AbortSignal.timeout(90_000)
 });
 const firestore = (relativePath, token, options = {}) => fetch(
     `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${relativePath}`,
-    { ...options, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, signal: AbortSignal.timeout(30_000) }
+    { ...options, headers: { ...appHeaders, Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, signal: AbortSignal.timeout(30_000) }
 );
 try {
     await auth.createUser({ uid, displayName: "Verificação descartável da publicação" });
@@ -66,6 +72,15 @@ try {
     const creditsResponse = await expectResponse("authenticated_api", await api("/api/ai/credits", token), 200);
     const credits = await creditsResponse.json();
     if (credits?.credits?.store !== "firestore") throw new Error("Production credits are not using Firestore.");
+    if (expectVerifiedEmail) {
+        const request = { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" };
+        const blocked = await expectResponse("unverified_email_cannot_generate", await api("/api/ai/generate", token, request), 403);
+        if ((await blocked.json()).code !== "email_verification_required") throw new Error("Email protection not confirmed.");
+        await auth.updateUser(uid, { email: `${uid}@example.invalid`, emailVerified: true });
+        token = await signIn();
+        // Invalid empty input stops before any provider call or credit reservation.
+        await expectResponse("verified_email_passes_to_input_validation", await api("/api/ai/generate", token, request), 400);
+    }
     // Empty legacy request can never start deletion, regardless of the feature flag.
     const deletionResponse = await expectResponse(expectDeletionEnabled ? "legacy_deletion_rejected" : "account_deletion_disabled",
         await api("/api/account", token, { method: "DELETE" }), expectDeletionEnabled ? 400 : 503);

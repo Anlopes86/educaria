@@ -68,6 +68,20 @@ test("successful response missing usage is unknown, but explicit zero is known",
         assert.equal(obs.finish({ success: true }).usageCoverage, expected);
     }
 });
+test("incomplete counters and schema recovery are explained without inventing tokens", async () => {
+    for (const [result, reason] of [
+        [{ usageMetadata: { promptTokenCount: 45 } }, "provider_incomplete_usage"],
+        [{ usageMetadata: {}, usageUnavailableReason: "provider_schema_recovery" }, "provider_schema_recovery"],
+        [{ usageMetadata: {}, usageUnavailableReason: "private-provider-text" }, "provider_not_reported"]
+    ]) {
+        const obs = observation(); await obs.call(async () => result);
+        const row = obs.finish({ success: true });
+        assert.equal(row.usageCoverage, "unknown");
+        assert.equal(row.measuredCredits, null);
+        assert.equal(row.estimatedCostUsd, null);
+        assert.equal(row.attempts[0].usageUnavailableReason, reason);
+    }
+});
 test("memory store deduplicates stable IDs, reports truncation and removes only targeted user", async () => {
     const store = createUsageAnalytics({ mode: "memory", now: () => timestamp, maxRecords: 2 });
     const row = await event();

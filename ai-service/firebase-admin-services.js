@@ -32,6 +32,7 @@ export function createFirebaseServices(env = process.env) {
         // Keep health/startup independent of loading the SDK's large dependency tree.
         const { applicationDefault, cert, initializeApp } = require("firebase-admin/app");
         const { getAuth } = require("firebase-admin/auth");
+        const { getAppCheck } = require("firebase-admin/app-check");
         const { getFirestore } = require("firebase-admin/firestore");
         const { getStorage } = require("firebase-admin/storage");
         const app = initializeApp({
@@ -42,7 +43,7 @@ export function createFirebaseServices(env = process.env) {
         // Teacher data and the deletion lock are always in the default database.
         // AI_CREDIT_FIRESTORE_DATABASE only controls the independent usage ledger.
         services = {
-            auth: getAuth(app), db: getFirestore(app),
+            auth: getAuth(app), db: getFirestore(app), appCheck: getAppCheck(app),
             bucket: () => {
                 if (!bucketName) throw Object.assign(new Error("FIREBASE_STORAGE_BUCKET is required."), { code: "admin/configuration-error" });
                 return getStorage(app).bucket(bucketName);
