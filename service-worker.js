@@ -1,5 +1,5 @@
 const EDUCARIA_CACHE_PREFIX = "educaria-static-";
-const EDUCARIA_CACHE_NAME = `${EDUCARIA_CACHE_PREFIX}v32`;
+const EDUCARIA_CACHE_NAME = `${EDUCARIA_CACHE_PREFIX}v33`;
 const EDUCARIA_SHELL_PATHS = [
     "./",
     "./index.html",
@@ -34,7 +34,8 @@ async function cacheResponse(request, response) {
 
 async function networkFirst(request) {
     try {
-        return await cacheResponse(request, await fetch(request));
+        // Revalidate the browser's HTTP cache too: network-first alone can reuse an old security script.
+        return await cacheResponse(request, await fetch(request, { cache: "no-cache" }));
     } catch (error) {
         const cached = await caches.match(request);
         if (cached) return cached;
