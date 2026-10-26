@@ -1,6 +1,6 @@
 (() => {
     // Public site identifier, not an API credential. Domain validation is configured in Google Cloud.
-    const siteKey = "";
+    const siteKey = "6LcgAgIuAAAAACjrkxbsrrPY1Ng2jrZkprQyp1-8";
     let appCheck;
     let dialog;
     let sending = false;
@@ -8,9 +8,19 @@
     const currentUser = () => typeof firebase !== "undefined" && firebase.apps.length ? firebase.auth().currentUser : null;
 
     window.educariaInitializeAppCheck = function () {
-        if (appCheck || !siteKey || typeof firebase.appCheck !== "function") return;
-        appCheck = firebase.appCheck();
-        appCheck.activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(siteKey), true);
+        if (appCheck || !siteKey || typeof firebase === "undefined" || typeof firebase.appCheck !== "function") return;
+        try {
+            const instance = firebase.appCheck();
+            instance.activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(siteKey), true);
+            appCheck = instance;
+            // Diagnose the rollout without exposing tokens, account identifiers or provider errors.
+            instance.onTokenChanged({
+                next: () => console.debug("EducarIA App Check: acesso validado."),
+                error: () => console.warn("EducarIA App Check: não foi possível validar o acesso.")
+            });
+        } catch {
+            console.warn("EducarIA App Check: proteção indisponível neste navegador.");
+        }
     };
     window.educariaAppCheckHeaders = async function () {
         if (!appCheck) return {};

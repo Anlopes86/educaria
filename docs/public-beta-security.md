@@ -24,7 +24,11 @@ Referência: [Firebase App Check para Web](https://firebase.google.com/docs/app-
 
 ## Verificações de produção
 
-Em 26/10/2026, antes desta publicação, foram confirmados: armazenamento de créditos em Firestore; limites globais de 180.000 tokens/dia e 900 pedidos/dia; 4 gerações/minuto para a plataforma e 2/minuto por usuário; 500 créditos/dia para conta gratuita. O dia do provedor usa UTC. A cota atual da organização Groq ainda precisa ser comparada no console autenticado; esses valores são limites da EducarIA, não uma garantia de capacidade do provedor.
+Em 26/10/2026, foram confirmados no Render: armazenamento de créditos em Firestore; limites globais de 180.000 tokens/dia e 900 pedidos/dia; 4 gerações/minuto para a plataforma e 2/minuto por usuário; 500 créditos/dia para conta gratuita. O dia do provedor usa UTC.
+
+No console autenticado da organização Personal no Groq, o modelo `openai/gpt-oss-120b` tem 30 pedidos/minuto, 1.000 pedidos/dia, 8.000 tokens/minuto e 200.000 tokens/dia. Os tetos diários da EducarIA deixam margem, mas o controle de pedidos por minuto não garante ficar dentro dos tokens por minuto: pedidos grandes simultâneos podem receber 429 e exigir espera. A cota do Groq é compartilhada com outros usos da mesma organização. Referência: [limites do Groq](https://console.groq.com/docs/rate-limits).
+
+O reCAPTCHA Enterprise foi ativado com autorização do responsável e sem vincular faturamento. A chave de produção permite somente `anlopes86.github.io`, sem desafios e sem modo de teste. A aplicação Web foi registrada no App Check com validade de uma hora e pontuação mínima padrão de 0,5. A publicação da chave inicia a coleta de atestações; a exigência depende da validação em produção. Os diagnósticos de navegador registram apenas sucesso/falha, nunca o token.
 
 Os verificadores `ai-service/tools/production-security-smoke.mjs` e `production-deletion-smoke.mjs` criam identificadores aleatórios próprios e nunca recebem um usuário existente como alvo. Validam leitura entre contas, promoção indevida de plano, sessões revogadas/desativadas, bloqueio durante exclusão e remoção completa. Nunca imprimem credenciais ou tokens.
 
