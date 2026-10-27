@@ -80,6 +80,7 @@ O transporte é `/api/ai/generate` com `materialType: "slides"` e `slideIllustra
 | `ai-usage-export.js` | Exportação protegida do consumo, com projeção de campos e rótulos de contas locais ao arquivo |
 | `firebase-admin-services.js` | Serviços Firebase e validação da sessão ativa |
 | `admin-dashboard.js` | Rotas administrativas protegidas pela lista de UIDs do servidor |
+| `beta-enrollment.js`, `beta-routes.js` | Lote de novos acessos, lista de espera e cota específica das novas contas; [ativação e manutenção](beta-enrollment.md) |
 | `account-deletion.js` | Exclusão retomável da conta e dos dados associados |
 
 Os módulos de `materials/` não conhecem Express, usuários ou cotas, exceto a fábrica de upload que cria o middleware Multer. Não leem configurações do ambiente nem iniciam chamadas à IA. Mantenha decisões de acesso, reservas e gravações fora das funções de formatação.

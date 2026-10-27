@@ -4,7 +4,7 @@
     const pending = new Set();
 
     async function request(path, params = {}, signal) {
-        if (!["/access", "/users", "/usage", "/usage/export"].includes(path)) throw new Error("Consulta administrativa inválida.");
+        if (!["/access", "/users", "/usage", "/usage/export", "/beta/approve"].includes(path)) throw new Error("Consulta administrativa inválida.");
         const version = sessionVersion;
         const controller = new AbortController();
         const abort = () => controller.abort();
@@ -19,8 +19,12 @@
             const endpoint = window.educariaAiEndpoint?.(`/api/admin${path}`);
             if (!endpoint) throw new Error("Serviço administrativo indisponível.");
             const url = new URL(endpoint);
-            for (const [key, value] of Object.entries(params)) url.searchParams.set(key, String(value));
-            const response = await fetch(url, { method: "GET", headers, cache: "no-store", credentials: "omit", signal: controller.signal });
+            const mutation = path === "/beta/approve";
+            if (!mutation) for (const [key, value] of Object.entries(params)) url.searchParams.set(key, String(value));
+            const response = await fetch(url, { method: mutation ? "POST" : "GET",
+                headers: mutation ? { ...headers, "Content-Type": "application/json" } : headers,
+                ...(mutation ? { body: JSON.stringify(params) } : {}),
+                cache: "no-store", credentials: "omit", signal: controller.signal });
             if (version !== sessionVersion) throw new DOMException("Consulta cancelada", "AbortError");
             if (!response.ok) {
                 const messages = { 401: "Sua sessão expirou. Entre novamente.", 403: "Esta área é exclusiva da administração.",

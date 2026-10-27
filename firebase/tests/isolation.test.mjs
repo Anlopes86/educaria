@@ -100,3 +100,33 @@ test("Storage isolates teacher prefixes and honors the Firestore deletion lock",
     await assertFails(uploadBytes(ref(own, path), new Uint8Array([66]), { contentType: "text/plain" }));
     await assertFails(deleteObject(ref(own, path)));
 });
+
+test("active beta blocks waitlisted/unadmitted users across Firestore and Storage, including forged approvals", async () => {
+    const control = "platformControl/betaEnrollment";
+    const write = async (path, data) => env.withSecurityRulesDisabled(ctx => setDoc(doc(ctx.firestore(), path), data));
+    try {
+        await write(control, { enabled: true });
+        await write("betaEnrollments/beta-approved", { status: "approved", cohort: "new" });
+        await write("betaEnrollments/beta-waiting", { status: "waitlisted" });
+        for (const uid of ["beta-approved", "beta-waiting", "beta-unadmitted"]) {
+            const context = env.authenticatedContext(uid);
+            const db = context.firestore(), storage = context.storage();
+            const check = uid === "beta-approved" ? assertSucceeds : assertFails;
+            await check(setDoc(doc(db, `teachers/${uid}`), profile));
+            await check(setDoc(doc(db, `teachers/${uid}/lessons/test`), { title: "Teste" }));
+            await check(uploadBytes(ref(storage, `teachers/${uid}/test.txt`), new Uint8Array([65]), { contentType: "text/plain" }));
+            for (const path of [control, `betaEnrollments/${uid}`, "betaEnrollments/beta-approved"]) {
+                await assertFails(getDoc(doc(db, path)));
+                await assertFails(setDoc(doc(db, path), { status: "approved", enabled: false }));
+            }
+        }
+        await write("betaEnrollments/beta-approved", { status: "approved", accessBlocked: true });
+        await write("accountDeletionJobs/beta-approved", { pending: true });
+        const blocked = env.authenticatedContext("beta-approved");
+        await assertFails(getDoc(doc(blocked.firestore(), "teachers/beta-approved")));
+        await assertFails(getMetadata(ref(blocked.storage(), "teachers/beta-approved/test.txt")));
+        await assertFails(deleteObject(ref(blocked.storage(), "teachers/beta-approved/test.txt")));
+    } finally {
+        await env.withSecurityRulesDisabled(ctx => deleteDoc(doc(ctx.firestore(), control)));
+    }
+});

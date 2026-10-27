@@ -29,7 +29,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
     const context = vm.createContext({
         Error, console: { error() {}, warn() {} }, process: { env: {} },
         app: { post: (...args) => { handler = args.at(-1); } },
-        aiRateLimit: null, requireAiAuth: null, requireAiVerifiedEmail: null, aiGenerationRateLimit: null, upload: { single: () => null }, hasMeasuredTokenUsage,
+        aiRateLimit: null, requireAiAuth: null, requireBetaAccess: null, requireAiVerifiedEmail: null, aiGenerationRateLimit: null, upload: { single: () => null }, hasMeasuredTokenUsage,
         schemaFor, normalizeItemRefinement, refinementSchema, validateRefinedItem, normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration, normalizeSlideGenerationOptions, normalizeActivityGenerationOptions, applyActivityGenerationSettings, worksheetCompletionTokens, worksheetMaxCompletionTokens: 12000,
         extractTextFromFile: async () => "", normalizeSlidesMaterial, normalizeDiscoveryMaterial, validateDiscoverySource, normalizeWorksheetMaterial, validateWorksheetSource, isUploadValidationError: () => false,
         activeAiTextProvider: () => provider, activeAiTextModel: () => provider === "groq" ? "openai/gpt-oss-120b" : "gemini-test",

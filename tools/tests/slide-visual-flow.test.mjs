@@ -14,7 +14,9 @@ test("decorative overflow does not reduce type; actual text overflow still does"
     vm.runInContext(part(runtime, "function isSlideOverflowing(", "function applySlideDensity("), scope);
     const root = { scrollHeight: 752, clientHeight: 529, getBoundingClientRect: () => ({ bottom: 634 }) };
     const copy = { scrollHeight: 493, clientHeight: 493, scrollWidth: 1000, clientWidth: 1000,
-        getBoundingClientRect: () => ({ top: 122, bottom: 615 }), children: [{ getBoundingClientRect: () => ({ bottom: 450 }) }] };
+        getBoundingClientRect: () => ({ top: 122, bottom: 615 }),
+        querySelectorAll() { return this.children; },
+        children: [{ getBoundingClientRect: () => ({ bottom: 450 }), getClientRects: () => [{}] }] };
     assert.equal(scope.isSlideOverflowing(root, copy), false);
     copy.scrollHeight = 610;
     assert.equal(scope.isSlideOverflowing(root, copy), true);
@@ -22,6 +24,43 @@ test("decorative overflow does not reduce type; actual text overflow still does"
     assert.equal(scope.isSlideOverflowing(root, copy), true);
     copy.scrollWidth = 1000; copy.children[0].getBoundingClientRect = () => ({ bottom: 620 });
     assert.equal(scope.isSlideOverflowing(root, copy), true);
+});
+
+test("fitting detects clipped paragraphs even while the initial slide is hidden", () => {
+    const scope = vm.createContext({ getComputedStyle: () => ({ display: "block", visibility: "hidden" }) });
+    vm.runInContext(part(runtime, "function isSlideOverflowing(", "function applySlideDensity("), scope);
+    const paragraph = { scrollHeight: 240, clientHeight: 120, scrollWidth: 400, clientWidth: 400,
+        getBoundingClientRect: () => ({ bottom: 300 }), getClientRects: () => [{}] };
+    const root = { getBoundingClientRect: () => ({ bottom: 600 }) };
+    const copy = { scrollHeight: 500, clientHeight: 500, scrollWidth: 400, clientWidth: 400,
+        getBoundingClientRect: () => ({ top: 50, bottom: 550 }), querySelectorAll: () => [paragraph] };
+    assert.equal(scope.isSlideOverflowing(root, copy), true);
+    paragraph.scrollHeight = paragraph.clientHeight;
+    assert.equal(scope.isSlideOverflowing(root, copy), false);
+    paragraph.getBoundingClientRect = () => ({ bottom: 570 });
+    assert.equal(scope.isSlideOverflowing(root, copy), true);
+});
+
+test("fitting recovers larger type after resize and keeps excessive text reachable", () => {
+    let density;
+    let fitsAt = "presentation-slide--compact";
+    const root = { dataset: {}, classList: { remove() {}, add(value) { density = value; } } };
+    const scope = vm.createContext({ isSlideOverflowing: () => density !== fitsAt });
+    vm.runInContext(part(runtime, "function setSlideDensityClass(", "function isSlideOverflowing("), scope);
+    vm.runInContext(part(runtime, "function applySlideDensity(", "function applySlideLayout("), scope);
+    scope.applySlideDensity(root, {});
+    assert.equal(density, "presentation-slide--compact");
+    fitsAt = "presentation-slide--comfort";
+    scope.applySlideDensity(root, {});
+    assert.equal(density, "presentation-slide--comfort");
+    fitsAt = "never";
+    root.dataset.slideComposition = "panels";
+    scope.applySlideDensity(root, {});
+    assert.equal(root.dataset.slideComposition, "editorial");
+    assert.equal(root.dataset.copyOverflow, "true");
+    fitsAt = "presentation-slide--comfort";
+    scope.applySlideDensity(root, {});
+    assert.equal(root.dataset.copyOverflow, undefined);
 });
 
 test("editor import and presentation parsing preserve palette provenance and composition", () => {

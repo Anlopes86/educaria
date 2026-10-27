@@ -31,7 +31,9 @@ async function harness(t, options = {}) {
             } }
     };
     const app = express();
+    app.use(express.json());
     app.use("/api/admin", createAdminRouter({
+        betaEnrollment: options.betaEnrollment,
         getServices: () => services, adminUids: options.adminUids || new Set(["owner"]), now: () => timestamp,
         usageAnalytics: { read: async (filters = {}) => {
             calls.usage += 1;
@@ -57,14 +59,31 @@ async function harness(t, options = {}) {
     const server = createServer(app);
     await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
     t.after(() => new Promise(resolve => { server.closeAllConnections(); server.close(resolve); }));
-    return { calls, query: (route = "/users", token = "owner", method = "GET") => fetch(`http://127.0.0.1:${server.address().port}/api/admin${route}`, {
-        method, headers: token ? { Authorization: `Bearer ${token}` } : {}
+    return { calls, query: (route = "/users", token = "owner", method = "GET", body) => fetch(`http://127.0.0.1:${server.address().port}/api/admin${route}`, {
+        method, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(body ? { "Content-Type": "application/json" } : {}) },
+        ...(body ? { body: JSON.stringify(body) } : {})
     }) };
 }
 
 test("UID configuration fails closed and is not an email, role or wildcard grant", () => {
     assert.deepEqual([...parseAdminUids()], []);
     assert.deepEqual([...parseAdminUids(" owner, owner, *, bad/uid, another-owner ")], ["owner", "another-owner"]);
+});
+
+test("only configured administrator can approve waitlisted access and refresh the directory", async t => {
+    let approved = false, calls = 0;
+    const betaEnrollment = { status: async () => ({ enabled: true, newSlots: 25, used: 25, waiting: 1 }),
+        readMany: async users => users.map(user => ({ status: user.uid === "teacher-1" && !approved ? "waitlisted" : "approved" })),
+        approve: async uid => { assert.equal(uid, "teacher-1"); calls++; approved = true; } };
+    const h = await harness(t, { betaEnrollment });
+    assert.equal((await h.query("/beta/approve", "", "POST", { uid: "teacher-1" })).status, 401);
+    assert.equal((await h.query("/beta/approve", "teacher-1", "POST", { uid: "teacher-1" })).status, 403);
+    assert.equal(calls, 0);
+    assert.equal((await (await h.query("/users?admission=waitlisted")).json()).users.length, 1);
+    assert.equal((await h.query("/beta/approve", "owner", "POST", { uid: "teacher-1", newSlots: 999 })).status, 400);
+    assert.equal((await h.query("/beta/approve", "owner", "POST", { uid: "teacher-1" })).status, 200);
+    assert.equal(calls, 1);
+    assert.equal((await (await h.query("/users?admission=waitlisted")).json()).users.length, 0);
 });
 test("anonymous access never reads the directory or balances", async t => {
     const h = await harness(t);

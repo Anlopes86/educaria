@@ -105,7 +105,15 @@ export function createFirestoreDeletionStore(getServices) {
         });
     }
     return {
-        create: (uid, job) => mutate(uid, (existing, write) => { if (!existing) write(job); return existing || job; }),
+        create: (uid, job) => getServices().db.runTransaction(async tx => {
+            const ref = collection().doc(uid);
+            const existing = await tx.get(ref);
+            if (!existing.exists) tx.set(ref, job);
+            // Storage has a two-document cross-service read limit. Mirror the
+            // deletion lock atomically on admission, retaining its waitlist status.
+            tx.set(getServices().db.doc(`betaEnrollments/${uid}`), { accessBlocked: true }, { merge: true });
+            return existing.exists ? existing.data() : job;
+        }),
         get: async (uid) => (await collection().doc(uid).get()).data(),
         async list() {
             // Single-field query, rotating pages: no composite index and no starvation

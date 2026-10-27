@@ -32,7 +32,10 @@
 .admin-badge { display: inline-flex; align-items: center; width: fit-content; padding: 5px 9px; border-radius: 8px; background: #f1edf6; color: #695086; font-size: .7rem; font-weight: 700; white-space: nowrap; }
 .admin-badge--green { background: #e8f3ed; color: #226963; }
 .admin-badge--muted { background: #f4e8e2; color: #854e3e; }
-.admin-filters { display: grid; grid-template-columns: minmax(170px, 1fr) minmax(130px, .45fr) minmax(140px, .45fr) auto; align-items: end; gap: 12px; padding: 16px; border-radius: 14px; background: #f0f5ef; }
+.admin-filters { display: grid; grid-template-columns: minmax(170px, 1fr) repeat(3, minmax(125px, .45fr)) auto; align-items: end; gap: 12px; padding: 16px; border-radius: 14px; background: #f0f5ef; }
+[data-admin-beta]:not(:empty) { padding: 16px; margin: 12px 0 18px; border: 1px solid #c9d9b5; border-radius: 14px; background: #edf3e4; font-size: .85rem; }
+[data-admin-beta] p { margin: 6px 0 0; line-height: 1.5; }
+.admin-table .platform-link-button { margin-top: 8px; min-height: 36px; padding: 7px 10px; white-space: normal; }
 .admin-filters label { display: grid; gap: 7px; min-width: 0; font-size: .75rem; font-weight: 700; }
 .admin-filters :is(input, select) { width: 100%; min-width: 0; min-height: 42px; padding: 10px 12px; border: 1px solid #c6d8ce; border-radius: 9px; background: #fffefa; color: #173c43; font: inherit; font-weight: 400; }
 .admin-page .platform-link-primary { background: #226963; border-color: #226963; color: #fff; }

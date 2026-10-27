@@ -31,6 +31,7 @@
         window.educariaAdminUsage?.clear();
         content.hidden = true;
         tbody.replaceChildren();
+        root.querySelector("[data-admin-beta]")?.replaceChildren();
         root.querySelectorAll("[data-admin-metric]").forEach(node => { node.textContent = "—"; });
         root.querySelector("[data-admin-updated]").textContent = "";
     }
@@ -58,9 +59,32 @@
         const account = cell("Conta");
         account.append(element("span", `admin-badge ${user.disabled ? "admin-badge--muted" : "admin-badge--green"}`, user.disabled ? "Desativada" : "Habilitada"),
             element("small", "admin-secondary", user.plan === "pro" ? "Plano Pro" : "Plano gratuito"));
+        if (user.beta?.status === "waitlisted") {
+            account.append(element("small", "admin-unverified", "Na lista de espera"));
+            const approve = element("button", "platform-link-button platform-link-secondary", "Liberar acesso");
+            approve.type = "button";
+            approve.disabled = user.disabled;
+            approve.addEventListener("click", async () => {
+                if (!window.confirm(`Liberar o acesso de ${user.name || user.email || "este professor"}? Se as vagas estiverem preenchidas, isso acrescentará uma vaga extra ao beta.`)) return;
+                const current = generation;
+                approve.disabled = true;
+                try {
+                    await window.educariaAdminApi.request("/beta/approve", { uid: user.uid });
+                    if (current === generation) await load(true);
+                } catch (error) {
+                    if (current !== generation) return;
+                    approve.disabled = false;
+                    showStatus(error.message, "error", true);
+                }
+            });
+            account.append(approve);
+        } else if (user.beta?.status === "approved") {
+            account.append(element("small", "admin-secondary", user.beta.cohort === "new" ? "Nova vaga do beta" : "Acesso anterior preservado"));
+        }
         const usage = cell("IA hoje");
         const credits = user.credits;
-        if (!credits) usage.append(element("span", "admin-secondary", "Saldo indisponível"));
+        if (user.beta?.status === "waitlisted") usage.append(element("span", "admin-secondary", "Aguardando liberação"));
+        else if (!credits) usage.append(element("span", "admin-secondary", "Saldo indisponível"));
         else if (credits.unlimited) {
             usage.append(element("strong", "", "Sem limite individual"), element("small", "admin-secondary", "Sem desconto de créditos. Veja o consumo no relatório abaixo."));
         } else {
@@ -73,6 +97,11 @@
         return row;
     }
     function render(payload, forceRefresh = false) {
+        const beta = root.querySelector("[data-admin-beta]");
+        if (beta && payload.beta?.enabled) {
+            beta.append(element("strong", "", `${payload.beta.used} de ${payload.beta.newSlots} novas vagas ocupadas`),
+                element("p", "admin-secondary", `${payload.beta.remaining} disponíveis · ${payload.beta.waiting} na lista de espera. Contas anteriores preservadas. Novas contas gratuitas: ${payload.beta.freeDailyCredits} créditos de IA por dia.`));
+        }
         root.querySelectorAll("[data-admin-metric]").forEach(node => { node.textContent = numbers.format(payload.summary[node.dataset.adminMetric] ?? 0); });
         tbody.replaceChildren(...payload.users.map(renderUser));
         empty.hidden = payload.users.length !== 0;
@@ -100,7 +129,7 @@
             const fields = new FormData(form);
             const payload = await window.educariaAdminApi.request("/users", {
                 q: fields.get("q") || "", status: fields.get("status") || "all", plan: fields.get("plan") || "all",
-                page, refresh: String(forceRefresh)
+                admission: fields.get("admission") || "all", page, refresh: String(forceRefresh)
             }, controller.signal);
             if (current !== generation) return;
             if (!payload.ok || !Array.isArray(payload.users) || !payload.pagination || !payload.summary) throw new Error("Resposta inválida.");

@@ -7,7 +7,15 @@ service cloud.firestore {
 
     function isOwner(teacherId) {
       return signedIn() && request.auth.uid == teacherId
+        && betaAccess(teacherId)
         && !exists(/databases/$(database)/documents/accountDeletionJobs/$(teacherId));
+    }
+
+    function betaAccess(teacherId) {
+      return !exists(/databases/$(database)/documents/platformControl/betaEnrollment)
+        || get(/databases/$(database)/documents/platformControl/betaEnrollment).data.enabled != true
+        || (exists(/databases/$(database)/documents/betaEnrollments/$(teacherId))
+          && get(/databases/$(database)/documents/betaEnrollments/$(teacherId)).data.status == 'approved');
     }
 
     function validNewTeacher() {
@@ -54,7 +62,7 @@ service cloud.firestore {
     }
 
     match /templates/{templateId} {
-      allow read: if signedIn();
+      allow read: if signedIn() && betaAccess(request.auth.uid);
       allow write: if false;
     }
 

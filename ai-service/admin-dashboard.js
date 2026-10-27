@@ -12,7 +12,7 @@ export function parseAdminUids(value = "") {
     return new Set(String(value).split(",").map(uid => uid.trim()).filter(uid => uid && uid.length <= 128 && !/[\s/*]/.test(uid)));
 }
 
-export function createAdminRouter({ getServices, adminUids = new Set(), getPlan, getCredits, usageAnalytics,
+export function createAdminRouter({ getServices, adminUids = new Set(), getPlan, getCredits, usageAnalytics, betaEnrollment,
     verifySession = verifyActiveSession, now = Date.now, cacheTtlMs = 30_000 } = {}) {
     const router = express.Router();
     const rateBuckets = new Map();
@@ -86,6 +86,10 @@ export function createAdminRouter({ getServices, adminUids = new Set(), getPlan,
                 if (pageToken && (seenTokens.has(pageToken) || users.length >= 20_000)) throw new Error("directory_capacity");
                 if (pageToken) seenTokens.add(pageToken);
             } while (pageToken);
+            if (betaEnrollment) {
+                const memberships = await betaEnrollment.readMany(users);
+                users.forEach((user, index) => { user.beta = memberships[index]; });
+            }
             users.sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")) || a.uid.localeCompare(b.uid));
             directory = { users, loadedAt: now() };
             return directory;
@@ -94,18 +98,19 @@ export function createAdminRouter({ getServices, adminUids = new Set(), getPlan,
     }
 
     router.get("/users", async (request, response) => {
-        const { q = "", status = "all", plan = "all", page = "1", refresh = "false" } = request.query;
-        if (Object.keys(request.query).some(key => !["q", "status", "plan", "page", "refresh"].includes(key))
+        const { q = "", status = "all", plan = "all", admission = "all", page = "1", refresh = "false" } = request.query;
+        if (Object.keys(request.query).some(key => !["q", "status", "plan", "admission", "page", "refresh"].includes(key))
             || typeof q !== "string" || q.length > 120 || !["all", "enabled", "disabled"].includes(status)
             || !["all", "free", "pro"].includes(plan) || typeof page !== "string" || !/^[1-9]\d{0,5}$/.test(page)
-            || !["true", "false"].includes(refresh)) {
+            || !["true", "false"].includes(refresh) || !["all", "approved", "waitlisted"].includes(admission)) {
             return response.status(400).json({ code: "admin_invalid_query", error: "Confira os filtros e tente novamente." });
         }
         try {
             const snapshot = await readDirectory(refresh === "true");
             const needle = searchable(q.trim());
             const matches = snapshot.users.filter(user => (!needle || searchable(`${user.name} ${user.email}`).includes(needle))
-                && (status === "all" || user.disabled === (status === "disabled")) && (plan === "all" || user.plan === plan));
+                && (status === "all" || user.disabled === (status === "disabled")) && (plan === "all" || user.plan === plan)
+                && (admission === "all" || user.beta?.status === admission));
             const pageSize = 20;
             const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
             const currentPage = Math.min(Number(page), totalPages);
@@ -130,6 +135,7 @@ export function createAdminRouter({ getServices, adminUids = new Set(), getPlan,
             const sevenDaysAgo = now() - 7 * 24 * 60 * 60 * 1000;
             response.json({
                 ok: true, users: rows,
+                ...(betaEnrollment ? { beta: await betaEnrollment.status() } : {}),
                 summary: {
                     total: snapshot.users.length,
                     newLast7Days: snapshot.users.filter(user => Date.parse(user.createdAt) >= sevenDaysAgo).length,
@@ -143,6 +149,17 @@ export function createAdminRouter({ getServices, adminUids = new Set(), getPlan,
             // Never log user records, search terms, ID tokens or SDK error bodies.
             response.status(503).json({ code: "admin_unavailable", error: "Não foi possível consultar os usuários agora. Tente novamente." });
         }
+    });
+    router.post("/beta/approve", async (request, response) => {
+        const uid = request.body?.uid;
+        if (!betaEnrollment || Object.keys(request.body || {}).length !== 1 || typeof uid !== "string" || !uid || uid.length > 128 || /[\s/]/.test(uid)) {
+            return response.status(400).json({ code: "admin_invalid_query", error: "Confira o cadastro selecionado." });
+        }
+        try {
+            await betaEnrollment.approve(uid);
+            directory = null;
+            response.json({ ok: true });
+        } catch { response.status(503).json({ code: "beta_unavailable", error: "Não foi possível liberar o acesso agora. Tente novamente." }); }
     });
     router.get("/usage", async (request, response) => {
         let filters;
@@ -168,6 +185,6 @@ export function createAdminRouter({ getServices, adminUids = new Set(), getPlan,
             response.status(503).json({ code: "admin_usage_export_unavailable", error: "Não foi possível exportar o consumo de IA agora. Tente novamente." });
         }
     });
-    router.use((_request, response) => response.status(405).json({ code: "admin_read_only", error: "O painel permite somente consultas." }));
+    router.use((_request, response) => response.status(405).json({ code: "admin_method_not_allowed", error: "Esta operação não está disponível." }));
     return router;
 }

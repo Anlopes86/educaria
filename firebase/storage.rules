@@ -7,7 +7,18 @@ service firebase.storage {
 
     function isOwner(teacherId) {
       return signedIn() && request.auth.uid == teacherId
-        && !firestore.exists(/databases/(default)/documents/accountDeletionJobs/$(teacherId));
+        && betaAccess(teacherId);
+    }
+
+    function betaAccess(teacherId) {
+      // At most two distinct Firestore documents in each branch. The server
+      // atomically mirrors deletion locks in betaEnrollments before cleanup.
+      return !firestore.exists(/databases/(default)/documents/platformControl/betaEnrollment)
+        || firestore.get(/databases/(default)/documents/platformControl/betaEnrollment).data.enabled != true
+        ? !firestore.exists(/databases/(default)/documents/accountDeletionJobs/$(teacherId))
+        : (firestore.exists(/databases/(default)/documents/betaEnrollments/$(teacherId))
+          && firestore.get(/databases/(default)/documents/betaEnrollments/$(teacherId)).data.status == 'approved'
+          && firestore.get(/databases/(default)/documents/betaEnrollments/$(teacherId)).data.get('accessBlocked', false) == false);
     }
 
     function allowedTeacherUpload() {

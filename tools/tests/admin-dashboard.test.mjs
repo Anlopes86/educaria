@@ -29,6 +29,15 @@ test("missing login never sends a request to the admin server", async () => {
     await assert.rejects(h.api.access(), error => error.status === 401);
     assert.equal(h.calls.length, 0);
 });
+
+test("explicit admission approval sends JSON via authenticated POST, not URL parameters", async () => {
+    const h = accessHarness();
+    await h.api.request("/beta/approve", { uid: "waiting-user" });
+    assert.equal(h.calls[0].options.method, "POST");
+    assert.equal(h.calls[0].options.headers["Content-Type"], "application/json");
+    assert.deepEqual(JSON.parse(h.calls[0].options.body), { uid: "waiting-user" });
+    assert.equal(h.calls[0].url.search, "");
+});
 test("changing accounts discards in-flight results even if fetch ignores abort", async () => {
     const h = accessHarness(); let complete;
     h.scope.fetch = async () => new Promise(resolve => { complete = resolve; });
@@ -93,7 +102,7 @@ test("usage client uses the protected API and clears private data with the direc
     assert.match(html, /data-usage-results hidden/);
     for (const filter of ["days", "materialType", "status", "cohort", "uid"]) assert.ok(html.includes(`name="${filter}"`));
 });
-test("admin screen is read-only, initially private and has labelled search, pagination and retry", async () => {
+test("admin screen is initially private and has labelled search, pagination and retry", async () => {
     const html = await read("plataforma/administracao.html");
     assert.match(html, /data-admin-content hidden/);
     assert.match(html, /noindex, nofollow/);

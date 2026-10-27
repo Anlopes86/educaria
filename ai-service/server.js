@@ -31,6 +31,8 @@ import { createAppProtection, requireVerifiedEmail } from "./app-protection.js";
 import { hasMeasuredTokenUsage } from "./usage-measurement.js";
 import { createDeletionManager, createFirestoreDeletionStore, createDeletionActions } from "./account-deletion.js";
 import { createAdminRouter, parseAdminUids } from "./admin-dashboard.js";
+import { createBetaEnrollment, betaCreditLimit } from "./beta-enrollment.js";
+import { createBetaRouter, createRequireBetaAccess } from "./beta-routes.js";
 import { createUsageAnalytics, createUsageObservation, usageContext } from "./ai-usage-analytics.js";
 
 function parseNonNegativeNumber(value, fallback) {
@@ -125,6 +127,8 @@ const billingCheckoutUrl = String(process.env.BILLING_CHECKOUT_URL || "").trim()
 const billingWebhookSecret = String(process.env.BILLING_WEBHOOK_SECRET || "").trim();
 const billingStorePath = path.resolve(process.env.BILLING_STORE_PATH || ".data/billing-events.json");
 const getFirebaseServices = createFirebaseServices();
+const betaEnrollment = createBetaEnrollment({ getServices: getFirebaseServices });
+const requireBetaAccess = createRequireBetaAccess(betaEnrollment, { authRequired: aiAuthRequired });
 const aiUsageAnalytics = createUsageAnalytics({
     getServices: getFirebaseServices,
     mode: aiCreditStoreMode === "firestore" ? "firestore" : "memory",
@@ -139,6 +143,7 @@ const accountDeletion = createDeletionManager({
     store: createFirestoreDeletionStore(getFirebaseServices),
     actions: createDeletionActions(getFirebaseServices, async (uid) => {
         if (!await aiUsageAnalytics.removeUser(uid)) return false;
+        await betaEnrollment.remove(uid);
         await loadBillingStore();
         billingRecords.delete(uid);
         aiProUidAllowList.delete(uid);
@@ -263,7 +268,7 @@ const appProtection = createAppProtection({
     mode: String(process.env.APP_CHECK_MODE || "monitor").trim(),
     appId: String(process.env.FIREBASE_WEB_APP_ID || "").trim()
 });
-app.use(["/api/ai", "/api/admin", "/api/billing/checkout", "/api/billing/status", "/api/model-template"], appProtection);
+app.use(["/api/ai", "/api/admin", "/api/beta", "/api/billing/checkout", "/api/billing/status", "/api/model-template"], appProtection);
 app.delete("/api/account", appProtection);
 const requireAiVerifiedEmail = (request, response, next) => aiAuthRequired
     ? requireVerifiedEmail(request, response, next) : next();
@@ -932,17 +937,17 @@ async function aiDailyCreditsFor(request) {
     const key = aiCreditBucketKey(request, day);
     const userId = aiCreditUserKey(request);
     const { used } = await aiCreditRepository.get({ key, userId, day, plan });
-    return aiCreditsWithRequestQuota(request, aiDailyCreditsSnapshot(day, plan, used, isAiUnlimitedUser(request)));
+    return aiCreditsWithRequestQuota(request, aiDailyCreditsSnapshot(day, plan, used, isAiUnlimitedUser(request), request.educariaBeta));
 }
 
-function aiDailyCreditsSnapshot(day, plan, used = 0, unlimited = false) {
-    const limit = aiDailyCreditLimitForPlan(plan);
+function aiDailyCreditsSnapshot(day, plan, used = 0, unlimited = false, membership = null) {
+    const limit = betaCreditLimit(plan, aiDailyCreditLimitForPlan(plan), membership);
     const normalizedUsed = Math.max(0, Math.floor(Number(used) || 0));
     return {
         day,
         plan,
         unlimited: Boolean(unlimited),
-        limits: aiDailyCreditLimits,
+        limits: { ...aiDailyCreditLimits, [plan]: limit },
         policy: {
             mode: aiCreditUsagePolicy.mode,
             tokensPerCredit: aiCreditUsagePolicy.tokensPerCredit,
@@ -973,7 +978,7 @@ async function reserveAiDailyCredit(request, requestedCost = 1) {
     const plan = aiPlanForRequest(request);
     const userId = aiCreditUserKey(request);
     const key = aiCreditBucketKey(request, day);
-    const limit = aiDailyCreditLimitForPlan(plan);
+    const limit = betaCreditLimit(plan, aiDailyCreditLimitForPlan(plan), request.educariaBeta);
     const estimatedCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
 
     if (isAiUnlimitedUser(request)) {
@@ -1004,7 +1009,7 @@ async function reserveAiDailyCredit(request, requestedCost = 1) {
     });
     const credits = await aiCreditsWithRequestQuota(
         request,
-        aiDailyCreditsSnapshot(day, plan, reservation.used)
+        aiDailyCreditsSnapshot(day, plan, reservation.used, false, request.educariaBeta)
     );
 
     if (!reservation.reserved) {
@@ -1025,6 +1030,7 @@ async function reserveAiDailyCredit(request, requestedCost = 1) {
         reservation: {
             day,
             plan,
+            membership: request.educariaBeta,
             key,
             id: reservation.reservationId,
             cost: reservation.cost
@@ -1044,7 +1050,7 @@ async function refundAiDailyCredit(reservation) {
         key: reservation.key,
         reservationId: reservation.id
     });
-    return aiDailyCreditsSnapshot(reservation.day, reservation.plan, refunded.used);
+    return aiDailyCreditsSnapshot(reservation.day, reservation.plan, refunded.used, false, reservation.membership);
 }
 
 async function settleAiDailyCredit(reservation, requestedCost, request) {
@@ -1064,7 +1070,7 @@ async function settleAiDailyCredit(reservation, requestedCost, request) {
     if (!reservation?.key || !reservation?.id) return null;
 
     const measuredCost = Math.max(1, Math.floor(Number(requestedCost) || 1));
-    const limit = aiDailyCreditLimitForPlan(reservation.plan);
+    const limit = betaCreditLimit(reservation.plan, aiDailyCreditLimitForPlan(reservation.plan), reservation.membership);
     const settlement = await aiCreditRepository.settle({
         key: reservation.key,
         reservationId: reservation.id,
@@ -1077,9 +1083,9 @@ async function settleAiDailyCredit(reservation, requestedCost, request) {
         credits: request
             ? await aiCreditsWithRequestQuota(
                 request,
-                aiDailyCreditsSnapshot(reservation.day, reservation.plan, settlement.used)
+                aiDailyCreditsSnapshot(reservation.day, reservation.plan, settlement.used, false, reservation.membership)
             )
-            : aiDailyCreditsSnapshot(reservation.day, reservation.plan, settlement.used)
+            : aiDailyCreditsSnapshot(reservation.day, reservation.plan, settlement.used, false, reservation.membership)
     };
 }
 
@@ -1284,6 +1290,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
 app.use("/api/admin", createAdminRouter({
     getServices: getFirebaseServices,
     usageAnalytics: aiUsageAnalytics,
+    betaEnrollment,
     adminUids: parseAdminUids(process.env.ADMIN_UIDS),
     getPlan: async (user) => {
         await loadBillingStore();
@@ -1293,7 +1300,7 @@ app.use("/api/admin", createAdminRouter({
         const day = dailyCreditDateKey();
         const plan = user.plan;
         const unlimited = aiUnlimitedUidAllowList.has(user.uid);
-        const limit = aiDailyCreditLimitForPlan(plan);
+        const limit = betaCreditLimit(plan, aiDailyCreditLimitForPlan(plan), user.beta);
         const balance = unlimited ? null : await aiCreditRepository.peek({
             key: `${user.uid}:${plan}:${day}`, userId: user.uid, day, plan
         });
@@ -1306,6 +1313,7 @@ app.use("/api/admin", createAdminRouter({
         };
     }
 }));
+app.use("/api/beta", aiRateLimit, createBetaRouter({ enrollment: betaEnrollment, getServices: getFirebaseServices }));
 
 app.get("/api/health", (_request, response) => {
     if (process.env.NODE_ENV === "production") {
@@ -1348,7 +1356,7 @@ app.get("/api/health", (_request, response) => {
     });
 });
 
-app.post("/api/billing/checkout", aiRateLimit, requireAiAuth, async (request, response) => {
+app.post("/api/billing/checkout", aiRateLimit, requireAiAuth, requireBetaAccess, async (request, response) => {
     try {
         if (!billingWebhookSecret) {
             return response.status(503).json({
@@ -1395,7 +1403,7 @@ app.post("/api/billing/checkout", aiRateLimit, requireAiAuth, async (request, re
     }
 });
 
-app.get("/api/billing/status", aiRateLimit, requireAiAuth, async (request, response) => {
+app.get("/api/billing/status", aiRateLimit, requireAiAuth, requireBetaAccess, async (request, response) => {
     const uid = String(request.educariaUser?.uid || request.educariaUser?.sub || "").trim();
     await loadBillingStore();
     const record = uid ? billingRecords.get(uid) : null;
@@ -1429,7 +1437,7 @@ app.post("/api/billing/webhook", async (request, response) => {
     });
 });
 
-app.get("/api/ai/credits", aiRateLimit, requireAiAuth, async (request, response) => {
+app.get("/api/ai/credits", aiRateLimit, requireAiAuth, requireBetaAccess, async (request, response) => {
     response.json({
         ok: true,
         credits: await aiDailyCreditsFor(request)
@@ -1465,7 +1473,7 @@ app.post("/api/account/deletion-status", aiRateLimit, async (request, response) 
     }
 });
 
-app.post("/api/ai/generate", aiRateLimit, requireAiAuth, requireAiVerifiedEmail, aiGenerationRateLimit, upload.single("file"), async (request, response) => {
+app.post("/api/ai/generate", aiRateLimit, requireAiAuth, requireBetaAccess, requireAiVerifiedEmail, aiGenerationRateLimit, upload.single("file"), async (request, response) => {
     let creditReservation = null;
     let requestReservation = null;
     let providerTokenReservation = null;
@@ -1725,7 +1733,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, requireAiVerifiedEmail,
     }
 });
 
-app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.single("file"), async (request, response) => {
+app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, requireBetaAccess, upload.single("file"), async (request, response) => {
     try {
         const materialType = String(request.body.materialType || "").trim();
 
@@ -1756,7 +1764,7 @@ app.post("/api/model-template/generate", aiRateLimit, requireAiAuth, upload.sing
     }
 });
 
-app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, requireAiVerifiedEmail, aiGenerationRateLimit, async (request, response) => {
+app.post("/api/ai/generate-image", aiRateLimit, requireAiAuth, requireBetaAccess, requireAiVerifiedEmail, aiGenerationRateLimit, async (request, response) => {
     let creditReservation = null;
     let requestReservation = null;
     let providerRequests = 0;

@@ -1251,10 +1251,6 @@ body.presentation-runtime-page .presentation-controls--floating .presentation-na
     justify-content: center;
 }
 
-.presentation-page .presentation-slide[data-slide-kind="question"] .presentation-slide-kicker span:last-child {
-    display: none;
-}
-
 .presentation-page .presentation-slide[data-slide-kind="question"] h1 {
     max-width: 18ch;
     margin-inline: auto;

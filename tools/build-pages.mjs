@@ -5,7 +5,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 const rootFiles = new Set([
-    "index.html", "login.html", "cadastro.html", "privacidade.html", "termos.html", "exclusao-conta.html",
+    "index.html", "login.html", "cadastro.html", "privacidade.html", "termos.html", "exclusao-conta.html", "lista-espera.html",
     "service-worker.js", "CNAME", ".nojekyll", "robots.txt", "sitemap.xml"
 ]);
 

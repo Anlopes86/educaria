@@ -398,6 +398,14 @@ body[data-auth-screen="register"] .auth-helper-card {
     margin-top: 12px;
 }
 
+body[data-auth-screen="waitlist"] .auth-panel--form a { color: #1b6470; text-underline-offset: 3px; }
+body[data-auth-screen="waitlist"] summary { cursor: pointer; }
+
+@media (max-width: 1024px) {
+    body[data-auth-screen="waitlist"] .auth-panel--form { order: 1; }
+    body[data-auth-screen="waitlist"] .auth-panel--brand { order: 2; }
+}
+
 @media (max-width: 1024px) {
     .auth-shell {
         grid-template-columns: 1fr;

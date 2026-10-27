@@ -1216,8 +1216,8 @@ body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentat
 body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide--dense[data-slide-kind="cover"] h1,
 body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide--dense[data-slide-kind="closing"] h1 {
     max-width: 18ch;
-    font-size: clamp(2.1rem, 3.15vw, 3.2rem);
-    line-height: 1.02;
+    font-size: var(--slide-title-size, clamp(2.1rem, 3.15vw, 3.2rem));
+    line-height: 1.08;
 }
 
 body.lesson-sequence-embedded[data-lesson-sequence-material="slides"] .presentation-slide h2 {

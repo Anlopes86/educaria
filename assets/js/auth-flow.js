@@ -10,6 +10,24 @@
 })();
 
 const EDUCARIA_SESSION_KEY = "educaria:auth:session";
+// All authenticated screens share this admission check. Scripts are local,
+// fixed resources; no endpoint, role or admission decision comes from storage.
+window.educariaBetaReady = (async () => {
+    const base = document.currentScript?.src;
+    if (!base) return;
+    async function load(name) {
+        await new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = new URL(name, base).href;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error("Não foi possível carregar o controle de acesso."));
+            document.head.append(script);
+        });
+    }
+    if (!window.educariaAiEndpoint) await load("ai-endpoint-config.js");
+    await load("beta-access.js?v=20261027-1");
+})();
+window.educariaBetaReady.catch(() => {});
 const EDUCARIA_TEACHER_CACHE_KEY = "educaria:auth:teacher-cache";
 const EDUCARIA_ANALYTICS_EVENTS_KEY = "educaria:analytics:events";
 const EDUCARIA_MILESTONE_KEY_PREFIX = "educaria:milestone:";
@@ -529,6 +547,7 @@ function enforceAuth() {
 let registrationInProgress = false;
 function redirectAuthenticatedFromAuthPages() {
     if (registrationInProgress) return;
+    if (document.body?.dataset.authScreen === "waitlist") return;
     const isAuthPage = document.body?.dataset.authPage === "true";
     if (!isAuthPage) return;
 
@@ -538,6 +557,7 @@ function redirectAuthenticatedFromAuthPages() {
 
 function mapFirebaseError(error) {
     const code = error?.code || "";
+    if (["beta_unavailable", "beta_waitlisted"].includes(code)) return error.message;
     if (code === "auth/email-already-in-use") return authTranslate("auth.errors.emailInUse", "Já existe uma conta com esse email.");
     if (code === "auth/invalid-email") return authTranslate("auth.errors.invalidEmail", "Digite um email válido.");
     if (code === "auth/weak-password") return authTranslate("auth.errors.weakPassword", "A senha precisa ser mais forte.");
@@ -547,25 +567,48 @@ function mapFirebaseError(error) {
     return authTranslate("auth.errors.generic", "Não foi possível concluir a autenticação agora.");
 }
 
-function readTeacherProfileFromFirebase(user) {
+async function requireBetaEnrollment(user) {
+    await window.educariaBetaReady;
+    if (!window.educariaBetaAccess) throw Object.assign(new Error("Não foi possível conferir seu acesso. Atualize a página e tente novamente."), { code: "beta_unavailable" });
+    return window.educariaBetaAccess.requireAccess(user);
+}
+
+function handleBetaWaitlist(error) {
+    if (error?.code !== "beta_waitlisted") return false;
+    writeCachedTeacher(null);
+    clearSessionEmail();
+    if (document.body?.dataset.authScreen !== "waitlist") window.location.replace(window.educariaBetaAccess.waitlistPath());
+    return true;
+}
+
+async function readTeacherProfileFromFirebase(user) {
     const services = firebaseServices();
     if (!services || !user) return Promise.resolve(null);
 
-    return services.db.collection("teachers").doc(user.uid).get().then((snapshot) => {
-        const profile = snapshot.exists ? snapshot.data() : {};
-        const institutionName = normalizeInstitutionName(profile.institutionName || profile.institution || "");
-        return {
-            uid: user.uid,
-            name: profile.name || user.displayName || "Professor",
-            email: user.email || profile.email || "",
-            emailVerified: user.emailVerified === true,
-            institution: institutionName || "Conta educacional",
-            institutionId: String(profile.institutionId || slugifyInstitutionId(institutionName) || "").trim(),
-            role: normalizeTeacherRole(profile.role),
-            plan: profile.plan || "free",
-            billingIntent: profile.billingIntent || null
-        };
-    });
+    const ref = services.db.collection("teachers").doc(user.uid);
+    let snapshot;
+    try { snapshot = await ref.get(); }
+    catch (error) { if (error.code !== "permission-denied") throw error; }
+    // Existing approved profiles remain usable even while Render is waking up.
+    // Rules enforce admission; missing/blocked profiles must check the server.
+    if (!snapshot?.exists) {
+        await requireBetaEnrollment(user);
+        snapshot = await ref.get();
+    }
+    if (services.auth.currentUser?.uid !== user.uid) throw new Error("A conta mudou. Entre novamente.");
+    const profile = snapshot.exists ? snapshot.data() : {};
+    const institutionName = normalizeInstitutionName(profile.institutionName || profile.institution || "");
+    return {
+        uid: user.uid,
+        name: profile.name || user.displayName || "Professor",
+        email: user.email || profile.email || "",
+        emailVerified: user.emailVerified === true,
+        institution: institutionName || "Conta educacional",
+        institutionId: String(profile.institutionId || slugifyInstitutionId(institutionName) || "").trim(),
+        role: normalizeTeacherRole(profile.role),
+        plan: profile.plan || "free",
+        billingIntent: profile.billingIntent || null
+    };
 }
 
 function bindLoginForm() {
@@ -605,6 +648,7 @@ function bindLoginForm() {
             notifyAuthChanged();
             window.location.href = authNextPath();
         } catch (error) {
+            if (handleBetaWaitlist(error)) return;
             updateAuthFeedback(mapFirebaseError(error), "error");
         }
     });
@@ -675,6 +719,7 @@ function bindRegisterForm() {
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (registrationInProgress) return;
         clearAuthFeedback();
 
         const services = firebaseServices();
@@ -704,11 +749,15 @@ function bindRegisterForm() {
             return;
         }
 
+        let accountCreated = false;
         try {
             updateAuthFeedback(authTranslate("auth.feedback.creatingAccount", "Criando sua conta..."), "success");
             registrationInProgress = true;
+            form.querySelector('[type="submit"]').disabled = true;
             const credential = await services.auth.createUserWithEmailAndPassword(email, password);
+            accountCreated = true;
             await credential.user.updateProfile({ displayName: name });
+            await requireBetaEnrollment(credential.user);
             await window.educariaSendVerificationEmail?.(credential.user);
             const normalizedInstitution = normalizeInstitutionName(institution);
             await services.db.collection("teachers").doc(credential.user.uid).set({
@@ -729,9 +778,13 @@ function bindRegisterForm() {
             notifyAuthChanged();
             window.location.href = authNextPath();
         } catch (error) {
-            updateAuthFeedback(mapFirebaseError(error), "error");
+            if (handleBetaWaitlist(error)) return;
+            updateAuthFeedback(accountCreated
+                ? "Sua conta foi criada, mas não foi possível concluir a entrada. Use o login com o mesmo e-mail e senha para continuar."
+                : mapFirebaseError(error), "error");
         } finally {
             registrationInProgress = false;
+            form.querySelector('[type="submit"]').disabled = false;
         }
     });
 }
@@ -767,6 +820,7 @@ function syncAuthStateWithFirebase() {
     }
 
     services.auth.onAuthStateChanged(async (user) => {
+        if (registrationInProgress || document.body?.dataset.authScreen === "waitlist") return;
         if (!user) {
             writeCachedTeacher(null);
             clearSessionEmail();
@@ -775,11 +829,17 @@ function syncAuthStateWithFirebase() {
             return;
         }
 
-        const teacher = await readTeacherProfileFromFirebase(user);
-        writeCachedTeacher(teacher);
-        saveSessionEmail(user.email || teacher?.email || "");
-        notifyAuthChanged();
-        redirectAuthenticatedFromAuthPages();
+        try {
+            const teacher = await readTeacherProfileFromFirebase(user);
+            if (services.auth.currentUser?.uid !== user.uid) return;
+            writeCachedTeacher(teacher);
+            saveSessionEmail(user.email || teacher?.email || "");
+            notifyAuthChanged();
+            redirectAuthenticatedFromAuthPages();
+        } catch (error) {
+            if (services.auth.currentUser?.uid !== user.uid || handleBetaWaitlist(error)) return;
+            updateAuthFeedback(mapFirebaseError(error), "error");
+        }
     });
 }
 
@@ -790,7 +850,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     scheduleEducariaAnalyticsAutoFlush();
     showFirebaseConfigMessageIfNeeded();
     showAuthOutcomeMessage();
-    redirectAuthenticatedFromAuthPages();
     enforceAuth();
     bindLoginForm();
     bindPasswordReset();

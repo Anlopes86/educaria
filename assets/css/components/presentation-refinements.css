@@ -1,25 +1,69 @@
 /* Final presentation hierarchy: the activity comes before the teacher's tools. */
-/* Longer explanations need the density rules to win over decorative headings. */
-body.presentation-page .presentation-slide.presentation-slide--dense h1 {
-    font-size: clamp(2rem, 3.1vw, 3rem);
+/* One type scale for every composition. Fullscreen changes the available space,
+   not the paragraph styles. Density is chosen from the actual rendered content. */
+body.presentation-page .presentation-slide[data-presentation-slide] {
+    --slide-title-size: clamp(2rem, 3.6vw, 3.8rem);
+    --slide-subtitle-size: clamp(1.1rem, 1.7vw, 1.75rem);
+    --slide-body-size: clamp(1.15rem, 1.8vw, 1.9rem);
+    --slide-copy-gap: clamp(10px, 1vw, 18px);
+    padding-bottom: 38px;
+}
+body.presentation-page .presentation-slide--compact[data-presentation-slide] {
+    --slide-title-size: clamp(1.8rem, 3vw, 3.15rem);
+    --slide-subtitle-size: clamp(1.05rem, 1.5vw, 1.5rem);
+    --slide-body-size: clamp(1.08rem, 1.6vw, 1.65rem);
+    --slide-copy-gap: 10px;
+}
+body.presentation-page .presentation-slide--dense[data-presentation-slide] {
+    --slide-title-size: clamp(1.55rem, 2.5vw, 2.7rem);
+    --slide-subtitle-size: clamp(1rem, 1.3vw, 1.3rem);
+    --slide-body-size: clamp(1rem, 1.38vw, 1.45rem);
+    --slide-copy-gap: 8px;
+}
+body.presentation-page .presentation-slide[data-presentation-slide] h1 {
+    margin: 0;
+    font-size: var(--slide-title-size);
     line-height: 1.08;
     max-width: 100%;
 }
-body.presentation-page .presentation-slide.presentation-slide--dense .presentation-slide-copy {
-    gap: 6px;
-    align-content: safe center;
+body.presentation-page .presentation-slide[data-presentation-slide] h2 {
+    font-size: var(--slide-subtitle-size);
+    line-height: 1.25;
+}
+body.presentation-page .presentation-slide[data-presentation-slide] .presentation-slide-copy {
+    height: 100%;
     max-height: 100%;
-    overflow-y: auto;
+    grid-auto-rows: max-content;
+    gap: var(--slide-copy-gap);
+    align-content: safe center;
+    padding-right: 0;
+    overflow: hidden;
+}
+body.presentation-page .presentation-slide[data-copy-overflow="true"] .presentation-slide-copy {
+    align-content: start;
     overflow-x: hidden;
+    overflow-y: auto;
     scrollbar-width: thin;
 }
-body.presentation-page .presentation-slide.presentation-slide--dense .presentation-slide-kicker {
+body.presentation-page .presentation-slide[data-presentation-slide] .presentation-slide-kicker {
     margin-bottom: 0;
-    font-size: .72rem;
+    font-size: clamp(.7rem, .75vw, .82rem);
+    letter-spacing: .08em;
+    font-weight: 700;
 }
-body.presentation-page .presentation-slide.presentation-slide--dense .presentation-slide-body {
+body.presentation-page .presentation-slide[data-presentation-slide] .presentation-slide-kicker span {
+    min-height: 26px;
+    padding: 4px 10px;
+}
+body.presentation-page .presentation-slide[data-presentation-slide] .presentation-slide-body {
     overflow: visible;
-    line-height: 1.38;
+    gap: var(--slide-copy-gap);
+    font-size: var(--slide-body-size);
+    line-height: 1.42;
+}
+body.presentation-page .presentation-slide[data-presentation-slide] .presentation-slide-body :is(p, li) {
+    font-size: inherit;
+    line-height: inherit;
 }
 body.presentation-page .presentation-slide.presentation-slide--dense .presentation-slide-body ul {
     gap: 6px;
@@ -29,6 +73,19 @@ body.presentation-page .presentation-slide.presentation-slide--dense .presentati
     gap: 10px;
     border-radius: 12px;
     background: color-mix(in srgb, var(--slide-accent, #0ea5e9) 12%, var(--slide-bg, #f0fdfa));
+}
+body.presentation-page .presentation-slide-progress {
+    bottom: 14px;
+    height: 3px;
+}
+/* A small, reserved toolbar row keeps library/restore actions off the slide. */
+body.presentation-page.presentation-topbar-collapsed:not(.lesson-sequence-embedded) .presentation-shell {
+    padding-top: 60px;
+}
+body.presentation-page.presentation-topbar-collapsed .presentation-topbar-restore {
+    left: auto;
+    right: 14px;
+    transform: none;
 }
 
 .presentation-runtime-page .presentation-topbar { position: relative; z-index: 20; gap: 12px; overflow: visible; }

@@ -98,9 +98,18 @@ body.presentation-runtime-page { background: #f4f6f1; color: var(--activity-ink)
     box-shadow: none;
 }
 .presentation-page .presentation-media {
-    background: color-mix(in srgb, var(--slide-text) 7%, transparent);
-    border-color: color-mix(in srgb, var(--slide-text) 15%, transparent);
+    background: transparent;
+    border: 0;
     box-shadow: none; border-radius: 18px;
+}
+body.presentation-page .presentation-slide--split .presentation-media {
+    padding: 0;
+}
+body.presentation-page .presentation-slide--split .presentation-media img {
+    min-height: 0;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 5px 7px #173c4312);
 }
 
 /* Opt-in AI compositions. Historical decks keep their original layout. */

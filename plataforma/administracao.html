@@ -7,7 +7,7 @@
     <meta name="referrer" content="no-referrer">
     <title>Administração | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261014-1">
-    <link rel="stylesheet" href="../assets/css/pages/admin.css?v=20261013-4">
+    <link rel="stylesheet" href="../assets/css/pages/admin.css?v=20261027-1">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js" defer></script>
@@ -17,11 +17,11 @@
     <script src="../assets/js/app-security.js?v=20261026-2" defer></script>
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
-    <script src="../assets/js/admin-access.js?v=20261013-4" defer></script>
+    <script src="../assets/js/admin-access.js?v=20261027-1" defer></script>
     <script src="../assets/js/app-sidebar.js?v=20261012-2" defer></script>
     <script src="../assets/js/admin-usage-export.js?v=20261013-4" defer></script>
     <script src="../assets/js/admin-usage.js?v=20261013-4" defer></script>
-    <script src="../assets/js/admin-dashboard.js?v=20261013-1" defer></script>
+    <script src="../assets/js/admin-dashboard.js?v=20261027-1" defer></script>
 </head>
 <body class="product-body theme-overview" data-requires-auth="true">
     <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -46,7 +46,7 @@
                     <span class="admin-eyebrow">Administração</span>
                     <h1 id="admin-title">Conheça quem está criando.</h1>
                     <p>Acompanhe os professores cadastrados e o uso diário de IA, em um só lugar.</p>
-                    <span class="admin-readonly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg>Acesso restrito · Somente consulta</span>
+                    <span class="admin-readonly"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg>Acesso restrito à administração</span>
                     <nav class="admin-jump" aria-label="Seções da administração"><a href="#admin-directory-title">Professores</a><a href="#admin-usage-title">Consumo de IA ↓</a></nav>
                 </div>
                 <svg class="admin-hero-art" viewBox="0 0 280 190" aria-hidden="true">
@@ -77,14 +77,16 @@
                     <article class="admin-metric admin-metric--sand"><span>Contas desativadas</span><strong data-admin-metric="disabled">—</strong><small>Sem acesso à plataforma</small></article>
                 </section>
                 <section class="admin-directory" aria-labelledby="admin-directory-title">
-                    <div class="admin-directory-heading"><div><span class="admin-eyebrow">Professores</span><h2 id="admin-directory-title">Pessoas por trás das aulas</h2></div><span class="admin-badge">Somente leitura</span></div>
+                    <div class="admin-directory-heading"><div><span class="admin-eyebrow">Professores</span><h2 id="admin-directory-title">Pessoas por trás das aulas</h2></div><span class="admin-badge">Cadastros e acesso ao beta</span></div>
                     <form class="admin-filters" data-admin-filters role="search" aria-label="Buscar professores">
                         <label class="admin-search"><span>Nome ou e-mail</span><input name="q" type="search" maxlength="120" placeholder="Quem você está procurando?" autocomplete="off"></label>
                         <label><span>Plano</span><select name="plan"><option value="all">Todos os planos</option><option value="free">Gratuito</option><option value="pro">Pro</option></select></label>
                         <label><span>Situação</span><select name="status"><option value="all">Todas as contas</option><option value="enabled">Habilitadas</option><option value="disabled">Desativadas</option></select></label>
+                        <label><span>Acesso ao beta</span><select name="admission"><option value="all">Todos os cadastros</option><option value="approved">Liberados</option><option value="waitlisted">Lista de espera</option></select></label>
                         <button type="submit" class="platform-link-button platform-link-primary">Buscar</button>
                     </form>
                     <div class="admin-results-heading"><p data-admin-count tabindex="-1" role="status" aria-live="polite"></p><button type="button" class="admin-clear" data-admin-clear>Limpar filtros</button></div>
+                    <div data-admin-beta role="status" aria-live="polite"></div>
                     <div class="admin-table-wrap" data-admin-table><table class="admin-table"><caption class="sr-only">Professores cadastrados e créditos diários de IA</caption><thead><tr><th scope="col">Professor</th><th scope="col">Escola</th><th scope="col">Cadastro e login</th><th scope="col">Conta</th><th scope="col">IA hoje</th></tr></thead><tbody data-admin-users></tbody></table></div>
                     <div class="admin-empty" data-admin-empty hidden><strong>Nenhum professor encontrado.</strong><p>Tente outro nome ou remova os filtros.</p></div>
                     <nav class="admin-pagination" aria-label="Páginas de usuários"><button type="button" class="platform-link-button platform-link-secondary" data-admin-prev disabled>← Anterior</button><span data-admin-page></span><button type="button" class="platform-link-button platform-link-secondary" data-admin-next disabled>Próxima →</button></nav>

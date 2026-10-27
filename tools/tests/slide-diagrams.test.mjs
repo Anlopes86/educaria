@@ -41,7 +41,7 @@ test("new schema cannot request raw drawing coordinates, arbitrary colors, exter
     for (const key of ["elements", "labels", "color", "geometry", "url", "svg"]) assert.equal(slideIllustrationSchema.properties[key], undefined);
     assert.deepEqual(slideIllustrationSchema.properties.layout.enum, ["process","cycle","comparison","concept-map","hierarchy","cards"]);
     const instructions = slideIllustrationInstructions({ includeIllustration:true }).join("\n");
-    for (const value of [/QUALQUER DISCIPLINA/, /objetivo visual/, /needs-image/, /fatos, relações causais/, /não por palavras-chave/]) assert.match(instructions, value);
+    for (const value of [/OBJETIVO VISUAL/, /relação específica do título, subtítulo e texto daquele slide/, /não um panorama da aula/, /needs-image/, /fatos, relações causais/]) assert.match(instructions, value);
     assert.doesNotMatch(instructions, /Sol, Mercúrio|raioX|centroX|solar-system/);
 });
 
@@ -191,7 +191,7 @@ test("comparison colours group each side consistently even without icons", () =>
 
 test("illustration guidance selects relationships without a ready-made cards example or a specific topic", () => {
     const instructions = slideIllustrationInstructions({ includeIllustration: true }).join("\n");
-    for (const fragment of ["ordem ou transformação", "repetição com retorno real", "mesmo critério", "classificação", "conceito central", "exemplos realmente independentes", "símbolos diferentes a conceitos equivalentes", "apenas repetir os bullets", "não comprova causalidade", "concordam com o texto do slide"]) assert.ok(instructions.includes(fragment), fragment);
+    for (const fragment of ["ordem ou transformação", "repetição com retorno real", "mesmo critério", "classificação", "conceito central", "exemplos realmente independentes", "símbolos diferentes a conceitos equivalentes", "apenas repita bullets", "não comprova causalidade", "concordam com o texto do slide"]) assert.ok(instructions.includes(fragment), fragment);
     assert.doesNotMatch(instructions, /"status":"ready".*"layout":"cards"/);
     assert.doesNotMatch(instructions, /Polônia|Alemanha|Sistema Solar|Mercúrio/i);
     assert.match(slideIllustrationInstructions({ includeIllustration: false }).join("\n"), /Não inclua o campo illustration/);
