@@ -17,7 +17,9 @@ if (!credentialPath || process.argv[3] !== "--create-disposable-probe") throw ne
 const options = new Set(process.argv.slice(4));
 const expectDeletionEnabled = options.has("--expect-deletion-enabled");
 const expectVerifiedEmail = options.has("--expect-verified-email");
-if ([...options].some(option => !["--expect-deletion-enabled", "--expect-verified-email", "--with-app-check"].includes(option))) throw new Error("Unexpected smoke-test option.");
+const expectAppCheck = options.has("--expect-app-check");
+if ([...options].some(option => !["--expect-deletion-enabled", "--expect-verified-email", "--with-app-check", "--expect-app-check"].includes(option))) throw new Error("Unexpected smoke-test option.");
+if (expectAppCheck && !options.has("--with-app-check")) throw new Error("App Check enforcement checks require a valid probe token too.");
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST || process.env.FIRESTORE_EMULATOR_HOST) throw new Error("Unexpected emulator override.");
 let credentials;
 try {
@@ -69,6 +71,13 @@ try {
     await auth.createUser({ uid, displayName: "Verificação descartável da publicação" });
     createdUser = true;
     let token = await signIn();
+    if (expectAppCheck) {
+        for (const value of ["", "invalid-attestation"]) {
+            const response = await expectResponse(value ? "invalid_app_check_api_denied" : "missing_app_check_api_denied",
+                await api("/api/ai/credits", token, { headers: { "X-Firebase-AppCheck": value } }), 403);
+            if ((await response.json()).code !== "app_check_required") throw new Error("App Check enforcement not confirmed.");
+        }
+    }
     const creditsResponse = await expectResponse("authenticated_api", await api("/api/ai/credits", token), 200);
     const credits = await creditsResponse.json();
     if (credits?.credits?.store !== "firestore") throw new Error("Production credits are not using Firestore.");
@@ -92,6 +101,11 @@ try {
     createdContent = true;
     await db.doc(`teachers/${uid}`).create({ name: "Probe", email: "probe@example.invalid" });
     await db.doc(`teachers/${otherUid}`).create({ name: "Other probe", role: "teacher", plan: "free" });
+    if (expectAppCheck) {
+        await expectResponse("missing_app_check_firestore_denied", await fetch(
+            `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/teachers/${uid}`,
+            { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(30_000) }), 403);
+    }
     await expectResponse("own_legacy_profile_read", await firestore(`teachers/${uid}`, token), 200);
     await expectResponse("cross_account_read_denied", await firestore(`teachers/${otherUid}`, token), 403);
     await expectResponse("self_upgrade_denied", await firestore(`teachers/${uid}?updateMask.fieldPaths=plan`, token, {

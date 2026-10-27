@@ -6,6 +6,7 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { initializeApp, cert, deleteApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getAppCheck } from "firebase-admin/app-check";
 import { getFirestore } from "firebase-admin/firestore";
 
 const projectId = "educaria-f46b2";
@@ -15,6 +16,8 @@ const credentialPath = process.argv[2];
 if (!credentialPath || process.argv[3] !== "--create-and-delete-disposable-probe") {
     throw new Error("Explicit disposable-deletion flag required.");
 }
+const options = new Set(process.argv.slice(4));
+if ([...options].some(option => option !== "--with-app-check")) throw new Error("Unexpected smoke-test option.");
 if (process.env.FIREBASE_AUTH_EMULATOR_HOST || process.env.FIRESTORE_EMULATOR_HOST) {
     throw new Error("Unexpected emulator override.");
 }
@@ -29,6 +32,9 @@ if (!apiKey) throw new Error("Missing public Firebase web configuration.");
 const app = initializeApp({ projectId, credential: cert(credentials) }, "educaria-deletion-smoke");
 const auth = getAuth(app);
 const db = getFirestore(app);
+const appCheckToken = options.has("--with-app-check")
+    ? (await getAppCheck(app).createToken("1:856146928482:web:2d5a5aa8b868ef19b1c23b")).token : null;
+const appHeaders = appCheckToken ? { "X-Firebase-AppCheck": appCheckToken } : {};
 const uid = `deletion-probe-${randomUUID()}`;
 const otherUid = `deletion-probe-${randomUUID()}`;
 const receipt = randomBytes(32).toString("hex");
@@ -52,7 +58,7 @@ async function expect(check, response, status) {
     return response;
 }
 const api = (route, token, options = {}) => fetch(baseUrl + route, {
-    ...options, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...options, headers: { ...(token ? { ...appHeaders, Authorization: `Bearer ${token}` } : {}),
         "Content-Type": "application/json", ...options.headers }, signal: AbortSignal.timeout(90_000)
 });
 const status = (proof = receipt) => api("/api/account/deletion-status", null, {
@@ -65,7 +71,7 @@ try {
     owned.user = true;
     const customToken = await auth.createCustomToken(uid);
     const signedIn = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${apiKey}`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json", ...appHeaders },
         body: JSON.stringify({ token: customToken, returnSecureToken: true }), signal: AbortSignal.timeout(30_000)
     });
     assert("probe_sign_in", signedIn.ok);
@@ -91,7 +97,7 @@ try {
     await expect("wrong_receipt_rejected", await status(randomBytes(32).toString("hex")), 404);
     await expect("locked_account_rejected", await api("/api/ai/credits", token), 401);
     const deniedWrite = await fetch(`https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/teachers/${uid}?updateMask.fieldPaths=name`, {
-        method: "PATCH", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        method: "PATCH", headers: { ...appHeaders, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ fields: { name: { stringValue: "Must be denied" } } }), signal: AbortSignal.timeout(30_000)
     });
     await expect("locked_firestore_write_rejected", deniedWrite, 403);
