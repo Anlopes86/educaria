@@ -1,6 +1,6 @@
 # Vagas do beta e lista de espera
 
-O lote inicial permite **25 novos acessos**, além das contas existentes. Depois disso, novos cadastros permanecem no Firebase Authentication, mas entram na lista de espera e não podem acessar materiais, uploads nem IA. A tela `lista-espera.html` permite consultar a liberação, sair ou excluir a conta. Não há envio automático de convites ou avisos por e-mail.
+O lote inicial permite **25 novos acessos**, além das contas existentes. Depois disso, novos cadastros permanecem no Firebase Authentication, mas entram na lista de espera e não podem acessar materiais, uploads nem IA. A tela `lista-espera.html` informa que novas vagas serão liberadas e permite consultar o acesso, sair da sessão ou falar com a EducarIA. Não há botão para sair da lista; pedidos de exclusão podem ser encaminhados pelo canal de contato. Não há envio automático de convites ou avisos por e-mail.
 
 ## Regras do lote
 

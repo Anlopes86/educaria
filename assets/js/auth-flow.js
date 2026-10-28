@@ -25,7 +25,7 @@ window.educariaBetaReady = (async () => {
         });
     }
     if (!window.educariaAiEndpoint) await load("ai-endpoint-config.js");
-    await load("beta-access.js?v=20261027-1");
+    await load("beta-access.js?v=20261027-2");
 })();
 window.educariaBetaReady.catch(() => {});
 const EDUCARIA_TEACHER_CACHE_KEY = "educaria:auth:teacher-cache";

@@ -399,7 +399,6 @@ body[data-auth-screen="register"] .auth-helper-card {
 }
 
 body[data-auth-screen="waitlist"] .auth-panel--form a { color: #1b6470; text-underline-offset: 3px; }
-body[data-auth-screen="waitlist"] summary { cursor: pointer; }
 
 @media (max-width: 1024px) {
     body[data-auth-screen="waitlist"] .auth-panel--form { order: 1; }

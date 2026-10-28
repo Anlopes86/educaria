@@ -38,7 +38,7 @@
             note.hidden = false;
             const full = availability.remaining === 0;
             note.textContent = full
-                ? "As vagas desta etapa foram preenchidas. Cadastre-se para entrar na lista de espera; você poderá acompanhar seu acesso ao fazer login."
+                ? "Em breve, novas vagas serão liberadas. Cadastre-se na lista de espera e acompanhe a liberação do seu acesso ao fazer login."
                 : `Estamos recebendo novos professores no beta. Restam ${availability.remaining} ${availability.remaining === 1 ? "vaga" : "vagas"} nesta etapa. O acesso é confirmado ao concluir o cadastro.`;
             const submit = form.querySelector('[type="submit"]');
             submit.removeAttribute("data-i18n");
@@ -60,7 +60,7 @@
         try {
             const access = await enroll(user);
             if (access.status !== "waitlisted") { location.replace("login.html"); return; }
-            status.textContent = "Seu cadastro está na lista de espera. As vagas desta etapa já foram preenchidas. Entre novamente ou use o botão abaixo para consultar a liberação.";
+            status.textContent = "Seu cadastro já está na lista de espera. Você pode acompanhar a liberação do seu acesso por aqui.";
         } catch (error) { status.textContent = error.message; }
         finally { retry.disabled = false; }
     }
@@ -75,21 +75,6 @@
         services.auth.onAuthStateChanged(user => {
             if (user) void checkWaitlist();
             else location.replace("login.html");
-        });
-        document.querySelector("[data-beta-delete]")?.addEventListener("click", async event => {
-            if (!window.confirm("Excluir sua conta e sair da lista de espera? Esta ação não pode ser desfeita.")) return;
-            const user = services.auth.currentUser;
-            if (!user || !window.educariaAccountDeletion) return;
-            const button = event.currentTarget;
-            button.disabled = true;
-            try {
-                await window.educariaAccountDeletion.start(user, services.auth);
-                location.replace("exclusao-conta.html");
-            } catch (error) {
-                document.querySelector("[data-beta-waitlist-status]").textContent = error.message;
-                if (window.educariaAccountDeletion.read()) { location.replace("exclusao-conta.html"); return; }
-                button.disabled = false;
-            }
         });
     }
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
