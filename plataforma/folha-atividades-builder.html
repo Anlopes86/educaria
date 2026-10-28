@@ -6,7 +6,7 @@
     <title>Folha de atividades | EducarIA</title>
     <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
     <link rel="stylesheet" href="../assets/css/components/item-refinement-editor.css?v=20261024-2">
-    <link rel="stylesheet" href="../assets/css/components/worksheet.css">
+    <link rel="stylesheet" href="../assets/css/components/worksheet.css?v=20261027-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
@@ -27,10 +27,10 @@
     <script src="../assets/js/discovery-input.js" defer></script>
     <script src="../assets/js/wordsearch-core.js" defer></script>
     <script src="../assets/js/crossword-core.js" defer></script>
-    <script src="../assets/js/worksheet-core.js" defer></script>
-    <script src="../assets/js/worksheet-view.js" defer></script>
+    <script src="../assets/js/worksheet-core.js?v=20261027-2" defer></script>
+    <script src="../assets/js/worksheet-view.js?v=20261027-2" defer></script>
     <script src="../assets/js/worksheet-layout.js" defer></script>
-    <script src="../assets/js/worksheet-builder.js" defer></script>
+    <script src="../assets/js/worksheet-builder.js?v=20261027-2" defer></script>
     <script src="../assets/js/ai-material-generator.js?v=20261024-3" defer></script>
     <script src="../assets/js/item-refinement-core.js?v=20261024-2" defer></script>
     <script src="../assets/js/item-refinement-adapters.js?v=20261024-2" defer></script>
@@ -58,7 +58,9 @@
                     <label class="worksheet-field">Tema ou orientação geral<textarea id="worksheet-source" rows="4" maxlength="12000" placeholder="Ex.: verbos em inglês no passado para o 7º ano. Também pode colar um texto ou uma lista de palavras."></textarea></label>
                     <p class="worksheet-help" data-worksheet-source-help role="status"></p>
                     <div class="worksheet-field-pair"><label class="worksheet-field">Ano ou público<input id="worksheet-audience" maxlength="160" placeholder="Ex.: 7º ano"></label><label class="worksheet-field">Dificuldade<select id="worksheet-difficulty"><option value="easy">Fácil</option><option value="medium" selected>Média</option><option value="hard">Difícil</option></select></label></div>
-                    <label class="worksheet-field">Tamanho da atividade<select id="worksheet-page-mode"><option value="compact">Compacta — tentar uma página</option><option value="roomy">Mais exercícios — permitir várias páginas</option></select></label>
+                    <label class="worksheet-field">Extensão da folha<select id="worksheet-page-mode"><option value="compact">Compacta — tentar uma página</option><option value="roomy">Mais exercícios — permitir várias páginas</option></select></label>
+                    <label class="worksheet-field">Tamanho das atividades<select id="worksheet-print-size"><option value="small">Pequeno — padrão atual</option><option value="medium">Médio — letras 2 pontos maiores</option><option value="large">Grande — letras 4 pontos maiores</option></select></label>
+                    <p class="worksheet-help" data-context-help="Tamanho das atividades">Aumenta letras, grades e espaços de resposta na folha e no gabarito. Você pode mudar depois de gerar, sem usar IA. A folha ganha mais páginas se precisar.</p>
                     <label class="worksheet-field">Organização da página<select id="worksheet-columns"><option value="auto">Automático — adaptar a cada atividade</option><option value="one">Uma coluna — mais espaço para cada atividade</option><option value="two">Duas colunas — mais compacto</option></select></label>
                     <p class="worksheet-help" data-context-help="Organização automática">No automático, atividades menores ficam lado a lado; grades maiores e pistas longas ganham a largura inteira. Você pode trocar o formato sem usar IA. Nenhuma palavra é descartada.</p>
                     <fieldset class="worksheet-selection worksheet-activity-options"><legend>Quais atividades você quer?</legend>

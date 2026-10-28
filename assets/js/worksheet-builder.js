@@ -12,7 +12,7 @@
         return core.readDraft({ controls: { "worksheet-title": $("#worksheet-title").value, "worksheet-subtitle": $("#worksheet-subtitle").value }, stackHtml: stack.innerHTML }, DOMParser);
     }
     function settings() {
-        return { school: $("#worksheet-school").value, className: $("#worksheet-class-name").value, columns: $("#worksheet-columns").value, trailClues: $("#worksheet-trail-clues").value === "true", wordBank: $("#worksheet-word-bank").value === "true", wordsearchHelp: ({ true: "words", false: "clues", none: "none" })[$("#worksheet-word-bank").value] };
+        return { school: $("#worksheet-school").value, className: $("#worksheet-class-name").value, columns: $("#worksheet-columns").value, printSize: core.printSize($("#worksheet-print-size").value).name, trailClues: $("#worksheet-trail-clues").value === "true", wordBank: $("#worksheet-word-bank").value === "true", wordsearchHelp: ({ true: "words", false: "clues", none: "none" })[$("#worksheet-word-bank").value] };
     }
     function changed() { $("[data-worksheet-items]").dispatchEvent(new Event("input", { bubbles: true })); }
     function syncSelection(restore = false) {
@@ -47,24 +47,26 @@
     }
     function paginate(data, blocks, config) {
         const host = $("[data-worksheet-pages]"); host.replaceChildren();
+        const size = core.printSize(config.printSize);
         let body;
         const page = () => {
             const wrap = document.createElement("div"); wrap.className = "worksheet-page-wrap";
-            wrap.innerHTML = `<section class="worksheet-sheet">${view.pageHeader(data, config, mode === "answers")}<div class="worksheet-body"></div><footer><span>${mode === "answers" ? "Gabarito · uso do professor" : "EducarIA · Atividades para aprender"}</span><span data-ws-page-number></span></footer></section>`;
+            wrap.innerHTML = `<section class="worksheet-sheet" data-ws-print-size="${size.name}" style="--ws-font-increase:${size.extraPt}pt;--ws-writing-width:${28 * size.scale}mm">${view.pageHeader(data, config, mode === "answers")}<div class="worksheet-body"></div><footer><span>${mode === "answers" ? "Gabarito · uso do professor" : "EducarIA · Atividades para aprender"}</span><span data-ws-page-number></span></footer></section>`;
             host.append(wrap); body = wrap.querySelector(".worksheet-body"); return body;
         };
         page();
         const automatic = !["one", "two"].includes(config.columns);
-        const measured = automatic ? measureBlocks(body, blocks) : null;
+        const measured = measureBlocks(body, blocks);
         const gap = parseFloat(getComputedStyle(body).rowGap) || 0;
         const queue = blocks.slice();
         while (queue.length) {
             const row = document.createElement("div"); row.className = "worksheet-print-row";
             const first = queue.shift();
             const used = [...body.children].reduce((sum, child) => sum + child.offsetHeight + gap, 0);
-            const pair = config.columns === "two" || (automatic && layout.useTwoColumns(measured.get(first), measured.get(queue[0]), { pageHeight: body.clientHeight, remaining: body.clientHeight - used, gap }));
+            const pair = config.columns === "two" ? measured.get(first).half.readable && measured.get(queue[0])?.half.readable
+                : automatic && layout.useTwoColumns(measured.get(first), measured.get(queue[0]), { pageHeight: body.clientHeight, remaining: body.clientHeight - used, gap });
             const second = pair ? queue.shift() : null;
-            if (automatic ? !second : config.columns === "one") row.classList.add("is-wide");
+            if ((automatic ? !second : config.columns === "one") || !measured.get(first).half.readable) row.classList.add("is-wide");
             row.innerHTML = first + (second || ""); body.append(row);
             if ((!automatic && row.querySelector(".worksheet-grid-wide")) || row.offsetHeight > body.clientHeight) {
                 if (second) { queue.unshift(second); row.lastElementChild.remove(); }
@@ -98,7 +100,8 @@
                 const exercise = row.firstElementChild;
                 const gridsFit = [...row.querySelectorAll(".worksheet-grid")].every(grid =>
                     grid.getBoundingClientRect().width + 1 >= parseFloat(grid.style.width) * 96 / 25.4);
-                const linesFit = [...row.querySelectorAll(".worksheet-word-lines")].every(lines => lines.clientWidth >= 28 * 96 / 25.4 - 1);
+                const minimumWritingWidth = parseFloat(getComputedStyle(body).getPropertyValue("--ws-writing-width")) || 28;
+                const linesFit = [...row.querySelectorAll(".worksheet-word-lines")].every(lines => lines.clientWidth >= minimumWritingWidth * 96 / 25.4 - 1);
                 return { height: row.offsetHeight, readable: gridsFit && linesFit && exercise.scrollWidth <= exercise.clientWidth + 1 };
             };
             return new Map(rows.map(row => [row.html, { half: metrics(row.half), full: metrics(row.full) }]));

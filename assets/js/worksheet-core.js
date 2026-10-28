@@ -7,6 +7,9 @@
     const types = Object.freeze(["wordtrail", "connections", "wordsearch", "crossword"]);
     const labels = Object.freeze({ wordtrail: "Trilha de Palavras", connections: "O que há em comum?", wordsearch: "Caça-palavras", crossword: "Palavras cruzadas" });
     const limits = Object.freeze({ words: 30, rounds: 8, clues: 8 });
+    const printSizes = Object.freeze(Object.fromEntries(["small", "medium", "large"].map((name, index) => [name,
+        Object.freeze({ name, extraPt: index * 2, scale: 1 + index * .2, cellMm: 5.5 * (1 + index * .2) })])));
+    function printSize(value) { return Object.hasOwn(printSizes, value) ? printSizes[value] : printSizes.small; }
     const instructions = Object.freeze({ wordtrail: "Ligue as letras na horizontal ou vertical. Você pode mudar de direção. Escreva as palavras nas linhas ao lado.", connections: "Leia as pistas e escreva a resposta que conecta todas elas.", wordsearch: "Encontre as palavras na horizontal ou vertical e circule-as.", crossword: "Leia as pistas e complete as palavras cruzadas." });
     const clean = value => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z]/g, "");
     const escape = value => String(value ?? "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
@@ -105,5 +108,5 @@
         if (repeated.length) warnings.push(`Respostas das cruzadas também aparecem na trilha ou no banco de palavras: ${repeated.map(word => word.term).join(", ")}. Isso pode servir à revisão, mas dá pistas em uma avaliação.`);
         return warnings;
     }
-    return Object.freeze({ types, labels, limits, instructions, clean, escape, normalize, selection, blankActivity, stackHtml, readDraft, containsAnswer, qualityWarnings });
+    return Object.freeze({ types, labels, limits, instructions, printSize, clean, escape, normalize, selection, blankActivity, stackHtml, readDraft, containsAnswer, qualityWarnings });
 });

@@ -164,6 +164,46 @@ test("grids keep 5.5mm cells, 10pt letters and padded outer borders", () => {
     }
 });
 
+test("print sizes add two or four points to grid letters and preserve legacy defaults", () => {
+    assert.deepEqual(core.printSize(), core.printSize("small"));
+    for (const value of ["invalid", "__proto__", null]) assert.deepEqual(core.printSize(value), core.printSize("small"));
+    assert.deepEqual(view.units(worksheetFixture, engines), view.units(worksheetFixture, engines, false, { printSize: "small" }));
+    for (const [printSize, points] of [["small", 10], ["medium", 12], ["large", 14]]) {
+        const result = view.units(worksheetFixture, engines, false, { printSize });
+        for (const html of result.units.filter(html => html.includes("<svg"))) {
+            const svg = html.match(/style="width:([\d.]+)mm" viewBox="-1 -1 (\d+) (\d+)"/);
+            assert.ok(Math.abs(Number(svg[1]) / Number(svg[2]) * 19.24 * 72 / 25.4 - points) < .02);
+        }
+    }
+});
+
+test("enlarged worksheets preserve all words and match student/key grid dimensions", () => {
+    for (const printSize of ["medium", "large"]) for (const columns of ["auto", "one", "two"]) {
+        const settings = { printSize, columns, trailClues: true, wordsearchHelp: "clues" };
+        const student = view.units(worksheetLargeFixture, engines, false, settings).units;
+        const key = view.units(worksheetLargeFixture, engines, true, settings).units;
+        for (const type of core.types) {
+            const total = units => units.filter(html => html.includes(`data-ws-print-type="${type}"`))
+                .reduce((sum, html) => sum + Number(html.match(/data-ws-print-count="(\d+)"/)[1]), 0);
+            assert.equal(total(student), type === "connections" ? 8 : 30);
+            assert.equal(total(key), total(student));
+        }
+        const geometry = units => [...units.join("").matchAll(/style="width:([\d.]+)mm" viewBox="([^"]+)"/g)].map(match => match.slice(1));
+        assert.deepEqual(geometry(student), geometry(key));
+        assert.ok(geometry(student).every(([width]) => Number(width) <= 174));
+        assert.doesNotMatch(student.join(""), /<polyline|Resposta 1/);
+    }
+});
+
+test("long-word searches split to fit large cells instead of shrinking or dropping answers", () => {
+    const data = selected(["wordsearch"]);
+    data.activities.wordsearch.words = Array.from({ length: 30 }, (_, i) => ({ term: "abcdefghijklmnop" + String.fromCharCode(65 + Math.floor(i / 26), 65 + i % 26), clue: "Pista" }));
+    const result = view.units(data, engines, true, { printSize: "large", columns: "auto" }).units;
+    assert.equal(result.reduce((sum, html) => sum + Number(html.match(/data-ws-print-count="(\d+)"/)[1]), 0), 30);
+    assert.ok([...result.join("").matchAll(/style="width:([\d.]+)mm"/g)].every(match => Number(match[1]) <= 174));
+    for (const word of data.activities.wordsearch.words) assert.ok(result.join("").includes(word.term));
+});
+
 test("legacy wordsearch writing instructions have real answer lines", () => {
     const data = selected(["wordsearch"]);
     data.activities.wordsearch.instruction = "Circule e escreva cada verbo nas linhas.";
