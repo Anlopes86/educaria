@@ -98,6 +98,20 @@ async function waitForFirebaseConfig() {
     }
 }
 
+const educariaAuthPersistence = new WeakMap();
+function prepareAuthPersistence(auth) {
+    if (!educariaAuthPersistence.has(auth)) {
+        const ready = Promise.resolve().then(() => auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL))
+            .catch(() => {
+                // Private browsing can reject local persistence. Firebase can still
+                // authenticate for this visit; do not keep restarting persistence.
+                console.warn("EducarIA: a sessão pode não ser mantida ao fechar o navegador.");
+            });
+        educariaAuthPersistence.set(auth, ready);
+    }
+    return educariaAuthPersistence.get(auth);
+}
+
 function firebaseServices() {
     if (!firebaseConfigReady() || typeof firebase === "undefined") return null;
 
@@ -108,9 +122,7 @@ function firebaseServices() {
 
         window.educariaInitializeAppCheck?.();
         const auth = firebase.auth();
-        auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch((error) => {
-            console.warn("EducarIA auth persistence unavailable:", error);
-        });
+        prepareAuthPersistence(auth);
 
         return {
             auth,
@@ -545,8 +557,10 @@ function enforceAuth() {
 }
 
 let registrationInProgress = false;
+let loginInProgress = false;
+let authStateRevision = 0;
 function redirectAuthenticatedFromAuthPages() {
-    if (registrationInProgress) return;
+    if (registrationInProgress || loginInProgress) return;
     if (document.body?.dataset.authScreen === "waitlist") return;
     const isAuthPage = document.body?.dataset.authPage === "true";
     if (!isAuthPage) return;
@@ -558,6 +572,11 @@ function redirectAuthenticatedFromAuthPages() {
 function mapFirebaseError(error) {
     const code = error?.code || "";
     if (["beta_unavailable", "beta_waitlisted"].includes(code)) return error.message;
+    if (["auth/network-request-failed", "unavailable", "deadline-exceeded", "auth/profile-timeout"].includes(code)) {
+        return "A conexão demorou para responder. Tente entrar novamente; não é necessário atualizar a página.";
+    }
+    if (code === "auth/session-changed") return "A sessão mudou durante a entrada. Tente novamente.";
+    if (code === "auth/too-many-requests") return "Houve muitas tentativas de entrada. Aguarde alguns minutos e tente novamente.";
     if (code === "auth/email-already-in-use") return authTranslate("auth.errors.emailInUse", "Já existe uma conta com esse email.");
     if (code === "auth/invalid-email") return authTranslate("auth.errors.invalidEmail", "Digite um email válido.");
     if (code === "auth/weak-password") return authTranslate("auth.errors.weakPassword", "A senha precisa ser mais forte.");
@@ -587,13 +606,13 @@ async function readTeacherProfileFromFirebase(user) {
 
     const ref = services.db.collection("teachers").doc(user.uid);
     let snapshot;
-    try { snapshot = await ref.get(); }
+    try { snapshot = await readTeacherSnapshot(ref, user, services.auth); }
     catch (error) { if (error.code !== "permission-denied") throw error; }
     // Existing approved profiles remain usable even while Render is waking up.
     // Rules enforce admission; missing/blocked profiles must check the server.
     if (!snapshot?.exists) {
         await requireBetaEnrollment(user);
-        snapshot = await ref.get();
+        snapshot = await readTeacherSnapshot(ref, user, services.auth);
     }
     if (services.auth.currentUser?.uid !== user.uid) throw new Error("A conta mudou. Entre novamente.");
     const profile = snapshot.exists ? snapshot.data() : {};
@@ -611,22 +630,43 @@ async function readTeacherProfileFromFirebase(user) {
     };
 }
 
+function authSessionChangedError() {
+    return Object.assign(new Error("A sessão mudou durante a entrada."), { code: "auth/session-changed" });
+}
+
+function withAuthTimeout(operation, duration, code) {
+    return new Promise((resolve, reject) => {
+        const timer = window.setTimeout(() => reject(Object.assign(new Error("A conexão demorou para responder."), { code })), duration);
+        Promise.resolve(operation).then(resolve, reject).finally(() => window.clearTimeout(timer));
+    });
+}
+
+async function readTeacherSnapshot(ref, user, auth) {
+    // A cold connection may fail or stall before Firestore has established its
+    // transport. Retry only transient reads, never admission/permission failures.
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        if (auth.currentUser?.uid !== user.uid) throw authSessionChangedError();
+        try {
+            return await withAuthTimeout(ref.get(), 15_000, "auth/profile-timeout");
+        } catch (error) {
+            const transient = ["unavailable", "deadline-exceeded", "auth/network-request-failed", "auth/profile-timeout"].includes(error?.code);
+            if (!transient || attempt === 1) throw error;
+        }
+    }
+}
+
 function bindLoginForm() {
     const form = document.querySelector("[data-login-form]");
-    if (!form) return;
+    if (!form || form.dataset.authBound === "true") return;
+    form.dataset.authBound = "true";
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (loginInProgress) return;
         clearAuthFeedback();
 
-        const services = firebaseServices();
         const email = normalizeEmail(form.querySelector('input[name="email"]')?.value);
         const password = String(form.querySelector('input[name="password"]')?.value || "").trim();
-
-        if (!services) {
-            updateAuthFeedback(authTranslate("auth.feedback.connectUnavailable", "Não foi possível conectar ao serviço de autenticação. Tente novamente em instantes."), "error");
-            return;
-        }
 
         if (!email) {
             updateAuthFeedback(authTranslate("auth.feedback.enterEmail", "Digite o email para entrar."), "error");
@@ -638,10 +678,24 @@ function bindLoginForm() {
             return;
         }
 
+        const submit = form.querySelector('[type="submit"]');
+        loginInProgress = true;
+        const revision = ++authStateRevision;
+        if (submit) submit.disabled = true;
+        form.setAttribute("aria-busy", "true");
         try {
             updateAuthFeedback(authTranslate("auth.feedback.signingIn", "Entrando na sua conta..."), "success");
+            await waitForFirebaseConfig();
+            const services = firebaseServices();
+            if (!services) {
+                updateAuthFeedback(authTranslate("auth.feedback.connectUnavailable", "Não foi possível conectar ao serviço de autenticação. Tente novamente em instantes."), "error");
+                return;
+            }
+            await prepareAuthPersistence(services.auth);
             const credential = await services.auth.signInWithEmailAndPassword(email, password);
+            updateAuthFeedback("Conferindo seu acesso…", "neutral");
             const teacher = await readTeacherProfileFromFirebase(credential.user);
+            if (revision !== authStateRevision || services.auth.currentUser?.uid !== credential.user.uid) throw authSessionChangedError();
             writeCachedTeacher(teacher);
             saveSessionEmail(credential.user.email || email);
             educariaTrack("login_success", { screen: "login" });
@@ -650,6 +704,10 @@ function bindLoginForm() {
         } catch (error) {
             if (handleBetaWaitlist(error)) return;
             updateAuthFeedback(mapFirebaseError(error), "error");
+        } finally {
+            loginInProgress = false;
+            if (submit) submit.disabled = false;
+            form.removeAttribute("aria-busy");
         }
     });
 }
@@ -820,24 +878,30 @@ function syncAuthStateWithFirebase() {
     }
 
     services.auth.onAuthStateChanged(async (user) => {
+        // The submitted form owns sign-in until profile/admission are complete.
+        // Two concurrent readers could otherwise overwrite feedback or navigate
+        // before the other branch has finished saving the session.
         if (registrationInProgress || document.body?.dataset.authScreen === "waitlist") return;
         if (!user) {
+            if (!loginInProgress) authStateRevision += 1;
             writeCachedTeacher(null);
             clearSessionEmail();
             notifyAuthChanged();
-            enforceAuth();
+            if (!loginInProgress) enforceAuth();
             return;
         }
+        if (loginInProgress) return;
+        const revision = ++authStateRevision;
 
         try {
             const teacher = await readTeacherProfileFromFirebase(user);
-            if (services.auth.currentUser?.uid !== user.uid) return;
+            if (revision !== authStateRevision || services.auth.currentUser?.uid !== user.uid) return;
             writeCachedTeacher(teacher);
             saveSessionEmail(user.email || teacher?.email || "");
             notifyAuthChanged();
             redirectAuthenticatedFromAuthPages();
         } catch (error) {
-            if (services.auth.currentUser?.uid !== user.uid || handleBetaWaitlist(error)) return;
+            if (revision !== authStateRevision || services.auth.currentUser?.uid !== user.uid || handleBetaWaitlist(error)) return;
             updateAuthFeedback(mapFirebaseError(error), "error");
         }
     });
@@ -845,13 +909,13 @@ function syncAuthStateWithFirebase() {
 
 document.addEventListener("DOMContentLoaded", async () => {
     hydrateFeedbackLiveRegions();
+    // Capture the first submit even if runtime configuration is still loading.
+    bindLoginForm();
     await waitForFirebaseConfig();
     educariaTrack("page_view", { screen: analyticsPageName() });
     scheduleEducariaAnalyticsAutoFlush();
     showFirebaseConfigMessageIfNeeded();
     showAuthOutcomeMessage();
-    enforceAuth();
-    bindLoginForm();
     bindPasswordReset();
     bindPasswordToggles();
     bindRegisterForm();

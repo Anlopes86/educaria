@@ -1,150 +1,178 @@
 import assert from 'node:assert/strict';
-import {test} from 'node:test';
+import { test } from 'node:test';
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
+
 const source = await fs.readFile(new URL('../../assets/js/landing-page.js', import.meta.url), 'utf8');
 const html = await fs.readFile(new URL('../../index.html', import.meta.url), 'utf8');
 const css = await fs.readFile(new URL('../../assets/css/pages/landing.css', import.meta.url), 'utf8');
+const formats = ['slides', 'quiz', 'flashcards', 'memory', 'mindmap', 'wheel'];
+
 function element(dataset = {}) {
-    const classes = new Set(), listeners = new Map(), attributes = new Map();
-    return { dataset, classes, listeners, attributes, hidden: false, disabled: false, style: {}, textContent: '',
-        classList: { add(...names) { names.forEach(n => classes.add(n)); }, remove(...names) { names.forEach(n => classes.delete(n)); }, contains: n => classes.has(n), toggle(n, active) { active ? classes.add(n) : classes.delete(n); } },
+    const listeners = new Map(), attributes = new Map();
+    return {
+        dataset, listeners, attributes, hidden: false, textContent: '', isConnected: true,
         setAttribute(k, v) { attributes.set(k, v); }, getAttribute: k => attributes.get(k),
+        removeAttribute(k) { attributes.delete(k); if (k === 'src') this.src = ''; },
         addEventListener(k, fn) { listeners.set(k, fn); }, focus() { this.focused = true; },
-        click() { listeners.get('click')?.(); }, key(key) { const event = {key, preventDefault() { this.prevented = true; }}; listeners.get('keydown')?.(event); return event; }
+        emit(name, options = {}) {
+            const event = { target: this, preventDefault() { this.prevented = true; }, ...options };
+            listeners.get(name)?.(event);
+            return event;
+        },
+        click(options) { return this.emit('click', options); },
+        key(key) { return this.emit('keydown', { key }); }
     };
 }
-function setup({teacher = null, reducedMotion = false} = {}) {
-    const groups = new Map(), singles = new Map(), timers = [];
+
+function setup({ teacher = null, modalSupported = true } = {}) {
+    const singles = new Map(), groups = new Map(), documentEvents = new Map();
     const get = selector => { if (!singles.has(selector)) singles.set(selector, element()); return singles.get(selector); };
-    const group = (selector, items) => { const value = items.map(item => element(item)); groups.set(selector, value); return value; };
-    const formats = ['slides','quiz','flashcards','memory','mindmap','wheel'];
-    const tabs = group('[data-demo-tab]', formats.map(demoTab => ({demoTab})));
-    const panels = group('[role="tabpanel"]', formats.map(() => ({})));
-    tabs.forEach((tab, i) => { tab.setAttribute('aria-controls', 'demo-' + formats[i]); panels[i].id = 'demo-' + formats[i]; });
-    const slides = group('[data-sample-slide]', [0,1,2].map(sampleSlide => ({sampleSlide})));
-    const steps = group('[data-slide-step]', [-1,1].map(slideStep => ({slideStep})));
-    const answers = group('[data-quiz-answer]', ['venus','mars','jupiter','saturn'].map(quizAnswer => ({quizAnswer})));
-    const cards = group('[data-memory-pair]', [['sun','Sol'],['earth','Nosso planeta'],['moon','Lua'],['moon','Satélite da Terra'],['sun','Nossa estrela'],['earth','Terra']].map(([memoryPair,memoryText]) => ({memoryPair,memoryText})));
-    const map = group('[data-map-node]', ['sun','planets','moons'].map(mapNode => ({mapNode})));
+    const tabs = formats.map(demoTab => element({ demoTab }));
+    const panels = formats.map(format => ({ id: `demo-${format}`, hidden: format !== 'slides' }));
+    tabs.forEach((tab, index) => tab.setAttribute('aria-controls', panels[index].id));
+    groups.set('[data-demo-tab]', tabs);
+    groups.set('[role="tabpanel"]', panels);
+    const links = [...formats, 'worksheet'].map(format => {
+        const link = element({ exampleTitle: `${format}: exemplo real`, exampleDescription: 'Tema: Sistema Solar · 6º ano' });
+        link.setAttribute('href', `assets/img/examples/${format}.jpg`);
+        link.querySelector = selector => selector === 'img' ? { alt: `Captura de ${format}` } : null;
+        return link;
+    });
+    groups.set('[data-example-open]', links);
     const root = get('[data-landing-showcase]');
-    root.querySelector = get; root.querySelectorAll = selector => groups.get(selector) || [];
+    root.querySelectorAll = selector => groups.get(selector) || [];
+    const dialog = get('#landing-example-dialog');
+    dialog.querySelector = get;
+    dialog.getBoundingClientRect = () => ({ left: 20, right: 1200, top: 20, bottom: 700 });
+    dialog.close = () => { dialog.open = false; dialog.emit('close'); };
+    if (modalSupported) dialog.showModal = () => { dialog.open = true; };
     const context = vm.createContext({
-        document: {querySelector: get, querySelectorAll: selector => [get(selector)], addEventListener() {}},
-        readCurrentTeacher: () => teacher,
-        window: {matchMedia: () => ({matches: reducedMotion}), setTimeout(fn, delay) { timers.push({fn, delay}); }},
-        Math: Object.assign(Object.create(Math), {random: () => .3})
+        document: {
+            querySelector: get,
+            querySelectorAll: selector => groups.get(selector) || [get(selector)],
+            addEventListener: (name, callback) => documentEvents.set(name, callback)
+        },
+        readCurrentTeacher: () => teacher
     });
     vm.runInContext(source, context);
     context.initializeLandingShowcase();
-    return {context, root, get, tabs, panels, slides, steps, answers, cards, map, timers, setTeacher(value) {teacher = value;}};
+    context.initializeLandingExampleViewer();
+    return { context, get, tabs, panels, links, dialog, documentEvents, setTeacher(value) { teacher = value; } };
 }
-test('landing: six tabs have matching accessible panels and keyboard navigation wraps', () => {
+
+test('six accessible tabs select only their panel and support keyboard navigation', () => {
     const h = setup();
-    for (const tab of h.tabs) {
-        assert.match(html, new RegExp('id="' + tab.getAttribute('aria-controls') + '" role="tabpanel"'));
-    }
+    for (const tab of h.tabs) assert.match(html, new RegExp(`id="${tab.getAttribute('aria-controls')}" role="tabpanel"`));
     h.tabs[0].key('ArrowLeft');
-    assert.equal(h.tabs[5].attributes.get('aria-selected'), 'true');
+    assert.equal(h.tabs[5].getAttribute('aria-selected'), 'true');
     assert.equal(h.tabs[5].focused, true);
-    assert.equal(h.panels.filter(p => !p.hidden).length, 1);
+    assert.equal(h.panels.filter(panel => !panel.hidden).length, 1);
     h.tabs[5].key('Home'); assert.equal(h.tabs[0].tabIndex, 0);
     h.tabs[0].key('End'); assert.equal(h.tabs[5].tabIndex, 0);
     h.tabs[5].key('ArrowRight'); assert.equal(h.tabs[0].tabIndex, 0);
     h.tabs[2].click(); assert.equal(h.panels[2].hidden, false);
     assert.equal(h.tabs[2].key('Tab').prevented, undefined);
 });
-test('landing: slide controls cycle in both directions and announce position', () => {
-    const h = setup(); h.steps[0].click();
-    assert.equal(h.slides[2].hidden, false);
-    assert.equal(h.get('[data-slide-counter]').textContent, 'Slide 3 de 3');
-    h.steps[1].click(); assert.equal(h.slides[0].hidden, false);
+
+test('each gallery entry opens its original capture in a labelled native dialog', () => {
+    const h = setup();
+    for (const link of h.links) {
+        const event = link.click();
+        assert.equal(event.prevented, true);
+        assert.equal(h.dialog.open, true);
+        assert.equal(h.get('[data-example-image]').src, link.getAttribute('href'));
+        assert.equal(h.get('[data-example-image]').alt, link.querySelector('img').alt);
+        assert.equal(h.get('#landing-example-title').textContent, link.dataset.exampleTitle);
+        assert.equal(h.get('[data-example-close]').focused, true);
+        h.get('[data-example-close]').click();
+        assert.equal(h.dialog.open, false);
+        assert.equal(h.get('[data-example-image]').src, '');
+        assert.equal(link.focused, true);
+    }
+    assert.match(html, /<dialog[^>]*aria-labelledby="landing-example-title"[^>]*aria-describedby="landing-example-description"/);
 });
-test('landing: quiz gives textual feedback for both outcomes and resets', () => {
-    const h = setup(); h.answers[0].click();
-    assert.ok(h.answers[0].classes.has('is-incorrect'));
-    assert.match(h.get('[data-quiz-feedback]').textContent, /Tente novamente/);
-    h.answers[1].click(); assert.ok(h.answers[1].classes.has('is-correct'));
-    assert.ok(!h.answers[0].classes.has('is-incorrect'));
-    h.get('[data-quiz-reset]').click();
-    assert.ok(h.answers.every(a => a.classes.size === 0));
+
+test('native Escape closing restores focus; removed openers are not focused', () => {
+    const h = setup();
+    h.links[0].click();
+    // Escape is handled by the browser's native dialog; test the close notification.
+    h.dialog.close();
+    assert.equal(h.links[0].focused, true);
+    h.links[1].click(); h.links[1].isConnected = false; h.dialog.close();
+    assert.equal(h.links[1].focused, undefined);
 });
-test('landing: flashcard reveals the answer and returns to the question', () => {
-    const h = setup(); const card = h.get('[data-demo-flip]'); card.click();
-    assert.match(h.get('[data-flashcard-text]').textContent, /É uma estrela/);
-    assert.match(card.attributes.get('aria-label'), /pergunta/);
-    card.click(); assert.match(h.get('[data-flashcard-text]').textContent, /planeta ou uma estrela/);
+
+test('backdrop clicks close the viewer but clicks inside its padding do not', () => {
+    const h = setup(); h.links[0].click();
+    h.dialog.click({ clientX: 30, clientY: 30 });
+    assert.equal(h.dialog.open, true);
+    h.dialog.click({ clientX: 5, clientY: 30 });
+    assert.equal(h.dialog.open, false);
 });
-test('landing: memory supports mismatches, all pairs and a complete reset without timers', () => {
-    const h = setup(); const c = h.cards;
-    c[0].click(); c[1].click(); assert.match(h.get('[data-memory-feedback]').textContent, /não formam um par/);
-    c[0].click(); assert.ok(!c[1].classes.has('is-open')); c[4].click();
-    c[0].click(); assert.match(h.get('[data-memory-feedback]').textContent, /1 de 3/);
-    c[2].click(); c[3].click(); c[1].click(); c[5].click();
-    assert.match(h.get('[data-memory-feedback]').textContent, /Todos os pares/);
-    h.get('[data-memory-reset]').click(); assert.ok(c.every(card => card.classes.size === 0));
-    assert.equal(h.timers.length, 0);
-});
-test('landing: mind map updates explanation and selection', () => {
-    const h = setup(); h.map[2].click();
-    assert.equal(h.get('[data-map-title]').textContent, 'Os satélites');
-    assert.match(h.get('[data-map-text]').textContent, /Lua/);
-    assert.equal(h.map[0].attributes.get('aria-pressed'), 'false');
-});
-test('landing: roulette result matches the pointer, blocks repeated spins and respects reduced motion', () => {
-    for (const reducedMotion of [false, true]) {
-        const h = setup({reducedMotion}); const spin = h.get('[data-wheel-spin]');
-        spin.click(); spin.click(); assert.equal(h.timers.length, 1);
-        assert.equal(h.get('[data-demo-wheel]').style.transform, 'rotate(990deg)');
-        assert.equal(h.timers[0].delay, reducedMotion ? 0 : 1150);
-        h.timers[0].fn(); assert.match(h.get('[data-wheel-feedback]').textContent, /Terra/);
-        assert.equal(spin.disabled, false);
-        spin.click(); assert.equal(h.get('[data-demo-wheel]').style.transform, 'rotate(1710deg)');
+
+test('direct image links remain usable without dialog support and with browser modifiers', () => {
+    const fallback = setup({ modalSupported: false });
+    assert.equal(fallback.links[0].click().prevented, undefined);
+    assert.equal(fallback.links[0].getAttribute('href'), 'assets/img/examples/slides.jpg');
+    const h = setup();
+    for (const options of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }, { altKey: true }, { button: 1 }]) {
+        assert.equal(h.links[0].click(options).prevented, undefined);
+        assert.equal(h.dialog.open, undefined);
     }
 });
-test('landing: authenticated and signed-out visitors keep appropriate CTA destinations', () => {
-    const h = setup();
-    h.get('[data-landing-nav-primary]').setAttribute('href', 'cadastro.html');
-    h.get('[data-landing-nav-primary]').textContent = 'Cadastre-se';
-    h.get('[data-landing-login-toggle]').textContent = 'Faça login';
-    h.context.renderLandingState();
-    assert.equal(h.get('[data-landing-nav-primary]').attributes.get('href'), 'cadastro.html');
-    assert.equal(h.get('[data-landing-nav-primary]').textContent, 'Cadastre-se');
-    assert.equal(h.get('[data-landing-login-toggle]').textContent, 'Faça login');
-    assert.equal(h.get('[data-landing-example-cta]').attributes.get('href'), 'cadastro.html');
-    h.setTeacher({uid:'example-teacher'}); h.context.renderLandingState();
-    assert.equal(h.get('[data-landing-nav-primary]').attributes.get('href'), 'cadastro.html');
-    assert.equal(h.get('[data-landing-nav-primary]').textContent, 'Cadastre-se');
-    assert.equal(h.get('[data-landing-login-toggle]').hidden, false);
-    assert.equal(h.get('[data-landing-example-cta]').attributes.get('href'), 'plataforma/index.html');
-    assert.equal(h.get('[data-landing-lesson-cta]').attributes.get('href'), 'plataforma/criar-aula.html');
-    h.setTeacher(null); h.context.renderLandingState();
-    assert.equal(h.get('[data-landing-lesson-cta]').attributes.get('href'), 'cadastro.html');
+
+test('hero, six formats and printing use real captures instead of bespoke activity simulations', () => {
+    for (const format of [...formats, 'worksheet']) assert.match(html, new RegExp(`src="assets/img/examples/${format}\\.jpg"`));
+    assert.match(html, /Atividades reais criadas na EducarIA/);
+    assert.match(html, /Ver exemplos não usa créditos/);
+    assert.match(html, /data-landing-print-cta/);
+    assert.match(html, /<a href="#para-imprimir">Para imprimir<\/a>/);
+    assert.doesNotMatch(html, /landing-solar\.svg|data-quiz-answer|data-memory-pair|data-demo-wheel|data-demo-flip|data-sample-slide/);
+    assert.doesNotMatch(source, /fetch\(|XMLHttpRequest|localStorage\.setItem|generateMaterial\(|Math\.random/);
 });
-test('landing: login opens the inline form and focuses the email field', () => {
+
+test('authenticated and signed-out visitors keep their appropriate creation destinations', () => {
     const h = setup();
-    h.context.initializeLandingLogin();
+    h.context.renderLandingState();
+    assert.equal(h.get('[data-landing-example-cta]').getAttribute('href'), 'cadastro.html');
+    assert.equal(h.get('[data-landing-print-cta]').getAttribute('href'), 'cadastro.html');
+    h.setTeacher({ uid: 'example-teacher' }); h.context.renderLandingState();
+    assert.equal(h.get('[data-landing-example-cta]').getAttribute('href'), 'plataforma/index.html');
+    assert.equal(h.get('[data-landing-lesson-cta]').getAttribute('href'), 'plataforma/criar-aula.html');
+    assert.equal(h.get('[data-landing-print-cta]').getAttribute('href'), 'plataforma/folha-atividades-builder.html?new=1');
+    assert.equal(h.get('[data-landing-print-cta]').textContent, 'Criar folha de atividades →');
+    h.setTeacher(null); h.context.renderLandingState();
+    assert.equal(h.get('[data-landing-lesson-cta]').getAttribute('href'), 'cadastro.html');
+    assert.equal(h.get('[data-landing-print-cta]').getAttribute('href'), 'cadastro.html');
+});
+
+test('login opens its inline form, focuses email and closes with Escape', () => {
+    const h = setup(); h.context.initializeLandingLogin();
     const toggle = h.get('[data-landing-login-toggle]');
-    const panel = h.get('#landing-login-panel');
-    panel.hidden = true;
+    const panel = h.get('#landing-login-panel'); panel.hidden = true;
     toggle.click();
     assert.equal(panel.hidden, false);
-    assert.equal(toggle.attributes.get('aria-expanded'), 'true');
+    assert.equal(toggle.getAttribute('aria-expanded'), 'true');
     assert.equal(h.get('#landing-login-email').focused, true);
-    toggle.click();
+    h.documentEvents.get('keydown')({ key: 'Escape' });
     assert.equal(panel.hidden, true);
-    assert.equal(toggle.attributes.get('aria-expanded'), 'false');
+    assert.equal(toggle.getAttribute('aria-expanded'), 'false');
+    assert.equal(toggle.focused, true);
     assert.match(html, /data-login-form/);
     assert.match(html, /href="cadastro\.html"[^>]*>Cadastre-se/);
 });
-test('landing: examples are local, initialization is idempotent and credit promises stay accurate', () => {
-    const h = setup(); const listener = h.tabs[0].listeners.get('click');
-    h.context.initializeLandingShowcase(); assert.equal(h.tabs[0].listeners.get('click'), listener);
-    assert.doesNotMatch(source, /fetch\(|XMLHttpRequest|localStorage\.setItem|generateMaterial\(/);
+
+test('initialization is idempotent and availability and first-class guidance remain accurate', () => {
+    const h = setup();
+    const tabListener = h.tabs[0].listeners.get('click');
+    const previewListener = h.links[0].listeners.get('click');
+    h.context.initializeLandingShowcase(); h.context.initializeLandingExampleViewer();
+    assert.equal(h.tabs[0].listeners.get('click'), tabListener);
+    assert.equal(h.links[0].listeners.get('click'), previewListener);
     assert.doesNotMatch(html, /5 gerações|ilimitad/i);
+    assert.match(html, /disponibilidade compartilhada/);
     assert.match(html, /Comece criando sua turma/);
     assert.match(css, /prefers-reduced-motion: reduce/);
-    for (const heading of html.matchAll(/<h3>(.*?)<\/h3>/g)) {
-        assert.doesNotMatch(heading[1], /\S<br>\S/, 'hidden mobile line breaks must keep word spacing');
-    }
+    for (const heading of html.matchAll(/<h3>(.*?)<\/h3>/g)) assert.doesNotMatch(heading[1], /\S<br>\S/);
 });

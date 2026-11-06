@@ -1,0 +1,54 @@
+/* Shared balance display: personal credits are distinct from AI availability. */
+[data-ai-credits].ai-credits-status {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 5px;
+    white-space: normal;
+}
+[data-ai-credits-label] { min-width: 0; overflow-wrap: anywhere; }
+[data-ai-credits-notice] { flex-basis: 100%; font-size: .75rem; line-height: 1.4; font-weight: 600; }
+[data-ai-credits-notice][hidden] { display: none; }
+button.ai-credits-help-trigger {
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 28px;
+    width: 28px;
+    min-height: 28px;
+    padding: 0;
+    margin: 0;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font: 800 .82rem/1 var(--font-body, sans-serif);
+    cursor: pointer;
+    box-shadow: none;
+}
+button.ai-credits-help-trigger:focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }
+button.ai-credits-help-trigger:hover { background: #ffffff88; }
+.ai-credits-help-dialog {
+    box-sizing: border-box;
+    width: min(480px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 24px;
+    overflow: auto;
+    border: 1px solid #cbded6;
+    border-radius: 22px;
+    background: #fffefa;
+    color: #233e44;
+    box-shadow: 0 24px 80px #173c4340;
+}
+.ai-credits-help-dialog::backdrop { background: #143b4670; }
+.ai-credits-help-dialog h2 { margin: 0 0 16px; font-size: 1.3rem; line-height: 1.3; color: inherit; }
+.ai-credits-help-dialog p { margin: 12px 0; font-size: .9rem; line-height: 1.6; color: inherit; }
+.ai-credits-help-dialog .ai-credits-help-summary { font-weight: 750; }
+.ai-credits-help-dialog [data-ai-credits-help-status] { padding: 10px 12px; border-radius: 12px; background: #fff0dc; color: #765110; }
+.ai-credits-help-dialog [hidden] { display: none !important; }
+.ai-credits-help-dialog form { display: flex; justify-content: flex-end; margin-top: 20px; }
+@media (pointer: coarse) { button.ai-credits-help-trigger { flex-basis: 40px; width: 40px; min-height: 40px; } }
+@media print { [data-ai-credits], .ai-credits-help-dialog { display: none !important; } }

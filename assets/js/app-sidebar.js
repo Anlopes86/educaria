@@ -21,28 +21,6 @@ function sidebarTeacherInstitution() {
     return "Conta educacional";
 }
 
-const SIDEBAR_FORMATS = {
-    core: [
-        { href: "slides-builder.html?new=1", label: "Slides", labelKey: "dashboard.formats.slides" },
-        { href: "quiz-builder.html?new=1", label: "Quiz", labelKey: "dashboard.formats.quiz" },
-        { href: "criar-aula.html", label: "Aula completa", labelKey: "dashboard.formats.lesson" },
-        { href: "folha-atividades-builder.html?new=1", label: "Folha para imprimir" }
-    ],
-    extra: [
-        { href: "flashcards-builder.html?new=1", label: "Flashcards", labelKey: "sidebar.formats.flashcards" },
-        { href: "jogo-memoria-builder.html?new=1", label: "Jogo da memória", labelKey: "sidebar.formats.memory" },
-        { href: "roleta-builder.html?new=1", label: "Roleta", labelKey: "sidebar.formats.wheel" },
-        { href: "ligar-pontos-builder.html?new=1", label: "Ligar pontos", labelKey: "sidebar.formats.match" },
-        { href: "mapa-mental-builder.html?new=1", label: "Mapa mental", labelKey: "sidebar.formats.mindmap" },
-        { href: "debate-guiado-builder.html?new=1", label: "Debate guiado", labelKey: "sidebar.formats.debate" },
-        { href: "caca-palavras-builder.html?new=1", label: "Caça-palavras", labelKey: "sidebar.formats.wordsearch" },
-        { href: "palavras-cruzadas-builder.html?new=1", label: "Palavras cruzadas", labelKey: "sidebar.formats.crossword" },
-        { href: "forca-builder.html?new=1", label: "Forca", labelKey: "sidebar.formats.hangman" },
-        { href: "trilha-palavras-builder.html?new=1", label: "Trilha de Palavras", labelKey: "sidebar.formats.wordtrail" },
-        { href: "em-comum-builder.html?new=1", label: "O que há em comum?", labelKey: "sidebar.formats.connections" }
-    ]
-};
-
 const SIDEBAR_ICONS = {
     admin: '<svg viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z"/><path d="m8 12 3 3 5-6"/></svg>',
     dashboard: '<svg viewBox="0 0 24 24"><path d="M4 13h6V4H4v9Zm0 7h6v-4H4v4Zm10 0h6v-9h-6v9Zm0-16v4h6V4h-6Z"/></svg>',
@@ -127,8 +105,8 @@ function ensureSidebarProfile() {
 }
 
 function sidebarNavKey(element) {
+    if (element.hasAttribute("data-sidebar-create-activity")) return "create-activity";
     const toggle = element.dataset.sidebarToggle;
-    if (toggle === "formats") return "create-activity";
     if (toggle === "create-class") return "create-class";
     if (toggle === "classes") return "recent-classes";
 
@@ -152,7 +130,7 @@ function reorderSidebarNavigation() {
             return panel ? [item, panel] : [item];
         };
         const ordered = [
-            ...itemFor('[data-sidebar-toggle="formats"]'),
+            ...itemFor('[data-sidebar-create-activity]'),
             ...itemFor('a[href="index.html"]'),
             ...itemFor('a[href="biblioteca.html"]'),
             ...itemFor('[data-sidebar-classes-page-link]'),
@@ -227,41 +205,45 @@ function renderSidebarCurrentClass(current) {
     });
 }
 
-function renderSidebarFormats() {
-    const currentPath = currentSidebarPath();
-
-    document.querySelectorAll('[data-sidebar-panel="formats"]').forEach((panel) => {
-        panel.innerHTML = `
-            <a href="index.html#quick-ai-create" class="sidebar-creator-shortcut">
-                <span class="sidebar-nav-icon" aria-hidden="true">${SIDEBAR_ICONS["create-activity"]}</span>
-                <span><strong>${escapeSidebarHtml(sidebarTranslate("sidebar.creator.title", "Começar com IA"))}</strong>
-                <small>${escapeSidebarHtml(sidebarTranslate("sidebar.creator.hint", "Um tema ou arquivo"))}</small></span>
-                <span aria-hidden="true">↗</span>
-            </a>
-            <div class="sidebar-subgroup">
-                <span class="sidebar-subgroup-label">${sidebarTranslate("sidebar.formats.core", "Formatos principais")}</span>
-                <div class="sidebar-subitems" data-sidebar-format-list="core"></div>
-            </div>
-            <div class="sidebar-subgroup">
-                <span class="sidebar-subgroup-label">${sidebarTranslate("dashboard.toolkit.moreFormats", "Mais formatos")}</span>
-                <div class="sidebar-subitems" data-sidebar-format-list="extra"></div>
-            </div>
-        `;
+function ensureSidebarCreationLink() {
+    document.querySelectorAll(".app-sidebar-nav").forEach((nav) => {
+        let link = nav.querySelector("[data-sidebar-create-activity]");
+        const oldToggle = nav.querySelector('[data-sidebar-toggle="formats"]');
+        if (!link) {
+            link = document.createElement("a");
+            link.className = "sidebar-nav-link";
+            link.setAttribute("data-sidebar-create-activity", "");
+            if (oldToggle) oldToggle.replaceWith(link);
+            else nav.prepend(link);
+        } else {
+            oldToggle?.remove();
+        }
+        link.setAttribute("href", "index.html#quick-ai-create");
+        link.setAttribute("data-i18n", "dashboard.nav.createActivity");
+        link.textContent = sidebarTranslate("dashboard.nav.createActivity", "Criar atividade");
+        nav.querySelectorAll('[data-sidebar-panel="formats"]').forEach(panel => panel.remove());
     });
+}
 
-    document.querySelectorAll("[data-sidebar-format-list]").forEach((root) => {
-        const group = root.dataset.sidebarFormatList === "extra" ? "extra" : "core";
-        const items = SIDEBAR_FORMATS[group];
+function focusSidebarCreator() {
+    if (currentSidebarPath() !== "index.html" || document.body.classList.contains("dashboard-tour-active")) return false;
+    const field = document.querySelector("[data-dashboard-quick-topic]");
+    if (!field) return false;
+    field.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+    field.focus({ preventScroll: true });
+    return true;
+}
 
-        root.innerHTML = items.map((item, index) => {
-            const active = item.href.split("?")[0] === currentPath ? " is-active" : "";
-            return `
-                <a href="${item.href}" class="sidebar-subitem sidebar-format-link${active}" data-sidebar-tone="${index % 4}">
-                    ${escapeSidebarHtml(item.labelKey ? sidebarTranslate(item.labelKey, item.label) : item.label)}
-                </a>
-            `;
-        }).join("");
-    });
+function handleSidebarNavigation(event) {
+    if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || (event.button != null && event.button !== 0)) return;
+    const link = event.target.closest("a[href]");
+    if (!link) return;
+    setMobileSidebarOpen(false);
+    if (!link.hasAttribute("data-sidebar-create-activity")) return;
+    closeSidebarPanels();
+    // On the dashboard, keep the current prompt and options intact. Other pages
+    // follow the link normally, including the editor's unsaved-work protection.
+    if (focusSidebarCreator()) event.preventDefault();
 }
 
 function renderSidebarClasses() {
@@ -617,15 +599,7 @@ function ensureMobileSidebarControls() {
     close.addEventListener("click", () => setMobileSidebarOpen(false));
     backdrop.addEventListener("click", () => setMobileSidebarOpen(false));
 
-    sidebar.addEventListener("click", (event) => {
-        if (event.target.closest("a[href]")) setMobileSidebarOpen(false);
-        if (event.target.closest(".sidebar-creator-shortcut")) {
-            closeSidebarPanels();
-            if (currentSidebarPath() === "index.html") {
-                window.requestAnimationFrame(() => document.querySelector("#quick-ai-create textarea")?.focus());
-            }
-        }
-    });
+    sidebar.addEventListener("click", handleSidebarNavigation);
 
     document.addEventListener("keydown", handleSidebarKeydown);
 
@@ -661,8 +635,8 @@ document.addEventListener("DOMContentLoaded", () => {
     ensureSidebarProfile();
     hydrateSidebarTeacher();
     ensureSidebarClassesPageLink();
+    ensureSidebarCreationLink();
     reorderSidebarNavigation();
-    renderSidebarFormats();
     renderSidebarClasses();
     decorateSidebarNavigation();
     enhanceSidebarPanels();
@@ -673,6 +647,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bindSidebarToggles();
     bindSidebarPanelOpeners();
     refreshSidebarAdminAccess();
+    if (window.location.hash === "#quick-ai-create") focusSidebarCreator();
 });
 
 document.addEventListener("educaria-auth-changed", () => {
@@ -694,10 +669,14 @@ document.addEventListener("educaria-classes-updated", () => {
 
 document.addEventListener("educaria-language-changed", () => {
     ensureSidebarClassesPageLink();
+    ensureSidebarCreationLink();
     reorderSidebarNavigation();
-    renderSidebarFormats();
     renderSidebarClasses();
     decorateSidebarNavigation();
     enhanceSidebarPanels();
     setActiveSidebarLinks();
+});
+
+window.addEventListener("hashchange", () => {
+    if (window.location.hash === "#quick-ai-create") focusSidebarCreator();
 });

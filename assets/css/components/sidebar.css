@@ -159,37 +159,6 @@ body.product-body .app-sidebar .sidebar-subitem.is-active {
     color: #1e473b;
     box-shadow: inset 3px 0 0 #527c58;
 }
-body.product-body .app-sidebar .sidebar-format-link { justify-content: flex-start; gap: 10px; }
-body.product-body .app-sidebar .sidebar-format-link::before {
-    content: "";
-    width: 11px;
-    height: 11px;
-    flex: 0 0 11px;
-    border-radius: 4px;
-    background: #a5c2a0;
-    border: 1px solid #173c4329;
-}
-body.product-body .app-sidebar [data-sidebar-tone="1"]::before { background: #c8b4dd; }
-body.product-body .app-sidebar [data-sidebar-tone="2"]::before { background: #e2c991; }
-body.product-body .app-sidebar [data-sidebar-tone="3"]::before { background: #a6cbd1; }
-
-body.product-body .app-sidebar .sidebar-creator-shortcut {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 12px 9px;
-    border: 1px solid #b5ccab;
-    border-radius: 12px;
-    background: #e2edce;
-    color: #244d40;
-    text-decoration: none;
-}
-body.product-body .app-sidebar .sidebar-creator-shortcut:hover { background: #d6e6bd; }
-body.product-body .app-sidebar .sidebar-creator-shortcut .sidebar-nav-icon { color: #3c6749; }
-body.product-body .app-sidebar .sidebar-creator-shortcut > span:nth-child(2) { flex: 1; }
-body.product-body .app-sidebar .sidebar-creator-shortcut strong { display: block; font-size: .85rem; }
-body.product-body .app-sidebar .sidebar-creator-shortcut small { display: block; margin-top: 3px; font-size: .72rem; }
-
 body.product-body .app-sidebar .sidebar-create-card {
     padding: 0;
     border: 0;

@@ -22,6 +22,7 @@ function renderLandingState() {
         updateLandingLink("[data-landing-cta-secondary]", "plataforma/biblioteca.html", "Ir para biblioteca");
         updateLandingLink("[data-landing-example-cta]", "plataforma/index.html", "Criar com meu conteúdo →");
         updateLandingLink("[data-landing-lesson-cta]", "plataforma/criar-aula.html", "Montar minha sequência →");
+        updateLandingLink("[data-landing-print-cta]", "plataforma/folha-atividades-builder.html?new=1", "Criar folha de atividades →");
         return;
     }
 
@@ -30,6 +31,7 @@ function renderLandingState() {
     updateLandingLink("[data-landing-cta-secondary]", "login.html", "Entrar");
     updateLandingLink("[data-landing-example-cta]", "cadastro.html", "Criar com meu conteúdo →");
     updateLandingLink("[data-landing-lesson-cta]", "cadastro.html", "Montar minha sequência →");
+    updateLandingLink("[data-landing-print-cta]", "cadastro.html", "Criar folha de atividades →");
 }
 
 document.addEventListener("DOMContentLoaded", renderLandingState);
@@ -57,15 +59,13 @@ function initializeLandingLogin() {
 
 document.addEventListener("DOMContentLoaded", initializeLandingLogin);
 
-// Fixed, local examples only: no AI requests, account writes or saved teacher materials.
+// Static captures of activities created in the platform: no AI calls or account writes.
 function initializeLandingShowcase() {
     const root = document.querySelector("[data-landing-showcase]");
     if (!root || root.dataset.initialized === "true") return;
     root.dataset.initialized = "true";
-    const all = (selector) => Array.from(root.querySelectorAll(selector));
-    const one = (selector) => root.querySelector(selector);
-    const tabs = all("[data-demo-tab]");
-    const panels = all('[role="tabpanel"]');
+    const tabs = Array.from(root.querySelectorAll("[data-demo-tab]"));
+    const panels = Array.from(root.querySelectorAll('[role="tabpanel"]'));
     const selectTab = (tab, focus = false) => {
         tabs.forEach((item) => {
             const selected = item === tab;
@@ -88,120 +88,45 @@ function initializeLandingShowcase() {
             selectTab(tabs[target], true);
         });
     });
+}
 
-    let slideIndex = 0;
-    const slides = all("[data-sample-slide]");
-    all("[data-slide-step]").forEach((button) => button.addEventListener("click", () => {
-        slideIndex = (slideIndex + Number(button.dataset.slideStep) + slides.length) % slides.length;
-        slides.forEach((slide, index) => { slide.hidden = index !== slideIndex; });
-        one("[data-slide-counter]").textContent = `Slide ${slideIndex + 1} de ${slides.length}`;
-    }));
-
-    const answers = all("[data-quiz-answer]");
-    answers.forEach((button) => button.addEventListener("click", () => {
-        answers.forEach((answer) => {
-            answer.classList.remove("is-incorrect", "is-correct");
-            answer.setAttribute("aria-pressed", String(answer === button));
+function initializeLandingExampleViewer() {
+    const dialog = document.querySelector("#landing-example-dialog");
+    if (!dialog || typeof dialog.showModal !== "function" || dialog.dataset.initialized === "true") return;
+    dialog.dataset.initialized = "true";
+    const image = dialog.querySelector("[data-example-image]");
+    const title = dialog.querySelector("#landing-example-title");
+    const description = dialog.querySelector("#landing-example-description");
+    const close = dialog.querySelector("[data-example-close]");
+    let opener = null;
+    document.querySelectorAll("[data-example-open]").forEach((link) => {
+        link.addEventListener("click", (event) => {
+            // Preserve opening in another tab, and the image link when dialog is unavailable.
+            if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button > 0) return;
+            event.preventDefault();
+            opener = link;
+            const preview = link.querySelector("img");
+            image.src = link.getAttribute("href");
+            image.alt = preview?.alt || link.dataset.exampleTitle;
+            title.textContent = link.dataset.exampleTitle;
+            description.textContent = link.dataset.exampleDescription;
+            dialog.showModal();
+            close.focus();
         });
-        const correct = button.dataset.quizAnswer === "mars";
-        button.classList.add(correct ? "is-correct" : "is-incorrect");
-        one("[data-quiz-feedback]").textContent = correct
-            ? "✓ Isso! Marte tem óxido de ferro no solo, que dá a ele uma cor avermelhada."
-            : "Ainda não! Dica: o nome desse planeta começa com M. Tente novamente.";
-    }));
-    one("[data-quiz-reset]").addEventListener("click", () => {
-        answers.forEach((answer) => {
-            answer.classList.remove("is-incorrect", "is-correct");
-            answer.setAttribute("aria-pressed", "false");
-        });
-        one("[data-quiz-feedback]").textContent = "Qual seria o palpite da sua turma?";
     });
-
-    let flipped = false;
-    const flashcard = one("[data-demo-flip]");
-    flashcard.addEventListener("click", () => {
-        flipped = !flipped;
-        flashcard.classList.toggle("is-flipped", flipped);
-        flashcard.setAttribute("aria-label", flipped ? "Virar flashcard para ver a pergunta" : "Virar flashcard para ver a resposta");
-        one("[data-flashcard-side]").textContent = flipped ? "VERSO · 01" : "FRENTE · 01";
-        one("[data-flashcard-text]").textContent = flipped ? "É uma estrela! O Sol produz a luz e o calor que chegam à Terra." : "O Sol é um planeta ou uma estrela?";
-        one("[data-flashcard-action]").textContent = flipped ? "Ver pergunta ↻" : "Ver resposta ↻";
-        one("[data-flashcard-status]").textContent = flipped ? "Resposta: o Sol é uma estrela." : "Pergunta: o Sol é um planeta ou uma estrela?";
+    close.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("click", (event) => {
+        if (event.target !== dialog) return;
+        const bounds = dialog.getBoundingClientRect();
+        if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
     });
-
-    const cards = all("[data-memory-pair]");
-    let openCards = [];
-    let matches = 0;
-    const hideCard = (card) => {
-        card.classList.remove("is-open", "is-matched");
-        card.textContent = "✦";
-        card.setAttribute("aria-label", `Revelar cartão ${cards.indexOf(card) + 1}`);
-        card.setAttribute("aria-disabled", "false");
-    };
-    cards.forEach((card) => card.addEventListener("click", () => {
-        if (card.classList.contains("is-matched")) return;
-        // An unmatched pair stays visible until the next selection, with no reading time limit.
-        if (openCards.length === 2) {
-            openCards.forEach(hideCard);
-            openCards = [];
-        }
-        if (openCards.includes(card)) return;
-        card.classList.add("is-open");
-        card.textContent = card.dataset.memoryText;
-        card.setAttribute("aria-label", `Cartão ${cards.indexOf(card) + 1}: ${card.dataset.memoryText}`);
-        openCards.push(card);
-        if (openCards.length === 1) {
-            one("[data-memory-feedback]").textContent = `${card.dataset.memoryText}. Agora encontre o par.`;
-        } else if (openCards[0].dataset.memoryPair === card.dataset.memoryPair) {
-            matches += 1;
-            openCards.forEach((matched) => {
-                matched.classList.add("is-matched");
-                matched.textContent = `✓ ${matched.dataset.memoryText}`;
-                matched.setAttribute("aria-disabled", "true");
-                matched.setAttribute("aria-label", `Par encontrado: ${matched.dataset.memoryText}`);
-            });
-            openCards = [];
-            one("[data-memory-feedback]").textContent = matches === 3 ? "✓ Todos os pares encontrados! Que tal jogar com o conteúdo da sua aula?" : `✓ Boa conexão! ${matches} de 3 pares encontrados.`;
-        } else {
-            one("[data-memory-feedback]").textContent = "Essas ideias não formam um par. Escolha um cartão para tentar de novo.";
-        }
-    }));
-    one("[data-memory-reset]").addEventListener("click", () => {
-        cards.forEach(hideCard);
-        openCards = [];
-        matches = 0;
-        one("[data-memory-feedback]").textContent = "Encontre os 3 pares de ideias.";
-    });
-
-    const mapContent = {
-        sun: ["O Sol", "A estrela no centro do Sistema Solar. Sua luz e seu calor são essenciais para a vida na Terra."],
-        planets: ["Os planetas", "Oito planetas giram ao redor do Sol. A Terra é o terceiro, entre Vênus e Marte."],
-        moons: ["Os satélites", "Satélites naturais orbitam planetas. A Lua é o satélite natural da Terra."]
-    };
-    const nodes = all("[data-map-node]");
-    nodes.forEach((node) => node.addEventListener("click", () => {
-        nodes.forEach((item) => item.setAttribute("aria-pressed", String(item === node)));
-        const [title, text] = mapContent[node.dataset.mapNode];
-        one("[data-map-title]").textContent = title;
-        one("[data-map-text]").textContent = text;
-    }));
-
-    let rotation = 0;
-    const spin = one("[data-wheel-spin]");
-    spin.addEventListener("click", () => {
-        if (spin.disabled) return;
-        const index = Math.floor(Math.random() * 4);
-        const target = (360 - index * 90) % 360;
-        rotation += 720 + (target - rotation % 360 + 360) % 360;
-        spin.disabled = true;
-        one("[data-wheel-feedback]").textContent = "Sorteando o próximo tema…";
-        one("[data-demo-wheel]").style.transform = `rotate(${rotation}deg)`;
-        const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-        window.setTimeout(() => {
-            one("[data-wheel-feedback]").textContent = `Tema sorteado: ${["Sol", "Terra", "Lua", "Marte"][index]}. O que a turma sabe sobre ele?`;
-            spin.disabled = false;
-        }, reducedMotion ? 0 : 1150);
+    // Native dialog handles Escape, traps focus and makes the rest of the page inert.
+    dialog.addEventListener("close", () => {
+        image.removeAttribute("src");
+        if (opener?.isConnected) opener.focus({ preventScroll: true });
+        opener = null;
     });
 }
 
 document.addEventListener("DOMContentLoaded", initializeLandingShowcase);
+document.addEventListener("DOMContentLoaded", initializeLandingExampleViewer);

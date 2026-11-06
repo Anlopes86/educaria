@@ -7,7 +7,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title data-i18n="dashboard.title">Painel do Professor | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261028-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
@@ -19,11 +19,12 @@
     <script src="../assets/js/auth-flow.js" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/i18n.js" defer></script>
-    <script src="../assets/js/ai-credits.js?v=20260928-3" defer></script>
+    <script src="../assets/js/ai-credits.js?v=20261028-2" defer></script>
     <script src="../assets/js/turma-context.js" defer></script>
+    <script src="../assets/js/material-context.js" defer></script>
     <script src="../assets/js/lesson-library.js?v=20261014-1" defer></script>
     <script src="../assets/js/admin-access.js?v=20261012-1" defer></script>
-    <script src="../assets/js/app-sidebar.js?v=20261012-2" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20261028-2" defer></script>
     <script src="../assets/js/image-upload.js" defer></script>
     <script src="../assets/js/dashboard-creation.js?v=20261004-1" defer></script>
     <script src="../assets/js/slide-diagram-model.js?v=20261013-3" defer></script>
@@ -31,7 +32,7 @@
     <script src="../assets/js/slide-diagram-editing.js?v=20261022-1" defer></script>
     <script src="../assets/js/slide-illustrations.js?v=20261024-1" defer></script>
     <script src="../assets/js/discovery-input.js" defer></script>
-    <script src="../assets/js/teacher-dashboard.js?v=20261024-4" defer></script>
+    <script src="../assets/js/teacher-dashboard.js?v=20261028-1" defer></script>
     <link rel="stylesheet" href="../assets/css/components/activity-examples.css?v=20261023-1">
     <script src="../assets/js/activity-examples-catalog.js?v=20261023-1" defer></script>
     <script src="../assets/js/activity-examples.js?v=20261023-1" defer></script>
@@ -78,23 +79,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false" data-i18n="dashboard.nav.createActivity">Criar atividade</button>
-                <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
-                    <div class="sidebar-subitems">
-                        <a href="quiz-builder.html?new=1" class="sidebar-subitem">Quiz</a>
-                        <a href="slides-builder.html?new=1" class="sidebar-subitem">Slides</a>
-                        <a href="flashcards-builder.html?new=1" class="sidebar-subitem">Flashcards</a>
-                        <a href="jogo-memoria-builder.html?new=1" class="sidebar-subitem">Jogo da memória</a>
-                        <a href="roleta-builder.html?new=1" class="sidebar-subitem">Roleta</a>
-                        <a href="ligar-pontos-builder.html?new=1" class="sidebar-subitem">Ligar pontos</a>
-                        <a href="mapa-mental-builder.html?new=1" class="sidebar-subitem">Mapa mental</a>
-                        <a href="debate-guiado-builder.html?new=1" class="sidebar-subitem">Debate guiado</a>
-                        <a href="caca-palavras-builder.html?new=1" class="sidebar-subitem">Caça-palavras</a>
-                        <a href="palavras-cruzadas-builder.html?new=1" class="sidebar-subitem">Palavras cruzadas</a>
-                        <a href="forca-builder.html?new=1" class="sidebar-subitem">Forca</a>
-                        <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
-                    </div>
-                </div>
+                <a href="index.html#quick-ai-create" class="sidebar-nav-link sidebar-nav-link--create" data-sidebar-create-activity data-i18n="dashboard.nav.createActivity">Criar atividade</a>
 
                 <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="classes" aria-expanded="false" data-i18n="dashboard.nav.myClasses">Minhas turmas</button>
                 <div class="sidebar-subpanel" data-sidebar-panel="classes" hidden>
@@ -219,63 +204,63 @@
                 </aside>
             </section>
 
+            <section class="dashboard-section dashboard-recent-section" data-dashboard-recent-section>
+                <div class="dashboard-section-head">
+                    <div class="dashboard-recent-heading">
+                        <span class="platform-section-label" data-i18n="dashboard.recent.label">Suas turmas</span>
+                        <h2 data-i18n="dashboard.recent.title">Continue de onde parou</h2>
+                        <p data-i18n="dashboard.recent.copy">Retome a atividade mais recente ou abra uma turma para preparar o próximo encontro.</p>
+                    </div>
+                    <a href="turmas.html" class="dashboard-recent-all-link" data-i18n="dashboard.recent.allClasses">Ver todas as turmas →</a>
+                </div>
+
+                <div class="quick-class-grid dashboard-quick-grid dashboard-class-grid dashboard-recent-grid" data-dashboard-recent-classes aria-live="polite" aria-busy="false"></div>
+            </section>
+
             <section class="dashboard-section" id="activity-toolkit">
                 <div class="dashboard-section-head">
                     <div class="dashboard-section-title">
-                        <span class="platform-section-label" data-i18n="dashboard.toolkit.label">Crie para o seu momento de aula</span>
-                        <h2 data-i18n="dashboard.toolkit.title">O que você quer fazer com a turma?</h2>
-                        <p data-i18n="dashboard.toolkit.intro">Escolha pelo resultado que deseja alcançar. Você poderá editar tudo antes de apresentar.</p>
+                        <span class="platform-section-label" data-i18n="dashboard.toolkit.label">Explore os formatos</span>
+                        <h2 data-i18n="dashboard.toolkit.title">Dê outro ritmo à sua aula</h2>
+                        <p data-i18n="dashboard.toolkit.intro">Veja um exemplo e escolha o formato para sua ideia.</p>
                     </div>
-                    <a href="#extra-formats" class="dashboard-inline-link" data-i18n="dashboard.toolkit.extraLink">Explorar todas as atividades ↓</a>
+                    <a href="#quick-ai-create" class="dashboard-inline-link" data-i18n="dashboard.toolkit.extraLink">Ir ao criador ↑</a>
                 </div>
 
                 <div class="dashboard-toolkit-grid" data-dashboard-tour-anchor="toolkit">
                     <a href="slides-builder.html?new=1" class="dashboard-tool-card dashboard-tool-card--slides">
                         <div class="dashboard-tool-content">
                             <h3 data-i18n="dashboard.formats.slides">Slides</h3>
-                            <p data-i18n="dashboard.toolkit.slides.copy">Transforme um tema em uma sequência visual clara, pronta para projetar e conduzir a explicação.</p>
-                            <div class="dashboard-tool-meta">
-                                <span data-i18n="dashboard.toolkit.slides.duration">10-15 min</span>
-                                <span data-i18n="dashboard.toolkit.slides.level">IA monta a base</span>
-                            </div>
-                            <span class="dashboard-tool-cta"><span data-i18n="dashboard.toolkit.cta">Criar agora</span><span aria-hidden="true">→</span></span>
+                            <p data-i18n="dashboard.toolkit.slides.copy">Explique com textos, imagens e ilustrações.</p>
+                            <span class="dashboard-tool-cta"><span data-i18n="dashboard.toolkit.cta">Usar formato</span><span aria-hidden="true">→</span></span>
                         </div>
                     </a>
 
                     <a href="quiz-builder.html?new=1" class="dashboard-tool-card dashboard-tool-card--quiz">
                         <div class="dashboard-tool-content">
                             <h3 data-i18n="dashboard.formats.quiz">Quiz</h3>
-                            <p data-i18n="dashboard.toolkit.quiz.copy">Crie perguntas envolventes para revisar o conteúdo e descobrir o que a turma já compreendeu.</p>
-                            <div class="dashboard-tool-meta">
-                                <span data-i18n="dashboard.toolkit.quiz.duration">5-8 min</span>
-                                <span data-i18n="dashboard.toolkit.quiz.level">Correção guiada</span>
-                            </div>
-                            <span class="dashboard-tool-cta"><span data-i18n="dashboard.toolkit.cta">Criar agora</span><span aria-hidden="true">→</span></span>
+                            <p data-i18n="dashboard.toolkit.quiz.copy">Revise o conteúdo com perguntas para a turma.</p>
+                            <span class="dashboard-tool-cta"><span data-i18n="dashboard.toolkit.cta">Usar formato</span><span aria-hidden="true">→</span></span>
                         </div>
                     </a>
 
                     <a href="criar-aula.html" class="dashboard-tool-card dashboard-tool-card--lesson">
                         <div class="dashboard-tool-content">
                             <h3 data-i18n="dashboard.formats.lesson">Aula completa</h3>
-                            <p data-i18n="dashboard.toolkit.lesson.copy">Organize objetivo, explicação, prática e fechamento em um roteiro completo para a aula.</p>
-                            <div class="dashboard-tool-meta">
-                                <span data-i18n="dashboard.toolkit.lesson.duration">15-25 min</span>
-                                <span data-i18n="dashboard.toolkit.lesson.level">Sequência completa</span>
-                            </div>
-                            <span class="dashboard-tool-cta"><span data-i18n="dashboard.toolkit.cta">Criar agora</span><span aria-hidden="true">→</span></span>
+                            <p data-i18n="dashboard.toolkit.lesson.copy">Junte atividades salvas na ordem que quiser.</p>
+                            <span class="dashboard-tool-cta"><span data-i18n="dashboard.toolkit.lesson.cta">Montar aula</span><span aria-hidden="true">→</span></span>
                         </div>
                     </a>
                 </div>
 
+                <details class="dashboard-format-disclosure">
+                    <summary>
+                        <span class="dashboard-format-swatch" aria-hidden="true"><b>▦</b><b>✦</b><b>?</b></span>
+                        <span><strong data-i18n="dashboard.toolkit.moreFormats.label">Mais formatos para experimentar</strong><small data-i18n="dashboard.toolkit.moreFormats.copy">Memória, roleta, flashcards e outras ideias.</small></span>
+                        <span class="dashboard-format-disclosure-count" data-i18n="dashboard.toolkit.moreFormats.count">11 formatos</span>
+                        <span class="dashboard-format-chevron" aria-hidden="true">⌄</span>
+                    </summary>
                 <div class="dashboard-toolkit-secondary" id="extra-formats">
-                    <div class="dashboard-toolkit-secondary-head">
-                        <div>
-                            <span class="platform-section-label" data-i18n="dashboard.toolkit.moreFormats.label">Mais possibilidades</span>
-                            <strong data-i18n="dashboard.toolkit.moreFormats">Dê outro ritmo à sua aula</strong>
-                            <p data-i18n="dashboard.toolkit.moreFormats.copy">Atividades rápidas para aquecer, praticar, organizar ideias ou fechar a aula com participação.</p>
-                        </div>
-                        <span class="dashboard-toolkit-count" data-i18n="dashboard.toolkit.moreFormats.count">9 formatos prontos para criar</span>
-                    </div>
                     <div class="dashboard-toolkit-links">
                         <a href="flashcards-builder.html?new=1" class="dashboard-toolkit-link dashboard-toolkit-link--teal"><span class="dashboard-toolkit-icon" aria-hidden="true">⚡</span><span><small>REVISAR</small><strong>Flashcards</strong><em>Retomada rápida de conceitos</em></span><b aria-hidden="true">→</b></a>
                         <a href="jogo-memoria-builder.html?new=1" class="dashboard-toolkit-link dashboard-toolkit-link--green"><span class="dashboard-toolkit-icon" aria-hidden="true">▦</span><span><small>ASSOCIAR</small><strong>Jogo da memória</strong><em>Conecte pares e significados</em></span><b aria-hidden="true">→</b></a>
@@ -288,19 +273,7 @@
                         <a href="forca-builder.html?new=1" class="dashboard-toolkit-link dashboard-toolkit-link--yellow"><span class="dashboard-toolkit-icon" aria-hidden="true">?</span><span><small>DESCOBRIR</small><strong>Forca</strong><em>Revele palavras com a turma</em></span><b aria-hidden="true">→</b></a>
                     </div>
                 </div>
-            </section>
-
-            <section class="dashboard-section dashboard-recent-section" data-dashboard-recent-section>
-                <div class="dashboard-section-head">
-                    <div class="dashboard-recent-heading">
-                        <span class="platform-section-label" data-i18n="dashboard.recent.label">Suas turmas</span>
-                        <h2 data-i18n="dashboard.recent.title">Continue de onde parou</h2>
-                        <p data-i18n="dashboard.recent.copy">Retome a atividade mais recente ou abra uma turma para preparar o próximo encontro.</p>
-                    </div>
-                    <a href="turmas.html" class="dashboard-recent-all-link" data-i18n="dashboard.recent.allClasses">Ver todas as turmas →</a>
-                </div>
-
-                <div class="quick-class-grid dashboard-quick-grid dashboard-class-grid dashboard-recent-grid" data-dashboard-recent-classes aria-live="polite" aria-busy="false"></div>
+                </details>
             </section>
 
             <section class="dashboard-section dashboard-class-summary">

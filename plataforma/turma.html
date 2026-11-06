@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="classDetail.title">Turma | EducarIA</title>
-    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261024-4">
+    <link rel="stylesheet" href="../assets/css/estilo-premium.css?v=20261028-2">
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-check-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-auth-compat.js"></script>
@@ -21,7 +21,7 @@
     <script src="../assets/js/lesson-library.js?v=20261014-1" defer></script>
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/admin-access.js?v=20261012-1" defer></script>
-    <script src="../assets/js/app-sidebar.js?v=20261012-2" defer></script>
+    <script src="../assets/js/app-sidebar.js?v=20261028-2" defer></script>
     <script src="../assets/js/class-format-picker.js" defer></script>
     <script src="../assets/js/class-detail.js?v=20260930-2" defer></script>
     <script src="../assets/js/library-bulk-actions.js?v=20261014-1" defer></script>
@@ -69,23 +69,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="sidebar-nav-link sidebar-nav-link--toggle" data-sidebar-toggle="formats" aria-expanded="false" data-i18n="dashboard.nav.createActivity">Criar atividade</button>
-                <div class="sidebar-subpanel" data-sidebar-panel="formats" hidden>
-                    <div class="sidebar-subitems">
-                        <a href="quiz-builder.html?new=1" class="sidebar-subitem">Quiz</a>
-                        <a href="slides-builder.html?new=1" class="sidebar-subitem">Slides</a>
-                        <a href="flashcards-builder.html?new=1" class="sidebar-subitem">Flashcards</a>
-                        <a href="jogo-memoria-builder.html?new=1" class="sidebar-subitem">Jogo da memória</a>
-                        <a href="roleta-builder.html?new=1" class="sidebar-subitem">Roleta editável</a>
-                        <a href="ligar-pontos-builder.html?new=1" class="sidebar-subitem">Ligar pontos</a>
-                        <a href="mapa-mental-builder.html?new=1" class="sidebar-subitem">Mapa mental</a>
-                        <a href="debate-guiado-builder.html?new=1" class="sidebar-subitem">Debate guiado</a>
-                        <a href="caca-palavras-builder.html?new=1" class="sidebar-subitem">Caça-palavras</a>
-                        <a href="palavras-cruzadas-builder.html?new=1" class="sidebar-subitem">Palavras cruzadas</a>
-                        <a href="forca-builder.html?new=1" class="sidebar-subitem">Força</a>
-                        <a href="criar-aula.html" class="sidebar-subitem">Aula completa</a>
-                    </div>
-                </div>
+                <a href="index.html#quick-ai-create" class="sidebar-nav-link sidebar-nav-link--create" data-sidebar-create-activity data-i18n="dashboard.nav.createActivity">Criar atividade</a>
 
                 <a href="biblioteca.html" class="sidebar-nav-link" data-i18n="dashboard.nav.library">Biblioteca</a>
                 <a href="configuracoes.html" class="sidebar-nav-link" data-i18n="dashboard.nav.settings">Configurações</a>

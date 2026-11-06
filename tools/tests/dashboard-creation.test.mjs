@@ -58,7 +58,7 @@ for (const hasExtraFormats of [true, false]) {
         assert.equal(feature.innerHTML, featureMarkup, "Refreshing formats must never replace another feature");
         assert.equal(blocks.length, 2);
         const rendered = blocks.find(block => block.id === "extra-formats");
-        assert.equal((rendered.innerHTML.match(/Mais possibilidades/g) || []).length, 1);
+        assert.doesNotMatch(rendered.innerHTML, /dashboard-toolkit-secondary-head/, "Refreshing formats must not duplicate the disclosure heading");
         assert.equal((rendered.innerHTML.match(/class="dashboard-toolkit-link /g) || []).length, 11);
         assert.ok(rendered.innerHTML.includes('trilha-palavras-builder.html?new=1'));
         assert.ok(rendered.innerHTML.includes('em-comum-builder.html?new=1'));

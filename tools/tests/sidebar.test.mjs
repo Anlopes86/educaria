@@ -21,26 +21,26 @@ function harness(path = "index.html") {
         removeAttribute(key) { delete this.attrs[key]; },
         toggleAttribute(key, on) { if (on) this.attrs[key] = ""; else delete this.attrs[key]; },
         focus() { document.activeElement = this; },
+        scrollIntoView(options) { this.scrolled = options; },
         getClientRects() { return this.hidden ? [] : [{}]; },
         closest() { return null; }
     });
-    const nodes = {sidebar: node(), content: node(), toggle: node(), close: node(), backdrop: node(), profile: node(), root: node(), formats: node(), core: node({}, {sidebarFormatList:"core"}), extra: node({}, {sidebarFormatList:"extra"})};
-    const state = {mobile: false, selected:"Turma B", classes:["Turma A", "Turma B"], links:[], toggles:[], panels:[], focusable:[nodes.profile,nodes.close]};
-    const selectors = {".app-sidebar": nodes.sidebar, ".app-content":nodes.content, "[data-sidebar-mobile-toggle]":nodes.toggle, "[data-sidebar-mobile-close]":nodes.close, "[data-sidebar-backdrop]":nodes.backdrop, "[data-sidebar-class-list]":nodes.root};
+    const nodes = {sidebar: node(), content: node(), toggle: node(), close: node(), backdrop: node(), profile: node(), root: node(), topic: node()};
+    const state = {mobile: false, reducedMotion: false, selected:"Turma B", classes:["Turma A", "Turma B"], links:[], toggles:[], panels:[], focusable:[nodes.profile,nodes.close]};
+    const selectors = {".app-sidebar": nodes.sidebar, ".app-content":nodes.content, "[data-sidebar-mobile-toggle]":nodes.toggle, "[data-sidebar-mobile-close]":nodes.close, "[data-sidebar-backdrop]":nodes.backdrop, "[data-sidebar-class-list]":nodes.root, "[data-dashboard-quick-topic]":nodes.topic};
+    document.createElement = () => node();
     document.querySelector = key => selectors[key] || state.panels.find(panel => key === `[data-sidebar-panel="${panel.dataset.sidebarPanel}"]`) || null;
     document.querySelectorAll = key => ({
         ".sidebar-nav-link[href], .sidebar-subitem[href]":state.links,
         "[data-sidebar-toggle]":state.toggles,
-        "[data-sidebar-panel]":state.panels,
-        '[data-sidebar-panel="formats"]':[nodes.formats],
-        "[data-sidebar-format-list]":[nodes.core,nodes.extra]
+        "[data-sidebar-panel]":state.panels
     }[key] || []);
     nodes.sidebar.querySelector = () => nodes.profile;
     nodes.sidebar.querySelectorAll = () => state.focusable;
     nodes.sidebar.contains = element => state.focusable.includes(element);
     nodes.toggle.focus();
     const windowListeners = {};
-    const scope = vm.createContext({document, window: {addEventListener:(event, callback) => { windowListeners[event] = callback; }, location:{pathname:`/plataforma/${path}`}, matchMedia:() => ({matches:state.mobile})}, readSelectedClass:()=>state.selected, getAvailableClasses:()=>state.classes});
+    const scope = vm.createContext({document, window: {addEventListener:(event, callback) => { windowListeners[event] = callback; }, location:{pathname:`/plataforma/${path}`}, matchMedia:query => ({matches:query.includes("reduced-motion") ? state.reducedMotion : state.mobile})}, readSelectedClass:()=>state.selected, getAvailableClasses:()=>state.classes});
     vm.runInContext(source, scope);
     return {node, nodes, state, document, scope, windowListeners, run: code=>vm.runInContext(code,scope)};
 }
@@ -93,16 +93,95 @@ test("class names are escaped and the empty state starts with creating a class",
     assert.match(h.nodes.root.innerHTML, /Criar turma/);
 });
 
-test("all fourteen formats and the printable worksheet remain available, with a shortcut to the main AI creator", () => {
-    const h = harness(); h.run("renderSidebarFormats()");
-    assert.match(h.nodes.formats.innerHTML, /index.html#quick-ai-create/);
-    assert.match(h.nodes.formats.innerHTML, /Começar com IA/);
-    assert.equal((h.nodes.core.innerHTML.match(/<a /g) || []).length,4);
-    assert.match(h.nodes.core.innerHTML, /folha-atividades-builder/);
-    assert.equal((h.nodes.extra.innerHTML.match(/<a /g) || []).length,11);
-    h.scope.window.educariaTranslate = (key,fallback) => key === "sidebar.creator.title" ? "Start with AI" : fallback;
-    h.run("renderSidebarFormats()");
-    assert.match(h.nodes.formats.innerHTML, /Start with AI/);
+test("one creation link replaces the former catalogue and stays unique after language changes", () => {
+    const h = harness(); let link = null, oldToggle = true, removedPanels = 0, inserted = 0;
+    const nav = {
+        querySelector: selector => selector === "[data-sidebar-create-activity]" ? link : oldToggle ? {
+            replaceWith(value) { link = value; oldToggle = false; inserted += 1; }
+        } : null,
+        querySelectorAll: () => removedPanels ? [] : [{remove() { removedPanels += 1; }}],
+        prepend() { throw Error("The existing navigation slot should be reused"); }
+    };
+    h.document.querySelectorAll = selector => selector === ".app-sidebar-nav" ? [nav] : [];
+    h.run("ensureSidebarCreationLink()");
+    assert.equal(link.getAttribute("href"), "index.html#quick-ai-create");
+    assert.equal(link.textContent, "Criar atividade");
+    assert.equal(link.hasAttribute("data-sidebar-toggle"), false);
+    assert.equal(removedPanels, 1);
+    h.scope.window.educariaTranslate = (key,fallback) => key === "dashboard.nav.createActivity" ? "Create activity" : fallback;
+    h.run("ensureSidebarCreationLink()");
+    assert.equal(link.textContent, "Create activity");
+    assert.equal(inserted, 1);
+    h.scope.link = link;
+    assert.equal(h.run("sidebarNavKey(link)"), "create-activity");
+});
+
+test("the creator shortcut focuses the current request without clearing it and closes the mobile menu", () => {
+    const h = harness(); h.state.mobile = true;
+    h.nodes.topic.value = "Use meu texto já digitado";
+    h.run("setMobileSidebarOpen(true)");
+    const link = h.node({href:"index.html#quick-ai-create", "data-sidebar-create-activity":""});
+    let prevented = false;
+    h.scope.event = {target:{closest:()=>link}, button:0, preventDefault(){prevented=true;}};
+    h.run("handleSidebarNavigation(event)");
+    assert.equal(prevented,true);
+    assert.equal(h.document.activeElement,h.nodes.topic);
+    assert.equal(h.nodes.topic.value,"Use meu texto já digitado");
+    assert.equal(h.nodes.topic.scrolled.block,"center");
+    assert.equal(h.nodes.topic.scrolled.behavior,"smooth");
+    assert.equal(h.document.body.classList.contains("app-sidebar-open"),false);
+    assert.equal(h.nodes.content.inert,false);
+    h.state.reducedMotion = true; h.run("focusSidebarCreator()");
+    assert.equal(h.nodes.topic.scrolled.behavior,"auto");
+});
+
+test("the creation link in each page's HTML is reused without adding another entry", async () => {
+    for (const page of ["index", "biblioteca", "turmas", "turma", "configuracoes"]) {
+        const html = await read(`plataforma/${page}.html`);
+        const nav = html.match(/<nav\b[^>]*class="[^"]*\bapp-sidebar-nav\b[^"]*"[^>]*>([\s\S]*?)<\/nav>/)?.[1];
+        assert.ok(nav, `${page}: navigation exists`);
+        const links = [...nav.matchAll(/<a\b[^>]*href="index\.html#quick-ai-create"[^>]*>/g)];
+        assert.equal(links.length, 1, `${page}: exactly one creation link`);
+        const attrs = Object.fromEntries([...links[0][0].matchAll(/([\w-]+)(?:="([^"]*)")?/g)].map(([, key, value]) => [key, value ?? ""]));
+        assert.ok("data-sidebar-create-activity" in attrs, `${page}: initial link is recognized by the sidebar`);
+        const h = harness(`${page}.html`);
+        const link = h.node(attrs);
+        const navigation = {
+            querySelector: selector => selector === "[data-sidebar-create-activity]" ? link : null,
+            querySelectorAll: () => [],
+            prepend() { assert.fail(`${page}: must reuse the HTML link`); }
+        };
+        h.document.querySelectorAll = selector => selector === ".app-sidebar-nav" ? [navigation] : [];
+        h.run("ensureSidebarCreationLink(); ensureSidebarCreationLink()");
+        h.scope.link = link;
+        assert.equal(h.run("sidebarNavKey(link)"), "create-activity");
+        assert.equal(link.getAttribute("href"), "index.html#quick-ai-create");
+    }
+});
+
+test("creation from another page follows the normal link and preserves browser navigation modifiers", () => {
+    const h = harness("biblioteca.html");
+    const link = h.node({href:"index.html#quick-ai-create", "data-sidebar-create-activity":""});
+    h.scope.event = {target:{closest:()=>link}, preventDefault(){throw Error("Other pages must navigate normally");}};
+    h.run("handleSidebarNavigation(event)");
+    assert.notEqual(h.document.activeElement,h.nodes.topic);
+    h.state.mobile = true; h.run("setMobileSidebarOpen(true)");
+    for (const modifier of ["ctrlKey","metaKey","shiftKey","altKey"]) {
+        h.scope.event[modifier] = true;
+        h.run("handleSidebarNavigation(event)");
+        assert.equal(h.document.body.classList.contains("app-sidebar-open"),true);
+        h.scope.event[modifier] = false;
+    }
+});
+
+test("entering the dashboard with the creation anchor focuses the field except during the first-access guide", () => {
+    const h = harness();
+    h.scope.window.location.hash = "#quick-ai-create";
+    h.windowListeners.hashchange();
+    assert.equal(h.document.activeElement,h.nodes.topic);
+    h.nodes.toggle.focus(); h.document.body.classList.add("dashboard-tour-active");
+    h.windowListeners.hashchange();
+    assert.equal(h.document.activeElement,h.nodes.toggle);
 });
 
 test("accordion regions have accessible names and synchronized expanded states", () => {
@@ -184,11 +263,14 @@ test("class navigation stays unique after language changes and reordering", () =
 test("all sidebar pages request the shared updated assets", async () => {
     const dashboard = await read("plataforma/index.html");
     const cssVersion = dashboard.match(/estilo-premium\.css\?v=(\d{8}-\d+)/)?.[1];
-    assert.ok(cssVersion && cssVersion >= "20261012-1", "shared stylesheet must be versioned and include the sidebar release");
+    const scriptVersion = dashboard.match(/app-sidebar\.js\?v=(\d{8}-\d+)/)?.[1];
+    assert.ok(cssVersion && cssVersion >= "20261028-1", "shared stylesheet must include the simplified navigation");
+    assert.ok(scriptVersion && scriptVersion >= "20261028-1", "sidebar script must include the direct creator link");
     for (const page of ["index","biblioteca","turmas","turma","configuracoes"]) {
         const html = await read(`plataforma/${page}.html`);
-        assert.match(html,/app-sidebar\.js\?v=20261012-2/);
+        assert.equal(html.match(/app-sidebar\.js\?v=(\d{8}-\d+)/)?.[1], scriptVersion);
         assert.equal(html.match(/estilo-premium\.css\?v=(\d{8}-\d+)/)?.[1], cssVersion);
     }
-    assert.match(await read("assets/css/estilo-premium.css"), /components\/sidebar\.css\?v=20261012-1/);
+    const componentVersion = (await read("assets/css/estilo-premium.css")).match(/components\/sidebar\.css\?v=(\d{8}-\d+)/)?.[1];
+    assert.ok(componentVersion && componentVersion >= "20261028-1");
 });

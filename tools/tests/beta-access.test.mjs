@@ -62,7 +62,7 @@ function authHarness({ exists = false, denied = false, waitlisted = false } = {}
         return { exists, data: () => ({ name: fields.name }) };
     }, set: async () => { calls.saved++; exists = true; } };
     const location = { pathname: "/educaria/cadastro.html", search: "", origin: "https://example.invalid", replace(path) { this.replaced = path; } };
-    const window = { location, addEventListener() {} };
+    const window = { location, addEventListener() {}, setTimeout, clearTimeout };
     const context = vm.createContext({ window, URL, URLSearchParams, console, document: { currentScript: null,
         body: { dataset: { authPage: "true", authScreen: "register" } }, addEventListener() {}, dispatchEvent() {},
         querySelector: selector => selector === "[data-register-form]" ? form : selector === "[data-auth-feedback]" ? feedback : null },

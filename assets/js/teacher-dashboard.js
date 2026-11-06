@@ -176,6 +176,7 @@ function dashboardClassInitials(className) {
 function dashboardRecentMaterialVisual(type) {
     const visuals = {
         lesson: { slug: "lesson", mark: "AU", label: "Aula completa" },
+        worksheet: { slug: "worksheet", mark: "A4", label: "Folha de atividades" },
         slides: { slug: "slides", mark: "SL", label: "Slides" },
         quiz: { slug: "quiz", mark: "QZ", label: "Quiz" },
         flashcards: { slug: "flashcards", mark: "FC", label: "Flashcards" },
@@ -188,7 +189,7 @@ function dashboardRecentMaterialVisual(type) {
         connections: { slug: "connections", mark: "EC", label: "O que há em comum?" },
         wordsearch: { slug: "wordsearch", mark: "CP", label: "Caça-palavras" },
         crossword: { slug: "crossword", mark: "PC", label: "Palavras cruzadas" },
-        hangman: { slug: "hangman", mark: "FO", label: "Força" }
+        hangman: { slug: "hangman", mark: "FO", label: "Forca" }
     };
 
     return visuals[String(type || "slides")] || visuals.slides;
@@ -253,14 +254,20 @@ function hydrateTeacherDashboard() {
                         ? materialGroupLabel(latestLesson.materialType || "slides")
                         : latestVisual.label)
                     : "";
+                const isWorksheet = latestLesson?.materialType === "worksheet";
+                const presentationLabel = isWorksheet
+                    ? dashboardTranslate("dashboard.recent.viewWorksheet", "Ver folha")
+                    : dashboardTranslate("dashboard.recent.present", "Apresentar");
                 const latestStatus = latestLesson
-                    ? escapeHtml(typeof lessonStatusLabel === "function"
+                    ? escapeHtml(isWorksheet && latestLesson.status === "ready"
+                        ? dashboardTranslate("dashboard.recent.printReady", "Pronta para imprimir")
+                        : typeof lessonStatusLabel === "function"
                         ? lessonStatusLabel(latestLesson.status)
                         : (latestLesson.status === "ready" ? "Pronto para projetar" : "Rascunho"))
                     : "";
                 const latestStatusClass = latestLesson?.status === "ready" ? "ready" : "draft";
                 const latestLessonId = latestLesson ? escapeHtml(latestLesson.id || "") : "";
-                const primaryPath = latestLesson ? escapeHtml(latestPath) : "#activity-toolkit";
+                const primaryPath = latestLesson ? escapeHtml(latestPath) : "#quick-ai-create";
                 const primaryLabel = latestLesson
                     ? dashboardTranslate("dashboard.recent.resume", "Continuar")
                     : dashboardTranslate("dashboard.recent.create", "Criar atividade");
@@ -287,7 +294,7 @@ function hydrateTeacherDashboard() {
                                     <span>${dashboardTranslate("dashboard.recent.latestLabel", "Última atividade")}</span>
                                     <em class="dashboard-recent-status dashboard-recent-status--${latestStatusClass}">${latestStatus}</em>
                                 </div>
-                                <strong>${latestTitle}</strong>
+                                <strong title="${latestTitle}">${latestTitle}</strong>
                                 <div class="dashboard-recent-activity-meta">
                                     <small>${latestType}</small>
                                     <time>${escapeHtml(lastUpdated)}</time>
@@ -303,7 +310,7 @@ function hydrateTeacherDashboard() {
                         `}
                         <div class="dashboard-recent-actions">
                             <a href="${primaryPath}" class="platform-link-button platform-link-primary" data-dashboard-class-link="${recentClassName}"${latestLesson ? ` data-edit-lesson="${latestLessonId}"` : ""}>${primaryLabel}<span aria-hidden="true">→</span></a>
-                            ${latestLesson ? `<a href="${escapeHtml(latestPresentationPath)}" class="platform-link-button platform-link-secondary dashboard-recent-present" data-dashboard-class-link="${recentClassName}" data-present-lesson="${latestLessonId}">Apresentar</a>` : ""}
+                            ${latestLesson ? `<a href="${escapeHtml(latestPresentationPath)}" class="platform-link-button platform-link-secondary dashboard-recent-present" data-dashboard-class-link="${recentClassName}" data-present-lesson="${latestLessonId}">${escapeHtml(presentationLabel)}</a>` : ""}
                             <a href="turma.html" class="dashboard-recent-class-link" data-dashboard-class-link="${recentClassName}">${dashboardTranslate("dashboard.recent.openClass", "Abrir turma")}</a>
                         </div>
                     </article>
@@ -336,11 +343,11 @@ function syncDashboardFormatHierarchy() {
     const sectionLabel = toolkitSection.querySelector(".dashboard-section-title .platform-section-label");
     const sectionTitle = toolkitSection.querySelector(".dashboard-section-title h2");
     const sectionLink = toolkitSection.querySelector(".dashboard-section-head .dashboard-inline-link");
-    if (sectionLabel) sectionLabel.textContent = dashboardTranslate("dashboard.toolkit.label", "Crie para o seu momento de aula");
-    if (sectionTitle) sectionTitle.textContent = dashboardTranslate("dashboard.toolkit.title", "O que você quer fazer com a turma?");
+    if (sectionLabel) sectionLabel.textContent = dashboardTranslate("dashboard.toolkit.label", "Explore os formatos");
+    if (sectionTitle) sectionTitle.textContent = dashboardTranslate("dashboard.toolkit.title", "Dê outro ritmo à sua aula");
     if (sectionLink) {
-        sectionLink.textContent = dashboardTranslate("dashboard.toolkit.extraLink", "Explorar todas as atividades ↓");
-        sectionLink.setAttribute("href", "#extra-formats");
+        sectionLink.textContent = dashboardTranslate("dashboard.toolkit.extraLink", "Ir ao criador ↑");
+        sectionLink.setAttribute("href", "#quick-ai-create");
     }
 
     const grid = toolkitSection.querySelector(".dashboard-toolkit-grid");
@@ -356,13 +363,13 @@ function syncDashboardFormatHierarchy() {
     const slidesCard = grid.querySelector('.dashboard-tool-card--slides .dashboard-tool-content p');
     const lessonCard = grid.querySelector('.dashboard-tool-card--lesson .dashboard-tool-content p');
     if (slidesCard) {
-        slidesCard.textContent = dashboardTranslate("dashboard.toolkit.slides.copy", "Transforme um tema em uma sequência visual clara, pronta para projetar e conduzir a explicação.");
+        slidesCard.textContent = dashboardTranslate("dashboard.toolkit.slides.copy", "Explique com textos, imagens e ilustrações.");
     }
     if (quizCard) {
-        quizCard.textContent = dashboardTranslate("dashboard.toolkit.quiz.copy", "Crie perguntas envolventes para revisar o conteúdo e descobrir o que a turma já compreendeu.");
+        quizCard.textContent = dashboardTranslate("dashboard.toolkit.quiz.copy", "Revise o conteúdo com perguntas para a turma.");
     }
     if (lessonCard) {
-        lessonCard.textContent = dashboardTranslate("dashboard.toolkit.lesson.copy", "Organize objetivo, explicação, prática e fechamento em um roteiro completo para a aula.");
+        lessonCard.textContent = dashboardTranslate("dashboard.toolkit.lesson.copy", "Junte atividades salvas na ordem que quiser.");
     }
 
     // Identify this region explicitly; separate features can share its visual class.
@@ -375,14 +382,6 @@ function syncDashboardFormatHierarchy() {
     }
 
     secondary.innerHTML = `
-        <div class="dashboard-toolkit-secondary-head">
-            <div>
-                <span class="platform-section-label">${dashboardTranslate("dashboard.toolkit.moreFormats.label", "Mais possibilidades")}</span>
-                <strong>${dashboardTranslate("dashboard.toolkit.moreFormats", "Dê outro ritmo à sua aula")}</strong>
-                <p>${dashboardTranslate("dashboard.toolkit.moreFormats.copy", "Atividades rápidas para aquecer, praticar, organizar ideias ou fechar a aula com participação.")}</p>
-            </div>
-            <span class="dashboard-toolkit-count">${dashboardTranslate("dashboard.toolkit.moreFormats.count", "11 formatos prontos para criar")}</span>
-        </div>
         <div class="dashboard-toolkit-links">
             ${DASHBOARD_EXTRA_FORMATS.map((format) => `
                 <a href="${escapeHtml(format.href)}" class="dashboard-toolkit-link dashboard-toolkit-link--${escapeHtml(format.tone)}">

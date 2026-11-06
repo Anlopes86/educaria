@@ -81,7 +81,8 @@ test("admin navigation is added only after server permission, on every sidebar p
         const html = await read(`plataforma/${page}.html`);
         assert.match(html, /admin-access\.js\?v=\d{8}-\d+/);
         assert.match(html, /ai-endpoint-config\.js/);
-        assert.match(html, /app-sidebar\.js\?v=20261012-2/);
+        const sidebarVersion = html.match(/app-sidebar\.js\?v=(\d{8}-\d+)/)?.[1];
+        assert.ok(sidebarVersion && sidebarVersion >= '20261028-2', `${page}: shared sidebar must be updated`);
     }
 });
 

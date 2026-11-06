@@ -1922,7 +1922,7 @@ body.product-body.theme-overview #activity-toolkit {
 
 body.product-body.theme-overview .dashboard-section-title h2 {
     margin: 0;
-    font-size: clamp(2rem, 3vw, 2.8rem);
+    font-size: clamp(1.55rem, 2.4vw, 2.1rem);
     letter-spacing: -0.035em;
 }
 
@@ -2034,7 +2034,7 @@ body.product-body.theme-overview .dashboard-tool-content h3 {
 }
 
 body.product-body.theme-overview .dashboard-tool-content p {
-    min-height: 72px;
+    min-height: 44px;
     color: #526174;
     font-size: 0.94rem;
 }
@@ -2059,16 +2059,57 @@ body.product-body.theme-overview .dashboard-tool-card:focus-visible .dashboard-t
 }
 
 body.product-body.theme-overview .dashboard-toolkit-secondary {
-    gap: 22px;
-    margin-top: 2px;
-    padding: 26px;
+    gap: 16px;
+    margin: 0;
+    padding: 0 18px 18px;
     overflow: hidden;
     border: 0;
-    border-radius: 27px;
-    background:
-        radial-gradient(circle at 100% 0%, rgba(45, 212, 191, 0.18), transparent 28%),
-        linear-gradient(135deg, #0b2438, #123d4a);
-    box-shadow: 0 30px 60px -42px rgba(5, 28, 43, 0.76);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.dashboard-format-disclosure {
+    border: 1px solid #d8e7e1;
+    border-radius: 22px;
+    background: #f2f8f5;
+}
+
+.dashboard-format-disclosure > summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 96px;
+    padding: 20px;
+    border-radius: inherit;
+    cursor: pointer;
+    list-style: none;
+}
+
+.dashboard-format-disclosure > summary::-webkit-details-marker { display: none; }
+.dashboard-format-disclosure > summary:hover { background: #e9f3ed; }
+.dashboard-format-disclosure > summary:focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }
+.dashboard-format-disclosure > summary > span:nth-child(2) { display: grid; gap: 5px; flex: 1; min-width: 0; }
+.dashboard-format-disclosure summary strong { color: #163c3e; font-size: 1rem; }
+.dashboard-format-disclosure summary small { color: #50676c; font-size: .84rem; line-height: 1.5; }
+.dashboard-format-disclosure-count { color: #37615d; font-size: .8rem; white-space: nowrap; }
+.dashboard-format-chevron { color: #0f766e; font-size: 1.3rem; transition: transform 160ms ease; }
+.dashboard-format-disclosure[open] .dashboard-format-chevron { transform: rotate(180deg); }
+.dashboard-format-disclosure[open] > summary { margin-bottom: 6px; }
+.dashboard-format-swatch { display: flex; align-items: center; padding-right: 5px; }
+.dashboard-format-swatch b { display: grid; place-items: center; width: 35px; height: 42px; border: 2px solid #fff; border-radius: 10px; background: #b7ded4; color: #205951; font-size: 1.1rem; transform: rotate(-9deg); }
+.dashboard-format-swatch b + b { margin-left: -9px; background: #f8d499; color: #805216; transform: rotate(0); }
+.dashboard-format-swatch b:last-child { background: #d6c8ec; color: #604480; transform: rotate(9deg); }
+
+@media (max-width: 600px) {
+    .dashboard-format-disclosure > summary { padding: 16px 14px; gap: 10px; }
+    .dashboard-format-swatch b { width: 28px; height: 34px; }
+    .dashboard-format-disclosure-count { display: none; }
+    body.product-body.theme-overview .dashboard-toolkit-secondary { padding: 0 10px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dashboard-format-chevron { transition: none; }
 }
 
 .dashboard-toolkit-secondary-head {
@@ -2396,7 +2437,7 @@ body.product-body.theme-overview .dashboard-recent-card h3 {
 
 .dashboard-recent-activity {
     display: grid;
-    grid-template-columns: 78px minmax(0, 1fr);
+    grid-template-columns: 50px minmax(0, 1fr);
     align-items: stretch;
     gap: 13px;
     min-width: 0;
@@ -2410,7 +2451,8 @@ body.product-body.theme-overview .dashboard-recent-card h3 {
     --recent-visual-color: var(--recent-accent);
     position: relative;
     display: grid;
-    min-height: 96px;
+    min-height: 72px;
+    align-self: start;
     align-content: center;
     justify-items: center;
     gap: 7px;
@@ -2434,14 +2476,14 @@ body.product-body.theme-overview .dashboard-recent-card h3 {
 .dashboard-recent-visual span {
     position: relative;
     z-index: 1;
-    width: 42px;
+    width: 30px;
     height: 4px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.76);
 }
 
 .dashboard-recent-visual span:last-child {
-    width: 27px;
+    width: 22px;
     opacity: 0.62;
 }
 
@@ -2467,12 +2509,14 @@ body.product-body.theme-overview .dashboard-recent-card h3 {
 }
 
 .dashboard-recent-visual--match,
+.dashboard-recent-visual--worksheet,
 .dashboard-recent-visual--lesson {
     --recent-visual-color: #db2777;
 }
 
 .dashboard-recent-activity-copy {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     min-width: 0;
     align-content: center;
     gap: 7px;
@@ -2480,6 +2524,7 @@ body.product-body.theme-overview .dashboard-recent-card h3 {
 
 .dashboard-recent-activity-kicker {
     display: flex;
+    flex-wrap: wrap;
     min-width: 0;
     align-items: center;
     justify-content: space-between;
@@ -2495,16 +2540,16 @@ body.product-body.theme-overview .dashboard-recent-card h3 {
 }
 
 .dashboard-recent-status {
-    flex: 0 0 auto;
+    max-width: 100%;
     padding: 3px 6px;
     border-radius: 999px;
     background: rgba(245, 158, 11, 0.13);
     color: #9a5b04;
-    font-size: 0.57rem;
+    font-size: 0.64rem;
     font-style: normal;
     font-weight: 900;
     line-height: 1.3;
-    white-space: nowrap;
+    white-space: normal;
 }
 
 .dashboard-recent-status--ready {
@@ -2518,21 +2563,23 @@ body.product-body.theme-overview .dashboard-recent-card h3 {
     color: #172033;
     font-size: 0.96rem;
     line-height: 1.35;
+    overflow-wrap: anywhere;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
 }
 
 .dashboard-recent-activity-meta {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
     margin-top: 2px;
 }
 
 .dashboard-recent-activity-meta small,
 .dashboard-recent-activity-meta time {
     color: #64748b;
+    max-width: 100%;
     overflow: hidden;
     font-size: 0.64rem;
     font-style: normal;
