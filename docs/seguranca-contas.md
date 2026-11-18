@@ -90,6 +90,8 @@ O workflow de Pages passa a exigir os testes das regras antes de publicar o fron
 
 `gaxios@6` (dependência de Storage) tem override pontual de `uuid` para `^11.1.1`, eliminando o alerta de segurança transitivo. Um teste verifica a interface CommonJS `v4` usada por essa dependência. Reavaliar o override quando o SDK atualizar sua árvore.
 
+`google-gax@5` (dependência indireta do Firestore) tem override de `rimraf` para `^6.1.4`, que traz versões corrigidas de `glob` e `minimatch`. O override fica restrito a essa árvore e exige Node 20 ou 22+, compatível com Node 22 usado no deploy. Reavaliar quando o Firestore deixar de depender dessa versão do `google-gax`; não remover a auditoria de produção para contornar um alerta.
+
 ### Resultado local em 01/10/2026
 
 - 33 testes do backend, 39 testes da interface/persistência e 5 testes nos emuladores passaram.
