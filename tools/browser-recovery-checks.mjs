@@ -45,7 +45,7 @@ export async function checkQuickRecovery(cdp, dashboardUrl, screenshotDir = "") 
     const records = await evaluate(cdp, `(() => {
         const api = window.educariaGenerationRecovery;
         const quiz = api.create({ ownerUid: api.currentUid(), topic: 'Fotossíntese', materialType: 'quiz', className: '7º ano B', label: 'Quiz',
-            payload: { material: { title: 'Ciências', questions: [{ type: 'multiple_choice', prompt: 'O que as plantas produzem?', options: ['Oxigênio', 'Areia'], correct_answer: 0, explanation: 'A fotossíntese libera oxigênio.' }] }, charge: { cost: 12 } } });
+            payload: { material: { title: 'Ciências', questions: [{ type: 'multiple_choice', prompt: 'O que as plantas produzem?', options: ['Oxigênio', 'Areia', 'Ferro', 'Sal'], correct_answer: 'Oxigênio', explanation: 'A fotossíntese libera oxigênio.' }] }, charge: { cost: 12 } } });
         quiz.createdAt -= 86400000;
         const slides = api.create({ ownerUid: api.currentUid(), topic: 'Fotossíntese', materialType: 'slides', className: '', label: 'Slides',
             payload: { material: { slides: [{ type: 'cover', title: 'Energia para a vida', body: 'As plantas transformam luz em energia química.' }] }, charge: { cost: 9 } } });
