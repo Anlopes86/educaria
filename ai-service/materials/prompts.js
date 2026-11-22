@@ -36,6 +36,7 @@ function basePromptFor(materialType, action, sourceText, slideOptions, generatio
             "Prefira perguntas que verifiquem compreensão, relação entre ideias e identificação de conceitos centrais.",
             "Evite enunciados vagos, alternativas ambíguas e distrações absurdas.",
             "Em múltipla escolha, use 4 alternativas plausíveis e apenas uma correta.",
+            "Em correct_answer, copie o texto exato da alternativa correta, não apenas sua letra. Varie a posição da resposta certa entre A, B, C e D. Não use alternativas como 'todas as anteriores' nem explicações que dependam de letras: cite o conteúdo da resposta.",
             "Em verdadeiro ou falso, escreva afirmacoes objetivas e verificaveis.",
             "Em pergunta aberta, produza critério curto e resposta-modelo enxuta.",
             "A explicação deve ajudar o professor a corrigir ou retomar o conteúdo.",

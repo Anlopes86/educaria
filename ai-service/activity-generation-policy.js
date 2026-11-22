@@ -109,7 +109,7 @@ export function activityGenerationInstructions(materialType, options) {
     if (materialType === "quiz") instructions.push({
         mixed: "Varie os tipos: multiple_choice, true_false e open. Com pelo menos 3 perguntas, inclua os três tipos.",
         choice: "TODAS as perguntas devem ter type multiple_choice, quatro alternativas plausíveis e apenas uma correta. Não inclua questões abertas ou verdadeiro/falso.",
-        open: "TODAS as perguntas devem ter type open, options vazio e correct_answer como resposta-modelo. Peça explicação, aplicação ou justificativa; não ofereça alternativas.",
+        open: "TODAS as perguntas devem ter type short_answer, options vazio e model_answer como resposta-modelo. Peça explicação, aplicação ou justificativa; não ofereça alternativas.",
         "true-false": "TODAS as perguntas devem ter type true_false, uma afirmação verificável e somente as opções Verdadeiro e Falso. Evite dupla negação."
     }[options.format]);
     if (materialType === "flashcards") instructions.push(options.examples

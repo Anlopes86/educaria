@@ -28,7 +28,11 @@
     function create({ ownerUid, topic, materialType, className, label, payload }) {
         const record = {
             id: crypto.randomUUID(), ownerUid, createdAt: Date.now(), topic, materialType, className, label,
-            material: payload?.material, cost: Number(payload?.charge?.cost || 0)
+            material: payload?.material, cost: Number(payload?.charge?.cost || 0),
+            feedback: payload?.feedback && typeof payload.feedback === "object" ? {
+                message: typeof payload.feedback.message === "string" ? payload.feedback.message.slice(0, 600) : "",
+                summary: typeof payload.feedback.summary === "string" ? payload.feedback.summary.slice(0, 450) : ""
+            } : null
         };
         if (!valid(record, ownerUid)) throw new Error("Não foi possível identificar o resultado da atividade.");
         return record;

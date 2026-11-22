@@ -9,6 +9,8 @@ import { GoogleGenAI } from "@google/genai";
 import { generateGroqStructuredMaterial } from "./ai-text-provider.js";
 import { schemaFor } from "./materials/schemas.js";
 import { normalizeItemRefinement, refinementSchema, validateRefinedItem } from "./materials/item-refinement.js";
+import { normalizeQuizMaterial } from "./materials/quiz.js";
+import { withGenerationFeedback, generationFeedbackInstruction, extractGenerationFeedback, generationFeedback } from "./materials/generation-feedback.js";
 import { normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration } from "./materials/slide-illustration-request.js";
 import { promptFor, imagePromptForSlide } from "./materials/prompts.js";
 import { normalizeSlidesMaterial } from "./materials/slides.js";
@@ -1156,7 +1158,7 @@ function fallbackJsonPrompt(schemaConfig) {
 }
 
 function estimateProviderTokenReservation(materialType, action, sourceText, slideOptions, generationOptions) {
-    const prompt = promptFor(materialType, action, sourceText, slideOptions, generationOptions);
+    const prompt = `${promptFor(materialType, action, sourceText, slideOptions, generationOptions)}\n\n${generationFeedbackInstruction}`;
     const estimatedInputTokens = Math.ceil(prompt.length / 3);
     const baseline = activeAiTextProvider() === "groq"
         ? groqMaxCompletionTokens
@@ -1181,7 +1183,8 @@ function estimateProviderTokenReservation(materialType, action, sourceText, slid
 async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig, slideOptions, generationOptions, observation) {
     const provider = activeAiTextProvider();
     const model = activeAiTextModel(provider);
-    const basePrompt = promptFor(materialType, action, sourceText, slideOptions, generationOptions);
+    const basePrompt = `${promptFor(materialType, action, sourceText, slideOptions, generationOptions)}\n\n${generationFeedbackInstruction}`;
+    schemaConfig = withGenerationFeedback(schemaConfig);
     const outputLimit = materialType === "worksheet"
         ? worksheetCompletionTokens(generationOptions, provider === "groq" ? groqMaxCompletionTokens : aiCreditUsagePolicy.estimatedOutputTokens, worksheetMaxCompletionTokens)
         : groqMaxCompletionTokens;
@@ -1596,6 +1599,8 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, requireBetaAccess, requ
             throw error;
         }
         const measuredCharge = aiCreditsForUsage(generated.usageMetadata, aiCreditUsagePolicy);
+        const feedbackResponse = extractGenerationFeedback(generated.material);
+        generated.material = feedbackResponse.material;
         const normalizedMaterial = refinement || illustrationRequest ? generated.material : materialType === "slides"
             ? { ...normalizeSlidesMaterial(generated.material, slideOptions), generation_options: slideOptions }
             : materialType === "worksheet" ? normalizeWorksheetMaterial(generated.material, generationOptions)
@@ -1604,6 +1609,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, requireBetaAccess, requ
         try {
             material = illustrationRequest ? validateSingleSlideIllustration(generated.material, illustrationRequest) : refinement ? validateRefinedItem(materialType, generated.material, refinement)
                 : applyActivityGenerationSettings(materialType, normalizedMaterial, generationOptions);
+            if (materialType === "quiz" && !refinement) material = normalizeQuizMaterial(material);
         } catch (error) {
             // Validation happens after a provider call: keep its measured usage
             // for global quotas even when the individual credit is refunded.
@@ -1639,6 +1645,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, requireBetaAccess, requ
             ok: true,
             materialType,
             material,
+            feedback: generationFeedback(materialType, material, { message: feedbackResponse.message, refinement, illustrationRequest }),
             ...(illustrationRequest ? { operation: "illustrate-slide" } : refinement ? { operation: "refine-item" } : {}),
             credits: settlement.credits,
             charge: {
@@ -1696,7 +1703,7 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, requireBetaAccess, requ
             });
         }
 
-        if (["json_validate_failed", "groq_empty_response", "groq_response_incomplete", "invalid_slide_content", "invalid_refined_item"].includes(error?.code)
+        if (["json_validate_failed", "groq_empty_response", "groq_response_incomplete", "invalid_slide_content", "invalid_refined_item", "invalid_quiz_material"].includes(error?.code)
             || /^(empty_model_response|invalid_json_response)/.test(error?.message || "")) {
             return response.status(502).json({
                 error: error?.code === "groq_response_incomplete"

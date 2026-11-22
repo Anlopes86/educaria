@@ -36,6 +36,7 @@
     function selectedKeys(type, item, selection) {
         const all = fields(type, item);
         if (selection === "all") return Object.keys(all);
+        if (type === "quiz" && item.kind === "multiple_choice" && selection === "options") return ["optionA", "optionB", "optionC", "optionD", "correct", "explanation"];
         if (!Object.hasOwn(all, selection) || (type === "quiz" && !["explanation", "criteria"].includes(selection))) fail("Escolha um campo válido para ajustar.");
         return [selection];
     }
@@ -63,7 +64,7 @@
         if (keys.some(key => required[type].includes(key) && !result[key])) fail("A sugestão não preencheu o conteúdo necessário.");
         if (type === "quiz") {
             if ("correct" in result && !specs.correct.choices.includes(result.correct)) fail("Gabarito inválido.");
-            if (before.kind === "multiple_choice" && selection === "all") {
+            if (before.kind === "multiple_choice" && ["all", "options"].includes(selection)) {
                 const options = [after.optionA, after.optionB, after.optionC, after.optionD];
                 if (options.some(value => !value) || new Set(options.map(value => value.toLocaleLowerCase())).size !== 4) fail("As alternativas devem ser diferentes e estar preenchidas.");
             }

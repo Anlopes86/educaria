@@ -3,6 +3,12 @@
 .item-refinement-toolbar, .item-refinement-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .item-refinement-toolbar { padding: 12px; margin: 12px 0; border: 1px solid #dcd3e8; border-radius: 16px; background: #f4f0f8; }
 .item-refinement-actions { margin-top: 8px; }
+.item-refinement-toolbar-title { flex: 1 1 180px; font-size: .95rem; }
+.item-refinement-toolbar [data-refine-applied] { flex-basis: 100%; margin: 0; font-size: .88rem; }
+.item-refinement-toolbar [data-refine-applied]:empty { display: none; }
+.item-refinement-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.item-refinement-presets button { font-size: .85rem; padding: 8px 12px; }
+.item-refinement-body label[hidden] { display: none; }
 .worksheet-edit-item > .item-refinement-actions { grid-column: 1 / -1; }
 .item-refinement-select, .item-refinement-approval { display: flex; align-items: center; gap: 8px; cursor: pointer; }
 .item-refinement-select input, .item-refinement-approval input { width: 20px; height: 20px; flex: none; accent-color: #654c83; }

@@ -55,9 +55,10 @@ function aiReadyModalTemplate() {
                         <p id="ai-ready-modal-description">O conteúdo já está no editor. Você pode ajustar qualquer parte antes de levar para a turma.</p>
                     </div>
                 </div>
+                <div data-ai-ready-feedback hidden></div>
                 <p class="ai-credits-pill" data-ai-ready-credit-usage hidden></p>
                 <p data-ai-ready-illustration-feedback role="status" hidden></p>
-                <ul class="ai-ready-checklist" aria-label="Próximos passos">
+                <ul class="ai-ready-checklist" data-ai-ready-checklist aria-label="Próximos passos">
                     <li><span><strong>Revise o conteúdo</strong><small>Textos, respostas e imagens continuam editáveis.</small></span></li>
                     <li><span><strong>Confira como ficará na TV</strong><small>O teste abre uma tela 16:9 sem sair do editor.</small></span></li>
                     <li><span><strong>Apresente quando estiver pronto</strong><small>Você também pode voltar e continuar mais tarde.</small></span></li>
@@ -364,6 +365,9 @@ function openAiReadyModal(materialType = "", usageDetails = null) {
     const presentLink = modal.querySelector("[data-ai-ready-present]");
     if (presentLink) presentLink.setAttribute("href", builderPresentationPath(resolvedMaterialType));
     const usageLabel = modal.querySelector("[data-ai-ready-credit-usage]");
+    window.EducariaAiFeedback?.render(modal.querySelector("[data-ai-ready-feedback]"), usageDetails?.feedback);
+    const checklist = modal.querySelector("[data-ai-ready-checklist]");
+    if (checklist) checklist.hidden = Boolean(usageDetails?.feedback?.message || usageDetails?.feedback?.summary);
     const illustrationFeedback = modal.querySelector("[data-ai-ready-illustration-feedback]");
     if (illustrationFeedback) {
         illustrationFeedback.textContent = window.EducariaSlideIllustrations?.feedback(usageDetails?.material) || "";
@@ -705,6 +709,19 @@ function applyQuizFromStructuredData(payload) {
     const questions = Array.isArray(payload?.questions) ? payload.questions : [];
     if (!questions.length) return false;
 
+    // Resolve every answer before replacing the current draft. An unknown answer
+    // must never silently become A, even when the provider returns only a letter.
+    const correctIndices = questions.map(question => {
+        if (question.type === "short_answer") return -1;
+        const options = question.type === "true_false" ? ["Verdadeiro", "Falso"] : (question.options || []);
+        const answer = question.type === "true_false" && /^(true|false)$/i.test(String(question.correct_answer))
+            ? (/^true$/i.test(question.correct_answer) ? "Verdadeiro" : "Falso") : question.correct_answer;
+        const index = window.EducariaQuizAnswers?.answerIndex(options, answer)
+            ?? options.findIndex(option => normalizeOptionText(option) === normalizeOptionText(answer));
+        if (index < 0) throw new Error("Uma questão veio sem gabarito reconhecível. Seu quiz anterior foi preservado; tente refazer a geração.");
+        return index;
+    });
+
     const cards = buildQuizCardsFromQuestions(questions);
     if (!cards.length) return false;
 
@@ -743,14 +760,7 @@ function applyQuizFromStructuredData(payload) {
         });
 
         if (correct) {
-            const correctAnswer = normalizeOptionText(question.correct_answer);
-            const correctIndex = Math.max(0, normalizedOptions.findIndex((option) => {
-                const normalizedOption = normalizeOptionText(option);
-                if (normalizedOption === correctAnswer) return true;
-                if (correctAnswer === "true" && normalizedOption === "verdadeiro") return true;
-                if (correctAnswer === "false" && normalizedOption === "falso") return true;
-                return false;
-            }));
+            const correctIndex = correctIndices[index];
             const key = `Alternativa ${String.fromCharCode(65 + correctIndex)}`;
             setSelectByText(correct, key);
         }

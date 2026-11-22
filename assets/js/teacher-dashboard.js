@@ -595,6 +595,7 @@ function dashboardQuickResultModalTemplate() {
                     <span><small>${escapeHtml(dashboardTranslate("dashboard.quick.tool", "Ferramenta"))}</small><strong data-dashboard-ai-result-tool></strong></span>
                     <span><small>${escapeHtml(dashboardTranslate("dashboard.quick.topic", "Tópico para criação"))}</small><strong data-dashboard-ai-result-topic></strong></span>
                 </div>
+                <div data-dashboard-ai-feedback hidden></div>
                 <p class="ai-credits-pill dashboard-ai-result-usage" data-dashboard-ai-result-usage hidden></p>
                 <p data-dashboard-ai-result-storage role="status"></p>
                 <p data-dashboard-illustration-feedback role="status" hidden></p>
@@ -631,6 +632,7 @@ function openDashboardQuickResultModal(result) {
     const usage = modal.querySelector("[data-dashboard-ai-result-usage]");
     if (tool) tool.textContent = result.label || "Atividade";
     if (topic) topic.textContent = result.topic;
+    window.EducariaAiFeedback?.render(modal.querySelector("[data-dashboard-ai-feedback]"), result.feedback);
     const illustrationFeedback = modal.querySelector("[data-dashboard-illustration-feedback]");
     if (illustrationFeedback) {
         illustrationFeedback.textContent = window.EducariaSlideIllustrations?.feedback(result.material) || "";

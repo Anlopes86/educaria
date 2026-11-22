@@ -34,7 +34,7 @@ for (const type of types) {
     });
 }
 
-for (const [format, expected] of [["choice", /TODAS.*multiple_choice/], ["open", /TODAS.*type open/], ["true-false", /TODAS.*true_false/], ["mixed", /inclua os três tipos/]]) {
+for (const [format, expected] of [["choice", /TODAS.*multiple_choice/], ["open", /TODAS.*type short_answer/], ["true-false", /TODAS.*true_false/], ["mixed", /inclua os três tipos/]]) {
     test(`quiz ${format} has an exclusive or explicitly mixed instruction`, () => assert.match(instructions("quiz", normalize("quiz", { format })), expected));
 }
 test("flashcard examples are requested explicitly and disabled deterministically", () => {

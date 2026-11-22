@@ -1,5 +1,5 @@
 const EDUCARIA_CACHE_PREFIX = "educaria-static-";
-const EDUCARIA_CACHE_NAME = `${EDUCARIA_CACHE_PREFIX}v37`;
+const EDUCARIA_CACHE_NAME = `${EDUCARIA_CACHE_PREFIX}v38`;
 const EDUCARIA_SHELL_PATHS = [
     "./",
     "./index.html",

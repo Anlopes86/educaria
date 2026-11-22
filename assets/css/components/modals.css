@@ -103,6 +103,22 @@
         linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(248, 250, 252, 0.985) 100%);
 }
 
+.ai-result-feedback {
+    display: grid;
+    gap: 8px;
+    padding: 16px 18px;
+    border: 1px solid #c9deda;
+    border-radius: 16px;
+    background: #edf6f2;
+    color: #23494e;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+.ai-result-feedback > strong { font-size: .9rem; color: #176c67; }
+.ai-result-feedback > p { margin: 0; font-size: .96rem; line-height: 1.5; white-space: pre-wrap; }
+.ai-result-feedback > .ai-result-feedback-summary { font-size: .84rem; color: #4c6668; }
+.ai-result-feedback[hidden], .ai-ready-checklist[hidden] { display: none; }
+
 .ai-ready-modal-head {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);

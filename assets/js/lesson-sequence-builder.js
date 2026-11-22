@@ -1350,19 +1350,28 @@ function buildDraftStackHtml(materialType, payload) {
     }
 
     if (materialType === "quiz") {
-        return (Array.isArray(payload.questions) ? payload.questions : []).map((question, index) => `
+        return (Array.isArray(payload.questions) ? payload.questions : []).map((question, index) => {
+            const options = (question.options || []).map(option => option.value || option);
+            const correctIndex = question.correct_answer != null
+                ? window.EducariaQuizAnswers?.answerIndex(options, question.correct_answer)
+                    ?? options.findIndex(option => String(option).trim().toLowerCase() === String(question.correct_answer).trim().toLowerCase())
+                : Number(question.correct_index ?? 0);
+            if (question.type !== "short_answer" && (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= options.length) && options.some(Boolean)) {
+                throw new Error("Uma questão do quiz veio sem gabarito válido. Revise essa questão antes de apresentar.");
+            }
+            return `
             <section data-quiz-question>
                 <input data-field="type" type="text" value="${escapeAttr(question.type === "short_answer" ? "Resposta curta" : question.type === "true_false" ? "Verdadeiro ou falso" : "Múltipla escolha")}">
                 <input data-field="prompt" type="text" value="${escapeAttr(question.prompt || `Questão ${index + 1}`)}">
                 ${(Array.isArray(question.options) ? question.options : []).map((option, optionIndex) => `
                     <input data-option data-option-key="Alternativa ${String.fromCharCode(65 + optionIndex)}" value="${escapeAttr(option.value || option)}">
                 `).join("")}
-                <input data-field="correct" type="text" value="${escapeAttr(`Alternativa ${String.fromCharCode(65 + Number(question.correct_index || 0))}`)}">
+                <input data-field="correct" type="text" value="${escapeAttr(`Alternativa ${String.fromCharCode(65 + Math.max(0, correctIndex))}`)}">
                 <textarea data-field="explanation">${escapeHtml(question.explanation || "")}</textarea>
                 <textarea data-field="criteria">${escapeHtml(question.criteria || "")}</textarea>
                 <textarea data-field="model">${escapeHtml(question.model_answer || "")}</textarea>
             </section>
-        `).join("");
+        `; }).join("");
     }
 
     if (materialType === "flashcards") {
