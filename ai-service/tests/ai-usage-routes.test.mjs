@@ -11,6 +11,8 @@ import { normalizeSlidesMaterial } from "../materials/slides.js";
 import { parseGeneratedJson } from "../materials/generated-json.js";
 import { schemaFor } from "../materials/schemas.js";
 import { normalizeItemRefinement, refinementSchema, validateRefinedItem } from "../materials/item-refinement.js";
+import { normalizeQuizMaterial } from "../materials/quiz.js";
+import { withGenerationFeedback, generationFeedbackInstruction, extractGenerationFeedback, generationFeedback } from "../materials/generation-feedback.js";
 import { normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration } from "../materials/slide-illustration-request.js";
 import { normalizeDiscoveryMaterial, validateDiscoverySource } from "../materials/discovery.js";
 import { normalizeWorksheetMaterial, validateWorksheetSource, worksheetCompletionTokens } from "../materials/worksheet.js";
@@ -27,6 +29,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
     const quotaRefunds = { requests: 0, tokens: 0 };
     const providerCall = async input => { providerInputs.push(input); const result = results[calls++]; if (result instanceof Error) throw result; return result; };
     const context = vm.createContext({
+        normalizeQuizMaterial, withGenerationFeedback, generationFeedbackInstruction, extractGenerationFeedback, generationFeedback,
         Error, console: { error() {}, warn() {} }, process: { env: {} },
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, requireBetaAccess: null, requireAiVerifiedEmail: null, aiGenerationRateLimit: null, upload: { single: () => null }, hasMeasuredTokenUsage,
@@ -279,12 +282,13 @@ test("large worksheet output budgets reach both providers without changing other
 });
 
 test("provider quota reserves the same worksheet output budget sent to generation", () => {
-    const context = vm.createContext({ promptFor: () => "abc".repeat(100), activeAiTextProvider: () => "groq", groqMaxCompletionTokens: 3500, worksheetMaxCompletionTokens: 12000, worksheetCompletionTokens });
+    const context = vm.createContext({ generationFeedbackInstruction, promptFor: () => "abc".repeat(100), activeAiTextProvider: () => "groq", groqMaxCompletionTokens: 3500, worksheetMaxCompletionTokens: 12000, worksheetCompletionTokens });
     const start = source.indexOf("function estimateProviderTokenReservation(");
     vm.runInContext(source.slice(start, source.indexOf("\n/**", start)), context);
     const options = { activityOptions: { wordtrail: { count: 30 }, crossword: { count: 30 }, wordsearch: { count: 30 } } };
-    assert.equal(context.estimateProviderTokenReservation("worksheet", "", "", null, options), 100 + worksheetCompletionTokens(options));
-    assert.equal(context.estimateProviderTokenReservation("quiz", "", "", null, {}), 3600);
+    const inputTokens = Math.ceil(("abc".repeat(100) + "\n\n" + generationFeedbackInstruction).length / 3);
+    assert.equal(context.estimateProviderTokenReservation("worksheet", "", "", null, options), inputTokens + worksheetCompletionTokens(options));
+    assert.equal(context.estimateProviderTokenReservation("quiz", "", "", null, {}), inputTokens + 3500);
 });
 
 test("discovery routes return valid materials with measured usage and reject bad lists before the provider", async () => {

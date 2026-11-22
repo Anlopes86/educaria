@@ -7,6 +7,7 @@ import { normalizeActivityGenerationOptions, applyActivityGenerationSettings } f
 import { promptFor } from "../materials/prompts.js";
 import { normalizeItemRefinement } from "../materials/item-refinement.js";
 import { normalizeSlideIllustrationRequest } from "../materials/slide-illustration-request.js";
+import { extractGenerationFeedback, generationFeedback } from "../materials/generation-feedback.js";
 
 for (const [label, detail, expected] of [
     ["Mais enxuto", "concise", /1 a 2 blocos curtos/],
@@ -133,6 +134,7 @@ test("production route passes options to generation and rejects bad fields befor
     const { validateDiscoverySource } = await import("../materials/discovery.js");
     let handler, received, reserved = 0;
     const context = vm.createContext({
+        extractGenerationFeedback, generationFeedback,
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, requireBetaAccess: null, requireAiVerifiedEmail: null, aiGenerationRateLimit: null, upload: { single: () => null },
         schemaFor: () => ({}), normalizeItemRefinement, normalizeSlideIllustrationRequest, normalizeSlideGenerationOptions: options, extractTextFromFile: async () => "",
