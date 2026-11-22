@@ -96,8 +96,18 @@ export async function checkQuickRecovery(cdp, dashboardUrl, screenshotDir = "") 
 
     await navigate(cdp, dashboardUrl);
     await until(cdp, `document.readyState === 'complete' && document.querySelector('[data-dashboard-ai-result-tool]')?.textContent === 'Slides'`);
+    const navigationAudit = await cdp.send("Page.addScriptToEvaluateOnNewDocument", { source: `
+        if (window.top === window) {
+            const key = 'educaria:audit:direct-presentation';
+            sessionStorage.setItem(key, JSON.stringify([...JSON.parse(sessionStorage.getItem(key) || '[]'), location.pathname]));
+        }
+    ` });
     await triggerNavigation(cdp, `document.querySelector('[data-dashboard-ai-result-present]').click()`);
     await until(cdp, `location.pathname.endsWith('/apresentacao.html') && document.body?.textContent.includes('Energia para a vida')`);
+    const visited = await evaluate(cdp, `JSON.parse(sessionStorage.getItem('educaria:audit:direct-presentation') || '[]')`);
+    assert.equal(visited.length, 1, "Present must navigate the teacher directly, without opening the editor first");
+    assert.ok(visited[0].endsWith('/apresentacao.html'));
+    await cdp.send("Page.removeScriptToEvaluateOnNewDocument", { identifier: navigationAudit.identifier });
     const editorIntact = await evaluate(cdp, `(() => {
         const saved = JSON.parse(localStorage.getItem(educariaScopedKey('educaria:lessons'))).find((lesson) => lesson.id === ${JSON.stringify(`lesson-ai-${records.slides.id}`)});
         return JSON.parse(saved.draft).stackHtml === readSlidesDraft().stackHtml;
@@ -113,7 +123,7 @@ export async function checkQuickRecovery(cdp, dashboardUrl, screenshotDir = "") 
             && Boolean(doc.querySelector('[data-upload-input]'));
     })()`);
     assert.equal(inlinePreservesControls, true);
-    return { recoveredAfterReload: true, multipleResults: true, classPreserved: true, keyboard: true, replayPreservedEdits: true, presentation: true, editorIntact, inlinePreservesControls };
+    return { recoveredAfterReload: true, multipleResults: true, classPreserved: true, keyboard: true, replayPreservedEdits: true, presentation: true, directPresentation: true, editorIntact, inlinePreservesControls };
 }
 
 export async function checkImageUpload(cdp, inline = false) {

@@ -2,6 +2,8 @@ import { spawn } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import http from "node:http";
+import { buildPages } from "./build-pages.mjs";
 import { checkQuickRecovery, checkImageUpload } from "./browser-recovery-checks.mjs";
 import { checkActivityExamples } from "./browser-example-checks.mjs";
 import { checkItemRefinement } from "./browser-refinement-checks.mjs";
@@ -10,7 +12,7 @@ import { checkSlideIllustration } from "./browser-slide-illustration-checks.mjs"
 
 const chromePath = process.env.CHROME_PATH || "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe";
 const root = path.resolve(import.meta.dirname, "..");
-const auditBaseUrl = process.env.EDUCARIA_AUDIT_BASE_URL || "";
+let auditBaseUrl = process.env.EDUCARIA_AUDIT_BASE_URL || "";
 const auditWidth = Math.max(320, Number(process.env.EDUCARIA_AUDIT_WIDTH || 390));
 const auditHeight = Math.max(480, Number(process.env.EDUCARIA_AUDIT_HEIGHT || 844));
 const auditScreenshotDir = process.env.EDUCARIA_AUDIT_SCREENSHOT_DIR
@@ -26,6 +28,30 @@ const auditLessonIndex = Math.max(0, Number(process.env.EDUCARIA_AUDIT_LESSON_IN
 const auditBuilderOverlay = process.env.EDUCARIA_AUDIT_BUILDER_OVERLAY || "";
 const auditStorageFailure = process.env.EDUCARIA_AUDIT_STORAGE_FAILURE === "1";
 const auditRecovery = process.env.EDUCARIA_AUDIT_RECOVERY === "1";
+// Recovery uses same-origin frames and an exact-origin postMessage handshake.
+// file:// has an opaque origin and cannot reproduce the deployed site contract.
+let recoveryServer;
+if (auditRecovery && !auditBaseUrl) {
+    const { destination: publicRoot } = await buildPages(root);
+    const mime = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json",
+        ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".woff2": "font/woff2" };
+    recoveryServer = http.createServer(async (request, response) => {
+        try {
+            const pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);
+            const file = path.resolve(publicRoot, `.${pathname === "/" ? "/index.html" : pathname}`);
+            if (!file.startsWith(`${publicRoot}${path.sep}`) || !mime[path.extname(file)]) throw new Error("Not a public asset");
+            const content = await fs.readFile(file);
+            response.setHeader("Content-Type", `${mime[path.extname(file)]}; charset=utf-8`);
+            response.setHeader("Cache-Control", "no-store");
+            response.end(content);
+        } catch { response.writeHead(404); response.end("Not found"); }
+    });
+    await new Promise((resolve, reject) => {
+        recoveryServer.once("error", reject);
+        recoveryServer.listen(0, "127.0.0.1", resolve);
+    });
+    auditBaseUrl = `http://127.0.0.1:${recoveryServer.address().port}/`;
+}
 const auditMobile = auditWidth < 768;
 const pages = process.argv.slice(2).length
     ? process.argv.slice(2).map((page) => ({
@@ -1496,6 +1522,10 @@ try {
         }
     }
 } finally {
+    if (recoveryServer) {
+        recoveryServer.closeAllConnections();
+        await new Promise(resolve => recoveryServer.close(resolve));
+    }
     if (chrome.exitCode === null) {
         const exited = new Promise((resolve) => chrome.once("exit", resolve));
         chrome.kill();
