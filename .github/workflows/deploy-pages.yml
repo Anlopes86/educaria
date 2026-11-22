@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 
@@ -74,10 +75,29 @@ jobs:
         run: node tools/build-pages.mjs
 
       - name: Upload artifact
+        id: pages-upload
         uses: actions/upload-pages-artifact@v5
         with:
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: ${{ steps.pages-build.outputs.path }}
+
+      - name: Wait for uploaded package metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_NAME: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          for attempt in {1..15}; do
+            count=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq "[.artifacts[] | select(.name == \"$ARTIFACT_NAME\" and .expired == false)] | length")
+            if [ "$count" = "1" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Pages package metadata is not available yet. Retry this job."
+          exit 1
 
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v5
+        with:
+          artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
