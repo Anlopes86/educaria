@@ -227,6 +227,20 @@ async function auditPage(pageConfig) {
         if (auditRecovery) blockedUrls.push("*onrender.com/*");
         if (pagePath.includes("criar-aula.html") || pagePath.includes("aula-completa-apresentacao.html")) {
             blockedUrls.push("*auth-flow.js*");
+            // This fixture replaces auth-flow to isolate the lesson player. Keep
+            // the actual offline runtime it normally loads, so HTTP audits can
+            // still verify service-worker registration instead of skipping it.
+            if (auditBaseUrl) {
+                await cdp.send("Page.addScriptToEvaluateOnNewDocument", { source: `
+                    document.addEventListener('DOMContentLoaded', () => {
+                        if (document.querySelector('script[data-educaria-offline-runtime]')) return;
+                        const script = document.createElement('script');
+                        script.src = new URL('../assets/js/offline-runtime.js', location.href).href;
+                        script.dataset.educariaOfflineRuntime = '';
+                        document.head.appendChild(script);
+                    }, { once: true });
+                ` });
+            }
         }
         await cdp.send("Network.setBlockedURLs", { urls: blockedUrls });
         await cdp.send("Page.addScriptToEvaluateOnNewDocument", {
