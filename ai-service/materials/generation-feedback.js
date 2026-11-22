@@ -3,14 +3,10 @@
 export function withGenerationFeedback(config) {
     return { ...config, schema: { ...config.schema,
         properties: { ...config.schema.properties, assistant_message: { type: "string", maxLength: 600,
-            description: "Retorno breve ao professor sobre o conteúdo entregue; não faz parte da atividade." } } } };
+            description: generationFeedbackInstruction } } } };
 }
 
-export const generationFeedbackInstruction = [
-    "No campo assistant_message, escreva um retorno breve ao professor, em português (até 600 caracteres, 1 a 3 frases), descrevendo concretamente o que preparou e como atendeu ao pedido.",
-    "Baseie o retorno somente no conteúdo que realmente está no JSON. Se faltou algo pedido, informe isso. Não prometa precisão factual, revisão humana, salvamento, publicação ou alterações em itens que não recebeu.",
-    "Em ajustes pontuais, diga que preparou SUGESTÕES para os itens selecionados, ainda sujeitas à aprovação do professor. Não diga que já aplicou as mudanças. Não inclua markdown, HTML, gabaritos nem respostas de jogos nesse retorno."
-].join("\n");
+export const generationFeedbackInstruction = "Retorno ao professor, em português, até 600 caracteres: descreva somente o que consta no JSON e eventuais limitações. Ajustes são SUGESTÕES pendentes de aprovação. Não afirme salvamento, aplicação, publicação ou precisão garantida. Sem HTML, markdown, gabaritos ou respostas de jogos.";
 
 export function extractGenerationFeedback(raw) {
     if (!raw || typeof raw !== "object" || Array.isArray(raw)) return { material: raw, message: "" };

@@ -10,7 +10,7 @@ import { generateGroqStructuredMaterial } from "./ai-text-provider.js";
 import { schemaFor } from "./materials/schemas.js";
 import { normalizeItemRefinement, refinementSchema, validateRefinedItem } from "./materials/item-refinement.js";
 import { normalizeQuizMaterial } from "./materials/quiz.js";
-import { withGenerationFeedback, generationFeedbackInstruction, extractGenerationFeedback, generationFeedback } from "./materials/generation-feedback.js";
+import { withGenerationFeedback, extractGenerationFeedback, generationFeedback } from "./materials/generation-feedback.js";
 import { normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration } from "./materials/slide-illustration-request.js";
 import { promptFor, imagePromptForSlide } from "./materials/prompts.js";
 import { normalizeSlidesMaterial } from "./materials/slides.js";
@@ -1158,7 +1158,7 @@ function fallbackJsonPrompt(schemaConfig) {
 }
 
 function estimateProviderTokenReservation(materialType, action, sourceText, slideOptions, generationOptions) {
-    const prompt = `${promptFor(materialType, action, sourceText, slideOptions, generationOptions)}\n\n${generationFeedbackInstruction}`;
+    const prompt = promptFor(materialType, action, sourceText, slideOptions, generationOptions);
     const estimatedInputTokens = Math.ceil(prompt.length / 3);
     const baseline = activeAiTextProvider() === "groq"
         ? groqMaxCompletionTokens
@@ -1183,7 +1183,7 @@ function estimateProviderTokenReservation(materialType, action, sourceText, slid
 async function generateStructuredMaterialWithRetry(materialType, action, sourceText, schemaConfig, slideOptions, generationOptions, observation) {
     const provider = activeAiTextProvider();
     const model = activeAiTextModel(provider);
-    const basePrompt = `${promptFor(materialType, action, sourceText, slideOptions, generationOptions)}\n\n${generationFeedbackInstruction}`;
+    const basePrompt = promptFor(materialType, action, sourceText, slideOptions, generationOptions);
     schemaConfig = withGenerationFeedback(schemaConfig);
     const outputLimit = materialType === "worksheet"
         ? worksheetCompletionTokens(generationOptions, provider === "groq" ? groqMaxCompletionTokens : aiCreditUsagePolicy.estimatedOutputTokens, worksheetMaxCompletionTokens)
