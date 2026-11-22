@@ -13,6 +13,8 @@ services:
         - assets/js/discovery-core.js
         - assets/js/discovery-input.js
         - assets/js/worksheet-core.js
+        - assets/js/item-refinement-core.js
+        - assets/js/quiz-answers.js
         - render.yaml
     healthCheckPath: /api/health
     envVars:
