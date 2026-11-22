@@ -126,7 +126,81 @@
         if (!valid(record, currentUid())) throw new Error("Entre na conta que criou esta atividade para retomá-la.");
         return `${routes[record.materialType]}?new=1&quickApply=1&quickResult=${encodeURIComponent(record.id)}${record.libraryId ? `&quickLesson=${encodeURIComponent(record.libraryId)}` : ""}&quickDestination=${destination === "present" ? "present" : "edit"}`;
     }
+    function preparedLesson(record) {
+        if (!valid(record, currentUid()) || typeof readLessonsLibrary !== "function") return null;
+        const lesson = readLessonsLibrary().find((item) => item.id === lessonId(record) && item.materialType === record.materialType);
+        try {
+            const draft = JSON.parse(lesson?.draft || "null");
+            return draft && typeof draft === "object" && !Array.isArray(draft) && !draft.pendingAiResult ? lesson : null;
+        } catch { return null; }
+    }
+    function backgroundPreparation() {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("quickPrepare") || "";
+        try {
+            return params.get("quickApply") === "1" && /^[a-zA-Z0-9_-]{1,100}$/.test(token)
+                && window.parent !== window && window.parent.location.origin === window.location.origin ? token : "";
+        } catch { return ""; }
+    }
+    function reportPreparation(record, error = "") {
+        const token = backgroundPreparation();
+        if (!token) return false;
+        window.parent.postMessage({ type: "educaria:quick-presentation-prepared", token,
+            id: record.id, lessonId: lessonId(record), ownerUid: record.ownerUid, ok: !error }, window.location.origin);
+        return true;
+    }
+    async function prepareForPresentation(record, { signal } = {}) {
+        if (!valid(record, currentUid())) throw new Error("Entre na conta que criou esta atividade para apresentá-la.");
+        if (signal?.aborted) throw new DOMException("Preparação cancelada.", "AbortError");
+        const existing = preparedLesson(record);
+        if (existing) return existing;
+        // Reuse the actual builders' converters, including illustrations and game
+        // layouts, without navigating away from the dashboard or calling the AI.
+        return new Promise((resolve, reject) => {
+            const token = crypto.randomUUID();
+            const frame = document.createElement("iframe");
+            frame.title = "Preparação da atividade";
+            frame.setAttribute("aria-hidden", "true");
+            frame.setAttribute("inert", "");
+            frame.tabIndex = -1;
+            frame.style.cssText = "position:fixed;left:-10000px;top:0;width:1280px;height:800px;visibility:hidden;pointer-events:none;border:0";
+            let timer;
+            let finished = false;
+            const finish = (error, lesson) => {
+                if (finished) return;
+                finished = true;
+                window.clearTimeout(timer);
+                window.removeEventListener("message", onMessage);
+                document.removeEventListener("educaria-auth-changed", onAccountChange);
+                signal?.removeEventListener("abort", onAbort);
+                frame.remove();
+                if (error) reject(error);
+                else resolve(lesson);
+            };
+            const onAbort = () => finish(new DOMException("Preparação cancelada.", "AbortError"));
+            const onAccountChange = () => {
+                if (record.ownerUid !== currentUid()) finish(new Error("A conta foi alterada. Entre novamente para apresentar a atividade."));
+            };
+            const onMessage = (event) => {
+                const data = event.data;
+                if (event.origin !== window.location.origin || event.source !== frame.contentWindow
+                    || data?.type !== "educaria:quick-presentation-prepared" || data.token !== token
+                    || data.id !== record.id || data.lessonId !== lessonId(record) || data.ownerUid !== record.ownerUid) return;
+                if (record.ownerUid !== currentUid()) { onAccountChange(); return; }
+                const lesson = data.ok === true ? preparedLesson(record) : null;
+                if (!lesson) { finish(new Error("Não foi possível preparar a apresentação. Tente novamente ou abra o editor.")); return; }
+                finish(null, lesson);
+            };
+            window.addEventListener("message", onMessage);
+            document.addEventListener("educaria-auth-changed", onAccountChange);
+            signal?.addEventListener("abort", onAbort, { once: true });
+            timer = window.setTimeout(() => finish(new Error("A apresentação demorou para abrir. Tente novamente ou abra o editor.")), 45000);
+            frame.src = `${editorUrl(record)}&quickPrepare=${encodeURIComponent(token)}`;
+            document.body.appendChild(frame);
+        });
+    }
     window.educariaGenerationRecovery = { currentUid, create, save, list, get, fromLesson, isDurable, complete, lessonId, editorUrl,
+        prepareForPresentation, backgroundPreparation, reportPreparation,
         hasUnsaved: () => volatile.size > 0 };
     document.addEventListener("DOMContentLoaded", () => {
         // Rescue legacy dashboard results into the library without spending IA credits.

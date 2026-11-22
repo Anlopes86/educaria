@@ -2334,12 +2334,18 @@ function readDashboardQuickResult() {
 
 function clearDashboardQuickResultQuery() {
     const params = new URLSearchParams(window.location.search);
-    ["new", "quickApply", "quickResult", "quickLesson", "quickDestination"].forEach((key) => params.delete(key));
+    ["new", "quickApply", "quickResult", "quickLesson", "quickDestination", "quickPrepare"].forEach((key) => params.delete(key));
     const query = params.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
 }
 
 function showQuickImportError(message) {
+    const recovery = window.educariaGenerationRecovery;
+    if (recovery?.backgroundPreparation()) {
+        const params = new URLSearchParams(window.location.search);
+        recovery.reportPreparation({ id: params.get("quickResult"), libraryId: params.get("quickLesson"), ownerUid: recovery.currentUid() }, message);
+        return;
+    }
     document.querySelector("[data-quick-presentation-transfer]")?.remove();
     document.body.classList.remove("dashboard-ai-result-open");
     let warning = document.querySelector("[data-quick-import-error]");
@@ -2380,6 +2386,7 @@ async function consumeDashboardQuickResult() {
     }
     dashboardQuickImportRunning = true;
     const recovery = window.educariaGenerationRecovery;
+    const preparing = Boolean(recovery.backgroundPreparation());
     try {
         const materialType = currentBuilderMaterialType();
         const config = materialConfig(materialType);
@@ -2391,11 +2398,12 @@ async function consumeDashboardQuickResult() {
             // A reload/retry after saving must not replace the teacher's later edits.
             activateLessonById(id);
             recovery.complete(request.id, existing);
+            if (preparing) { recovery.reportPreparation(request); return; }
             clearDashboardQuickResultQuery();
             window.location.replace(request.destination === "present" ? builderPresentationPath(materialType) : window.location.href);
             return;
         }
-        if (request.destination === "present") showQuickPresentationTransfer();
+        if (!preparing && request.destination === "present") showQuickPresentationTransfer();
         writeActiveLessonId("");
         if (typeof saveSelectedClass === "function") saveSelectedClass(String(request.className || ""));
         const classField = config.classId ? document.getElementById(config.classId) : null;
@@ -2409,7 +2417,10 @@ async function consumeDashboardQuickResult() {
         textField.dispatchEvent(new Event("input", { bubbles: true }));
         applyGenerationOptionsToEditor(materialType, request.material?.generation_options);
         if (!config.apply(request.material)) throw new Error("Conteúdo não aplicado.");
-        await new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+        // Hidden frames can pause animation frames; conversion only needs the
+        // queued editor updates, not a painted preview.
+        await new Promise((resolve) => preparing ? window.setTimeout(resolve, 0)
+            : window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
         if (recovery.currentUid() !== request.ownerUid) throw new Error("A conta foi alterada.");
         const scope = request.className ? "class" : "library";
         const record = { ...buildLessonRecord(materialType, scope), id, className: request.className || "", scope,
@@ -2417,6 +2428,12 @@ async function consumeDashboardQuickResult() {
         const saved = persistLessonRecord(record, { skipSync: true, source: "quick-ai-recovery" });
         if (!saved?.draft) throw new Error("Rascunho não salvo.");
         recovery.complete(request.id, saved);
+        if (preparing) {
+            // Keep the import guard through frame removal, preventing pagehide
+            // autosave from writing again. The dashboard owns cloud sync now.
+            recovery.reportPreparation(request);
+            return;
+        }
         clearDashboardQuickResultQuery();
         window.educariaQuickImportPending = false;
         document.querySelector("[data-quick-import-error]")?.remove();

@@ -9,7 +9,7 @@ const generator = await fs.readFile(new URL("../../assets/js/ai-material-generat
 const importSource = generator.slice(generator.indexOf("function applyGenerationOptionsToEditor("), generator.indexOf("function bindAiMaterialGenerator()"));
 
 function harness(values = new Map()) {
-    const state = { failWrite: false, failImport: false, applied: 0, lessons: [], errors: [], navigations: [] };
+    const state = { failWrite: false, failImport: false, applied: 0, lessons: [], errors: [], navigations: [], frames: 0, reviews: 0, messages: [] };
     const storage = {
         get length() { return values.size; }, key: (index) => [...values.keys()][index],
         getItem: (key) => values.get(key) ?? null,
@@ -18,10 +18,11 @@ function harness(values = new Map()) {
     };
     const teacher = (uid) => storage.setItem("educaria:auth:teacher-cache", JSON.stringify({ uid }));
     teacher("Teacher-A");
-    const location = { search: "", pathname: "/plataforma/quiz-builder.html", hash: "", href: "quiz-builder.html",
+    const location = { origin: "https://example.test", search: "", pathname: "/plataforma/quiz-builder.html", hash: "", href: "quiz-builder.html",
         replace: (url) => state.navigations.push(url) };
     const window = { location, history: { replaceState(_, __, url) { location.search = new URL(url, "https://example.test").search; } },
-        requestAnimationFrame(callback) { state.onFrame?.(); callback(); } };
+        requestAnimationFrame(callback) { state.frames++; state.onFrame?.(); callback(); },
+        setTimeout(callback) { state.onFrame?.(); callback(); } };
     const field = { value: "", dispatchEvent() {} };
     const document = {
         getElementById: () => field, querySelector: () => null, dispatchEvent() {}, addEventListener() {},
@@ -37,18 +38,27 @@ function harness(values = new Map()) {
         persistLessonRecord(record) { if (state.failImport) throw new Error("Disk full"); state.lessons.push(record); return record; },
         syncLessonRecordWithFirebase: async () => ({ synced: false }),
         activateLessonById: (id) => state.lessons.find((lesson) => lesson.id === id),
-        builderPresentationPath: () => "quiz-aplicacao.html", reviewGeneratedMaterial() {},
+        builderPresentationPath: () => "quiz-aplicacao.html", reviewGeneratedMaterial() { state.reviews++; },
         recordError: (message) => state.errors.push(message)
     });
     vm.runInContext(recoverySource, context);
-    vm.runInContext(`let dashboardQuickImportRunning = false; ${importSource}\nshowQuickImportError = recordError;`, context);
+    vm.runInContext(`let dashboardQuickImportRunning = false; ${importSource}
+        const originalImportError = showQuickImportError;
+        showQuickImportError = message => window.educariaGenerationRecovery.backgroundPreparation()
+            ? originalImportError(message) : recordError(message);`, context);
     const api = window.educariaGenerationRecovery;
     function create(extra = {}) {
         return api.create({ ownerUid: api.currentUid(), materialType: "quiz", topic: "Ciências", className: "", label: "Quiz",
             payload: { material: { title: "Ciências", questions: [{ prompt: "O que é energia?" }] }, charge: { cost: 12 } }, ...extra });
     }
     function open(record) { location.search = new URL(api.editorUrl(record), "https://example.test").search; }
-    return { api, state, values, storage, teacher, create, open, context, consume: () => vm.runInContext("consumeDashboardQuickResult()", context) };
+    function prepare(record) {
+        open(record);
+        location.search += "&quickPrepare=transfer-test";
+        window.parent = { location: { origin: location.origin }, postMessage: (data, origin) => state.messages.push({ ...data, origin }) };
+        window.educariaQuickImportPending = true;
+    }
+    return { api, state, values, storage, teacher, create, open, prepare, context, consume: () => vm.runInContext("consumeDashboardQuickResult()", context) };
 }
 
 function libraryHarness() {
@@ -202,4 +212,43 @@ test("account switching during import cannot save the material under the new acc
     const h = harness(); const record = h.create(); h.api.save(record); h.open(record);
     h.state.onFrame = () => h.teacher("Teacher-B"); await h.consume();
     assert.equal(h.state.lessons.length, 0); h.teacher("Teacher-A"); assert.equal(h.api.list().length, 1);
+});
+
+test("background preparation persists once without a painted editor or pagehide autosave", async () => {
+    const h = libraryHarness(); const record = h.create({ className: "Turma A" }); h.api.save(record); h.prepare(record);
+    await h.consume();
+    assert.equal(h.state.applied, 1);
+    assert.equal(h.state.lessons.length, 1);
+    assert.equal(h.state.lessons[0].className, "Turma A");
+    assert.equal(h.state.frames, 0, "hidden preparation must not wait for animation frames");
+    assert.equal(h.state.reviews, 0);
+    assert.deepEqual(h.state.navigations, []);
+    assert.equal(h.context.window.educariaQuickImportPending, true, "keep pagehide autosave blocked until the parent removes the frame");
+    assert.equal(h.state.messages.length, 1);
+    assert.deepEqual(h.state.messages[0], { type: "educaria:quick-presentation-prepared", token: "transfer-test",
+        id: record.id, lessonId: h.api.lessonId(record), ownerUid: "Teacher-A", ok: true, origin: "https://example.test" });
+});
+
+test("preparation replay presents the current saved edit without applying the original AI response", async () => {
+    const h = libraryHarness(); const record = h.create(); h.api.save(record); h.prepare(record);
+    await h.consume();
+    h.state.lessons[0].draft = '{"text":"revisado pelo professor"}';
+    h.prepare(record); await h.consume();
+    assert.equal(h.state.applied, 1);
+    assert.match(h.state.lessons[0].draft, /revisado pelo professor/);
+    assert.equal(h.state.messages.at(-1).ok, true);
+    assert.deepEqual(h.state.navigations, []);
+});
+
+test("failed background conversion reports failure and retains the generated draft for retry", async () => {
+    const h = libraryHarness(); const record = h.create(); h.api.save(record); h.prepare(record); h.state.failImport = true;
+    await h.consume();
+    assert.equal(h.state.messages.at(-1).ok, false);
+    assert.equal(h.api.list().length, 1);
+    assert.equal(h.context.window.educariaQuickImportPending, true);
+    assert.deepEqual(h.state.navigations, []);
+    h.state.failImport = false; await h.consume();
+    assert.equal(h.state.messages.at(-1).ok, true);
+    assert.equal(h.state.lessons.length, 1);
+    assert.equal(h.api.list().length, 0);
 });

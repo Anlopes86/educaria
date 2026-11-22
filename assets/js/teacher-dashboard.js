@@ -152,6 +152,7 @@ let dashboardTourState = null;
 let dashboardTourAutoTimer = 0;
 const dashboardTourSeenOnPage = new Set();
 let dashboardQuickAiResult = null;
+let dashboardQuickPresentationController = null;
 const dashboardQuickOptionState = new Map();
 
 function dashboardTranslate(key, fallback) {
@@ -605,7 +606,7 @@ function dashboardQuickResultModalTemplate() {
                         ${escapeHtml(dashboardTranslate("dashboard.quick.result.present", "Apresentar agora"))}
                     </button>
                     <button type="button" class="platform-link-button platform-link-secondary" data-dashboard-ai-result-download hidden>Baixar cópia de segurança</button>
-                    <button type="button" class="platform-link-button platform-link-secondary" data-dashboard-ai-result-later>Continuar depois</button>
+                    <button type="button" class="platform-link-button platform-link-secondary" data-dashboard-ai-result-later>${escapeHtml(dashboardTranslate("builder.actions.saveLibrary", "Salvar na biblioteca"))}</button>
                 </div>
             </section>
         </div>
@@ -744,7 +745,21 @@ function dashboardQuickGenerationError(error) {
     return dashboardTranslate("dashboard.quick.generationError", "Não foi possível criar a atividade agora. Tente novamente.");
 }
 
-function continueDashboardQuickResult(destination) {
+function cancelDashboardQuickPresentation() {
+    dashboardQuickPresentationController?.abort();
+    dashboardQuickPresentationController = null;
+    const modal = document.querySelector("[data-dashboard-ai-result-modal]");
+    modal?.removeAttribute("aria-busy");
+    const button = modal?.querySelector("[data-dashboard-ai-result-present]");
+    if (button) {
+        button.disabled = false;
+        button.textContent = dashboardTranslate("dashboard.quick.result.present", "Apresentar agora");
+    }
+}
+
+async function continueDashboardQuickResult(destination) {
+    if (destination === "present" && dashboardQuickPresentationController) return;
+    cancelDashboardQuickPresentation();
     const result = dashboardQuickAiResult;
     if (!result) return;
     const recovery = window.educariaGenerationRecovery;
@@ -765,6 +780,30 @@ function continueDashboardQuickResult(destination) {
             className: result.className
         });
     }
+    if (destination === "present") {
+        const controller = new AbortController();
+        dashboardQuickPresentationController = controller;
+        const modal = document.querySelector("[data-dashboard-ai-result-modal]");
+        const status = modal?.querySelector("[data-dashboard-ai-result-storage]");
+        const button = modal?.querySelector("[data-dashboard-ai-result-present]");
+        modal?.setAttribute("aria-busy", "true");
+        if (button) { button.disabled = true; button.textContent = "Preparando…"; }
+        if (status) status.textContent = "Preparando sua apresentação… O conteúdo já está criado, sem usar novos créditos.";
+        try {
+            const lesson = await recovery.prepareForPresentation(result, { signal: controller.signal });
+            if (controller.signal.aborted || result.ownerUid !== recovery.currentUid()) return;
+            activateLessonById(lesson.id);
+            void syncLessonRecordWithFirebase(lesson).catch(() => {});
+            window.location.href = presentationPathForLesson(lesson);
+        } catch (error) {
+            if (!controller.signal.aborted && result.ownerUid === recovery.currentUid() && status) {
+                status.textContent = `${error.message} Sua atividade continua salva na biblioteca.`;
+            }
+        } finally {
+            if (dashboardQuickPresentationController === controller) cancelDashboardQuickPresentation();
+        }
+        return;
+    }
     if (typeof window.educariaMarkMilestone === "function") {
         window.educariaMarkMilestone("activation_builder_opened", {
             source: "dashboard_quick_create",
@@ -779,6 +818,7 @@ function continueDashboardQuickResult(destination) {
 }
 
 function closeDashboardQuickResultModal() {
+    cancelDashboardQuickPresentation();
     const modal = document.querySelector("[data-dashboard-ai-result-modal]");
     if (modal) modal.hidden = true;
     document.body.classList.remove("dashboard-ai-result-open");
@@ -790,6 +830,7 @@ function restoreDashboardQuickResults(autoOpen = false) {
     const recovery = window.educariaGenerationRecovery;
     if (!recovery) return;
     if (dashboardQuickAiResult?.ownerUid !== recovery.currentUid()) {
+        cancelDashboardQuickPresentation();
         dashboardQuickAiResult = null;
         const modal = document.querySelector("[data-dashboard-ai-result-modal]");
         if (modal) modal.hidden = true;
@@ -819,7 +860,21 @@ function bindDashboardQuickResultModal() {
             return;
         }
         if (event.target.closest("[data-dashboard-ai-result-later]")) {
+            const result = dashboardQuickAiResult;
+            const recovery = window.educariaGenerationRecovery;
+            if (!result || result.ownerUid !== recovery?.currentUid()) return;
+            if (!recovery.save(result) || !recovery.isDurable(result)) {
+                openDashboardQuickResultModal(result);
+                return;
+            }
             closeDashboardQuickResultModal();
+            const feedback = document.querySelector("[data-dashboard-quick-feedback]");
+            if (feedback) {
+                feedback.hidden = false;
+                feedback.textContent = result.className
+                    ? `Atividade salva na biblioteca, na turma ${result.className}.`
+                    : "Atividade salva em Rascunhos, na sua biblioteca.";
+            }
             return;
         }
         if (event.target.closest("[data-dashboard-ai-result-download]")) {

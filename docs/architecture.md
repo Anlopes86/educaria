@@ -36,6 +36,8 @@ Fluxo principal: painel/editor → `ai-material-generator.js` → API `/api/ai/g
 
 Os scripts clássicos compartilham funções globais. Renomear uma função ou mudar a ordem de carregamento pode afetar outras páginas. A camada de persistência também atende materiais antigos: não renomeie chaves de armazenamento para “padronizar” sem migração.
 
+No criador do painel, “Apresentar agora” prepara o resultado em segundo plano com os conversores dos editores e navega diretamente à apresentação. `generation-recovery.js` coordena um iframe interno da mesma origem, sem chamada adicional à IA; `ai-material-generator.js` converte e salva o rascunho antes de avisar o painel. A confirmação exige origem, janela, token, conta e ID correspondentes, além do registro salvo. O iframe mantém `educariaQuickImportPending` até ser removido para evitar autosave duplicado. Falha, cancelamento ou tempo esgotado conservam o resultado na biblioteca; o painel assume a sincronização com a conta. “Salvar na biblioteca” confirma persistência antes de fechar o modal.
+
 ### Ajustes pontuais com IA
 
 `item-refinement-editor.js` oferece “Ajustar com IA” por item e seleção múltipla nas 13 atividades. O professor pode escolher, por exemplo, as questões 3, 5 e 8, escrever um pedido e aprovar todas ou apenas algumas sugestões. O original permanece intacto até a confirmação; cancelar/Escape descarta a sugestão. “Desfazer último ajuste” restaura o último lote aplicado enquanto os itens não forem alterados novamente, na mesma sessão/conta. Respostas atrasadas não podem sobrescrever itens alterados/removidos/reordenados ou atravessar uma troca de conta. Textos retornados são apresentados com `textContent`, sem executar HTML.
