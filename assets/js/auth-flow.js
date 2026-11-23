@@ -666,14 +666,17 @@ function withAuthTimeout(operation, duration, code) {
 }
 
 async function readTeacherSnapshot(ref, user, auth) {
-    // Retrying a stalled Firestore stream can stall on the very same connection.
-    // Recover through a bounded HTTP read with the same user and security rules.
+    // A single profile does not need Firestore's streaming connection. Start the
+    // authenticated HTTP read immediately, instead of waiting for an 8s stream
+    // timeout first. The SDK remains a fallback for transient HTTP failures.
     const canReadDirectly = typeof fetch === "function" && typeof user.getIdToken === "function";
     let refreshCredentials = false;
     for (let attempt = 0; attempt < 2; attempt += 1) {
         if (auth.currentUser?.uid !== user.uid) throw authSessionChangedError();
         try {
-            if (attempt === 1 && canReadDirectly) return await readTeacherSnapshotDirectly(user, auth, refreshCredentials);
+            if (canReadDirectly && (attempt === 0 || refreshCredentials)) {
+                return await readTeacherSnapshotDirectly(user, auth, refreshCredentials);
+            }
             return await withAuthTimeout(ref.get({ source: "server" }), 8_000, "auth/profile-timeout");
         } catch (error) {
             const transient = ["unavailable", "deadline-exceeded", "auth/network-request-failed", "auth/profile-timeout"].includes(error?.code);

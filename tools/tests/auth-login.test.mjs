@@ -232,7 +232,7 @@ function directProfile(h, name = "Perfil confirmado") {
     }) };
 }
 
-test("a cold Firestore stream recovers through authenticated HTTP without another login click", async () => {
+test("login reads the profile directly without waiting for a cold Firestore stream", async () => {
     const h = harness(); await h.boot();
     const stream = deferred(); h.ref.get = () => { h.calls.reads++; return stream.promise; };
     h.user.getIdToken = async () => "user-token";
@@ -245,9 +245,10 @@ test("a cold Firestore stream recovers through authenticated HTTP without anothe
         assert.equal(options.credentials, "omit");
         return directProfile(h);
     };
-    const login = h.submitForm(); await tick(); h.expire(); await login;
+    await h.submitForm();
     stream.resolve({ exists: true, data: () => ({ name: "Stale stream" }) }); await tick();
     assert.equal(h.calls.signIn, 1); assert.equal(h.calls.enrolled, 0);
+    assert.equal(h.calls.reads, 0);
     const cached = JSON.parse(h.storage.get("educaria:auth:teacher-cache"));
     assert.equal(cached.name, "Perfil confirmado"); assert.equal(cached.billingIntent.plan, "pro");
     assert.deepEqual(h.calls.navigation, ["plataforma/index.html"]);
@@ -256,11 +257,13 @@ test("a cold Firestore stream recovers through authenticated HTTP without anothe
 test("initial permission failure refreshes attestation but HTTP denial still requires admission", async () => {
     const h = harness(); await h.boot();
     h.ref.get = async () => { throw Object.assign(Error("denied"), { code: "permission-denied" }); };
-    h.user.getIdToken = async refresh => { assert.equal(refresh, true); return "user-token"; };
-    h.window.educariaAppCheckHeaders = async refresh => { assert.equal(refresh, true); return { "X-Firebase-AppCheck": "app-token" }; };
+    const idRefreshes = [], appRefreshes = [];
+    h.user.getIdToken = async refresh => { idRefreshes.push(refresh); return "user-token"; };
+    h.window.educariaAppCheckHeaders = async refresh => { appRefreshes.push(refresh); return { "X-Firebase-AppCheck": "app-token" }; };
     h.context.fetch = async () => ({ ok: false, status: 403 });
     h.window.educariaBetaAccess.requireAccess = async () => { h.calls.enrolled++; throw Object.assign(Error("Lista de espera"), { code: "beta_waitlisted" }); };
     await h.submitForm();
+    assert.deepEqual(idRefreshes, [false, true]); assert.deepEqual(appRefreshes, [false, true]);
     assert.equal(h.calls.enrolled, 1);
     assert.deepEqual(h.calls.navigation, ["lista-espera.html"]);
     assert.equal(h.storage.has("educaria:auth:teacher-cache"), false);
@@ -287,6 +290,33 @@ test("HTTP recovery has a deadline and aborts a stalled request", async () => {
     assert.equal(h.submit.disabled, false);
     assert.equal(h.calls.navigation.length, 0);
     assert.equal(h.feedback.dataset.state, "error");
+});
+
+test("a transient direct-read failure still enters through a server-confirmed SDK profile", async () => {
+    const h = harness(); await h.boot();
+    h.user.getIdToken = async () => "user-token";
+    h.context.fetch = async () => ({ ok: false, status: 503 });
+    h.ref.get = async options => {
+        h.calls.reads++;
+        assert.equal(options.source, "server");
+        return { exists: true, data: () => ({ name: "Confirmed by SDK" }) };
+    };
+    await h.submitForm();
+    assert.equal(h.calls.reads, 1); assert.equal(h.calls.enrolled, 0);
+    assert.equal(JSON.parse(h.storage.get("educaria:auth:teacher-cache")).name, "Confirmed by SDK");
+    assert.deepEqual(h.calls.navigation, ["plataforma/index.html"]);
+});
+
+test("an expired initial attestation is renewed without enrolling an already approved teacher", async () => {
+    const h = harness(); await h.boot();
+    const refreshes = [];
+    h.user.getIdToken = async refresh => { refreshes.push(refresh); return "user-token"; };
+    let requests = 0;
+    h.context.fetch = async () => ++requests === 1 ? { ok: false, status: 403 } : directProfile(h);
+    await h.submitForm();
+    assert.deepEqual(refreshes, [false, true]);
+    assert.equal(h.calls.reads, 0); assert.equal(h.calls.enrolled, 0);
+    assert.deepEqual(h.calls.navigation, ["plataforma/index.html"]);
 });
 
 test("a rejected login configuration identifies the stage without exposing provider details", async () => {

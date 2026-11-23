@@ -68,7 +68,7 @@ O transporte é `/api/ai/generate` com `materialType: "slides"` e `slideIllustra
 
 `pendingAiResult` identifica conteúdo ainda não convertido para o editor, não uma decisão de salvamento pendente. `resultAcknowledgedAt` registra a escolha do professor sem remover o conteúdo. O painel só abre o modal ao concluir uma geração ou pelo botão de retomada; entrar na página, sincronizar a conta e restaurar a aba não reabrem resultados antigos. A retomada prioriza os resultados mais recentes ainda não reconhecidos.
 
-O login confirma o perfil pelas regras do Firestore. Se a leitura inicial demorar ou falhar temporariamente, tenta uma leitura HTTP autenticada do mesmo documento, com prazo e cancelamento, mantendo Auth e App Check. Uma recusa inicial renova os tokens antes da nova confirmação; uma recusa persistente continua sujeita à admissão do beta. Respostas de outra sessão e respostas atrasadas não podem restaurar a conta anterior.
+O login confirma o perfil pelas regras do Firestore, começando por uma leitura HTTP autenticada, com prazo e cancelamento, mantendo Auth e App Check. Assim não precisa esperar a conexão de streaming do SDK para consultar um único perfil. Em falhas temporárias do HTTP, o SDK consulta o servidor como alternativa. Uma recusa inicial renova os tokens antes da nova confirmação; uma recusa persistente continua sujeita à admissão do beta. Respostas de outra sessão e respostas atrasadas não podem restaurar a conta anterior.
 
 `autoFiled` identifica apenas materiais guardados automaticamente: ao escolher uma turma no salvamento explícito, o registro é promovido para ela sem deixar um rascunho duplicado. Materiais organizados explicitamente preservam a semântica anterior de cópia para novos destinos.
 
