@@ -12,6 +12,7 @@ import { parseGeneratedJson } from "../materials/generated-json.js";
 import { schemaFor } from "../materials/schemas.js";
 import { normalizeItemRefinement, refinementSchema, validateRefinedItem } from "../materials/item-refinement.js";
 import { normalizeQuizMaterial } from "../materials/quiz.js";
+import { createQuizVariation } from "../materials/quiz-variety.js";
 import { withGenerationFeedback, extractGenerationFeedback, generationFeedback } from "../materials/generation-feedback.js";
 import { normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration } from "../materials/slide-illustration-request.js";
 import { normalizeDiscoveryMaterial, validateDiscoverySource } from "../materials/discovery.js";
@@ -29,7 +30,7 @@ function harness({ provider = "groq", unlimited = false, results = [{ text: '{"c
     const quotaRefunds = { requests: 0, tokens: 0 };
     const providerCall = async input => { providerInputs.push(input); const result = results[calls++]; if (result instanceof Error) throw result; return result; };
     const context = vm.createContext({
-        normalizeQuizMaterial, withGenerationFeedback, extractGenerationFeedback, generationFeedback,
+        normalizeQuizMaterial, createQuizVariation, withGenerationFeedback, extractGenerationFeedback, generationFeedback,
         Error, console: { error() {}, warn() {} }, process: { env: {} },
         app: { post: (...args) => { handler = args.at(-1); } },
         aiRateLimit: null, requireAiAuth: null, requireBetaAccess: null, requireAiVerifiedEmail: null, aiGenerationRateLimit: null, upload: { single: () => null }, hasMeasuredTokenUsage,
@@ -71,6 +72,31 @@ test("text route logs actual provider usage and returned quantity without storin
     assert.equal(response.statusCode, 200); assert.equal(h.calls(), 1); assert.equal(h.events.length, 1);
     assert.equal(h.events[0].usage.totalTokens, 350); assert.equal(h.events[0].generatedCount, 1); assert.equal(h.events[0].context.requestedCount, 3);
     assert.equal(h.events[0].creditsCharged, response.body.charge.cost); assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE/);
+});
+
+test("new quiz variety reaches both providers in one billed request without persisting history", async () => {
+    const material = { title: "Quiz", questions: [{ type: "multiple_choice", prompt: "Qual alternativa representa uma cor?",
+        options: ["Azul", "Rio", "Pedra", "Vento"], correct_answer: "Azul", explanation: "Azul é uma cor." }] };
+    for (const provider of ["groq", "gemini"]) {
+        const h = harness({ provider, promptBuilder: promptFor, results: [{ text: JSON.stringify(material), usageMetadata }] });
+        const response = await h.run({ materialType: "quiz", sourceText: "Conhecimentos gerais", generationOptions: { count: 1, format: "choice" },
+            quizContext: JSON.stringify(["PRIVATE PREVIOUS QUESTION"]) });
+        assert.equal(response.statusCode, 200);
+        assert.equal(h.calls(), 1);
+        const input = h.providerInputs[0];
+        assert.equal(provider === "groq" ? input.temperature : input.config.temperature, 0.75);
+        assert.match(provider === "groq" ? input.prompt : input.contents, /PRIVATE PREVIOUS QUESTION/);
+        assert.doesNotMatch(JSON.stringify(response.body.material), /PRIVATE PREVIOUS QUESTION|quizVariation/);
+        assert.doesNotMatch(JSON.stringify(h.events), /PRIVATE PREVIOUS QUESTION/);
+        assert.equal(response.body.charge.usage.totalTokens, 350);
+    }
+});
+
+test("invalid quiz history is refused before any provider request", async () => {
+    const h = harness();
+    const response = await h.run({ materialType: "quiz", sourceText: "Geografia", quizContext: JSON.stringify(Array(25).fill("Q")) });
+    assert.equal(response.statusCode, 400); assert.equal(h.calls(), 0);
+    assert.equal(response.body.code, "invalid_generation_options");
 });
 
 test("one-slide illustration uses the text provider, normal quotas and measured billing", async () => {

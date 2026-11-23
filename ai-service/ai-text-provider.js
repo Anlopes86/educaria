@@ -70,6 +70,7 @@ export async function generateGroqStructuredMaterial({
     prompt,
     schemaConfig,
     reasoningEffort = "low",
+    temperature = 0.2,
     maxCompletionTokens = 3_500,
     timeoutMs = 90_000,
     fetchImpl = fetch
@@ -106,7 +107,7 @@ export async function generateGroqStructuredMaterial({
         },
         reasoning_effort: reasoningEffort,
         max_completion_tokens: positiveInteger(maxCompletionTokens, 3_500),
-        temperature: 0.2
+        temperature: typeof temperature === "number" && Number.isFinite(temperature) ? Math.min(1, Math.max(0, temperature)) : 0.2
     };
 
     let response;

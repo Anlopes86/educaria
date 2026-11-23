@@ -1833,6 +1833,7 @@ async function checkAiHealth() {
 async function requestStructuredMaterial(materialType, sourceText, file, action, slideOptions, generationOptions, refinement, slideIllustration) {
     const targeted = Boolean(refinement || slideIllustration);
     const refinementOwner = targeted ? window.educariaGenerationRecovery?.currentUid() : null;
+    const quizContext = materialType === "quiz" && !targeted && !file ? window.EducariaQuizContext?.forRequest() : null;
     const endpoint = resolveAiEndpoint();
     const formData = new FormData();
     formData.append("materialType", materialType);
@@ -1841,6 +1842,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action,
     if (refinement) formData.append("refinement", JSON.stringify(refinement));
     if (slideIllustration) formData.append("slideIllustration", JSON.stringify(slideIllustration));
     if (generationOptions) formData.append("generationOptions", JSON.stringify(generationOptions));
+    if (quizContext?.questions.length) formData.append("quizContext", JSON.stringify(quizContext.questions));
     if (materialType === "slides" && slideOptions) {
         formData.append("slideOptions", JSON.stringify(slideOptions));
     }
@@ -1850,6 +1852,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action,
     }
 
     const headers = typeof window.educariaAiAuthHeaders === "function" ? await window.educariaAiAuthHeaders({ generation: true }) : {};
+    if (quizContext && quizContext.ownerUid !== window.EducariaQuizContext.currentOwner()) throw new Error("A conta mudou. Abra a criação novamente.");
     if (targeted && (!refinementOwner || refinementOwner !== window.educariaGenerationRecovery?.currentUid())) {
         throw new Error("A conta mudou. Abra o ajuste novamente.");
     }
@@ -1861,6 +1864,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action,
 
     if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
+        if (quizContext && quizContext.ownerUid !== window.EducariaQuizContext.currentOwner()) throw new Error("A conta mudou. Abra a criação novamente.");
         if (targeted && refinementOwner !== window.educariaGenerationRecovery?.currentUid()) throw new Error("A conta mudou.");
         if (errorPayload?.credits) {
             document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
@@ -1875,6 +1879,7 @@ async function requestStructuredMaterial(materialType, sourceText, file, action,
     }
 
     const payload = await response.json();
+    if (quizContext && quizContext.ownerUid !== window.EducariaQuizContext.currentOwner()) throw new Error("A conta mudou. Abra a criação novamente.");
     if (targeted && refinementOwner !== window.educariaGenerationRecovery?.currentUid()) throw new Error("A conta mudou.");
     document.dispatchEvent(new CustomEvent("educaria-ai-credits-updated", {
         detail: { credits: payload?.credits || null }

@@ -10,6 +10,7 @@ import { generateGroqStructuredMaterial } from "./ai-text-provider.js";
 import { schemaFor } from "./materials/schemas.js";
 import { normalizeItemRefinement, refinementSchema, validateRefinedItem } from "./materials/item-refinement.js";
 import { normalizeQuizMaterial } from "./materials/quiz.js";
+import { createQuizVariation } from "./materials/quiz-variety.js";
 import { withGenerationFeedback, extractGenerationFeedback, generationFeedback } from "./materials/generation-feedback.js";
 import { normalizeSlideIllustrationRequest, singleSlideIllustrationSchema, validateSingleSlideIllustration } from "./materials/slide-illustration-request.js";
 import { promptFor, imagePromptForSlide } from "./materials/prompts.js";
@@ -1210,6 +1211,7 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
                 prompt: basePrompt,
                 schemaConfig,
                 reasoningEffort: groqReasoningEffort,
+                temperature: generationOptions?.quizVariation?.temperature ?? 0.2,
                 maxCompletionTokens: outputLimit,
                 timeoutMs: groqRequestTimeoutMs
             }));
@@ -1263,7 +1265,8 @@ async function generateStructuredMaterialWithRetry(materialType, action, sourceT
             result = await observation.call(() => gemini.models.generateContent({
                 model,
                 contents: attempt.contents,
-                config: { ...attempt.config, ...(materialType === "worksheet" ? { maxOutputTokens: outputLimit } : {}) }
+                config: { ...attempt.config, ...(materialType === "worksheet" ? { maxOutputTokens: outputLimit } : {}),
+                    ...(generationOptions?.quizVariation ? { temperature: generationOptions.quizVariation.temperature } : {}) }
             }));
             hasUnknownUsage ||= !hasMeasuredTokenUsage(result?.usageMetadata);
             const material = parseGeneratedJson(result?.text || "");
@@ -1529,6 +1532,9 @@ app.post("/api/ai/generate", aiRateLimit, requireAiAuth, requireBetaAccess, requ
         }
 
         // Validate supplied word lists before reserving credits or calling the provider.
+        if (materialType === "quiz" && !refinement) generationOptions.quizVariation = createQuizVariation({
+            sourceText, options: generationOptions, hasFile: Boolean(request.file), history: request.body.quizContext
+        });
         if (!refinement) Object.assign(generationOptions, validateDiscoverySource(materialType, generationOptions, sourceText));
         if (!refinement && materialType === "worksheet") {
             Object.assign(generationOptions, validateWorksheetSource(generationOptions, sourceText));

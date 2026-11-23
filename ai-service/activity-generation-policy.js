@@ -164,7 +164,9 @@ export function contentGenerationInstructions(materialType, options) {
 }
 
 export function applyActivityGenerationSettings(materialType, material, options) {
-    const result = { ...material, generation_options: { ...material.generation_options, ...options } };
+    const { quizVariation: transientContext, ...savedOptions } = options;
+    const result = { ...material, generation_options: { ...material.generation_options, ...savedOptions } };
+    delete result.generation_options.quizVariation;
     if (options.title) result.title = options.title;
     if (materialType === "mindmap") result.layout = options.layout;
     if (materialType === "debate") result.format = options.format === "guided-circle" ? "Roda guiada" : "Dois lados";

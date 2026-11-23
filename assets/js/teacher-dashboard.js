@@ -691,6 +691,10 @@ async function requestDashboardQuickMaterial(materialType, topic, label, generat
     formData.append("text", topic);
     if (file) formData.append("file", file);
     formData.append("generationOptions", JSON.stringify(generationOptions?.values || {}));
+    if (materialType === "quiz" && !file) {
+        const context = window.EducariaQuizContext?.forRequest();
+        if (context?.ownerUid === ownerUid && context.questions.length) formData.append("quizContext", JSON.stringify(context.questions));
+    }
     if (materialType === "slides") {
         const values = generationOptions?.values || {};
         formData.append("slideOptions", JSON.stringify(Object.fromEntries(

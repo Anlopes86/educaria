@@ -5,6 +5,7 @@ import { discoveryPrompt } from "./discovery.js";
 import { worksheetPrompt } from "./worksheet.js";
 import { refinementPrompt } from "./item-refinement.js";
 import { singleSlideIllustrationPrompt } from "./slide-illustration-request.js";
+import { quizVariationInstructions } from "./quiz-variety.js";
 
 /**
  * Builds the Portuguese-language provider prompt for a given activity type.
@@ -46,6 +47,7 @@ function basePromptFor(materialType, action, sourceText, slideOptions, generatio
             "- Não use tom publicitário nem linguagem excessivamente rebuscada.",
             "- Se o conteúdo estiver incompleto, faça a melhor estrutura possível sem sair do tema.",
             "- Respeite explicitamente a quantidade e o formato pedidos pelo professor quando isso for informado.",
+            quizVariationInstructions(generationOptions?.quizVariation),
             "Material de origem:",
             sourceText
         ].join("\n\n");

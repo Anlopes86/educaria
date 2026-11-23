@@ -112,6 +112,23 @@ test("file upload and non-slide requests keep the original transport", async () 
     assert.equal(await h.posted.body.get("file").text(), "Arquivo");
 });
 
+test("quiz requests include recent prompts without changing the teacher's topic or uploaded material", async () => {
+    const h = generationHarness();
+    h.context.window.EducariaQuizContext = { forRequest: () => ({ ownerUid: "teacher-A", questions: ["Questão anterior?"] }), currentOwner: () => "teacher-A" };
+    await h.context.requestStructuredMaterial("quiz", "Conhecimentos gerais", null, "Gerar 8 perguntas.");
+    assert.deepEqual(JSON.parse(h.posted.body.get("quizContext")), ["Questão anterior?"]);
+    assert.equal(h.posted.body.get("sourceText"), "Conhecimentos gerais");
+    await h.context.requestStructuredMaterial("quiz", "Organizar", new Blob(["Perguntas prontas"]), "Estruturar perguntas enviadas");
+    assert.equal(h.posted.body.get("quizContext"), null);
+});
+
+test("a quiz history prepared in another account is never sent after a session switch", async () => {
+    const h = generationHarness();
+    h.context.window.EducariaQuizContext = { forRequest: () => ({ ownerUid: "teacher-A", questions: ["PRIVATE"] }), currentOwner: () => "teacher-B" };
+    await assert.rejects(h.context.requestStructuredMaterial("quiz", "Tema", null, "Criar"), /A conta mudou/);
+    assert.equal(h.posted, undefined);
+});
+
 test("editor sends the attached text once, leaving extraction to the API", async () => {
     const h = generationHarness();
     h.fields.file.files = [new Blob(["Texto do arquivo"], { type: "text/plain" })];

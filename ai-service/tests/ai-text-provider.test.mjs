@@ -6,6 +6,20 @@ import {
     groqUsageMetadata
 } from "../ai-text-provider.js";
 
+test("quiz variation reaches Groq's sampling setting without changing the structured response", async () => {
+    let sent;
+    const result = await generateGroqStructuredMaterial({ apiKey: "test", prompt: "Quiz", temperature: 0.75,
+        schemaConfig: { name: "quiz", schema: { type: "object", properties: { title: { type: "string" } } } },
+        fetchImpl: async (_, options) => {
+            sent = JSON.parse(options.body);
+            return new Response(JSON.stringify({ choices: [{ message: { content: '{"title":"Quiz"}' } }] }));
+        }
+    });
+    assert.equal(sent.temperature, 0.75);
+    assert.equal(sent.response_format.json_schema.strict, true);
+    assert.equal(result.text, '{"title":"Quiz"}');
+});
+
 test("successful Groq output with absent or incomplete usage stays unmeasured", async () => {
     for (const usage of [undefined, { prompt_tokens: 20 }, { total_tokens: 50 }]) {
         const result = await generateGroqStructuredMaterial({ apiKey: "test", prompt: "test",
@@ -89,6 +103,7 @@ test("sends a strict JSON schema request to Groq", async () => {
     });
 
     assert.equal(requestBody.model, "openai/gpt-oss-120b");
+    assert.equal(requestBody.temperature, 0.2);
     assert.equal(requestBody.response_format.json_schema.strict, true);
     assert.equal(requestBody.response_format.json_schema.schema.additionalProperties, false);
     assert.equal(result.text, "{\"title\":\"Fotossíntese\"}");
