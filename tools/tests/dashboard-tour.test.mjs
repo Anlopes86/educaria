@@ -35,7 +35,7 @@ function harness() {
             innerWidth: 1280, innerHeight: 720,
             requestAnimationFrame: (handler) => { const id = ++data.frameId; data.frames.set(id, handler); return id; },
             cancelAnimationFrame: (id) => data.frames.delete(id),
-            educariaGenerationRecovery: { list: () => data.recovered }, setTimeout: (handler) => { data.timer = handler; return 1; }, clearTimeout() {},
+            educariaGenerationRecovery: { listPending: () => data.recovered }, setTimeout: (handler) => { data.timer = handler; return 1; }, clearTimeout() {},
             addEventListener() {}, removeEventListener() {}, matchMedia: () => ({ matches: false })
         },
         setMobileSidebarOpen: (value) => { data.mobile = value; }

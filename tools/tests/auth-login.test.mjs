@@ -13,7 +13,7 @@ function deferred() {
 
 function harness({ screen = "login", delayedConfig = false } = {}) {
     const events = {}, formEvents = {}, storage = new Map(), timers = new Map();
-    const calls = { signIn: 0, persistence: 0, reads: 0, enrolled: 0, navigation: [], notifications: 0 };
+    const calls = { signIn: 0, persistence: 0, reads: 0, enrolled: 0, navigation: [], notifications: 0, warnings: [] };
     const feedback = { hidden: true, textContent: "", dataset: {}, getAttribute() {}, setAttribute() {} };
     const submit = { disabled: false };
     const fields = { email: { value: "teacher@example.invalid" }, password: { value: "example-password" } };
@@ -56,7 +56,7 @@ function harness({ screen = "login", delayedConfig = false } = {}) {
         addEventListener() {}, setTimeout(fn) { timers.set(++timerId, fn); return timerId; },
         clearTimeout(id) { timers.delete(id); }, clearInterval() {}, setInterval() { return 1; }
     };
-    const context = vm.createContext({ window, document, firebase, console: { warn() {}, error() {} },
+    const context = vm.createContext({ window, document, firebase, console: { warn: (...args) => calls.warnings.push(args), error() {} },
         URL, URLSearchParams, AbortController, CustomEvent: class { constructor(type, details) { this.type = type; this.detail = details; } },
         localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) }
     });
@@ -287,4 +287,30 @@ test("HTTP recovery has a deadline and aborts a stalled request", async () => {
     assert.equal(h.submit.disabled, false);
     assert.equal(h.calls.navigation.length, 0);
     assert.equal(h.feedback.dataset.state, "error");
+});
+
+test("a rejected login configuration identifies the stage without exposing provider details", async () => {
+    const h = harness(); await h.boot();
+    h.auth.signInWithEmailAndPassword = async () => { throw Object.assign(Error("private-token-or-email"), {
+        code: "auth/requests-from-referer-blocked", customData: { token: "private-token-or-email" }
+    }); };
+    await h.submitForm();
+    assert.match(h.feedback.textContent, /configuração do site/);
+    assert.match(h.feedback.textContent, /autenticacao\/auth\/requests-from-referer-blocked/);
+    assert.ok(!JSON.stringify(h.calls.warnings).includes("private-token-or-email"));
+    assert.ok(!h.feedback.textContent.includes("private-token-or-email"));
+    assert.equal(h.submit.disabled, false);
+    assert.equal(h.calls.navigation.length, 0);
+});
+
+test("profile errors and missing admission scripts do not collapse into a generic authentication message", async () => {
+    const h = harness(); await h.boot();
+    h.ref.get = async () => { throw Object.assign(Error("denied"), { code: "permission-denied" }); };
+    h.window.educariaBetaReady = Promise.reject(Error("private-script-error"));
+    h.window.educariaBetaReady.catch(() => {});
+    await h.submitForm();
+    assert.match(h.feedback.textContent, /carregar a confirmação de acesso/);
+    assert.match(h.feedback.textContent, /perfil\/beta_unavailable/);
+    assert.equal(h.calls.navigation.length, 0);
+    assert.ok(!JSON.stringify(h.calls.warnings).includes("private-script-error"));
 });

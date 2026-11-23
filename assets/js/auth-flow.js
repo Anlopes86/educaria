@@ -572,9 +572,19 @@ function redirectAuthenticatedFromAuthPages() {
 function mapFirebaseError(error) {
     const code = error?.code || "";
     if (["beta_unavailable", "beta_waitlisted"].includes(code)) return error.message;
-    if (["auth/network-request-failed", "unavailable", "deadline-exceeded", "auth/profile-timeout"].includes(code)) {
+    if (["auth/network-request-failed", "unavailable", "deadline-exceeded", "auth/profile-timeout", "auth/timeout"].includes(code)
+        || ["AbortError", "TimeoutError"].includes(error?.name)) {
         return "A conexão demorou para responder. Tente entrar novamente; não é necessário atualizar a página.";
     }
+    if (code === "permission-denied") return "Não foi possível confirmar a permissão de acesso aos seus dados. Tente novamente em instantes.";
+    if (["unauthenticated", "auth/user-token-expired", "auth/invalid-user-token"].includes(code)) return "Sua sessão expirou. Entre novamente para continuar.";
+    if (["auth/invalid-app-credential", "auth/captcha-check-failed", "appCheck/fetch-status-error", "appCheck/recaptcha-error"].includes(code)) {
+        return "Não foi possível validar a segurança do acesso neste navegador. Tente novamente em instantes.";
+    }
+    if (["auth/invalid-api-key", "auth/app-not-authorized", "auth/requests-from-referer-blocked", "auth/operation-not-allowed"].includes(code)) {
+        return "O serviço de login recusou a configuração do site. Informe a referência abaixo ao suporte.";
+    }
+    if (code === "auth/user-disabled") return "Esta conta está desativada. Entre em contato com o suporte.";
     if (code === "auth/session-changed") return "A sessão mudou durante a entrada. Tente novamente.";
     if (code === "auth/too-many-requests") return "Houve muitas tentativas de entrada. Aguarde alguns minutos e tente novamente.";
     if (code === "auth/email-already-in-use") return authTranslate("auth.errors.emailInUse", "Já existe uma conta com esse email.");
@@ -586,8 +596,22 @@ function mapFirebaseError(error) {
     return authTranslate("auth.errors.generic", "Não foi possível concluir a autenticação agora.");
 }
 
+function showAuthFailure(error, stage) {
+    // Report only a bounded provider code and our own stage, never credentials,
+    // raw responses, account details or Firebase's full error/customData object.
+    const providerCode = String(error?.code || "");
+    const code = /^(?:auth|appCheck)\/[a-z-]{1,70}$/.test(providerCode)
+        || ["permission-denied", "unauthenticated", "unavailable", "deadline-exceeded", "beta_unavailable"].includes(providerCode)
+        ? providerCode : ["AbortError", "TimeoutError", "TypeError", "ReferenceError"].includes(error?.name) ? error.name : "erro-inesperado";
+    const phase = ["configuracao", "autenticacao", "perfil", "conclusao"].includes(stage) ? stage : "entrada";
+    console.warn("EducarIA: falha na entrada.", { etapa: phase, codigo: code });
+    const credentialsError = ["auth/invalid-credential", "auth/wrong-password", "auth/user-not-found", "auth/invalid-email"].includes(code);
+    updateAuthFeedback(`${mapFirebaseError(error)}${credentialsError ? "" : ` Referência: ${phase}/${code}.`}`, "error");
+}
+
 async function requireBetaEnrollment(user) {
-    await window.educariaBetaReady;
+    try { await window.educariaBetaReady; }
+    catch { throw Object.assign(new Error("Não foi possível carregar a confirmação de acesso. Atualize a página e tente novamente."), { code: "beta_unavailable" }); }
     if (!window.educariaBetaAccess) throw Object.assign(new Error("Não foi possível conferir seu acesso. Atualize a página e tente novamente."), { code: "beta_unavailable" });
     return window.educariaBetaAccess.requireAccess(user);
 }
@@ -742,6 +766,7 @@ function bindLoginForm() {
         const revision = ++authStateRevision;
         if (submit) submit.disabled = true;
         form.setAttribute("aria-busy", "true");
+        let stage = "configuracao";
         try {
             updateAuthFeedback(authTranslate("auth.feedback.signingIn", "Entrando na sua conta..."), "success");
             await waitForFirebaseConfig();
@@ -751,10 +776,13 @@ function bindLoginForm() {
                 return;
             }
             await prepareAuthPersistence(services.auth);
+            stage = "autenticacao";
             const credential = await services.auth.signInWithEmailAndPassword(email, password);
+            stage = "perfil";
             updateAuthFeedback("Conferindo seu acesso…", "neutral");
             const teacher = await readTeacherProfileFromFirebase(credential.user);
             if (revision !== authStateRevision || services.auth.currentUser?.uid !== credential.user.uid) throw authSessionChangedError();
+            stage = "conclusao";
             writeCachedTeacher(teacher);
             saveSessionEmail(credential.user.email || email);
             educariaTrack("login_success", { screen: "login" });
@@ -762,7 +790,7 @@ function bindLoginForm() {
             window.location.href = authNextPath();
         } catch (error) {
             if (handleBetaWaitlist(error)) return;
-            updateAuthFeedback(mapFirebaseError(error), "error");
+            showAuthFailure(error, stage);
         } finally {
             loginInProgress = false;
             if (submit) submit.disabled = false;
@@ -961,7 +989,7 @@ function syncAuthStateWithFirebase() {
             redirectAuthenticatedFromAuthPages();
         } catch (error) {
             if (revision !== authStateRevision || services.auth.currentUser?.uid !== user.uid || handleBetaWaitlist(error)) return;
-            updateAuthFeedback(mapFirebaseError(error), "error");
+            showAuthFailure(error, "perfil");
         }
     });
 }
