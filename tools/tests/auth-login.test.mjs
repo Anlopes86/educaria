@@ -57,7 +57,7 @@ function harness({ screen = "login", delayedConfig = false } = {}) {
         clearTimeout(id) { timers.delete(id); }, clearInterval() {}, setInterval() { return 1; }
     };
     const context = vm.createContext({ window, document, firebase, console: { warn() {}, error() {} },
-        URL, URLSearchParams, CustomEvent: class { constructor(type, details) { this.type = type; this.detail = details; } },
+        URL, URLSearchParams, AbortController, CustomEvent: class { constructor(type, details) { this.type = type; this.detail = details; } },
         localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, value), removeItem: key => storage.delete(key) }
     });
     vm.runInContext(source, context);
@@ -223,4 +223,68 @@ test("unavailable persistent storage does not repeatedly reset authentication", 
     h.context.firebaseServices(); await tick();
     assert.equal(h.calls.persistence, 1);
     assert.deepEqual(h.calls.navigation, ["plataforma/index.html"]);
+});
+
+function directProfile(h, name = "Perfil confirmado") {
+    return { ok: true, status: 200, json: async () => ({
+        name: `projects/public-test-config/databases/(default)/documents/teachers/${h.user.uid}`,
+        fields: { name: { stringValue: name }, billingIntent: { mapValue: { fields: { plan: { stringValue: "pro" } } } } }
+    }) };
+}
+
+test("a cold Firestore stream recovers through authenticated HTTP without another login click", async () => {
+    const h = harness(); await h.boot();
+    const stream = deferred(); h.ref.get = () => { h.calls.reads++; return stream.promise; };
+    h.user.getIdToken = async () => "user-token";
+    h.window.educariaAppCheckHeaders = async () => ({ "X-Firebase-AppCheck": "app-token" });
+    h.context.fetch = async (url, options) => {
+        assert.equal(url, "https://firestore.googleapis.com/v1/projects/public-test-config/databases/(default)/documents/teachers/teacher");
+        assert.equal(options.headers.Authorization, "Bearer user-token");
+        assert.equal(options.headers["X-Firebase-AppCheck"], "app-token");
+        assert.equal(options.cache, "no-store");
+        assert.equal(options.credentials, "omit");
+        return directProfile(h);
+    };
+    const login = h.submitForm(); await tick(); h.expire(); await login;
+    stream.resolve({ exists: true, data: () => ({ name: "Stale stream" }) }); await tick();
+    assert.equal(h.calls.signIn, 1); assert.equal(h.calls.enrolled, 0);
+    const cached = JSON.parse(h.storage.get("educaria:auth:teacher-cache"));
+    assert.equal(cached.name, "Perfil confirmado"); assert.equal(cached.billingIntent.plan, "pro");
+    assert.deepEqual(h.calls.navigation, ["plataforma/index.html"]);
+});
+
+test("initial permission failure refreshes attestation but HTTP denial still requires admission", async () => {
+    const h = harness(); await h.boot();
+    h.ref.get = async () => { throw Object.assign(Error("denied"), { code: "permission-denied" }); };
+    h.user.getIdToken = async refresh => { assert.equal(refresh, true); return "user-token"; };
+    h.window.educariaAppCheckHeaders = async refresh => { assert.equal(refresh, true); return { "X-Firebase-AppCheck": "app-token" }; };
+    h.context.fetch = async () => ({ ok: false, status: 403 });
+    h.window.educariaBetaAccess.requireAccess = async () => { h.calls.enrolled++; throw Object.assign(Error("Lista de espera"), { code: "beta_waitlisted" }); };
+    await h.submitForm();
+    assert.equal(h.calls.enrolled, 1);
+    assert.deepEqual(h.calls.navigation, ["lista-espera.html"]);
+    assert.equal(h.storage.has("educaria:auth:teacher-cache"), false);
+});
+
+test("HTTP recovery cannot publish a response after the account changes", async () => {
+    const h = harness(); await h.boot();
+    h.ref.get = async () => { throw Object.assign(Error("unavailable"), { code: "unavailable" }); };
+    h.user.getIdToken = async () => "user-token";
+    const response = deferred(); h.context.fetch = () => response.promise;
+    const login = h.submitForm(); await tick(); await h.emitAuth(null);
+    response.resolve(directProfile(h)); await login;
+    assert.deepEqual(h.calls.navigation, []);
+    assert.equal(h.storage.has("educaria:auth:teacher-cache"), false);
+});
+
+test("HTTP recovery has a deadline and aborts a stalled request", async () => {
+    const h = harness(); await h.boot();
+    h.ref.get = async () => { throw Object.assign(Error("unavailable"), { code: "unavailable" }); };
+    h.user.getIdToken = async () => "user-token";
+    let signal; h.context.fetch = (_, options) => { signal = options.signal; return new Promise(() => {}); };
+    const login = h.submitForm(); await tick(); h.expire(); await login;
+    assert.equal(signal.aborted, true);
+    assert.equal(h.submit.disabled, false);
+    assert.equal(h.calls.navigation.length, 0);
+    assert.equal(h.feedback.dataset.state, "error");
 });

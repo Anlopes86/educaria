@@ -49,12 +49,15 @@ export async function checkQuickRecovery(cdp, dashboardUrl, screenshotDir = "") 
         quiz.createdAt -= 86400000;
         const slides = api.create({ ownerUid: api.currentUid(), topic: 'Fotossíntese', materialType: 'slides', className: '', label: 'Slides',
             payload: { material: { slides: [{ type: 'cover', title: 'Energia para a vida', body: 'As plantas transformam luz em energia química.' }] }, charge: { cost: 9 } } });
-        api.save(quiz); api.save(slides); restoreDashboardQuickResults(true);
+        api.save(quiz); api.save(slides); restoreDashboardQuickResults();
         return { quiz, slides };
     })()`);
     await navigate(cdp);
-    await until(cdp, `document.readyState === 'complete' && document.querySelector('[data-dashboard-ai-result-modal]')?.hidden === false`);
+    assert.equal(await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-modal]')?.hidden !== false`), true);
+    await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-resume]').click()`);
+    await until(cdp, `document.querySelector('[data-dashboard-ai-result-modal]')?.hidden === false`);
     assert.equal(await evaluate(cdp, `window.educariaGenerationRecovery.list().length`), 2);
+    assert.equal(await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-tool]').textContent`), "Slides");
     assert.equal(await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-topic]').textContent`), "Fotossíntese");
     assert.equal(await evaluate(cdp, `(() => {
         const card = document.querySelector('.dashboard-ai-result-card'); const rect = card.getBoundingClientRect();
@@ -73,6 +76,9 @@ export async function checkQuickRecovery(cdp, dashboardUrl, screenshotDir = "") 
     assert.equal(keyboard, true);
     await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-later]').click()`);
     assert.equal(await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-resume]').hidden`), false);
+    assert.equal(await evaluate(cdp, `window.educariaGenerationRecovery.listPending().length`), 1);
+    await navigate(cdp);
+    assert.equal(await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-modal]')?.hidden !== false`), true);
     await triggerNavigation(cdp, `document.querySelector('[data-dashboard-ai-result-resume]').click(); document.querySelector('[data-dashboard-ai-result-edit]').click();`);
     await until(cdp, `location.pathname.endsWith('quiz-builder.html') && typeof readActiveLesson === 'function' && !window.educariaQuickImportPending && Boolean(readActiveLesson()?.draft)`);
     const lessonId = `lesson-ai-${records.quiz.id}`;
@@ -95,7 +101,10 @@ export async function checkQuickRecovery(cdp, dashboardUrl, screenshotDir = "") 
     assert.equal(await evaluate(cdp, `readLessonsLibrary().filter((lesson) => lesson.id === ${JSON.stringify(lessonId)}).length`), 1);
 
     await navigate(cdp, dashboardUrl);
-    await until(cdp, `document.readyState === 'complete' && document.querySelector('[data-dashboard-ai-result-tool]')?.textContent === 'Slides'`);
+    assert.equal(await evaluate(cdp, `document.querySelector('[data-dashboard-ai-result-modal]')?.hidden !== false`), true);
+    assert.equal(await evaluate(cdp, `window.educariaGenerationRecovery.listPending().length`), 0);
+    // Saved structured drafts remain accessible, including presentation without regeneration.
+    await evaluate(cdp, `openDashboardQuickResultModal(window.educariaGenerationRecovery.get(${JSON.stringify(records.slides.id)}))`);
     const navigationAudit = await cdp.send("Page.addScriptToEvaluateOnNewDocument", { source: `
         if (window.top === window) {
             const key = 'educaria:audit:direct-presentation';

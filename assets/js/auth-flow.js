@@ -614,7 +614,7 @@ async function readTeacherProfileFromFirebase(user) {
         await requireBetaEnrollment(user);
         snapshot = await readTeacherSnapshot(ref, user, services.auth);
     }
-    if (services.auth.currentUser?.uid !== user.uid) throw new Error("A conta mudou. Entre novamente.");
+    if (services.auth.currentUser?.uid !== user.uid) throw authSessionChangedError();
     const profile = snapshot.exists ? snapshot.data() : {};
     const institutionName = normalizeInstitutionName(profile.institutionName || profile.institution || "");
     return {
@@ -642,17 +642,76 @@ function withAuthTimeout(operation, duration, code) {
 }
 
 async function readTeacherSnapshot(ref, user, auth) {
-    // A cold connection may fail or stall before Firestore has established its
-    // transport. Retry only transient reads, never admission/permission failures.
+    // Retrying a stalled Firestore stream can stall on the very same connection.
+    // Recover through a bounded HTTP read with the same user and security rules.
+    const canReadDirectly = typeof fetch === "function" && typeof user.getIdToken === "function";
+    let refreshCredentials = false;
     for (let attempt = 0; attempt < 2; attempt += 1) {
         if (auth.currentUser?.uid !== user.uid) throw authSessionChangedError();
         try {
-            return await withAuthTimeout(ref.get(), 15_000, "auth/profile-timeout");
+            if (attempt === 1 && canReadDirectly) return await readTeacherSnapshotDirectly(user, auth, refreshCredentials);
+            return await withAuthTimeout(ref.get({ source: "server" }), 8_000, "auth/profile-timeout");
         } catch (error) {
             const transient = ["unavailable", "deadline-exceeded", "auth/network-request-failed", "auth/profile-timeout"].includes(error?.code);
-            if (!transient || attempt === 1) throw error;
+            refreshCredentials = ["permission-denied", "unauthenticated"].includes(error?.code);
+            if (attempt === 1 || (!transient && !(refreshCredentials && canReadDirectly))) throw error;
+            if (loginInProgress) updateAuthFeedback("A conexão está demorando. Continuando sua entrada automaticamente…", "neutral");
         }
     }
+}
+
+function authFirestoreValue(value) {
+    if (!value || "nullValue" in value) return null;
+    if ("stringValue" in value) return value.stringValue;
+    if ("booleanValue" in value) return value.booleanValue;
+    if ("integerValue" in value) return Number(value.integerValue);
+    if ("doubleValue" in value) return value.doubleValue;
+    if ("timestampValue" in value) return value.timestampValue;
+    if (value.arrayValue) return (value.arrayValue.values || []).map(authFirestoreValue);
+    if (value.mapValue) return Object.fromEntries(Object.entries(value.mapValue.fields || {}).map(([key, entry]) => [key, authFirestoreValue(entry)]));
+    return null;
+}
+
+async function readTeacherSnapshotDirectly(user, auth, refreshCredentials) {
+    const controller = new AbortController();
+    const assertSession = () => {
+        if (auth.currentUser?.uid !== user.uid) throw authSessionChangedError();
+        if (controller.signal.aborted) throw Object.assign(new Error("A conexão demorou para responder."), { code: "auth/profile-timeout" });
+    };
+    const operation = async () => {
+        assertSession();
+        const [token, appCheckHeaders] = await Promise.all([
+            user.getIdToken(refreshCredentials), window.educariaAppCheckHeaders?.(refreshCredentials)
+        ]);
+        assertSession();
+        // Firebase ID tokens preserve Security Rules and beta admission. No
+        // service-account credential or profile from local cache grants access.
+        const project = encodeURIComponent(firebaseConfig().projectId);
+        const url = `https://firestore.googleapis.com/v1/projects/${project}/databases/(default)/documents/teachers/${encodeURIComponent(user.uid)}`;
+        const response = await fetch(url, {
+            headers: { ...appCheckHeaders, Authorization: `Bearer ${token}` },
+            credentials: "omit", cache: "no-store", signal: controller.signal
+        });
+        assertSession();
+        if (response.status === 404) return { exists: false, data: () => ({}) };
+        if (!response.ok) {
+            const code = response.status === 403 ? "permission-denied" : response.status === 401 ? "unauthenticated" : "unavailable";
+            throw Object.assign(new Error("Não foi possível conferir seu acesso."), { code });
+        }
+        const document = await response.json();
+        assertSession();
+        if (!document.name || document.name !== `projects/${firebaseConfig().projectId}/databases/(default)/documents/teachers/${user.uid}`) {
+            throw Object.assign(new Error("Não foi possível conferir seu perfil."), { code: "unavailable" });
+        }
+        const profile = Object.fromEntries(Object.entries(document.fields || {}).map(([key, value]) => [key, authFirestoreValue(value)]));
+        return { exists: true, data: () => profile };
+    };
+    try {
+        return await withAuthTimeout(operation(), 12_000, "auth/profile-timeout");
+    } catch (error) {
+        if (error instanceof TypeError) throw Object.assign(new Error("Não foi possível conectar."), { code: "auth/network-request-failed" });
+        throw error;
+    } finally { controller.abort(); }
 }
 
 function bindLoginForm() {

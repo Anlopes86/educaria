@@ -22,10 +22,10 @@
             console.warn("EducarIA App Check: proteção indisponível neste navegador.");
         }
     };
-    window.educariaAppCheckHeaders = async function () {
+    window.educariaAppCheckHeaders = async function (forceRefresh = false) {
         if (!appCheck) return {};
         try {
-            const result = await appCheck.getToken(false);
+            const result = await appCheck.getToken(forceRefresh === true);
             return { "X-Firebase-AppCheck": result.token };
         } catch {
             // During staged rollout the server decides whether attestation is mandatory.

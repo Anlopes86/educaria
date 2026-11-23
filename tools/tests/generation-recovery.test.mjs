@@ -73,6 +73,50 @@ function libraryHarness() {
     return h;
 }
 
+test("saving to the library acknowledges the result without deleting its editable payload", async () => {
+    const h = libraryHarness(); const record = h.create(); h.api.save(record);
+    assert.equal(h.api.listPending().length, 1);
+    assert.equal(h.api.acknowledge(record), true);
+    assert.equal(h.api.listPending().length, 0);
+    assert.equal(h.api.list().length, 1);
+    assert.equal(h.api.get(record.id).material.title, "Ciências");
+    const reloaded = libraryHarness(); reloaded.state.lessons = structuredClone(h.state.lessons);
+    assert.equal(reloaded.api.listPending().length, 0);
+    reloaded.open(reloaded.api.get(record.id)); await reloaded.consume();
+    assert.equal(reloaded.state.applied, 1);
+    assert.equal(reloaded.state.lessons.length, 1);
+});
+
+test("recovery prefers the latest unacknowledged result and respects account boundaries", () => {
+    const h = libraryHarness(); const older = h.create(); older.createdAt -= 1000;
+    const latest = h.create(); h.api.save(older); h.api.save(latest);
+    assert.equal(h.api.listPending()[0].id, latest.id);
+    h.api.acknowledge(latest);
+    assert.equal(h.api.listPending()[0].id, older.id);
+    h.teacher("Teacher-B");
+    assert.equal(h.api.acknowledge(older), false);
+    assert.equal(h.api.listPending().length, 0);
+});
+
+test("legacy recovery keys do not duplicate library drafts or resurrect converted materials", () => {
+    const h = harness(); const record = h.create(); h.api.save(record);
+    h.context.writeLessonsLibrary = lessons => { h.state.lessons = lessons; };
+    h.state.lessons = [{ id: h.api.lessonId(record), materialType: record.materialType, draft: JSON.stringify({ pendingAiResult: record }) }];
+    assert.equal(h.api.list().length, 1);
+    h.state.lessons[0].draft = '{"text":"edição preservada"}';
+    assert.equal(h.api.list().length, 0);
+    assert.equal(h.api.acknowledge(record), true);
+    assert.equal(h.state.lessons[0].draft, '{"text":"edição preservada"}');
+});
+
+test("an acknowledgement failure never discards an unsaved result", () => {
+    const h = libraryHarness(); const record = h.create(); h.state.failWrite = true;
+    h.api.save(record);
+    assert.equal(h.api.acknowledge(record), false);
+    assert.equal(h.api.listPending().length, 1);
+    assert.equal(h.api.hasUnsaved(), true);
+});
+
 test("archiving preserves the chosen class even while the class list is not yet available", async () => {
     const h = libraryHarness(); h.context.getAvailableClasses = () => [];
     const record = h.create({ className: "7º ano B" });

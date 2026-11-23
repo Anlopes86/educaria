@@ -75,18 +75,48 @@
                 if (!storageKey?.startsWith(prefix)) continue;
                 try {
                     const record = JSON.parse(localStorage.getItem(storageKey));
-                    if (valid(record, uid) && key(record) === storageKey) results.set(record.id, record);
+                    if (valid(record, uid) && key(record) === storageKey) results.set(lessonId(record), record);
                 } catch { /* A corrupt entry must not hide other pending results. */ }
             }
         } catch { /* Volatile results can still be downloaded while this page is open. */ }
-        for (const record of volatile.values()) if (valid(record, uid)) results.set(record.id, record);
+        for (const record of volatile.values()) if (valid(record, uid)) results.set(lessonId(record), record);
         if (typeof readLessonsLibrary === "function") {
             for (const lesson of readLessonsLibrary()) {
                 const record = fromLesson(lesson);
                 if (record) results.set(record.libraryId, record);
+                else if (lesson.draft) results.delete(lesson.id); // A converted draft supersedes its legacy recovery copy.
             }
         }
         return [...results.values()].sort((a, b) => a.createdAt - b.createdAt);
+    }
+    function listPending() {
+        // pendingAiResult means the editor has not converted the payload yet. It
+        // does not mean the teacher still has to decide where to keep it.
+        return list().filter(record => !record.resultAcknowledgedAt).sort((a, b) => b.createdAt - a.createdAt);
+    }
+    function acknowledge(record) {
+        if (!valid(record, currentUid()) || !isDurable(record)) return false;
+        const acknowledgedAt = Date.now();
+        try {
+            const lessons = typeof readLessonsLibrary === "function" ? readLessonsLibrary() : [];
+            const lesson = lessons.find(item => item.id === lessonId(record));
+            if (lesson) {
+                const draft = JSON.parse(lesson.draft);
+                if (draft.pendingAiResult) {
+                    if (draft.pendingAiResult.id !== record.id || draft.pendingAiResult.ownerUid !== currentUid()) return false;
+                    draft.pendingAiResult.resultAcknowledgedAt = acknowledgedAt;
+                    writeLessonsLibrary(lessons.map(item => item.id === lesson.id ? {
+                        ...item, draft: JSON.stringify(draft), updatedAt: new Date(acknowledgedAt).toISOString()
+                    } : item), { source: "generated-result-acknowledged" });
+                }
+                // Converted editor content is already handled; never overwrite it.
+            } else {
+                localStorage.setItem(key(record), JSON.stringify({ ...record, resultAcknowledgedAt: acknowledgedAt }));
+            }
+            record.resultAcknowledgedAt = acknowledgedAt;
+            volatile.delete(key(record));
+            return true;
+        } catch { return false; }
     }
     function fromLesson(lesson) {
         try {
@@ -203,7 +233,7 @@
             document.body.appendChild(frame);
         });
     }
-    window.educariaGenerationRecovery = { currentUid, create, save, list, get, fromLesson, isDurable, complete, lessonId, editorUrl,
+    window.educariaGenerationRecovery = { currentUid, create, save, list, listPending, acknowledge, get, fromLesson, isDurable, complete, lessonId, editorUrl,
         prepareForPresentation, backgroundPreparation, reportPreparation,
         hasUnsaved: () => volatile.size > 0 };
     document.addEventListener("DOMContentLoaded", () => {
