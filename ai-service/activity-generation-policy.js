@@ -95,7 +95,7 @@ export function activityGenerationInstructions(materialType, options) {
         `Ano/público: ${JSON.stringify(audience.audience || "não informado")}. ${guidance[audience.profile]}`,
         "O ano/público explícito tem prioridade sobre a turma. Nunca confunda o nome da turma com a idade dos alunos.",
         `Disciplina: ${JSON.stringify(options.subject || "não informada")}. Objetivo: ${JSON.stringify(options.objective || "não informado")}.`,
-        "O tema e as instruções do pedido principal têm prioridade sobre a disciplina como contexto. Não substitua assuntos explícitos por conteúdo típico da disciplina.",
+        materialType === "quiz" ? "O tema e as instruções do pedido principal têm prioridade sobre a disciplina como contexto. Não substitua assuntos explícitos por conteúdo típico da disciplina." : "",
         options.approach ? `Como ajudar: ${JSON.stringify(options.approach)}.` : ""
     ];
     if (["wordtrail", "connections"].includes(materialType)) instructions.push(options.inputMode === "words"

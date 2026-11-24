@@ -125,6 +125,9 @@ const DASHBOARD_QUICK_OPTION_CONFIGS = {
 const DASHBOARD_CORE_FORMAT_PATHS = new Set(DASHBOARD_CORE_FORMATS.map((format) => format.href));
 // Keep the essential controls visible; teaching choices live under Personalizar.
 DASHBOARD_QUICK_OPTION_CONFIGS.slides.find((field) => field.key === "visualMode").advanced = true;
+for (const field of DASHBOARD_QUICK_OPTION_CONFIGS.quiz) {
+    if (["difficulty", "language"].includes(field.key)) field.advanced = true;
+}
 const dashboardChoice = (key, label, value, choices) => ({ key, type: "select", label, value, advanced: true,
     options: choices.map(([value, label]) => ({ value, label })) });
 DASHBOARD_QUICK_OPTION_CONFIGS.slides.push(

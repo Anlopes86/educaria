@@ -385,6 +385,13 @@ function normalizeLessonScope(lesson) {
     return lesson?.className ? LESSON_SCOPE_CLASS : LESSON_SCOPE_LIBRARY;
 }
 
+// Location and editing status are separate: a draft assigned to a class
+// belongs to that class, never to the personal unassigned-drafts section.
+function isUnassignedLibraryDraft(lesson) {
+    return normalizeLessonScope(lesson) === LESSON_SCOPE_LIBRARY
+        && !lesson.className && lesson.status === LESSON_STATUS_DRAFT;
+}
+
 function removeLessonById(id) {
     const lessons = readLessonsLibrary().filter((lesson) => lesson.id !== id);
     queueDeletedLessonId(id);
@@ -1466,13 +1473,6 @@ function saveCurrentLessonToLibrary(preferredType = "", options = {}) {
 
 function libraryMaterials() {
     return readLessonsLibrary().filter((lesson) => normalizeLessonScope(lesson) === LESSON_SCOPE_LIBRARY);
-}
-
-// Location and editing status are separate: a draft assigned to a class
-// belongs to that class, never to the personal unassigned-drafts section.
-function isUnassignedLibraryDraft(lesson) {
-    return normalizeLessonScope(lesson) === LESSON_SCOPE_LIBRARY
-        && !lesson.className && lesson.status === LESSON_STATUS_DRAFT;
 }
 
 function classMaterials(className) {

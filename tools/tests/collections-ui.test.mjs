@@ -84,18 +84,21 @@ test("class identities are stable, short, and understand Portuguese grade names"
     assert.doesNotMatch(visual.classIdentity('<img src=x>').initials, /[<>]/);
 });
 
-test("library gallery preserves global sorting, every format, and existing action hooks", () => {
+test("library gallery sorts within separate organized and draft sections, preserving formats and actions", () => {
     const h = harness();
     h.run('activeLibrarySort="title"; hydrateLibraryPage()');
     assert.equal(h.root.attrs["aria-busy"], "false");
     assert.match(h.root.innerHTML, /collection-library-grid/);
     assert.doesNotMatch(h.root.innerHTML, /lesson-group-disclosure/);
+    assert.ok(h.root.innerHTML.indexOf('id="library-organized-heading"') < h.root.innerHTML.indexOf('id="library-drafts-heading"'));
     let lastIndex = -1;
-    for (const [i, type] of types.entries()) {
+    const ordered = [...records.filter(record => record.status === "ready"), ...records.filter(record => record.status === "draft")];
+    for (const record of ordered) {
+        const type = record.materialType;
         const index = h.root.innerHTML.indexOf(`data-material-type="${type}"`);
         assert.ok(index > lastIndex, type);
         lastIndex = index;
-        for (const action of ["present", "edit", "rename", "delete", "duplicate"]) assert.ok(h.root.innerHTML.includes(`data-${action}-lesson="item-${i}"`), `${type} ${action}`);
+        for (const action of ["present", "edit", "rename", "delete", "duplicate"]) assert.ok(h.root.innerHTML.includes(`data-${action}-lesson="${record.id}"`), `${type} ${action}`);
     }
     assert.equal((h.root.innerHTML.match(/class="collection-more"/g) || []).length, types.length);
     assert.match(h.root.innerHTML, /quiz-aplicacao\.html\?lesson=item-1&amp;material=quiz/);
