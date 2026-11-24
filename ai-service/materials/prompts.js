@@ -6,6 +6,7 @@ import { worksheetPrompt } from "./worksheet.js";
 import { refinementPrompt } from "./item-refinement.js";
 import { singleSlideIllustrationPrompt } from "./slide-illustration-request.js";
 import { quizVariationInstructions } from "./quiz-variety.js";
+import { quizPedagogyInstructions } from "./quiz-pedagogy.js";
 
 /**
  * Builds the Portuguese-language provider prompt for a given activity type.
@@ -31,7 +32,7 @@ function basePromptFor(materialType, action, sourceText, slideOptions, generatio
             "Você é um assistente pedagógico de uma plataforma educacional brasileira.",
             "Responda apenas em JSON compatível com o schema fornecido.",
             "O material deve ficar pronto para revisão rápida do professor, sem texto fora do JSON.",
-            "Escreva em português do Brasil, com linguagem escolar clara, objetiva e natural.",
+            "Use linguagem escolar clara, objetiva e natural, respeitando a política de idioma do quiz abaixo.",
             "Se o texto já trouxer perguntas, normalize a estrutura e complete apenas o que estiver faltando.",
             "Se o texto for expositivo, gere um quiz fiel ao conteúdo enviado, sem inventar fatos desnecessários.",
             "Prefira perguntas que verifiquem compreensão, relação entre ideias e identificação de conceitos centrais.",
@@ -48,6 +49,7 @@ function basePromptFor(materialType, action, sourceText, slideOptions, generatio
             "- Se o conteúdo estiver incompleto, faça a melhor estrutura possível sem sair do tema.",
             "- Respeite explicitamente a quantidade e o formato pedidos pelo professor quando isso for informado.",
             quizVariationInstructions(generationOptions?.quizVariation),
+            quizPedagogyInstructions(sourceText, generationOptions),
             "Material de origem:",
             sourceText
         ].join("\n\n");

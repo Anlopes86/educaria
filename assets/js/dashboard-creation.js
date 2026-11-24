@@ -10,11 +10,16 @@ function validateDashboardSourceFile(file) {
 function hydrateDashboardCreationClasses() {
     const field = document.querySelector('[data-dashboard-context="className"]');
     if (!field || field.disabled) return;
-    const selected = field.dataset.initialized ? field.value : (typeof readSelectedClass === "function" ? readSelectedClass() : "");
+    const ownerUid = window.educariaGenerationRecovery?.currentUid() || "";
+    const sameOwner = field.dataset.ownerUid === ownerUid;
+    const selected = field.dataset.initialized && sameOwner ? field.value : (typeof readSelectedClass === "function" ? readSelectedClass() : "");
     const classes = typeof getAvailableClasses === "function" ? getAvailableClasses() : [];
-    field.replaceChildren(new Option("Biblioteca pessoal", ""), ...classes.map((name) => new Option(name, name)));
-    field.value = classes.includes(selected) ? selected : "";
+    // A partial cloud refresh must not silently erase the teacher's destination.
+    const choices = [...new Set([...classes, ...(selected ? [selected] : [])])];
+    field.replaceChildren(new Option("Rascunhos da biblioteca (sem turma)", ""), ...choices.map((name) => new Option(name, name)));
+    field.value = selected;
     field.dataset.initialized = "true";
+    field.dataset.ownerUid = ownerUid;
 }
 
 async function prepareDashboardSlideImage(form) {
@@ -77,9 +82,5 @@ function bindDashboardCreationAttachments(form) {
         preview.querySelector("img").removeAttribute("src");
     });
     document.addEventListener("educaria-classes-updated", hydrateDashboardCreationClasses);
-    document.addEventListener("educaria-auth-changed", () => {
-        const classes = form.querySelector('[data-dashboard-context="className"]');
-        if (classes) delete classes.dataset.initialized;
-        hydrateDashboardCreationClasses();
-    });
+    document.addEventListener("educaria-auth-changed", hydrateDashboardCreationClasses);
 }

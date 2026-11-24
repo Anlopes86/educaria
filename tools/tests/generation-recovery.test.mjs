@@ -123,8 +123,11 @@ test("archiving preserves the chosen class even while the class list is not yet 
     assert.equal(h.api.save(record), true);
     assert.equal(h.state.lessons[0].className, "7º ano B");
     assert.equal(h.state.lessons[0].scope, "class");
+    assert.equal(h.state.lessons[0].status, "ready");
+    assert.equal(h.state.lessons[0].autoFiled, false);
     h.open(h.api.get(record.id)); await h.consume();
     assert.equal(h.state.lessons[0].className, "7º ano B");
+    assert.equal(h.state.lessons[0].status, "ready");
 });
 
 test("an archived result's old recovery link reopens later edits without recreating a pending result", async () => {

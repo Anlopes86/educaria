@@ -2171,6 +2171,7 @@ async function generateMaterial(materialType, button, options = {}) {
     } : undefined;
     const generationOptions = {
         inputMode: config.inputModeId ? document.getElementById(config.inputModeId)?.value || "topic" : "topic",
+        ...(materialType === "quiz" ? { difficulty: document.getElementById("quiz-dificuldade")?.value || "medium", language: document.getElementById("quiz-idioma")?.value || "auto" } : {}),
         ...(materialType === "connections" ? { clueCount: Number(document.getElementById(config.clueCountId)?.value || 5), difficulty: document.getElementById(config.difficultyId)?.value || "medium" } : {}),
         ...(materialType === "wordtrail" ? { includeClues: document.getElementById(config.includeCluesId)?.value !== "false" } : {}),
         count: requestedCount, approach: action, format: formatText, layout: layoutText,
@@ -2331,6 +2332,12 @@ function applyGenerationOptionsToEditor(materialType, options) {
     if (["slides", "flashcards"].includes(materialType) && options.count === null && config?.countId) {
         const count = document.getElementById(config.countId);
         if (count) count.value = "";
+    }
+    if (materialType === "quiz") {
+        for (const [id, value] of [["quiz-dificuldade", options.difficulty || "medium"], ["quiz-idioma", options.language || "auto"]]) {
+            const field = document.getElementById(id);
+            if (field) field.value = value;
+        }
     }
     if (materialType === "wordsearch" && options.directions) {
         const directions = document.getElementById("caca-direcoes");

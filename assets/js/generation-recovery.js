@@ -1,4 +1,4 @@
-/* Generated payloads are drafts in the personal library before an editor is opened.
+/* Generated payloads keep their chosen destination before an editor is opened.
  * Conversion to editor HTML is lazy and never makes another provider request. */
 (() => {
     const prefix = "educaria:ai-result:";
@@ -52,7 +52,7 @@
                         id: lessonId(record), materialType: record.materialType, type: record.label,
                         title: record.material.title || record.topic || "Atividade criada com IA",
                         summary: "Criada com IA. Abra para revisar e apresentar, sem gastar novos créditos.",
-                        scope: className ? "class" : "library", className, status: "draft", autoFiled: !className,
+                        scope: className ? "class" : "library", className, status: className ? "ready" : "draft", autoFiled: !className,
                         createdAt: now, updatedAt: now, sourceMode: "topic",
                         draft: JSON.stringify({ pendingAiResult: record })
                     }, ...lessons], { source: "generated-draft" });

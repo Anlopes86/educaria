@@ -155,6 +155,14 @@ function normalizeLessonRecord(lesson) {
     const scope = lesson.scope || (className ? LESSON_SCOPE_CLASS : LESSON_SCOPE_LIBRARY);
     const updatedAt = isoTimestampOrEmpty(lesson.updatedAt) || new Date().toISOString();
     const createdAt = isoTimestampOrEmpty(lesson.createdAt) || updatedAt;
+    let status = normalizeLessonStatus(lesson.status);
+    // Older dashboard results used "draft" for every lazy-conversion payload,
+    // even when already filed in a class. Do not alter manually edited drafts.
+    if (scope === LESSON_SCOPE_CLASS && className && status === LESSON_STATUS_DRAFT) {
+        try {
+            if (JSON.parse(lesson.draft || "{}").pendingAiResult?.material) status = LESSON_STATUS_READY;
+        } catch { /* A legacy editor draft may not be JSON. Keep its status. */ }
+    }
     const normalizedType = materialType === "hangman"
         ? "Forca"
         : (String(lesson.type || materialGroupLabel(materialType)).trim() || materialGroupLabel(materialType));
@@ -176,7 +184,7 @@ function normalizeLessonRecord(lesson) {
         ...baseRecord,
         createdAt,
         updatedAt,
-        status: normalizeLessonStatus(lesson.status),
+        status,
         autoFiled: Boolean(lesson.autoFiled),
         bnccCodes,
         tags: normalizeStringList([
@@ -411,6 +419,8 @@ function organizeLessons(ids, action, destination = null) {
     } else {
         changed = records.map((lesson) => ({
             ...lesson, autoFiled: false, scope: destination.scope, className: destination.scope === "class" ? destination.className : "", updatedAt: now,
+            status: destination.scope === LESSON_SCOPE_CLASS && lesson.autoFiled && isUnassignedLibraryDraft(lesson)
+                ? LESSON_STATUS_READY : lesson.status,
             ...(action === "copy" ? { id: newLessonRecordId(), createdAt: now, syncRevision: "", conflictOf: "",
                 lastOpenedAt: "", lastPresentedAt: "", lastUsedAt: "", usageCount: 0 } : {})
         }));
@@ -502,7 +512,8 @@ function saveLessonToDestinations(source, destinations, { updateSource = true, m
             id: updatesExisting ? existing.id : newLessonRecordId(),
             createdAt: updatesExisting ? existing.createdAt : now,
             updatedAt: now,
-            status: markReady ? LESSON_STATUS_READY : source.status,
+            status: markReady || (scope === LESSON_SCOPE_CLASS && source.autoFiled && isUnassignedLibraryDraft(source))
+                ? LESSON_STATUS_READY : source.status,
             autoFiled: false,
             syncRevision: updatesExisting ? existing.syncRevision : "",
             conflictOf: updatesExisting ? existing.conflictOf : "",
@@ -528,6 +539,8 @@ function duplicateLessonToClass(id, targetClass) {
         id: newLessonRecordId(),
         className: turma,
         scope: LESSON_SCOPE_CLASS,
+        autoFiled: false,
+        status: lesson.autoFiled && isUnassignedLibraryDraft(lesson) ? LESSON_STATUS_READY : lesson.status,
         createdAt: now,
         updatedAt: now,
         lastOpenedAt: "",
@@ -1455,6 +1468,13 @@ function libraryMaterials() {
     return readLessonsLibrary().filter((lesson) => normalizeLessonScope(lesson) === LESSON_SCOPE_LIBRARY);
 }
 
+// Location and editing status are separate: a draft assigned to a class
+// belongs to that class, never to the personal unassigned-drafts section.
+function isUnassignedLibraryDraft(lesson) {
+    return normalizeLessonScope(lesson) === LESSON_SCOPE_LIBRARY
+        && !lesson.className && lesson.status === LESSON_STATUS_DRAFT;
+}
+
 function classMaterials(className) {
     return readLessonsLibrary().filter((lesson) => {
         return normalizeLessonScope(lesson) === LESSON_SCOPE_CLASS && lesson.className === className;
@@ -1764,7 +1784,7 @@ function libraryFilterSummaryLabel(filterId, filteredCount, totalCount) {
 }
 
 function libraryMaterialsForActiveScope() {
-    if (activeLibraryScope === "drafts") return libraryMaterials().filter((lesson) => lesson.status === LESSON_STATUS_DRAFT);
+    if (activeLibraryScope === "drafts") return libraryMaterials().filter(isUnassignedLibraryDraft);
     if (activeLibraryScope === "all") return readLessonsLibrary();
     if (activeLibraryScope.startsWith("class:")) return classMaterials(activeLibraryScope.slice(6));
     return libraryMaterials();
@@ -2708,9 +2728,11 @@ function hydrateLibraryPage() {
     hydrateLibraryScopeFilter(scopeFilter);
     const draftsButton = document.querySelector("[data-library-drafts]");
     if (draftsButton) {
-        const count = libraryMaterials().filter((lesson) => lesson.status === LESSON_STATUS_DRAFT).length;
+        const count = libraryMaterials().filter(isUnassignedLibraryDraft).length;
         draftsButton.querySelector("[data-drafts-count]").textContent = count;
         draftsButton.setAttribute("aria-pressed", String(activeLibraryScope === "drafts"));
+        const action = draftsButton.querySelector("[data-drafts-action]");
+        if (action) action.textContent = activeLibraryScope === "drafts" ? "Voltar à biblioteca" : "Ver só rascunhos";
     }
     const lessons = libraryMaterialsForActiveScope();
     if (countNode) {
@@ -2823,8 +2845,8 @@ function hydrateLibraryPage() {
     }
 
     // Keep the user's sort across formats, without a mostly empty row per type.
-    root.innerHTML = `<div class="lesson-history-grid class-lesson-grid collection-library-grid">
-                        ${filteredLessons.map((lesson) => {
+    const renderCards = (items) => `<div class="lesson-history-grid class-lesson-grid collection-library-grid">
+                        ${items.map((lesson) => {
                             const key = lesson.materialType || "slides";
                             return `
                             <article class="lesson-history-card lesson-history-card--grouped" data-lesson-card="${escapeHtml(lesson.id)}" data-material-type="${escapeHtml(key)}">
@@ -2835,6 +2857,7 @@ function hydrateLibraryPage() {
                                 <div class="lesson-history-meta">
                                     <span>${lessonLibraryTranslate("classes.latest.updatedAt", "Atualizado em")} ${escapeHtml(formatLessonDate(lesson.updatedAt))}</span>
                                     <span>${escapeHtml(lesson.type)}</span>
+                                    <span>${lesson.className ? `Turma: ${escapeHtml(lesson.className)}` : isUnassignedLibraryDraft(lesson) ? "Sem turma" : "Biblioteca pessoal"}</span>
                                     <span class="lesson-status-chip lesson-status-chip--${escapeHtml(lesson.status || LESSON_STATUS_DRAFT)}">${escapeHtml(lessonStatusLabel(lesson.status))}</span>
                                 </div>
                                 ${lessonPedagogyTagsHtml(lesson)}
@@ -2853,6 +2876,12 @@ function hydrateLibraryPage() {
                             </article>
                         `; }).join("")}
                     </div>`;
+    const drafts = filteredLessons.filter(isUnassignedLibraryDraft);
+    const organized = filteredLessons.filter((lesson) => !isUnassignedLibraryDraft(lesson));
+    root.innerHTML = [
+        organized.length ? `<section class="library-material-section" aria-labelledby="library-organized-heading"><h3 id="library-organized-heading">Materiais organizados <span>${organized.length}</span></h3>${renderCards(organized)}</section>` : "",
+        drafts.length ? `<section class="library-material-section library-material-section--drafts" aria-labelledby="library-drafts-heading"><h3 id="library-drafts-heading">Rascunhos <span>${drafts.length}</span></h3><p>Criações sem turma. Selecione os materiais para mover ou copiar para uma turma.</p>${renderCards(drafts)}</section>` : ""
+    ].join("");
     root.setAttribute("aria-busy", "false");
 }
 

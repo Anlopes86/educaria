@@ -56,6 +56,8 @@ const DASHBOARD_QUICK_OPTION_CONFIGS = {
     ],
     quiz: [
         { key: "count", type: "number", labelKey: "dashboard.quick.count.questions", label: "Quantidade de perguntas", min: 1, max: 30, value: 8, instruction: (value) => `Gerar ${value} perguntas.` },
+        { key: "difficulty", type: "select", label: "Dificuldade", value: "medium", options: [{ value: "easy", label: "Fácil" }, { value: "medium", label: "Média" }, { value: "hard", label: "Difícil" }] },
+        { key: "language", type: "select", label: "Idioma das perguntas", value: "auto", options: [{ value: "auto", label: "Conforme o pedido e a disciplina" }, { value: "pt-BR", label: "Português" }, { value: "en", label: "Inglês" }, { value: "es", label: "Espanhol" }] },
         {
             key: "format",
             type: "select",

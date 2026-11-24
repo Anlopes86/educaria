@@ -31,7 +31,7 @@
     <script src="../assets/js/ai-endpoint-config.js" defer></script>
     <script src="../assets/js/ai-credits.js?v=20261028-2" defer></script>
     <script src="../assets/js/quiz-answers.js?v=20261122-1" defer></script>
-    <script src="../assets/js/ai-material-generator.js?v=20261123-1" defer></script>
+    <script src="../assets/js/ai-material-generator.js?v=20261123-2" defer></script>
     <script src="../assets/js/item-refinement-core.js?v=20261122-1" defer></script>
     <script src="../assets/js/item-refinement-adapters.js?v=20261024-2" defer></script>
     <script src="../assets/js/item-refinement-editor.js?v=20261122-1" defer></script>
@@ -117,6 +117,23 @@
                             <div class="platform-field">
                                 <label for="quiz-quantidade">Perguntas</label>
                                 <input id="quiz-quantidade" type="number" min="1" max="50" step="1" value="8" placeholder="Ex.: 12">
+                            </div>
+                            <div class="platform-field">
+                                <label for="quiz-dificuldade">Dificuldade</label>
+                                <select id="quiz-dificuldade">
+                                    <option value="easy">Fácil</option>
+                                    <option value="medium" selected>Média</option>
+                                    <option value="hard">Difícil</option>
+                                </select>
+                            </div>
+                            <div class="platform-field">
+                                <label for="quiz-idioma">Idioma das perguntas</label>
+                                <select id="quiz-idioma">
+                                    <option value="auto">Conforme o pedido e a disciplina</option>
+                                    <option value="pt-BR">Português</option>
+                                    <option value="en">Inglês</option>
+                                    <option value="es">Espanhol</option>
+                                </select>
                             </div>
                             <div class="platform-field">
                                 <label for="quiz-formato">Formato</label>
