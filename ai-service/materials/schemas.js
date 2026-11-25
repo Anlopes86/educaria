@@ -333,7 +333,7 @@ const materialSchemas = new Map([
     ["slides", { name: "educaria_slides", description: "Slides estruturados para o builder da EducarIA", schema: slidesSchema }],
     ["flashcards", { name: "educaria_flashcards", description: "Flashcards estruturados para o builder da EducarIA", schema: flashcardsSchema }],
     ["memory", { name: "educaria_memory", description: "Jogo da memória estruturado para o editor da EducarIA", schema: memorySchema }],
-    ["hangman", { name: "educaria_hangman", description: "Jogo da força estruturado para o editor da EducarIA", schema: hangmanSchema }],
+    ["hangman", { name: "educaria_hangman", description: "Jogo da forca estruturado para o editor da EducarIA", schema: hangmanSchema }],
     ["match", { name: "educaria_match", description: "Ligar pontos estruturado para o builder da EducarIA", schema: matchSchema }],
     ["wheel", { name: "educaria_wheel", description: "Roleta estruturada para o builder da EducarIA", schema: wheelSchema }],
     ["wordsearch", { name: "educaria_wordsearch", description: "Caça-palavras estruturado para o editor da EducarIA", schema: wordsearchSchema }],

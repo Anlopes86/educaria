@@ -1,4 +1,5 @@
 import core from "../../assets/js/item-refinement-core.js";
+import { refinementPedagogyInstructions } from "./pedagogical-guidelines.js";
 const contextLimits = { title: 300, description: 1500, audience: 200, format: 100, sideA: 300, sideB: 300 };
 const record = value => value && typeof value === "object" && !Array.isArray(value);
 const error = (message, code = "invalid_item_refinement") => Object.assign(new Error(message), { code });
@@ -54,6 +55,7 @@ export function refinementPrompt(type, sourceText) {
         "Quando solicitado refazer, crie uma nova abordagem para cada item selecionado. Quando solicitado aprofundar, desenvolva explicações e exemplos concretos. Para simplificar, ajuste linguagem e extensão. Não se limite a sinônimos.",
         "Com field=all, preserve trechos não envolvidos no pedido. Complete itens vazios quando solicitado. Preserve o idioma, tempo verbal e termos exatos fornecidos, salvo pedido explícito de substituição ou tradução.",
         "Não invente fontes, citações, datas ou estatísticas. Evite repetir os outros itens. Imagens, cores, layout e ordem são controlados pelo editor e não devem aparecer na resposta.",
+        refinementPedagogyInstructions(type),
         type === "quiz" ? "Mantenha o kind de cada questão. multiple_choice exige quatro alternativas diferentes e uma correta; correct deve ser A, B, C ou D. true_false: correct A=Verdadeiro, B=Falso. short_answer exige model com resposta esperada e criteria coerentes. Ao refazer uma questão, revise todo o conjunto pergunta/alternativas/gabarito/explicação, sem contradições." : "",
         type === "quiz" ? "Se o pedido for substituir/refazer perguntas, crie questões realmente novas sobre o tema, sem repetir os enunciados atuais nem os vizinhos. Se o pedido for apenas distribuir ou embaralhar alternativas, mantenha o enunciado e o sentido das respostas; mude somente sua ordem, atualize correct e confira se a explicação ainda corresponde. Nunca transforme todas as respostas em A por padrão. Com field=options, mantenha o enunciado intacto e devolva somente alternativas, correct e explanation." : "",
         type === "slides" ? "Reescreva o conteúdo do slide selecionado. Use parágrafos curtos e exemplos quando pedido; não reduza um pedido de aprofundamento a uma lista de títulos. Mantenha texto legível em sala. Não produza SVG, HTML ou URLs de imagem." : "",
